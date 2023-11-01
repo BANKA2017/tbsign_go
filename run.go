@@ -4,65 +4,34 @@ import (
 	"database/sql"
 	"flag"
 	"log"
-	"net/http"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
-	_type "github.com/BANKA2017/tbsign_go/types"
+	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/leeqvip/gophp"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
-func getOption(options []model.TcOption, keyName string) string {
-	for _, v := range options {
-		if v.Name == keyName {
-			return v.Value
-		}
-	}
-	return ""
-}
-
-func getCookie(pid int32) _type.Cookie {
-	cookie, ok := cookieList[pid]
-	if !ok {
-		var cookieDB struct {
-			Bduss  string
-			Stoken string
-		}
-		gormDB.Model(&model.TcBaiduid{}).Where("id = ?", pid).First(&cookieDB)
-		cookie.Tbs = _function.GetTbs(&client, cookieDB.Bduss)
-		if cookie.Tbs == "" {
-			return cookie
-		}
-		cookie.Bduss = cookieDB.Bduss
-		cookie.Stoken = cookieDB.Stoken
-		cookieList[pid] = cookie
-	}
-
-	return cookie
-}
-
 func Dosign(table string, retry bool) (bool, error) {
-	var now = time.Now()
-	//signMode := getOption(options, "sign_mode")
-	signHour, _ := strconv.ParseInt(getOption(options, "sign_hour"), 10, 64)
-	if int64(now.Hour()) <= signHour {
+	//signMode := GetOption(options, "sign_mode")
+	signHour, _ := strconv.ParseInt(_function.GetOption("sign_hour"), 10, 64)
+	if int64(_function.Now.Hour()) <= signHour {
 		log.Println(strconv.FormatInt(signHour, 10) + "点时忽略签到")
 		return true, nil
 	}
-	//limit := getOption(options, "cron_limit")
+	//limit := GetOption(options, "cron_limit")
 	var tiebaList []model.TcTieba
 	//处理所有未签到的贴吧
 	//TODO support limit
 	//if limit == "0" {
 	if retry {
-		gormDB.Where("no = ? AND latest != ? AND status IN ?", 0, now.Day(), []int64{340011, 2280007, 110001, 1989004, 255}).Find(&tiebaList)
+		_function.GormDB.Where("no = ? AND latest != ? AND status IN ?", 0, _function.Now.Day(), []int64{340011, 2280007, 110001, 1989004, 255}).Find(&tiebaList)
 	} else {
-		gormDB.Where("no = ? AND latest != ?", 0, now.Day()).Find(&tiebaList)
+		_function.GormDB.Where("no = ? AND latest != ?", 0, _function.Now.Day()).Find(&tiebaList)
 	}
 
 	if len(tiebaList) <= 0 {
@@ -73,7 +42,7 @@ func Dosign(table string, retry bool) (bool, error) {
 	//}
 
 	//log.Println(tiebaList)
-	sleep, _ := strconv.ParseInt(getOption(options, "sign_sleep"), 10, 64)
+	sleep, _ := strconv.ParseInt(_function.GetOption("sign_sleep"), 10, 64)
 
 	//force sleep
 	if sleep <= 0 {
@@ -82,7 +51,7 @@ func Dosign(table string, retry bool) (bool, error) {
 
 	// get all cookies
 	for _, v := range tiebaList {
-		getCookie(v.Pid)
+		_function.GetCookie(v.Pid)
 	}
 	for _, v := range tiebaList {
 		// we will not auto update fid
@@ -90,23 +59,23 @@ func Dosign(table string, retry bool) (bool, error) {
 			continue
 		}
 		wg.Add(1)
-		go DoSignAndUpdateDB(v.Pid, v.Tieba, v.Fid, v.ID, now)
+		go DoSignAction(v.Pid, v.Tieba, v.Fid, v.ID, _function.Now)
 
 		time.Sleep(time.Millisecond * time.Duration(sleep))
 	}
 	wg.Wait()
-	log.Println(time.Now().UnixMilli() - now.UnixMilli())
+	log.Println(time.Now().UnixMilli() - _function.Now.UnixMilli())
 	return false, nil
 }
 
-func DoSignAndUpdateDB(pid int32, kw string, fid int32, id int32, now time.Time) {
+func DoSignAction(pid int32, kw string, fid int32, id int32, now time.Time) {
 	//success := false
-	ck := getCookie(pid)
+	ck := _function.GetCookie(pid)
 	if ck.Bduss == "" {
 		log.Println("sign: Failed, no such account", pid, kw, fid, id, now.Day())
 		return
 	}
-	response, err := _function.DoSignClient(&client, ck, kw, fid)
+	response, err := _function.PostSignClient(ck, kw, fid)
 
 	if err == nil && response.ErrorCode != "" {
 		var errorCode int64 = 0
@@ -116,7 +85,7 @@ func DoSignAndUpdateDB(pid int32, kw string, fid int32, id int32, now time.Time)
 			errorMsg = response.ErrorMsg
 		}
 		//TODO better sql update
-		gormDB.Model(model.TcTieba{}).Where("id = ?", id).Updates(&model.TcTieba{
+		_function.GormDB.Model(model.TcTieba{}).Where("id = ?", id).Updates(&model.TcTieba{
 			Latest:    int32(now.Day()),
 			Status:    int32(errorCode),
 			LastError: errorMsg,
@@ -127,13 +96,8 @@ func DoSignAndUpdateDB(pid int32, kw string, fid int32, id int32, now time.Time)
 	defer wg.Done()
 }
 
-var gormDB *gorm.DB
 var err error
-var options []model.TcOption
-var cookieList = make(map[int32]_type.Cookie)
 var wg sync.WaitGroup
-
-var client http.Client
 
 var AgainErrorId = "160002"
 
@@ -163,23 +127,21 @@ func main() {
 	// connect to db
 	dsn := dbAccount + ":" + dbPassword + "@tcp(" + dbEndpoint + ")/" + dbName + "?charset=utf8mb4&parseTime=True&loc=Local"
 	sqlDB, _ := sql.Open("mysql", dsn)
-	gormDB, err = gorm.Open(mysql.New(mysql.Config{
+	_function.GormDB, err = gorm.Open(mysql.New(mysql.Config{
 		Conn: sqlDB,
 	}), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// get today
-	var now = time.Now()
-
-	var today = strconv.Itoa(now.Year()) + "-" + strconv.Itoa(int(now.Month())) + "-" + strconv.Itoa(now.Day())
+	var today = strconv.Itoa(_function.Now.Year()) + "-" + strconv.Itoa(int(_function.Now.Month())) + "-" + strconv.Itoa(_function.Now.Day())
 
 	// get options
 
-	gormDB.Find(&options)
-	//limit, _ := strconv.ParseInt(getOption(options, "cron_limit"), 10, 64)
-	cornSignAgain := getOption(options, "cron_sign_again")
+	_function.GormDB.Find(&_function.Options)
+
+	//limit, _ := strconv.ParseInt(GetOption(options, "cron_limit"), 10, 64)
+	cornSignAgain := _function.GetOption("cron_sign_again")
 	cornSignAgainParsed, err := gophp.Unserialize([]byte(cornSignAgain))
 	if err != nil {
 		panic(err)
@@ -203,7 +165,8 @@ func main() {
 		if err != nil {
 			log.Fatal("encode failed")
 		}
-		gormDB.Model(&model.TcOption{}).Where("name = ?", "cron_sign_again").Update("value", string(cornSignAgainEncoded))
+
+		_function.SetOption("cron_sign_again", string(cornSignAgainEncoded))
 
 		log.Println(string(cornSignAgainEncoded))
 	}
@@ -214,7 +177,7 @@ func main() {
 		Dosign(table, false)
 	}
 
-	retryMax, _ := strconv.ParseInt(getOption(options, "retry_max"), 10, 64)
+	retryMax, _ := strconv.ParseInt(_function.GetOption("retry_max"), 10, 64)
 	if retryMax == 0 || cornSignAgainInterface["lastdo"] == today && int64(retryNum) <= retryMax && retryMax > -1 {
 		for retryMax == 0 || int64(retryNum) <= retryMax {
 			retryAgain := false
@@ -230,11 +193,15 @@ func main() {
 			if err != nil {
 				log.Fatal("encode failed")
 			}
-			gormDB.Model(&model.TcOption{}).Where("name = ?", "cron_sign_again").Update("value", string(cornSignAgainEncoded))
+			_function.SetOption("cron_sign_again", string(cornSignAgainEncoded))
 			if !retryAgain {
 				break
 			}
 		}
 	}
+
+	// plugins
+	//import (_plugin "github.com/BANKA2017/tbsign_go/plugins")
+	_plugin.DoForumSupportAction()
 
 }

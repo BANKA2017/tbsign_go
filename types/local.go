@@ -1,11 +1,11 @@
 package _type
 
-type LastDo struct {
+type TypeLastDo struct {
 	Num    int64  `php:"num"`
 	LastDo string `php:"lastdo"`
 }
 
-type Cookie struct {
+type TypeCookie struct {
 	Bduss  string
 	Stoken string
 	Tbs    string
