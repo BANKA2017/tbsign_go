@@ -22,7 +22,7 @@
 ```shell
 go run run.go --account=<DBAccount> --pwd=<DBPassword>
 #or
-./run  --account=<DBAccount> --pwd=<DBPassword>
+./run --account=<DBAccount> --pwd=<DBPassword>
 ```
 
 ### 已知问题

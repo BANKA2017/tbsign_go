@@ -593,9 +593,9 @@ func DoForumSupportAction() {
 	var accountStatusList = make(map[int32]string)
 
 	// get list
-	td := _function.Now.Unix() - _function.Now.Unix()%86400
+	todayBeginning := _function.Now.Unix() - _function.Now.Unix()%86400 + 86400 - 8*3600 //GMT+8
 	ver4RankLog := &[]model.TcVer4RankLog{}
-	_function.GormDB.Model(&model.TcVer4RankLog{}).Where("date < ?", td).Find(&ver4RankLog)
+	_function.GormDB.Model(&model.TcVer4RankLog{}).Where("date < ?", todayBeginning).Find(&ver4RankLog)
 	for _, forumSupportItem := range *ver4RankLog {
 		if _, ok := accountStatusList[forumSupportItem.UID]; !ok {
 			accountStatusList[forumSupportItem.UID] = _function.GetUserOption("ver4_rank_check", strconv.Itoa(int(forumSupportItem.UID)))
@@ -605,12 +605,12 @@ func DoForumSupportAction() {
 			_function.GormDB.Where("uid = ?", forumSupportItem.UID).Delete(&model.TcVer4RankLog{})
 			accountStatusList[forumSupportItem.UID] = "NOT_EXISTS"
 		} else if accountStatusList[forumSupportItem.UID] == "1" {
-			re, err := PostForumSupport(_function.GetCookie(forumSupportItem.Pid), forumSupportItem.Fid, forumSupportItem.Nid)
+			response, err := PostForumSupport(_function.GetCookie(forumSupportItem.Pid), forumSupportItem.Fid, forumSupportItem.Nid)
 			message := ""
 			if err != nil {
 				message = "助攻失败，发生了一些未知错误~"
 			}
-			switch re.No {
+			switch response.No {
 			case 0:
 				message = "助攻成功啦~明天记得继续呦~"
 			case 3110004:
@@ -621,7 +621,7 @@ func DoForumSupportAction() {
 				message = "助攻失败，发生了一些未知错误~"
 			}
 			_function.GormDB.Model(&model.TcVer4RankLog{}).Where("id = ?", forumSupportItem.ID).Updates(model.TcVer4RankLog{
-				Log:  "<br/>" + _function.Now.Format("2006-01-02") + " #" + strconv.Itoa(re.No) + "," + message + forumSupportItem.Log,
+				Log:  "<br/>" + _function.Now.Format("2006-01-02") + " #" + strconv.Itoa(response.No) + "," + message + forumSupportItem.Log,
 				Date: int32(_function.Now.Unix()),
 			})
 			//?
