@@ -59,7 +59,7 @@ func Fetch[T any](_url string, _method string, _body string, _headers map[string
 	return &responseTemplate, err
 }
 
-func addSign(form *map[string]string) {
+func AddSign(form *map[string]string) {
 	(*form)["_client_version"] = "12.22.1.0"
 	(*form)["_client_type"] = "4"
 
@@ -98,7 +98,7 @@ func PostSignClient(cookie _type.TypeCookie, kw string, fid int32) (_type.Client
 	form["fid"] = strconv.Itoa(int(fid))
 	form["kw"] = kw
 	form["tbs"] = cookie.Tbs
-	addSign(&form)
+	AddSign(&form)
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
@@ -122,4 +122,14 @@ func GetForumList(cookie _type.TypeCookie, page int64) (_type.ForumListResponse,
 	forumListResponse, err := Fetch("https://tieba.baidu.com/mg/o/getForumHome?st=0&pn="+strconv.Itoa(int(page))+"&rn=200", "GET", "", headersMap, _type.ForumListResponse{})
 
 	return *forumListResponse, err
+}
+
+func GetForumNameShare(name string) (_type.ForumNameShareResponse, error) {
+	queryStr := url.Values{}
+	queryStr.Set("ie", "utf-8")
+	queryStr.Set("fname", name)
+
+	ForumNameShare, err := Fetch("http://tieba.baidu.com/f/commit/share/fnameShareApi?"+queryStr.Encode(), "GET", "", map[string]string{}, _type.ForumNameShareResponse{})
+
+	return *ForumNameShare, err
 }

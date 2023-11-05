@@ -1,6 +1,7 @@
 package _function
 
 import (
+	"log"
 	"time"
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
@@ -10,6 +11,7 @@ import (
 
 var Options []model.TcOption
 var CookieList = make(map[int32]_type.TypeCookie)
+var FidList = make(map[string]int64)
 var GormDB *gorm.DB
 
 // Tieba works in GMT+8
@@ -61,6 +63,25 @@ func GetCookie(pid int32) _type.TypeCookie {
 	}
 
 	return cookie
+}
+
+func GetFid(name string) int64 {
+	fid, ok := FidList[name]
+	if !ok {
+		// find in db
+		var tiebaInfo model.TcTieba
+		GormDB.Model(&model.TcTieba{}).Where("tieba = ? AND fid IS NOT NULL AND fid != ''", name).First(&tiebaInfo)
+		fid = int64(tiebaInfo.Fid)
+		if fid == 0 {
+			forumNameInfo, err := GetForumNameShare(name)
+			if err != nil {
+				log.Println(err)
+			}
+			fid = int64(forumNameInfo.Data.Fid)
+		}
+		FidList[name] = fid
+	}
+	return fid
 }
 
 // for GMT+8

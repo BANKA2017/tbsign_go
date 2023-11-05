@@ -42,6 +42,7 @@ go run run.go --account=<DBAccount> --pwd=<DBPassword>
 - [x] 不会对所谓的 vip 帐号有任何特殊照顾，原 vip 帐号的特权也会下放给所有账号
 - [x] 无法支持一个贴吧账号绑定到多个云签帐号
 - [x] 不同语言各有特性，不会强求 1:1 兼容
+- [x] 循环封禁无法确认封禁是否成功，因为返回的结果是一样的
 
 ### TODO
 
@@ -49,8 +50,9 @@ go run run.go --account=<DBAccount> --pwd=<DBPassword>
 - [ ] 兼容官方已收录插件中关于贴吧的部分
   - [x] [自动刷新贴吧列表](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_ref)
   - [x] [名人堂](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_rank)
-  - [ ] [循环封禁](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_ban)
+  - [x] [循环封禁](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_ban)
   - [ ] [删贴机](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_review)（可能会拖很久甚至不会做）
 - [ ] 优化 PHP 原版的相关功能
 - [x] 不再考虑 ~~通过读取 `config.php` 取得数据库连接信息~~
+- [ ] 自动清理解除绑定的帐号的插件设置
 - [ ] ……更多的想起来再加

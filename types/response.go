@@ -81,3 +81,14 @@ type ForumListResponse struct {
 	ServerTime int    `json:"server_time,omitempty"`
 	Time       string `json:"time,omitempty"`
 }
+
+type ForumNameShareResponse struct {
+	No    int    `json:"no,omitempty"`
+	Error string `json:"error,omitempty"`
+	Data  struct {
+		Fid         int `json:"fid,omitempty"`
+		CanSendPics int `json:"can_send_pics,omitempty"`
+	} `json:"data,omitempty"`
+	// when fname does not exist in the query string, type of data is string
+	//Data string `json:"data,omitempty"`
+}

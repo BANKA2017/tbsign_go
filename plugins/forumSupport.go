@@ -621,7 +621,7 @@ func DoForumSupportAction() {
 				message = "助攻失败，发生了一些未知错误~"
 			}
 			_function.GormDB.Model(&model.TcVer4RankLog{}).Where("id = ?", forumSupportItem.ID).Updates(model.TcVer4RankLog{
-				Log:  "<br/>" + _function.Now.Format("2006-01-02") + " #" + strconv.Itoa(response.No) + "," + message + forumSupportItem.Log,
+				Log:  "<br/>" + _function.Now.Local().Format("2006-01-02") + " #" + strconv.Itoa(response.No) + "," + message + forumSupportItem.Log,
 				Date: int32(_function.Now.Unix()),
 			})
 			//?
