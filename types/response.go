@@ -43,3 +43,41 @@ type UserInfo struct {
 	LastLevelName    string         `json:"last_level_name,omitempty"`
 	LastLevel        string         `json:"last_level,omitempty"`
 }
+
+type ForumListResponse struct {
+	Data struct {
+		LikeForum struct {
+			List []struct {
+				Avatar       string `json:"avatar,omitempty"`
+				ForumID      int    `json:"forum_id,omitempty"`
+				ForumName    string `json:"forum_name,omitempty"`
+				HotNum       int    `json:"hot_num,omitempty"`
+				IsBrandForum int    `json:"is_brand_forum,omitempty"`
+				LevelID      int    `json:"level_id,omitempty"`
+			} `json:"list,omitempty"`
+			Page struct {
+				CurPage   int `json:"cur_page,omitempty"`
+				TotalPage int `json:"total_page,omitempty"`
+			} `json:"page,omitempty"`
+		} `json:"like_forum,omitempty"`
+		Tokens struct {
+			BottomBanner          string `json:"bottom_banner,omitempty"`
+			BottomLayer           string `json:"bottom_layer,omitempty"`
+			IndexFooterClientDown string `json:"index_footer_client_down,omitempty"`
+			IndexMessageIcon      string `json:"index_message_icon,omitempty"`
+		} `json:"tokens,omitempty"`
+		UbsAbtestConfig []struct {
+			Sid string `json:"sid,omitempty"`
+		} `json:"ubs_abtest_config,omitempty"`
+		UbsSampleIds string `json:"ubs_sample_ids,omitempty"`
+		UserInfo     struct {
+			ID      int `json:"id,omitempty"`
+			IsLogin int `json:"is_login,omitempty"`
+		} `json:"user_info,omitempty"`
+	} `json:"data,omitempty"`
+	Errmsg     string `json:"errmsg,omitempty"`
+	Errno      int    `json:"errno,omitempty"`
+	Logid      string `json:"logid,omitempty"`
+	ServerTime int    `json:"server_time,omitempty"`
+	Time       string `json:"time,omitempty"`
+}

@@ -114,3 +114,12 @@ func PostSignClient(cookie _type.TypeCookie, kw string, fid int32) (_type.Client
 
 	return *signResponse, err
 }
+
+func GetForumList(cookie _type.TypeCookie, page int64) (_type.ForumListResponse, error) {
+	headersMap := map[string]string{
+		"Cookie": "BDUSS=" + cookie.Bduss + ";STOKEN=" + cookie.Stoken,
+	}
+	forumListResponse, err := Fetch("https://tieba.baidu.com/mg/o/getForumHome?st=0&pn="+strconv.Itoa(int(page))+"&rn=200", "GET", "", headersMap, _type.ForumListResponse{})
+
+	return *forumListResponse, err
+}

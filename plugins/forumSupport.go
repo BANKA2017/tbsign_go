@@ -593,7 +593,7 @@ func DoForumSupportAction() {
 	var accountStatusList = make(map[int32]string)
 
 	// get list
-	todayBeginning := _function.Now.Unix() - _function.Now.Unix()%86400 + 86400 - 8*3600 //GMT+8
+	todayBeginning := _function.TodayBeginning() //GMT+8
 	ver4RankLog := &[]model.TcVer4RankLog{}
 	_function.GormDB.Model(&model.TcVer4RankLog{}).Where("date < ?", todayBeginning).Find(&ver4RankLog)
 	for _, forumSupportItem := range *ver4RankLog {

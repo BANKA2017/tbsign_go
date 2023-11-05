@@ -53,8 +53,20 @@ func GetCookie(pid int32) _type.TypeCookie {
 		}
 		cookie.Bduss = cookieDB.Bduss
 		cookie.Stoken = cookieDB.Stoken
+		cookie.ID = cookieDB.ID
+		cookie.Name = cookieDB.Name
+		cookie.Portrait = cookieDB.Portrait
+		cookie.UID = cookieDB.UID
 		CookieList[pid] = cookie
 	}
 
 	return cookie
+}
+
+// for GMT+8
+func TodayBeginning() int64 {
+	if Now.Local().Hour() >= 8 {
+		return Now.Unix() - Now.Unix()%86400 - 8*3600
+	}
+	return Now.Unix() - Now.Unix()%86400 + 86400 - 8*3600
 }

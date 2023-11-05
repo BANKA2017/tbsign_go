@@ -9,4 +9,9 @@ type TypeCookie struct {
 	Bduss  string
 	Stoken string
 	Tbs    string
+
+	ID       int32
+	UID      int32
+	Name     string
+	Portrait string
 }

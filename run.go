@@ -203,5 +203,6 @@ func main() {
 	// plugins
 	//import (_plugin "github.com/BANKA2017/tbsign_go/plugins")
 	_plugin.DoForumSupportAction()
+	_plugin.RefreshTiebaListAction()
 
 }

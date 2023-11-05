@@ -5,7 +5,8 @@
 
 ## ⚠ 警告
 
-不保证持续维护，不保证不会封号，请**不要**用于主力账号！！！
+- 不保证持续维护，不保证不会封号，请**不要**用于主力账号！！！
+- 没有文档，没有教程，不会回答任何疑问
 
 ### flags
 
@@ -36,14 +37,20 @@ go run run.go --account=<DBAccount> --pwd=<DBPassword>
 - [ ] 没有进行任何优化
 - [ ] 一次性执行，仍然需要 cron
 
+**下面提到的不会解决**
+
+- [x] 不会对所谓的 vip 帐号有任何特殊照顾，原 vip 帐号的特权也会下放给所有账号
+- [x] 无法支持一个贴吧账号绑定到多个云签帐号
+- [x] 不同语言各有特性，不会强求 1:1 兼容
+
 ### TODO
 
 - [ ] 解决已知问题
 - [ ] 兼容官方已收录插件中关于贴吧的部分
-  - [ ] 自动刷新贴吧列表
-  - [x] 名人堂
-  - [ ] 循环封禁
-  - [ ] 删贴机（可能会拖很久甚至不会做）
-- [ ] 反向优化 PHP 原版的相关功能
-- [ ] 通过读取 `config.php` 取得数据库连接信息
+  - [x] [自动刷新贴吧列表](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_ref)
+  - [x] [名人堂](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_rank)
+  - [ ] [循环封禁](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_ban)
+  - [ ] [删贴机](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_review)（可能会拖很久甚至不会做）
+- [ ] 优化 PHP 原版的相关功能
+- [x] 不再考虑 ~~通过读取 `config.php` 取得数据库连接信息~~
 - [ ] ……更多的想起来再加
