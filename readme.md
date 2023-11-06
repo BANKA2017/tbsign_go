@@ -1,4 +1,5 @@
 # Tieba-Cloud-Sign-Go (Dev)
+
 ---
 
 只是一个签到程序，需要配合[百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/)使用
@@ -12,19 +13,29 @@
 
 | flag     | default          | description |
 | :------- | :--------------- | :---------- |
-| account  |                  | 数据库帐号  |
+| username |                  | 数据库帐号  |
 | pwd      |                  | 数据库密码  |
 | endpoint | `127.0.0.1:3306` | 数据库端点  |
 | db       | `tbsign`         | 数据库名称  |
 
-
 示例
 
 ```shell
-go run run.go --account=<DBAccount> --pwd=<DBPassword>
+go run run.go --username=<dbUsername> --pwd=<DBPassword>
 #or
-./run --account=<DBAccount> --pwd=<DBPassword>
+./run --username=<dbUsername> --pwd=<DBPassword>
 ```
+
+### env
+
+不支持 `.env` 文件，请直接设置环境变量，使用顺序是 `flags` > `env` > `default`
+
+| flag        | description |
+| :---------- | :---------- |
+| tc_username | 数据库帐号  |
+| tc_pwd      | 数据库密码  |
+| tc_endpoint | 数据库端点  |
+| tc_db       | 数据库名称  |
 
 ### 已知问题
 
