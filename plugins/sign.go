@@ -20,11 +20,15 @@ var AgainErrorId = "160002"
 //特殊的重复签到错误代码！！！签到过快=已签到
 //again_error_id_3 := "1102"
 
+var cornSignAgainInterface map[string]interface{}
+var tableList = []string{"tieba"}
+var today string
+
 func Dosign(table string, retry bool) (bool, error) {
 	//signMode := GetOption(options, "sign_mode")
 	signHour, _ := strconv.ParseInt(_function.GetOption("sign_hour"), 10, 64)
 	if int64(_function.Now.Hour()) <= signHour {
-		log.Println(strconv.FormatInt(signHour, 10) + "点时忽略签到")
+		log.Println("sign:", strconv.FormatInt(signHour, 10)+"点时忽略签到")
 		return true, nil
 	}
 	//limit := GetOption(options, "cron_limit")
@@ -39,7 +43,7 @@ func Dosign(table string, retry bool) (bool, error) {
 	}
 
 	if len(tiebaList) <= 0 {
-		log.Println("Empty list")
+		log.Println("sign: Empty list")
 		return true, nil
 	}
 	//} else {
@@ -87,61 +91,74 @@ func Dosign(table string, retry bool) (bool, error) {
 				})
 			}
 
-			log.Println(pid, kw, fid, id, now.Local().Day(), response, time.Now().UnixMilli()-now.UnixMilli())
+			log.Println("sign:", pid, kw, fid, id, now.Local().Day(), time.Now().UnixMilli()-now.UnixMilli())
 			defer wg.Done()
 		}(v.Pid, v.Tieba, v.Fid, v.ID, _function.Now)
 
 		time.Sleep(time.Millisecond * time.Duration(sleep))
 	}
 	wg.Wait()
-	log.Println(time.Now().UnixMilli() - _function.Now.UnixMilli())
+	log.Println("sign: done!", time.Now().UnixMilli()-_function.Now.UnixMilli())
 	return false, nil
 }
 
 func DoSignAction() {
-	var today = _function.Now.Local().Format("2006-01-02")
-	//limit, _ := strconv.ParseInt(GetOption(options, "cron_limit"), 10, 64)
+	today = _function.Now.Local().Format("2006-01-02")
+	limit, _ := strconv.ParseInt(_function.GetOption("cron_limit"), 10, 64)
 	cornSignAgain := _function.GetOption("cron_sign_again")
 	cornSignAgainParsed, err := gophp.Unserialize([]byte(cornSignAgain))
 	if err != nil {
-		panic(err)
+		log.Println("sign:", err)
+		return
 	}
 
-	cornSignAgainInterface, ok1 := cornSignAgainParsed.(map[string]interface{})
-	retryNum, ok3 := cornSignAgainInterface["num"].(int)
+	var ok1 bool
+	cornSignAgainInterface, ok1 = cornSignAgainParsed.(map[string]interface{})
 	lastdo, ok2 := cornSignAgainInterface["lastdo"].(string)
 
-	if !(ok1 && ok2 && ok3) {
-		log.Fatal("Parsed failed")
+	if !(ok1 && ok2) {
+		log.Println("sign: parse config failed (lastdo)")
+		return
 	}
-	log.Println(today, lastdo)
 
 	if today != lastdo {
 		// update lastdo
 		cornSignAgainInterface["num"] = 0
-		retryNum = 0
 		cornSignAgainInterface["lastdo"] = today
 		cornSignAgainEncoded, err := gophp.Serialize(cornSignAgainInterface)
 		if err != nil {
-			log.Fatal("encode failed")
+			log.Println("sign: encode php serialize failed", err)
+			return
 		}
 
 		_function.SetOption("cron_sign_again", string(cornSignAgainEncoded))
 
-		log.Println(string(cornSignAgainEncoded))
+		//log.Println(string(cornSignAgainEncoded))
 	}
 
-	var tables = []string{"tieba"}
-
-	for _, table := range tables {
+	for index, table := range tableList {
+		if limit > 0 && index > int(limit) {
+			break
+		}
 		Dosign(table, false)
 	}
 
+}
+
+// TODO resign
+func DoReSignAction() {
 	retryMax, _ := strconv.ParseInt(_function.GetOption("retry_max"), 10, 64)
+
+	retryNum, ok3 := cornSignAgainInterface["num"].(int)
+	if !(ok3) {
+		log.Println("sign: parse config failed (num)")
+		return
+	}
+
 	if retryMax == 0 || cornSignAgainInterface["lastdo"] == today && int64(retryNum) <= retryMax && retryMax > -1 {
 		for retryMax == 0 || int64(retryNum) <= retryMax {
 			retryAgain := false
-			for _, table := range tables {
+			for _, table := range tableList {
 				checkRequest, _ := Dosign(table, true)
 				if checkRequest {
 					retryAgain = true
@@ -151,7 +168,8 @@ func DoSignAction() {
 			cornSignAgainInterface["num"] = retryNum
 			cornSignAgainEncoded, err := gophp.Serialize(cornSignAgainInterface)
 			if err != nil {
-				log.Fatal("encode failed")
+				log.Println("sign_retry: encode failed")
+				return
 			}
 			_function.SetOption("cron_sign_again", string(cornSignAgainEncoded))
 			if !retryAgain {
@@ -160,8 +178,3 @@ func DoSignAction() {
 		}
 	}
 }
-
-//TODO resign
-//func DoReSignAction() {
-//
-//}

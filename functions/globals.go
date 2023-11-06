@@ -19,6 +19,10 @@ var LocalTime, _ = time.LoadLocation("Asia/Shanghai")
 
 var Now = time.Now().In(LocalTime)
 
+func UpdateNow() {
+	Now = time.Now().In(LocalTime)
+}
+
 func GetOption(keyName string) string {
 	for _, v := range Options {
 		if v.Name == keyName {
@@ -75,7 +79,7 @@ func GetFid(name string) int64 {
 		if fid == 0 {
 			forumNameInfo, err := GetForumNameShare(name)
 			if err != nil {
-				log.Println(err)
+				log.Println("fid:", err)
 			}
 			fid = int64(forumNameInfo.Data.Fid)
 		}

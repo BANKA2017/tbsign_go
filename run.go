@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"time"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
@@ -43,7 +44,7 @@ func main() {
 	}
 
 	if dbUsername == "" || dbPassword == "" {
-		log.Fatal("Wrong username or password")
+		log.Fatal("global: Empty username or password")
 	}
 
 	// connect to db
@@ -53,16 +54,31 @@ func main() {
 		Conn: sqlDB,
 	}), &gorm.Config{})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("db:", err)
 	}
+
+	log.Println("db: connected!")
 
 	// get options
 	_function.GormDB.Find(&_function.Options)
 
-	// plugins
-	_plugin.DoSignAction()
-	_plugin.DoForumSupportAction()
-	_plugin.RefreshTiebaListAction()
-	//_plugin.LoopBanAction() // not for everyone
+	// Interval
+	oneMinuteInterval := time.NewTicker(time.Minute)
+	defer oneMinuteInterval.Stop()
+	fourHoursInterval := time.NewTicker(time.Hour * 4)
+	defer fourHoursInterval.Stop()
 
+	for {
+		select {
+		case <-oneMinuteInterval.C:
+			_function.UpdateNow()
+			_plugin.DoSignAction()
+			// plugins
+			_plugin.DoReSignAction()
+			_plugin.DoForumSupportAction()
+			//_plugin.LoopBanAction() // not for everyone
+		case <-fourHoursInterval.C:
+			_plugin.RefreshTiebaListAction()
+		}
+	}
 }

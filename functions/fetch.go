@@ -30,7 +30,7 @@ func Fetch[T any](_url string, _method string, _body string, _headers map[string
 	}
 	req, err := http.NewRequest(_method, _url, body)
 	if err != nil {
-		log.Println(err)
+		log.Println("fetch:", err)
 		return nil, err
 	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Linux; Android 9; ONEPLUS A3010 Build/PKQ1.181203.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/117.0.0.0 Mobile Safari/537.36 tieba/12.22.1.0")
@@ -41,19 +41,19 @@ func Fetch[T any](_url string, _method string, _body string, _headers map[string
 	}
 	resp, err := Client.Do(req)
 	if err != nil {
-		log.Println(err)
+		log.Println("fetch:", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 	response, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println(err)
+		log.Println("fetch:", err)
 		return nil, err
 	}
 	//log.Println(string(response[:]))
 
 	if err = JsonDecode(response, &responseTemplate); err != nil {
-		log.Println(err)
+		log.Println("fetch:", err)
 		return nil, err
 	}
 	return &responseTemplate, err

@@ -77,7 +77,7 @@ func LoopBanAction() {
 		// !!! warning: unable to check permission !!!
 		response, err := PostClientBan(_function.GetCookie(banAccountInfo.Pid), int32(fid), banAccountInfo.Portrait, 1, reason)
 		if err != nil {
-			log.Println(err)
+			log.Println("ban:", err)
 			continue
 		}
 		msg := banAccountInfo.Log

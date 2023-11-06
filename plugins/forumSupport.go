@@ -1,6 +1,7 @@
 package _plugin
 
 import (
+	"log"
 	"net/url"
 	"strconv"
 
@@ -587,15 +588,17 @@ func PostForumSupport(cookie _type.TypeCookie, fid int32, nid string) (TypeForum
 }
 
 func DoForumSupportAction() {
-	//id, _ := strconv.ParseInt(_function.GetOption("ver4_rank_id"), 10, 64)
-
+	id, err := strconv.ParseInt(_function.GetOption("ver4_rank_id"), 10, 64)
+	if err != nil {
+		id = 0
+	}
 	// status list
 	var accountStatusList = make(map[int32]string)
 
 	// get list
 	todayBeginning := _function.TodayBeginning() //GMT+8
 	ver4RankLog := &[]model.TcVer4RankLog{}
-	_function.GormDB.Model(&model.TcVer4RankLog{}).Where("date < ?", todayBeginning).Find(&ver4RankLog)
+	_function.GormDB.Model(&model.TcVer4RankLog{}).Where("date < ? AND id > ?", todayBeginning, id).Find(&ver4RankLog)
 	for _, forumSupportItem := range *ver4RankLog {
 		if _, ok := accountStatusList[forumSupportItem.UID]; !ok {
 			accountStatusList[forumSupportItem.UID] = _function.GetUserOption("ver4_rank_check", strconv.Itoa(int(forumSupportItem.UID)))
@@ -620,12 +623,14 @@ func DoForumSupportAction() {
 			default:
 				message = "助攻失败，发生了一些未知错误~"
 			}
+
+			log.Println("support:", forumSupportItem.Tieba, forumSupportItem.Name, message)
 			_function.GormDB.Model(&model.TcVer4RankLog{}).Where("id = ?", forumSupportItem.ID).Updates(model.TcVer4RankLog{
 				Log:  "<br/>" + _function.Now.Local().Format("2006-01-02") + " #" + strconv.Itoa(response.No) + "," + message + forumSupportItem.Log,
 				Date: int32(_function.Now.Unix()),
 			})
-			//?
-			//_function.SetOption("ver4_rank_id", strconv.Itoa(int(forumSupportItem.ID)))
+
+			_function.SetOption("ver4_rank_id", strconv.Itoa(int(forumSupportItem.ID)))
 		}
 	}
 	_function.SetOption("ver4_rank_id", "0")

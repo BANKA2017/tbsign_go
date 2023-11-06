@@ -16,11 +16,11 @@ func scanTiebaByPid(pid int32) {
 	var pn int64 = 1
 
 	for {
-		log.Println(pid, pn)
+		//log.Println(pid, pn)
 		response, err := _function.GetForumList(account, pn)
 		//log.Println(rc, err)
 		if err != nil {
-			log.Println(err)
+			log.Println("scanTiebaByPid:", err)
 			break
 		}
 		if response.Errmsg != "成功" || len(response.Data.LikeForum.List) <= 0 {
@@ -48,7 +48,7 @@ func scanTiebaByPid(pid int32) {
 		}
 		if len(tiebaList) > 0 {
 			err := _function.GormDB.Create(tiebaList)
-			log.Println(err)
+			log.Println("scanTiebaByPid:", err)
 		}
 		pn++
 		if pn > int64(response.Data.LikeForum.Page.TotalPage) {
@@ -59,12 +59,12 @@ func scanTiebaByPid(pid int32) {
 
 func RefreshTiebaListAction() {
 
-	activeAfter := 18 //GMT+8 18:00
+	//activeAfter := 18 //GMT+8 18:00
 
 	day, _ := strconv.ParseInt(_function.GetOption("ver4_ref_day"), 10, 64)
 	if day != int64(_function.Now.Local().Day()) {
 		lastdo, _ := strconv.ParseInt(_function.GetOption("ver4_ref_lastdo"), 10, 64)
-		if (_function.Now.Unix() > lastdo+90) && _function.Now.Local().Hour() > activeAfter {
+		if _function.Now.Unix() > lastdo+90 {
 			var accounts = &[]model.TcBaiduid{}
 			_function.GormDB.Model(&model.TcBaiduid{}).Find(accounts)
 			for _, account := range *accounts {
