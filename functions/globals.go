@@ -12,6 +12,8 @@ import (
 var Options []model.TcOption
 var CookieList = make(map[int32]_type.TypeCookie)
 var FidList = make(map[string]int64)
+var PluginListDB []model.TcPlugin
+var PluginList = make(map[string]bool)
 var GormDB *gorm.DB
 
 // Tieba works in GMT+8
@@ -86,6 +88,18 @@ func GetFid(name string) int64 {
 		FidList[name] = fid
 	}
 	return fid
+}
+
+func GetOptionsAndPluginList() {
+	// get options
+	GormDB.Find(&Options)
+
+	// get plugin list
+	GormDB.Find(&PluginListDB)
+
+	for _, pluginStatus := range PluginListDB {
+		PluginList[pluginStatus.Name] = pluginStatus.Status
+	}
 }
 
 // for GMT+8

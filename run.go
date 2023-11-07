@@ -59,9 +59,6 @@ func main() {
 
 	log.Println("db: connected!")
 
-	// get options
-	_function.GormDB.Find(&_function.Options)
-
 	// Interval
 	oneMinuteInterval := time.NewTicker(time.Minute)
 	defer oneMinuteInterval.Stop()
@@ -71,14 +68,25 @@ func main() {
 	for {
 		select {
 		case <-oneMinuteInterval.C:
+			_function.GetOptionsAndPluginList()
+
 			_function.UpdateNow()
-			go _plugin.DoSignAction()
+			_plugin.DoSignAction()
+			_plugin.DoReSignAction()
+
 			// plugins
-			go _plugin.DoReSignAction()
-			go _plugin.DoForumSupportAction()
-			//_plugin.LoopBanAction() // not for everyone
+			if _function.PluginList["ver4_rank"] {
+				go _plugin.DoForumSupportAction()
+			}
+
+			if _function.PluginList["ver4_ban"] {
+				go _plugin.LoopBanAction()
+			}
 		case <-fourHoursInterval.C:
-			go _plugin.RefreshTiebaListAction()
+			_function.GetOptionsAndPluginList()
+			if _function.PluginList["ver4_ref"] {
+				go _plugin.RefreshTiebaListAction()
+			}
 		}
 	}
 }

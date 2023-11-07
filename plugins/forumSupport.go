@@ -572,6 +572,8 @@ var ForumSupportList = TypeForumSupportList{
 	},
 }
 
+var ForumSupportPluginName = "ver4_rank"
+
 func PostForumSupport(cookie _type.TypeCookie, fid int32, nid string) (TypeForumSupportResponse, error) {
 	_body := url.Values{}
 	_body.Set("tbs", cookie.Tbs)

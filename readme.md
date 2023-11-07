@@ -47,6 +47,7 @@ go run run.go --username=<dbUsername> --pwd=<DBPassword>
 - [ ] 混乱的输出，随处可见的打点
 - [ ] 没有进行任何优化
 - [x] 一次性执行，仍然需要 cron
+- [x] 会运行未安装/未激活的插件
 
 **下面提到的不会解决**
 

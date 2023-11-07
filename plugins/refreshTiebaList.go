@@ -8,6 +8,8 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 )
 
+var RefreshTiebaListPluginName = "ver4_ref"
+
 func scanTiebaByPid(pid int32) {
 	account := _function.GetCookie(pid)
 

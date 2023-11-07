@@ -21,6 +21,8 @@ type BanAccountResponse struct {
 	Info       []any  `json:"info,omitempty"`
 }
 
+var LoopBanPluginName = "ver4_ban"
+
 func PostClientBan(cookie _type.TypeCookie, fid int32, portrait string, day int32, reason string) (BanAccountResponse, error) {
 	var form = make(map[string]string)
 	form["BDUSS"] = cookie.Bduss
