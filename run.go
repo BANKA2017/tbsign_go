@@ -72,13 +72,13 @@ func main() {
 		select {
 		case <-oneMinuteInterval.C:
 			_function.UpdateNow()
-			_plugin.DoSignAction()
+			go _plugin.DoSignAction()
 			// plugins
-			_plugin.DoReSignAction()
-			_plugin.DoForumSupportAction()
+			go _plugin.DoReSignAction()
+			go _plugin.DoForumSupportAction()
 			//_plugin.LoopBanAction() // not for everyone
 		case <-fourHoursInterval.C:
-			_plugin.RefreshTiebaListAction()
+			go _plugin.RefreshTiebaListAction()
 		}
 	}
 }

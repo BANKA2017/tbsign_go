@@ -46,7 +46,7 @@ func Dosign(table string, retry bool) (bool, error) {
 	}
 
 	if len(tiebaList) <= 0 {
-		log.Println("sign: Empty list")
+		//log.Println("sign: Empty list")
 		return hasFailed, nil
 	}
 
