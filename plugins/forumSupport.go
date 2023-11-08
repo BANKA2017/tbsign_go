@@ -574,7 +574,7 @@ var ForumSupportList = TypeForumSupportList{
 
 var ForumSupportPluginName = "ver4_rank"
 
-func PostForumSupport(cookie _type.TypeCookie, fid int32, nid string) (TypeForumSupportResponse, error) {
+func PostForumSupport(cookie _type.TypeCookie, fid int32, nid string) (*TypeForumSupportResponse, error) {
 	_body := url.Values{}
 	_body.Set("tbs", cookie.Tbs)
 	_body.Set("forum_id", strconv.Itoa(int(fid)))
@@ -586,7 +586,7 @@ func PostForumSupport(cookie _type.TypeCookie, fid int32, nid string) (TypeForum
 
 	supportResponse, err := _function.Fetch("http://tieba.baidu.com/celebrity/submit/support", "POST", _body.Encode(), headersMap, TypeForumSupportResponse{})
 	//log.Println(supportResponse)
-	return *supportResponse, err
+	return supportResponse, err
 }
 
 func DoForumSupportAction() {

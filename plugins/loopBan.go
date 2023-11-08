@@ -23,7 +23,7 @@ type BanAccountResponse struct {
 
 var LoopBanPluginName = "ver4_ban"
 
-func PostClientBan(cookie _type.TypeCookie, fid int32, portrait string, day int32, reason string) (BanAccountResponse, error) {
+func PostClientBan(cookie _type.TypeCookie, fid int32, portrait string, day int32, reason string) (*BanAccountResponse, error) {
 	var form = make(map[string]string)
 	form["BDUSS"] = cookie.Bduss
 	form["day"] = strconv.Itoa(int(day))
@@ -43,7 +43,7 @@ func PostClientBan(cookie _type.TypeCookie, fid int32, portrait string, day int3
 	}
 	banResponse, err := _function.Fetch("http://c.tieba.baidu.com/c/c/bawu/commitprison", "POST", _body.Encode()+"&sign="+form["sign"], map[string]string{}, BanAccountResponse{})
 
-	return *banResponse, err
+	return banResponse, err
 }
 
 func LoopBanAction() {

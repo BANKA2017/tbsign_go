@@ -90,7 +90,7 @@ func GetTbs(bduss string) string {
 	return tbsResponse.Tbs
 }
 
-func PostSignClient(cookie _type.TypeCookie, kw string, fid int32) (_type.ClientSignResponse, error) {
+func PostSignClient(cookie _type.TypeCookie, kw string, fid int32) (*_type.ClientSignResponse, error) {
 	//log.Println(cookie, kw, fid)
 	var form = make(map[string]string)
 	form["BDUSS"] = cookie.Bduss
@@ -112,24 +112,24 @@ func PostSignClient(cookie _type.TypeCookie, kw string, fid int32) (_type.Client
 	//log.Println(_body.Encode() + "&sign=" + form["sign"])
 	signResponse, err := Fetch("http://c.tieba.baidu.com/c/c/forum/sign", "POST", _body.Encode()+"&sign="+form["sign"], headersMap, _type.ClientSignResponse{})
 
-	return *signResponse, err
+	return signResponse, err
 }
 
-func GetForumList(cookie _type.TypeCookie, page int64) (_type.ForumListResponse, error) {
+func GetForumList(cookie _type.TypeCookie, page int64) (*_type.ForumListResponse, error) {
 	headersMap := map[string]string{
 		"Cookie": "BDUSS=" + cookie.Bduss + ";STOKEN=" + cookie.Stoken,
 	}
 	forumListResponse, err := Fetch("https://tieba.baidu.com/mg/o/getForumHome?st=0&pn="+strconv.Itoa(int(page))+"&rn=200", "GET", "", headersMap, _type.ForumListResponse{})
 
-	return *forumListResponse, err
+	return forumListResponse, err
 }
 
-func GetForumNameShare(name string) (_type.ForumNameShareResponse, error) {
+func GetForumNameShare(name string) (*_type.ForumNameShareResponse, error) {
 	queryStr := url.Values{}
 	queryStr.Set("ie", "utf-8")
 	queryStr.Set("fname", name)
 
 	ForumNameShare, err := Fetch("http://tieba.baidu.com/f/commit/share/fnameShareApi?"+queryStr.Encode(), "GET", "", map[string]string{}, _type.ForumNameShareResponse{})
 
-	return *ForumNameShare, err
+	return ForumNameShare, err
 }
