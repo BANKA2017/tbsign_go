@@ -9,14 +9,15 @@
 - 不保证持续维护，不保证不会封号，请**不要**用于主力账号！！！
 - 没有文档，没有教程，不会回答任何疑问
 
-### flags
+## flags
 
-| flag     | default          | description |
-| :------- | :--------------- | :---------- |
-| username |                  | 数据库帐号  |
-| pwd      |                  | 数据库密码  |
-| endpoint | `127.0.0.1:3306` | 数据库端点  |
-| db       | `tbsign`         | 数据库名称  |
+| flag     | default          | description     |
+| :------- | :--------------- | :-------------- |
+| username |                  | 数据库帐号      |
+| pwd      |                  | 数据库密码      |
+| endpoint | `127.0.0.1:3306` | 数据库端点      |
+| db       | `tbsign`         | 数据库名称      |
+| db_path  | `tbsign.db`      | SQLite 文件目录 |
 
 示例
 
@@ -26,18 +27,23 @@ go run run.go --username=<dbUsername> --pwd=<DBPassword>
 ./run --username=<dbUsername> --pwd=<DBPassword>
 ```
 
-### env
+## env
 
 不支持 `.env` 文件，请直接设置环境变量，使用顺序是 `flags` > `env` > `default`
 
-| flag        | description |
-| :---------- | :---------- |
-| tc_username | 数据库帐号  |
-| tc_pwd      | 数据库密码  |
-| tc_endpoint | 数据库端点  |
-| tc_db       | 数据库名称  |
+| flag        | description     |
+| :---------- | :-------------- |
+| tc_username | 数据库帐号      |
+| tc_pwd      | 数据库密码      |
+| tc_endpoint | 数据库端点      |
+| tc_db       | 数据库名称      |
+| tc_db_path  | SQLite 文件目录 |
 
-### 已知问题
+## 数据库
+
+数据库的选择顺序是 SQLite > MySQL，只要 `db_path`/`tc_db_path` 的文件存在，就会使用 SQLite
+
+## 已知问题
 
 - [ ] 不支持自定义的数据表前缀，统一使用默认前缀 `tc_`
 - [ ] 不支持分表，暂时也没有支持的打算
@@ -56,7 +62,7 @@ go run run.go --username=<dbUsername> --pwd=<DBPassword>
 - [x] 不同语言各有特性，不会强求 1:1 兼容
 - [x] 循环封禁无法确认封禁是否成功，因为返回的结果是一样的
 
-### TODO
+## TODO
 
 - [ ] 解决已知问题
 - [ ] 兼容官方已收录插件中关于贴吧的部分

@@ -10,18 +10,22 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"gorm.io/driver/mysql"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
-
-var err error
 
 var dbUsername string
 var dbPassword string
 var dbEndpoint string
 var dbName string
 
+var dbPath string
+
 func main() {
-	// from flag
+	// sqlite
+	flag.StringVar(&dbPath, "db_path", "tbsign.db", "Database path")
+
+	// mysql
 	flag.StringVar(&dbUsername, "username", "", "Username")
 	flag.StringVar(&dbPassword, "pwd", "", "Password")
 	flag.StringVar(&dbEndpoint, "endpoint", "127.0.0.1:3306", "endpoint")
@@ -36,28 +40,43 @@ func main() {
 	if dbPassword == "" {
 		dbPassword = os.Getenv("tc_pwd")
 	}
-	if os.Getenv("tc_endpoint") != "" {
+	if dbEndpoint == "" && os.Getenv("tc_endpoint") != "" {
 		dbEndpoint = os.Getenv("tc_endpoint")
 	}
-	if os.Getenv("tc_db") != "" {
+	if dbName == "" && os.Getenv("tc_db") != "" {
 		dbName = os.Getenv("tc_db")
 	}
+	if dbPath == "" && os.Getenv("tc_db_path") != "" {
+		dbPath = os.Getenv("tc_db_path")
 
-	if dbUsername == "" || dbPassword == "" {
-		log.Fatal("global: Empty username or password")
 	}
 
 	// connect to db
-	dsn := dbUsername + ":" + dbPassword + "@tcp(" + dbEndpoint + ")/" + dbName + "?charset=utf8mb4&parseTime=True&loc=Local"
-	sqlDB, _ := sql.Open("mysql", dsn)
-	_function.GormDB, err = gorm.Open(mysql.New(mysql.Config{
-		Conn: sqlDB,
-	}), &gorm.Config{})
-	if err != nil {
-		log.Fatal("db:", err)
-	}
 
-	log.Println("db: connected!")
+	if _, err := os.Stat(dbPath); err == nil {
+		// sqlite
+		_function.GormDB, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+
+		if err != nil {
+			log.Fatal("db:", err)
+		}
+		log.Println("db: sqlite connected!")
+	} else {
+		// mysql
+		if dbUsername == "" || dbPassword == "" {
+			log.Fatal("global: Empty username or password")
+		}
+		dsn := dbUsername + ":" + dbPassword + "@tcp(" + dbEndpoint + ")/" + dbName + "?charset=utf8mb4&parseTime=True&loc=Local"
+		sqlDB, _ := sql.Open("mysql", dsn)
+		_function.GormDB, err = gorm.Open(mysql.New(mysql.Config{
+			Conn: sqlDB,
+		}), &gorm.Config{})
+
+		if err != nil {
+			log.Fatal("db:", err)
+		}
+		log.Println("db: mysql connected!")
+	}
 
 	// Interval
 	oneMinuteInterval := time.NewTicker(time.Minute)
