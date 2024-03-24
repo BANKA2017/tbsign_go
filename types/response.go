@@ -92,3 +92,12 @@ type ForumNameShareResponse struct {
 	// when fname does not exist in the query string, type of data is string
 	//Data string `json:"data,omitempty"`
 }
+
+type BaiduUserInfoResponse struct {
+	ID       string `json:"id,omitempty"`
+	Name     string `json:"name,omitempty"`
+	BDUSS    string `json:"BDUSS,omitempty"`
+	Portrait string `json:"portrait,omitempty"`
+	// ErrorCode string `json:"error_code,omitempty"`
+	// ErrorMsg string `json:"error_msg,omitempty"`
+}

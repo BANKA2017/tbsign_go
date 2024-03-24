@@ -11,37 +11,47 @@
 
 ## flags
 
-| flag     | default          | description     |
-| :------- | :--------------- | :-------------- |
-| username |                  | 数据库帐号      |
-| pwd      |                  | 数据库密码      |
-| endpoint | `127.0.0.1:3306` | 数据库端点      |
-| db       | `tbsign`         | 数据库名称      |
-| db_path  | `tbsign.db`      | SQLite 文件目录 |
+| flag     | default          | description                        |
+| :------- | :--------------- | :--------------------------------- |
+| username |                  | 数据库帐号                         |
+| pwd      |                  | 数据库密码                         |
+| endpoint | `127.0.0.1:3306` | 数据库端点                         |
+| db       | `tbsign`         | 数据库名称                         |
+| db_path  | `tbsign.db`      | SQLite 文件目录                    |
+| test     | `false`          | 测试模式，此模式下不会运行计划任务 |
+| api      | `false`          | 是否启动后端 api                   |
 
 示例
 
 ```shell
 go run run.go --username=<dbUsername> --pwd=<DBPassword>
-#or
+# or
 ./run --username=<dbUsername> --pwd=<DBPassword>
+# developer --> https://github.com/cosmtrek/air
+air -- --db_path=tbsign.db --test=true --api=true
 ```
 
 ## env
 
 不支持 `.env` 文件，请直接设置环境变量，使用顺序是 `flags` > `env` > `default`
 
-| flag        | description     |
-| :---------- | :-------------- |
-| tc_username | 数据库帐号      |
-| tc_pwd      | 数据库密码      |
-| tc_endpoint | 数据库端点      |
-| tc_db       | 数据库名称      |
-| tc_db_path  | SQLite 文件目录 |
+| flag        | description                        |
+| :---------- | :--------------------------------- |
+| tc_username | 数据库帐号                         |
+| tc_pwd      | 数据库密码                         |
+| tc_endpoint | 数据库端点                         |
+| tc_db       | 数据库名称                         |
+| tc_db_path  | SQLite 文件目录                    |
+| tc_test     | 测试模式，此模式下不会运行计划任务 |
+| tc_api      | 是否启动后端 api                   |
 
 ## 数据库
 
 数据库的选择顺序是 SQLite > MySQL，只要 `db_path`/`tc_db_path` 的文件存在，就会使用 SQLite
+
+## Api (WIP)
+
+仅供参考，未来可能还会大改，等到稳定后随缘出文档和前端
 
 ## 已知问题
 

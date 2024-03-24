@@ -5,8 +5,10 @@ import (
 	"flag"
 	"log"
 	"os"
+	"sync"
 	"time"
 
+	_api "github.com/BANKA2017/tbsign_go/api"
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"gorm.io/driver/mysql"
@@ -21,6 +23,11 @@ var dbName string
 
 var dbPath string
 
+var testMode bool
+var enableApi bool
+
+var wg sync.WaitGroup
+
 func main() {
 	// sqlite
 	flag.StringVar(&dbPath, "db_path", "tbsign.db", "Database path")
@@ -30,6 +37,9 @@ func main() {
 	flag.StringVar(&dbPassword, "pwd", "", "Password")
 	flag.StringVar(&dbEndpoint, "endpoint", "127.0.0.1:3306", "endpoint")
 	flag.StringVar(&dbName, "db", "tbsign", "Database name")
+
+	flag.BoolVar(&testMode, "test", false, "Not send any requests to tieba servers")
+	flag.BoolVar(&enableApi, "api", false, "active backend endpoints")
 
 	flag.Parse()
 
@@ -48,7 +58,12 @@ func main() {
 	}
 	if dbPath == "" && os.Getenv("tc_db_path") != "" {
 		dbPath = os.Getenv("tc_db_path")
-
+	}
+	if !testMode && os.Getenv("tc_test") != "" {
+		testMode = os.Getenv("tc_test") == "true"
+	}
+	if !enableApi && os.Getenv("tc_api") != "" {
+		enableApi = os.Getenv("tc_api") == "true"
 	}
 
 	// connect to db
@@ -84,28 +99,43 @@ func main() {
 	fourHoursInterval := time.NewTicker(time.Hour * 4)
 	defer fourHoursInterval.Stop()
 
-	for {
-		select {
-		case <-oneMinuteInterval.C:
-			_function.GetOptionsAndPluginList()
+	// cron
+	wg.Add(1)
+	go func() {
+		if testMode {
+			return
+		}
 
-			_function.UpdateNow()
-			_plugin.DoSignAction()
-			_plugin.DoReSignAction()
+		defer wg.Done()
+		for {
+			select {
+			case <-oneMinuteInterval.C:
+				_function.GetOptionsAndPluginList()
 
-			// plugins
-			if _function.PluginList["ver4_rank"] {
-				go _plugin.DoForumSupportAction()
-			}
+				_function.UpdateNow()
+				_plugin.DoSignAction()
+				_plugin.DoReSignAction()
 
-			if _function.PluginList["ver4_ban"] {
-				go _plugin.LoopBanAction()
-			}
-		case <-fourHoursInterval.C:
-			_function.GetOptionsAndPluginList()
-			if _function.PluginList["ver4_ref"] {
-				go _plugin.RefreshTiebaListAction()
+				// plugins
+				if _function.PluginList["ver4_rank"] {
+					go _plugin.DoForumSupportAction()
+				}
+
+				if _function.PluginList["ver4_ban"] {
+					go _plugin.LoopBanAction()
+				}
+			case <-fourHoursInterval.C:
+				_function.GetOptionsAndPluginList()
+				if _function.PluginList["ver4_ref"] {
+					go _plugin.RefreshTiebaListAction()
+				}
 			}
 		}
+	}()
+
+	if enableApi {
+		_api.Api()
 	}
+
+	wg.Wait()
 }

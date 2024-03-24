@@ -133,3 +133,23 @@ func GetForumNameShare(name string) (*_type.ForumNameShareResponse, error) {
 
 	return ForumNameShare, err
 }
+
+func GetBaiduUserInfo(cookie _type.TypeCookie) (*_type.BaiduUserInfoResponse, error) {
+	var form = make(map[string]string)
+	form["bdusstoken"] = cookie.Bduss
+	AddSign(&form)
+	_body := url.Values{}
+	for k, v := range form {
+		if k != "sign" {
+			_body.Set(k, v)
+		}
+	}
+	headersMap := map[string]string{
+		"Cookie": "BDUSS=" + cookie.Bduss,
+	}
+
+	//log.Println(_body.Encode() + "&sign=" + form["sign"])
+	accountInfo, err := Fetch("http://c.tieba.baidu.com/c/s/login", "POST", _body.Encode()+"&sign="+form["sign"], headersMap, _type.BaiduUserInfoResponse{})
+
+	return accountInfo, err
+}

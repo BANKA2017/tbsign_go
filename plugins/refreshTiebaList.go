@@ -10,12 +10,14 @@ import (
 
 var RefreshTiebaListPluginName = "ver4_ref"
 
-func scanTiebaByPid(pid int32) {
+func ScanTiebaByPid(pid int32) {
 	account := _function.GetCookie(pid)
 
 	var localTiebaList = &[]model.TcTieba{}
 	_function.GormDB.Model(&model.TcTieba{ID: account.UID}).Find(&localTiebaList)
 	var pn int64 = 1
+
+	var filterList = []model.TcTieba{}
 
 	for {
 		//log.Println(pid, pn)
@@ -36,6 +38,7 @@ func scanTiebaByPid(pid int32) {
 				//合并或被封禁的贴吧会怎样?
 				if tiebaInfoDB.Fid == int32(tiebaInfo.ForumID) && tiebaInfoDB.Pid == pid {
 					exists = true
+					filterList = append(filterList, tiebaInfoDB)
 					break
 				}
 			}
@@ -52,9 +55,29 @@ func scanTiebaByPid(pid int32) {
 			err := _function.GormDB.Create(tiebaList)
 			log.Println("scanTiebaByPid:", err)
 		}
+
 		pn++
 		if pn > int64(response.Data.LikeForum.Page.TotalPage) {
 			break
+		}
+	}
+
+	if len(filterList) != len(*localTiebaList) {
+		delList := []model.TcTieba{}
+		for _, v := range *localTiebaList {
+			exists := false
+			for _, v2 := range filterList {
+				if v.Fid == v2.Fid {
+					exists = true
+					break
+				}
+			}
+			if !exists {
+				delList = append(delList, model.TcTieba{ID: v.ID})
+			}
+		}
+		if len(delList) > 0 {
+			_function.GormDB.Delete(&delList)
 		}
 	}
 }
@@ -70,7 +93,7 @@ func RefreshTiebaListAction() {
 			var accounts = &[]model.TcBaiduid{}
 			_function.GormDB.Model(&model.TcBaiduid{}).Find(accounts)
 			for _, account := range *accounts {
-				scanTiebaByPid(account.ID)
+				ScanTiebaByPid(account.ID)
 				_function.SetOption("ver4_ref_id", strconv.Itoa(int(account.ID)))
 				_function.SetOption("ver4_ref_lastdo", strconv.Itoa(int(_function.Now.Unix())))
 			}
