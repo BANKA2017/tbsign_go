@@ -47,8 +47,11 @@ func Api() {
 	e.GET("/passport", GetAccountInfo)
 	e.POST("/passport/login", Login)
 	e.POST("/passport/logout", Logout)
-	// TODO merge to settings
+	// e.POST("/passport/register", Register)
+	// e.POST("/passport/delete", DeleteAccount)
 	e.POST("/passport/update_pwd", UpdatePassword)
+	e.GET("/passport/settings", GetSettings)
+	e.POST("/passport/settings", UpdateSettings)
 
 	// tieba account
 	e.GET("/account", GetTiebaAccountList)
@@ -62,7 +65,16 @@ func Api() {
 	e.POST("/list/del", RemoveTieba)
 	e.POST("/list/refresh", RefreshTiebaList)
 
-	// TODO plugins
+	// manage
+	e.GET("/admin/settings", GetAdminSettings)
+	e.POST("/admin/settings", UpdateAdminSettings)
+	e.GET("/admin/account", GetAccountList)
+
+	// plugins
+	e.GET("/plugins/ver4_rank/list", GetVer4RankList)
+	e.GET("/plugins/ver4_rank/settings", GetVer4RankSettings)
+	e.POST("/plugins/ver4_rank/settings", UpdateVer4RankSettings)
+
 	// TODO tools
 
 	e.Logger.Fatal(e.Start(":1323"))

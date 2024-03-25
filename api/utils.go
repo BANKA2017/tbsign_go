@@ -19,6 +19,7 @@ var PreCheckWhiteList = []string{
 	"/robots.txt",
 	"/passport/login",
 	"/passport/logout",
+	"/passport/register",
 }
 
 func PreCheckWhiteListExists(path string) bool {
@@ -71,6 +72,20 @@ func verifyAuthorization(authorization string) string {
 			return authArray[0]
 		} else {
 			return "0"
+		}
+	}
+}
+
+func getAccountRole(uid int64) string {
+	if uid <= 0 {
+		return "guest"
+	} else {
+		var accountInfo []model.TcUser
+		_function.GormDB.Where("id = ?", uid).Limit(1).Find(&accountInfo)
+		if len(accountInfo) == 0 {
+			return "guest"
+		} else {
+			return accountInfo[0].Role
 		}
 	}
 }

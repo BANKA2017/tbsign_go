@@ -17,7 +17,7 @@ func ScanTiebaByPid(pid int32) {
 	_function.GormDB.Model(&model.TcTieba{ID: account.UID}).Find(&localTiebaList)
 	var pn int64 = 1
 
-	var filterList = []model.TcTieba{}
+	var wholeTiebaList = []model.TcTieba{}
 
 	for {
 		//log.Println(pid, pn)
@@ -38,17 +38,18 @@ func ScanTiebaByPid(pid int32) {
 				//合并或被封禁的贴吧会怎样?
 				if tiebaInfoDB.Fid == int32(tiebaInfo.ForumID) && tiebaInfoDB.Pid == pid {
 					exists = true
-					filterList = append(filterList, tiebaInfoDB)
 					break
 				}
 			}
+			tmpTcTieba := model.TcTieba{
+				Pid:   pid,
+				Fid:   int32(tiebaInfo.ForumID),
+				UID:   account.UID,
+				Tieba: tiebaInfo.ForumName,
+			}
+			wholeTiebaList = append(wholeTiebaList, tmpTcTieba)
 			if !exists {
-				tiebaList = append(tiebaList, &model.TcTieba{
-					Pid:   pid,
-					Fid:   int32(tiebaInfo.ForumID),
-					UID:   account.UID,
-					Tieba: tiebaInfo.ForumName,
-				})
+				tiebaList = append(tiebaList, &tmpTcTieba)
 			}
 		}
 		if len(tiebaList) > 0 {
@@ -62,22 +63,22 @@ func ScanTiebaByPid(pid int32) {
 		}
 	}
 
-	if len(filterList) != len(*localTiebaList) {
-		delList := []model.TcTieba{}
-		for _, v := range *localTiebaList {
+	if len(wholeTiebaList) != len(*localTiebaList) {
+		delList := []int32{}
+		for _, v := range wholeTiebaList {
 			exists := false
-			for _, v2 := range filterList {
+			for _, v2 := range *localTiebaList {
 				if v.Fid == v2.Fid {
 					exists = true
 					break
 				}
 			}
 			if !exists {
-				delList = append(delList, model.TcTieba{ID: v.ID})
+				delList = append(delList, v.ID)
 			}
 		}
 		if len(delList) > 0 {
-			_function.GormDB.Delete(&delList)
+			_function.GormDB.Delete(&model.TcTieba{}, delList)
 		}
 	}
 }

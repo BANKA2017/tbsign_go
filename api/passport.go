@@ -13,13 +13,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func Register() {
-
-}
-
-func DeleteAccount() {
-
-}
+// func Register(c echo.Context) error {
+//
+// }
+//
+// func DeleteAccount(c echo.Context) error {
+//
+// }
 
 func Login(c echo.Context) error {
 	account := c.Request().PostFormValue("account") // username or email
@@ -143,4 +143,54 @@ func GetAccountInfo(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resp, "tbsign"))
+}
+
+func GetSettings(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	var accountSettings []model.TcUsersOption
+	_function.GormDB.Where("uid = ?", uid).Find(&accountSettings)
+
+	settings := make(map[string]string)
+
+	for _, v := range accountSettings {
+		settings[v.Name] = v.Value
+	}
+
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", settings, "tbsign"))
+}
+
+func UpdateSettings(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	c.Request().ParseForm()
+
+	var accountSettings []model.TcUsersOption
+	_function.GormDB.Where("uid = ?", uid).Find(&accountSettings)
+
+	var newSettings []model.TcUsersOption
+
+	for _, v := range accountSettings {
+		for k1, v1 := range c.Request().Form {
+			if v.Name == k1 {
+				if v.Value != v1[0] {
+					v.Value = v1[0]
+					newSettings = append(newSettings, v)
+				}
+				break
+			}
+		}
+	}
+
+	settings := make(map[string]string)
+	if len(newSettings) > 0 {
+		for _, v := range newSettings {
+			settings[v.Name] = v.Value
+			_function.GormDB.Model(model.TcUsersOption{}).Where("uid = ? AND name = ?", uid, v.Name).Updates(&model.TcUsersOption{
+				Value: v.Value,
+			})
+		}
+	}
+
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", settings, "tbsign"))
 }

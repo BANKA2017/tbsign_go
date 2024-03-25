@@ -10,7 +10,7 @@ import (
 	_type "github.com/BANKA2017/tbsign_go/types"
 )
 
-type TypeForumSupportList []struct {
+type TypeForumSupportList struct {
 	Fid   string `json:"fid"`
 	Nid   int64  `json:"nid"`
 	Name  string `json:"name"`
@@ -23,7 +23,7 @@ type TypeForumSupportResponse struct {
 	// Data is unused
 }
 
-var ForumSupportList = TypeForumSupportList{
+var ForumSupportList = []TypeForumSupportList{
 	{
 		Fid:   "280050",
 		Nid:   2257282262,
