@@ -4,11 +4,12 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
 
-func Api() {
+func Api(variables ...any) {
 	// api
 	e := echo.New()
 	//e.Use(middleware.Logger())
@@ -26,7 +27,7 @@ func Api() {
 	// pre-check
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			//c.Set("start_date", time.Now().UnixNano())
+			c.Set("start_date", time.Now().UnixNano())
 			log.Println(c.Path(), c.QueryString())
 			if PreCheckWhiteListExists(c.Path()) {
 				//log.Println("echo: whitelist")
@@ -47,6 +48,13 @@ func Api() {
 			//log.Println("echo: next")
 			c.Set("uid", uid)
 			c.Set("role", role)
+
+			// set variables
+			_variable := make(map[string]any)
+			for i := 0; i < len(variables); i += 2 {
+				_variable[variables[i].(string)] = variables[i+1]
+			}
+			c.Set("variables", _variable)
 			return next(c)
 		}
 	})

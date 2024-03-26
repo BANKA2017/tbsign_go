@@ -67,6 +67,7 @@ func main() {
 	}
 
 	// connect to db
+	dbMode := "mysql"
 
 	if _, err := os.Stat(dbPath); err == nil {
 		// sqlite
@@ -75,6 +76,7 @@ func main() {
 		if err != nil {
 			log.Fatal("db:", err)
 		}
+		dbMode = "sqlite"
 		log.Println("db: sqlite connected!")
 	} else {
 		// mysql
@@ -134,7 +136,7 @@ func main() {
 	}()
 
 	if enableApi {
-		_api.Api()
+		_api.Api("dbmode", dbMode, "testmode", testMode)
 	}
 
 	wg.Wait()
