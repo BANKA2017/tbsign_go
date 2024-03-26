@@ -33,7 +33,7 @@ func UpdateVer4RankSettings(c echo.Context) error {
 	numberPid, err := strconv.ParseInt(pid, 10, 64)
 	log.Println(pid, numberPid, err)
 	if err != nil || numberPid <= 0 {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", make(map[string]interface{}, 0), "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
 	}
 
 	var rankList []model.TcVer4RankLog

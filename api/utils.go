@@ -13,6 +13,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+var echoEmptyObject = make(map[string]interface{}, 0)
+
 var PreCheckWhiteList = []string{
 	"/*",
 	"/favicon.ico",
@@ -32,20 +34,20 @@ func PreCheckWhiteListExists(path string) bool {
 }
 
 func apiTemplate[T any](code int, message string, data T, version string) _type.ApiTemplate {
-	var template _type.ApiTemplate
-	template.Code = code
-	template.Message = message
-	template.Data = data
-	template.Version = version
-	return template
+	return _type.ApiTemplate{
+		Code:    code,
+		Message: message,
+		Data:    data,
+		Version: version,
+	}
 }
 
 func echoReject(c echo.Context) error {
-	var response = apiTemplate(403, "Invalid Request", make(map[string]interface{}, 0), "tbsign")
+	var response = apiTemplate(403, "Invalid Request", echoEmptyObject, "tbsign")
 	return c.JSON(http.StatusForbidden, response)
 }
 
-func echoFavicon(c echo.Context) error {
+func echoNoContent(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }
 
@@ -53,39 +55,25 @@ func echoRobots(c echo.Context) error {
 	return c.String(http.StatusOK, "User-agent: *\nDisallow: /*")
 }
 
-func verifyAuthorization(authorization string) string {
+func verifyAuthorization(authorization string) (string, string) {
 	if authorization == "" {
-		return "0"
+		return "0", "guest"
 	} else {
 		parsedAuth, err := base64.RawURLEncoding.DecodeString(authorization)
 		if err != nil {
-			return "0"
+			return "0", "guest"
 		}
 		authArray := strings.Split(string(parsedAuth), ":")
 		if len(authArray) != 3 || authArray[0] == "" || authArray[1] == "" || authArray[2] == "" {
-			return "0"
+			return "0", "guest"
 		}
 		var accountInfo []model.TcUser
 		_function.GormDB.Where("id = ?", authArray[0]).Limit(1).Find(&accountInfo)
 
 		if hex.EncodeToString(_function.GenHMAC256([]byte(accountInfo[0].Pw+":"+authArray[1]), []byte(strconv.Itoa(int(accountInfo[0].ID))+accountInfo[0].Pw))) == authArray[2] {
-			return authArray[0]
+			return strconv.Itoa(int(accountInfo[0].ID)), accountInfo[0].Role
 		} else {
-			return "0"
-		}
-	}
-}
-
-func getAccountRole(uid int64) string {
-	if uid <= 0 {
-		return "guest"
-	} else {
-		var accountInfo []model.TcUser
-		_function.GormDB.Where("id = ?", uid).Limit(1).Find(&accountInfo)
-		if len(accountInfo) == 0 {
-			return "guest"
-		} else {
-			return accountInfo[0].Role
+			return "0", "guest"
 		}
 	}
 }

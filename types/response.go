@@ -94,10 +94,13 @@ type ForumNameShareResponse struct {
 }
 
 type BaiduUserInfoResponse struct {
-	ID       string `json:"id,omitempty"`
-	Name     string `json:"name,omitempty"`
-	BDUSS    string `json:"BDUSS,omitempty"`
-	Portrait string `json:"portrait,omitempty"`
-	// ErrorCode string `json:"error_code,omitempty"`
-	// ErrorMsg string `json:"error_msg,omitempty"`
+	User struct {
+		ID       string `json:"id,omitempty"`
+		Name     string `json:"name,omitempty"`
+		BDUSS    string `json:"BDUSS,omitempty"`
+		Portrait string `json:"portrait,omitempty"`
+	} `json:"user"`
+
+	ErrorCode string `json:"error_code,omitempty"`
+	ErrorMsg  string `json:"error_msg,omitempty"`
 }

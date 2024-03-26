@@ -2,7 +2,6 @@ package _api
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
@@ -10,16 +9,6 @@ import (
 )
 
 func GetAdminSettings(c echo.Context) error {
-	uid := c.Get("uid").(string)
-
-	numberUID, _ := strconv.ParseInt(uid, 10, 64)
-
-	role := getAccountRole(numberUID)
-
-	if role != "admin" {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid role", make(map[string]interface{}, 0), "tbsign"))
-	}
-
 	var adminSettings []model.TcOption
 	_function.GormDB.Find(&adminSettings)
 
@@ -32,16 +21,6 @@ func GetAdminSettings(c echo.Context) error {
 }
 
 func UpdateAdminSettings(c echo.Context) error {
-	uid := c.Get("uid").(string)
-
-	numberUID, _ := strconv.ParseInt(uid, 10, 64)
-
-	role := getAccountRole(numberUID)
-
-	if role != "admin" {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid role", make(map[string]interface{}, 0), "tbsign"))
-	}
-
 	c.Request().ParseForm()
 
 	var adminSettings []model.TcOption
@@ -85,16 +64,6 @@ func UpdateAdminSettings(c echo.Context) error {
 // }
 
 func GetAccountList(c echo.Context) error {
-	uid := c.Get("uid").(string)
-
-	numberUID, _ := strconv.ParseInt(uid, 10, 64)
-
-	role := getAccountRole(numberUID)
-
-	if role != "admin" {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid role", make(map[string]interface{}, 0), "tbsign"))
-	}
-
 	var accountInfo []model.TcUser
 	_function.GormDB.Find(&accountInfo)
 

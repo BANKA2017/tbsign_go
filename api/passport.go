@@ -22,12 +22,12 @@ import (
 // }
 
 func Login(c echo.Context) error {
-	account := c.Request().PostFormValue("account") // username or email
-	password := c.Request().PostFormValue("password")
+	account := c.FormValue("account") // username or email
+	password := c.FormValue("password")
 	timestamp := strconv.Itoa(int(time.Now().UnixMilli()))
 
 	if account == "" || password == "" {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid account or password", make(map[string]interface{}, 0), "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid account or password", echoEmptyObject, "tbsign"))
 	}
 
 	// check
@@ -42,34 +42,34 @@ func Login(c echo.Context) error {
 		if md5_ == accountInfo[0].Pw {
 			log.Println("md5")
 		} else {
-			return c.JSON(http.StatusOK, apiTemplate(403, "Invalid account or password", make(map[string]interface{}, 0), "tbsign"))
+			return c.JSON(http.StatusOK, apiTemplate(403, "Invalid account or password", echoEmptyObject, "tbsign"))
 		}
 	} else {
 		log.Print("right")
 	}
 
-	var resp struct {
-		UID       int32  `json:"uid"`
+	var resp = struct {
+		UID       string `json:"uid"`
 		Pwd       string `json:"pwd"` // <- static session
 		Timestamp string `json:"timestamp"`
+	}{
+		UID:       strconv.Itoa(int(accountInfo[0].ID)),
+		Pwd:       hex.EncodeToString(_function.GenHMAC256([]byte(accountInfo[0].Pw+":"+timestamp), []byte(strconv.Itoa(int(accountInfo[0].ID))+accountInfo[0].Pw))),
+		Timestamp: timestamp,
 	}
-
-	resp.UID = accountInfo[0].ID
-	resp.Pwd = hex.EncodeToString(_function.GenHMAC256([]byte(accountInfo[0].Pw+":"+timestamp), []byte(strconv.Itoa(int(accountInfo[0].ID))+accountInfo[0].Pw)))
-	resp.Timestamp = timestamp
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resp, "tbsign"))
 }
 
 func Logout(c echo.Context) error {
-	return c.JSON(http.StatusOK, apiTemplate(200, "In fact, you just need to clear your local cache", make(map[string]interface{}, 0), "tbsign"))
+	return c.JSON(http.StatusOK, apiTemplate(200, "In fact, you just need to clear your local cache", echoEmptyObject, "tbsign"))
 }
 
 func UpdatePassword(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	oldPwd := c.Request().PostFormValue("old_password")
-	newPwd := c.Request().PostFormValue("new_password")
+	oldPwd := c.FormValue("old_password")
+	newPwd := c.FormValue("new_password")
 
 	var accountInfo []model.TcUser
 	_function.GormDB.Where("id = ?", uid).Limit(1).Find(&accountInfo)
@@ -82,7 +82,7 @@ func UpdatePassword(c echo.Context) error {
 		if md5_ == accountInfo[0].Pw {
 			log.Println("md5")
 		} else {
-			return c.JSON(http.StatusOK, apiTemplate(403, "Invalid password", make(map[string]interface{}, 0), "tbsign"))
+			return c.JSON(http.StatusOK, apiTemplate(403, "Invalid password", echoEmptyObject, "tbsign"))
 		}
 	} else {
 		log.Print("right")
@@ -91,23 +91,23 @@ func UpdatePassword(c echo.Context) error {
 	// create new password
 	hash, err := bcrypt.GenerateFromPassword([]byte(newPwd), 12)
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Encrypt password failed...", make(map[string]interface{}, 0), "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(500, "Encrypt password failed...", echoEmptyObject, "tbsign"))
 	}
 
 	_function.GormDB.Model(model.TcUser{}).Where("id = ?", uid).Update("pw", string(hash))
 
-	var resp struct {
+	timestamp := strconv.Itoa(int(time.Now().UnixMilli()))
+	numberUID, _ := strconv.ParseInt(uid, 10, 64)
+
+	var resp = struct {
 		UID       int32  `json:"uid"`
 		Pwd       string `json:"pwd"` // <- static session
 		Timestamp string `json:"timestamp"`
+	}{
+		UID:       int32(numberUID),
+		Pwd:       hex.EncodeToString(_function.GenHMAC256([]byte(string(hash)+":"+timestamp), []byte(uid+string(hash)))),
+		Timestamp: timestamp,
 	}
-
-	timestamp := strconv.Itoa(int(time.Now().UnixMilli()))
-
-	numberUID, _ := strconv.ParseInt(uid, 10, 64)
-	resp.UID = int32(numberUID)
-	resp.Pwd = hex.EncodeToString(_function.GenHMAC256([]byte(string(hash)+":"+timestamp), []byte(uid+string(hash))))
-	resp.Timestamp = timestamp
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resp, "tbsign"))
 }
@@ -123,20 +123,19 @@ func GetAccountInfo(c echo.Context) error {
 	var accountSettings []model.TcUsersOption
 	_function.GormDB.Where("uid = ?", uid).Find(&accountSettings)
 
-	var resp struct {
+	var resp = struct {
 		UID      int32             `json:"uid"`
 		Name     string            `json:"name"`
 		Email    string            `json:"email"`
 		Role     string            `json:"role"`
 		Settings map[string]string `json:"settings"`
+	}{
+		UID:      accountInfo[0].ID,
+		Name:     accountInfo[0].Name,
+		Email:    accountInfo[0].Email,
+		Role:     accountInfo[0].Role,
+		Settings: make(map[string]string),
 	}
-
-	resp.UID = accountInfo[0].ID
-	resp.Name = accountInfo[0].Name
-	resp.Email = accountInfo[0].Email
-	resp.Role = accountInfo[0].Role
-
-	resp.Settings = make(map[string]string)
 
 	for _, v := range accountSettings {
 		resp.Settings[v.Name] = v.Value
