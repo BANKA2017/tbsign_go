@@ -41,9 +41,15 @@ func PostClientBan(cookie _type.TypeCookie, fid int32, portrait string, day int3
 			_body.Set(k, v)
 		}
 	}
-	banResponse, err := _function.Fetch("http://c.tieba.baidu.com/c/c/bawu/commitprison", "POST", _body.Encode()+"&sign="+form["sign"], map[string]string{}, BanAccountResponse{})
+	banResponse, err := _function.Fetch("http://c.tieba.baidu.com/c/c/bawu/commitprison", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), map[string]string{})
 
-	return banResponse, err
+	if err != nil {
+		return nil, err
+	}
+
+	var banDecode BanAccountResponse
+	err = _function.JsonDecode(banResponse, &banDecode)
+	return &banDecode, err
 }
 
 func LoopBanAction() {

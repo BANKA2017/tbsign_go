@@ -1,11 +1,12 @@
 package _api
 
 import (
+	"encoding/base64"
 	"encoding/hex"
 	"log"
 	"net/http"
 	"strconv"
-	"time"
+	"strings"
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
@@ -22,12 +23,11 @@ import (
 // }
 
 func Login(c echo.Context) error {
-	account := c.FormValue("account") // username or email
-	password := c.FormValue("password")
-	timestamp := strconv.Itoa(int(time.Now().UnixMilli()))
+	account := strings.TrimSpace(c.FormValue("account")) // username or email
+	password := strings.TrimSpace(c.FormValue("password"))
 
 	if account == "" || password == "" {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid account or password", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(401, "Invalid account or password", echoEmptyObject, "tbsign"))
 	}
 
 	// check
@@ -42,20 +42,16 @@ func Login(c echo.Context) error {
 		if md5_ == accountInfo[0].Pw {
 			log.Println("md5")
 		} else {
-			return c.JSON(http.StatusOK, apiTemplate(403, "Invalid account or password", echoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, apiTemplate(401, "Invalid account or password", echoEmptyObject, "tbsign"))
 		}
-	} else {
-		log.Print("right")
 	}
 
 	var resp = struct {
-		UID       string `json:"uid"`
-		Pwd       string `json:"pwd"` // <- static session
-		Timestamp string `json:"timestamp"`
+		Type  string `json:"type"`
+		Token string `json:"token"` // <- static session
 	}{
-		UID:       strconv.Itoa(int(accountInfo[0].ID)),
-		Pwd:       hex.EncodeToString(_function.GenHMAC256([]byte(accountInfo[0].Pw+":"+timestamp), []byte(strconv.Itoa(int(accountInfo[0].ID))+accountInfo[0].Pw))),
-		Timestamp: timestamp,
+		Type:  "basic",
+		Token: base64.RawURLEncoding.EncodeToString([]byte(strconv.Itoa(int(accountInfo[0].ID)) + ":" + hex.EncodeToString(_function.GenHMAC256([]byte(accountInfo[0].Pw), []byte(strconv.Itoa(int(accountInfo[0].ID))+accountInfo[0].Pw))))),
 	}
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resp, "tbsign"))
@@ -84,8 +80,6 @@ func UpdatePassword(c echo.Context) error {
 		} else {
 			return c.JSON(http.StatusOK, apiTemplate(403, "Invalid password", echoEmptyObject, "tbsign"))
 		}
-	} else {
-		log.Print("right")
 	}
 
 	// create new password
@@ -96,17 +90,14 @@ func UpdatePassword(c echo.Context) error {
 
 	_function.GormDB.Model(model.TcUser{}).Where("id = ?", uid).Update("pw", string(hash))
 
-	timestamp := strconv.Itoa(int(time.Now().UnixMilli()))
 	numberUID, _ := strconv.ParseInt(uid, 10, 64)
 
 	var resp = struct {
-		UID       int32  `json:"uid"`
-		Pwd       string `json:"pwd"` // <- static session
-		Timestamp string `json:"timestamp"`
+		UID int32  `json:"uid"`
+		Pwd string `json:"pwd"` // <- static session
 	}{
-		UID:       int32(numberUID),
-		Pwd:       hex.EncodeToString(_function.GenHMAC256([]byte(string(hash)+":"+timestamp), []byte(uid+string(hash)))),
-		Timestamp: timestamp,
+		UID: int32(numberUID),
+		Pwd: hex.EncodeToString(_function.GenHMAC256([]byte(string(hash)), []byte(uid+string(hash)))),
 	}
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resp, "tbsign"))

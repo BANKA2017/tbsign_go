@@ -584,9 +584,15 @@ func PostForumSupport(cookie _type.TypeCookie, fid int32, nid string) (*TypeForu
 		"Cookie": "BDUSS=" + cookie.Bduss,
 	}
 
-	supportResponse, err := _function.Fetch("http://tieba.baidu.com/celebrity/submit/support", "POST", _body.Encode(), headersMap, TypeForumSupportResponse{})
-	//log.Println(supportResponse)
-	return supportResponse, err
+	supportResponse, err := _function.Fetch("http://tieba.baidu.com/celebrity/submit/support", "POST", []byte(_body.Encode()), headersMap)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var supportDecode TypeForumSupportResponse
+	err = _function.JsonDecode(supportResponse, &supportDecode)
+	return &supportDecode, err
 }
 
 func DoForumSupportAction() {

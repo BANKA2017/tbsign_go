@@ -20,6 +20,7 @@
 | db_path  | `tbsign.db`      | SQLite 文件目录                    |
 | test     | `false`          | 测试模式，此模式下不会运行计划任务 |
 | api      | `false`          | 是否启动后端 api                   |
+| address  | `:1323`          | 后端运行地址                       |
 
 示例
 
@@ -44,6 +45,7 @@ air -- --db_path=tbsign.db --test=true --api=true
 | tc_db_path  | SQLite 文件目录                    |
 | tc_test     | 测试模式，此模式下不会运行计划任务 |
 | tc_api      | 是否启动后端 api                   |
+| tc_address  | 后端运行地址                       |
 
 ## 数据库
 
@@ -85,3 +87,7 @@ air -- --db_path=tbsign.db --test=true --api=true
 - [ ] 自动清理解除绑定的帐号的插件设置
 - [ ] 打包/Docker/或者别的
 - [ ] ……更多的想起来再加
+
+## 感谢
+
+- [Starry-OvO/aiotieba](https://github.com/Starry-OvO/aiotieba)

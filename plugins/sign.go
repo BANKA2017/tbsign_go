@@ -13,7 +13,7 @@ import (
 
 var wg sync.WaitGroup
 
-var AgainErrorId = "160002"
+const AgainErrorId = "160002"
 
 //重复签到错误代码
 //again_error_id_2 := "1101"

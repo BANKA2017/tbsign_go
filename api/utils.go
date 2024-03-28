@@ -13,7 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-var echoEmptyObject = make(map[string]interface{}, 0)
+var echoEmptyObject = make(map[string]any, 0)
 
 var PreCheckWhiteList = []string{
 	"/*",
@@ -22,6 +22,7 @@ var PreCheckWhiteList = []string{
 	"/passport/login",
 	"/passport/logout",
 	"/passport/register",
+	"/tool/tiebauid2userinfo/:tiebauid",
 }
 
 func PreCheckWhiteListExists(path string) bool {
@@ -64,13 +65,13 @@ func verifyAuthorization(authorization string) (string, string) {
 			return "0", "guest"
 		}
 		authArray := strings.Split(string(parsedAuth), ":")
-		if len(authArray) != 3 || authArray[0] == "" || authArray[1] == "" || authArray[2] == "" {
+		if len(authArray) != 2 || authArray[0] == "" || authArray[1] == "" {
 			return "0", "guest"
 		}
 		var accountInfo []model.TcUser
 		_function.GormDB.Where("id = ?", authArray[0]).Limit(1).Find(&accountInfo)
 
-		if hex.EncodeToString(_function.GenHMAC256([]byte(accountInfo[0].Pw+":"+authArray[1]), []byte(strconv.Itoa(int(accountInfo[0].ID))+accountInfo[0].Pw))) == authArray[2] {
+		if hex.EncodeToString(_function.GenHMAC256([]byte(accountInfo[0].Pw), []byte(strconv.Itoa(int(accountInfo[0].ID))+accountInfo[0].Pw))) == authArray[1] {
 			return strconv.Itoa(int(accountInfo[0].ID)), accountInfo[0].Role
 		} else {
 			return "0", "guest"

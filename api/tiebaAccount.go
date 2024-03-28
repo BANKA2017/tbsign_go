@@ -3,6 +3,7 @@ package _api
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
@@ -21,11 +22,11 @@ import (
 func AddTiebaAccount(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	bduss := c.FormValue("bduss")
-	stoken := c.FormValue("stoken")
+	bduss := strings.TrimSpace(c.FormValue("bduss"))
+	stoken := strings.TrimSpace(c.FormValue("stoken"))
 
 	if bduss == "" || stoken == "" {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid BDUSS or stoken", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(401, "Invalid BDUSS or stoken", echoEmptyObject, "tbsign"))
 	}
 
 	// get tieba account info
@@ -39,7 +40,20 @@ func AddTiebaAccount(c echo.Context) error {
 	_function.GormDB.Where("uid = ? AND portrait = ?", uid, baiduAccountInfo.User.Portrait).Limit(1).Find(&tiebaAccounts)
 
 	if len(tiebaAccounts) > 0 {
-		return c.JSON(http.StatusOK, apiTemplate(200, "Account already exists", tiebaAccounts[0], "tbsign"))
+		if tiebaAccounts[0].Bduss != bduss || tiebaAccounts[0].Stoken != stoken {
+			newData := model.TcBaiduid{
+				Bduss:    bduss,
+				Stoken:   stoken,
+				Name:     baiduAccountInfo.User.Name,
+				Portrait: baiduAccountInfo.User.Portrait,
+			}
+			_function.GormDB.Model(model.TcBaiduid{}).Where("id = ?", tiebaAccounts[0].ID).Updates(&newData)
+			newData.ID = tiebaAccounts[0].ID
+			newData.UID = tiebaAccounts[0].UID
+			return c.JSON(http.StatusOK, apiTemplate(200, "OK", newData, "tbsign"))
+		} else if tiebaAccounts[0].Bduss == bduss && tiebaAccounts[0].Stoken == stoken {
+			return c.JSON(http.StatusOK, apiTemplate(200, "Account already exists", tiebaAccounts[0], "tbsign"))
+		}
 	}
 
 	numberUID, _ := strconv.ParseInt(uid, 10, 64)
@@ -52,14 +66,14 @@ func AddTiebaAccount(c echo.Context) error {
 		Portrait: baiduAccountInfo.User.Portrait,
 	}
 	_function.GormDB.Create(&newAccount)
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", newAccount, "tbsign"))
+	return c.JSON(http.StatusOK, apiTemplate(201, "OK", newAccount, "tbsign"))
 
 }
 
 func RemoveTiebaAccount(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	pid := c.FormValue("pid")
+	pid := c.Param("pid")
 	numberPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
 		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
@@ -73,7 +87,9 @@ func RemoveTiebaAccount(c echo.Context) error {
 		if v.ID == int32(numberPid) {
 			_function.GormDB.Model(&model.TcBaiduid{}).Delete("id = ?", v.ID)
 			_function.GormDB.Model(&model.TcTieba{}).Delete("pid = ?", v.ID)
-			return c.JSON(http.StatusOK, apiTemplate(200, "OK", v, "tbsign"))
+			return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]int32{
+				"pid": v.ID,
+			}, "tbsign"))
 		}
 	}
 

@@ -26,6 +26,8 @@ var dbPath string
 var testMode bool
 var enableApi bool
 
+var address string
+
 var wg sync.WaitGroup
 
 func main() {
@@ -40,6 +42,8 @@ func main() {
 
 	flag.BoolVar(&testMode, "test", false, "Not send any requests to tieba servers")
 	flag.BoolVar(&enableApi, "api", false, "active backend endpoints")
+
+	flag.StringVar(&address, "address", ":1323", "address :1323")
 
 	flag.Parse()
 
@@ -64,6 +68,9 @@ func main() {
 	}
 	if !enableApi && os.Getenv("tc_api") != "" {
 		enableApi = os.Getenv("tc_api") == "true"
+	}
+	if address == ":1323" && os.Getenv("tc_address") != "" {
+		address = os.Getenv("tc_address")
 	}
 
 	// connect to db
@@ -136,7 +143,7 @@ func main() {
 	}()
 
 	if enableApi {
-		_api.Api("dbmode", dbMode, "testmode", testMode)
+		_api.Api(address, "dbmode", dbMode, "testmode", testMode)
 	}
 
 	wg.Wait()

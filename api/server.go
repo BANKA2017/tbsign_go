@@ -20,7 +20,7 @@ func GetServerStatus(c echo.Context) error {
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
 		"hostname":  hostname,
 		"goroutine": runtime.NumGoroutine(),
-		"version":   runtime.Version(),
+		"goversion": runtime.Version(),
 		"variables": c.Get("variables"),
 	}, "tbsign"))
 }

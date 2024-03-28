@@ -58,8 +58,8 @@ func AddTieba(c echo.Context) error {
 func RemoveTieba(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	pid := c.FormValue("pid")
-	fid := c.FormValue("fid")
+	pid := c.Param("pid")
+	fid := c.Param("fid")
 
 	numberUID, _ := strconv.ParseInt(uid, 10, 64)
 	numberPid, err := strconv.ParseInt(pid, 10, 64)
@@ -78,6 +78,38 @@ func RemoveTieba(c echo.Context) error {
 	})
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", echoEmptyObject, "tbsign"))
+}
+
+func IgnoreTieba(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	pid := c.Param("pid")
+	fid := c.Param("fid")
+
+	method := c.Request().Method
+
+	numberUID, _ := strconv.ParseInt(uid, 10, 64)
+	numberPid, err := strconv.ParseInt(pid, 10, 64)
+	if err != nil {
+		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
+	}
+	numberFid, err := strconv.ParseInt(fid, 10, 64)
+	if err != nil {
+		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid fid", echoEmptyObject, "tbsign"))
+	}
+
+	if method == "DELETE" {
+		_function.GormDB.Model(&model.TcTieba{}).Where("uid = ? AND pid = ? AND fid = ?", numberUID, numberPid, numberFid).Update("no", false)
+	} else {
+		_function.GormDB.Model(&model.TcTieba{}).Where("uid = ? AND pid = ? AND fid = ?", numberUID, numberPid, numberFid).Update("no", true)
+	}
+
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
+		"uid": numberUID,
+		"pid": numberPid,
+		"fid": numberFid,
+		"no":  method != "DELETE",
+	}, "tbsign"))
 }
 
 func CleanTiebaList(c echo.Context) error {
