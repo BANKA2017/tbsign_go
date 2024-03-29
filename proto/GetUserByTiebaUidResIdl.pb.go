@@ -6,7 +6,7 @@
 // 	protoc        v3.12.4
 // source: GetUserByTiebaUidResIdl.proto
 
-package proto
+package __
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -22,348 +22,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type Error struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Errorno int32  `protobuf:"varint,1,opt,name=errorno,proto3" json:"errorno,omitempty"`
-	Errmsg  string `protobuf:"bytes,2,opt,name=errmsg,proto3" json:"errmsg,omitempty"`
-}
-
-func (x *Error) Reset() {
-	*x = Error{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *Error) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Error) ProtoMessage() {}
-
-func (x *Error) ProtoReflect() protoreflect.Message {
-	mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Error.ProtoReflect.Descriptor instead.
-func (*Error) Descriptor() ([]byte, []int) {
-	return file_GetUserByTiebaUidResIdl_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *Error) GetErrorno() int32 {
-	if x != nil {
-		return x.Errorno
-	}
-	return 0
-}
-
-func (x *Error) GetErrmsg() string {
-	if x != nil {
-		return x.Errmsg
-	}
-	return ""
-}
-
-type User struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id               int64                  `protobuf:"varint,2,opt,name=id,proto3" json:"id,omitempty"`
-	Name             string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	NameShow         string                 `protobuf:"bytes,4,opt,name=name_show,json=nameShow,proto3" json:"name_show,omitempty"`
-	Portrait         string                 `protobuf:"bytes,5,opt,name=portrait,proto3" json:"portrait,omitempty"`
-	Iconinfo         []*User_Icon           `protobuf:"bytes,17,rep,name=iconinfo,proto3" json:"iconinfo,omitempty"`
-	IsCoreuser       int32                  `protobuf:"varint,20,opt,name=is_coreuser,json=isCoreuser,proto3" json:"is_coreuser,omitempty"`
-	LevelId          int32                  `protobuf:"varint,23,opt,name=level_id,json=levelId,proto3" json:"level_id,omitempty"`
-	IsBawu           int32                  `protobuf:"varint,25,opt,name=is_bawu,json=isBawu,proto3" json:"is_bawu,omitempty"`
-	BawuType         string                 `protobuf:"bytes,26,opt,name=bawu_type,json=bawuType,proto3" json:"bawu_type,omitempty"`
-	BDUSS            string                 `protobuf:"bytes,29,opt,name=BDUSS,proto3" json:"BDUSS,omitempty"`
-	FansNum          int32                  `protobuf:"varint,30,opt,name=fans_num,json=fansNum,proto3" json:"fans_num,omitempty"`
-	ConcernNum       int32                  `protobuf:"varint,31,opt,name=concern_num,json=concernNum,proto3" json:"concern_num,omitempty"`
-	Sex              int32                  `protobuf:"varint,32,opt,name=sex,proto3" json:"sex,omitempty"`
-	MyLikeNum        int32                  `protobuf:"varint,33,opt,name=my_like_num,json=myLikeNum,proto3" json:"my_like_num,omitempty"`
-	Intro            string                 `protobuf:"bytes,34,opt,name=intro,proto3" json:"intro,omitempty"`
-	PostNum          int32                  `protobuf:"varint,37,opt,name=post_num,json=postNum,proto3" json:"post_num,omitempty"`
-	TbAge            string                 `protobuf:"bytes,38,opt,name=tb_age,json=tbAge,proto3" json:"tb_age,omitempty"`
-	Gender           int32                  `protobuf:"varint,42,opt,name=gender,proto3" json:"gender,omitempty"`
-	PrivSets         *User_PrivSets         `protobuf:"bytes,45,opt,name=priv_sets,json=privSets,proto3" json:"priv_sets,omitempty"`
-	IsFriend         int32                  `protobuf:"varint,46,opt,name=is_friend,json=isFriend,proto3" json:"is_friend,omitempty"`
-	LikeForum        []*User_LikeForumInfo  `protobuf:"bytes,47,rep,name=likeForum,proto3" json:"likeForum,omitempty"`
-	IsGuanfang       int32                  `protobuf:"varint,52,opt,name=is_guanfang,json=isGuanfang,proto3" json:"is_guanfang,omitempty"`
-	VipInfo          *User_UserVipInfo      `protobuf:"bytes,61,opt,name=vipInfo,proto3" json:"vipInfo,omitempty"`
-	NewTshowIcon     []*User_TshowInfo      `protobuf:"bytes,65,rep,name=new_tshow_icon,json=newTshowIcon,proto3" json:"new_tshow_icon,omitempty"`
-	IsFans           int32                  `protobuf:"varint,91,opt,name=is_fans,json=isFans,proto3" json:"is_fans,omitempty"`
-	NewGodData       *User_NewGodInfo       `protobuf:"bytes,101,opt,name=new_god_data,json=newGodData,proto3" json:"new_god_data,omitempty"`
-	IsDefaultAvatar  int32                  `protobuf:"varint,106,opt,name=is_default_avatar,json=isDefaultAvatar,proto3" json:"is_default_avatar,omitempty"`
-	TiebaUid         string                 `protobuf:"bytes,120,opt,name=tieba_uid,json=tiebaUid,proto3" json:"tieba_uid,omitempty"`
-	IpAddress        string                 `protobuf:"bytes,127,opt,name=ip_address,json=ipAddress,proto3" json:"ip_address,omitempty"`
-	VirtualImageInfo *User_VirtualImageInfo `protobuf:"bytes,136,opt,name=virtual_image_info,json=virtualImageInfo,proto3" json:"virtual_image_info,omitempty"`
-	UserGrowth       *User_UserGrowth       `protobuf:"bytes,137,opt,name=user_growth,json=userGrowth,proto3" json:"user_growth,omitempty"`
-}
-
-func (x *User) Reset() {
-	*x = User{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *User) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*User) ProtoMessage() {}
-
-func (x *User) ProtoReflect() protoreflect.Message {
-	mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use User.ProtoReflect.Descriptor instead.
-func (*User) Descriptor() ([]byte, []int) {
-	return file_GetUserByTiebaUidResIdl_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *User) GetId() int64 {
-	if x != nil {
-		return x.Id
-	}
-	return 0
-}
-
-func (x *User) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *User) GetNameShow() string {
-	if x != nil {
-		return x.NameShow
-	}
-	return ""
-}
-
-func (x *User) GetPortrait() string {
-	if x != nil {
-		return x.Portrait
-	}
-	return ""
-}
-
-func (x *User) GetIconinfo() []*User_Icon {
-	if x != nil {
-		return x.Iconinfo
-	}
-	return nil
-}
-
-func (x *User) GetIsCoreuser() int32 {
-	if x != nil {
-		return x.IsCoreuser
-	}
-	return 0
-}
-
-func (x *User) GetLevelId() int32 {
-	if x != nil {
-		return x.LevelId
-	}
-	return 0
-}
-
-func (x *User) GetIsBawu() int32 {
-	if x != nil {
-		return x.IsBawu
-	}
-	return 0
-}
-
-func (x *User) GetBawuType() string {
-	if x != nil {
-		return x.BawuType
-	}
-	return ""
-}
-
-func (x *User) GetBDUSS() string {
-	if x != nil {
-		return x.BDUSS
-	}
-	return ""
-}
-
-func (x *User) GetFansNum() int32 {
-	if x != nil {
-		return x.FansNum
-	}
-	return 0
-}
-
-func (x *User) GetConcernNum() int32 {
-	if x != nil {
-		return x.ConcernNum
-	}
-	return 0
-}
-
-func (x *User) GetSex() int32 {
-	if x != nil {
-		return x.Sex
-	}
-	return 0
-}
-
-func (x *User) GetMyLikeNum() int32 {
-	if x != nil {
-		return x.MyLikeNum
-	}
-	return 0
-}
-
-func (x *User) GetIntro() string {
-	if x != nil {
-		return x.Intro
-	}
-	return ""
-}
-
-func (x *User) GetPostNum() int32 {
-	if x != nil {
-		return x.PostNum
-	}
-	return 0
-}
-
-func (x *User) GetTbAge() string {
-	if x != nil {
-		return x.TbAge
-	}
-	return ""
-}
-
-func (x *User) GetGender() int32 {
-	if x != nil {
-		return x.Gender
-	}
-	return 0
-}
-
-func (x *User) GetPrivSets() *User_PrivSets {
-	if x != nil {
-		return x.PrivSets
-	}
-	return nil
-}
-
-func (x *User) GetIsFriend() int32 {
-	if x != nil {
-		return x.IsFriend
-	}
-	return 0
-}
-
-func (x *User) GetLikeForum() []*User_LikeForumInfo {
-	if x != nil {
-		return x.LikeForum
-	}
-	return nil
-}
-
-func (x *User) GetIsGuanfang() int32 {
-	if x != nil {
-		return x.IsGuanfang
-	}
-	return 0
-}
-
-func (x *User) GetVipInfo() *User_UserVipInfo {
-	if x != nil {
-		return x.VipInfo
-	}
-	return nil
-}
-
-func (x *User) GetNewTshowIcon() []*User_TshowInfo {
-	if x != nil {
-		return x.NewTshowIcon
-	}
-	return nil
-}
-
-func (x *User) GetIsFans() int32 {
-	if x != nil {
-		return x.IsFans
-	}
-	return 0
-}
-
-func (x *User) GetNewGodData() *User_NewGodInfo {
-	if x != nil {
-		return x.NewGodData
-	}
-	return nil
-}
-
-func (x *User) GetIsDefaultAvatar() int32 {
-	if x != nil {
-		return x.IsDefaultAvatar
-	}
-	return 0
-}
-
-func (x *User) GetTiebaUid() string {
-	if x != nil {
-		return x.TiebaUid
-	}
-	return ""
-}
-
-func (x *User) GetIpAddress() string {
-	if x != nil {
-		return x.IpAddress
-	}
-	return ""
-}
-
-func (x *User) GetVirtualImageInfo() *User_VirtualImageInfo {
-	if x != nil {
-		return x.VirtualImageInfo
-	}
-	return nil
-}
-
-func (x *User) GetUserGrowth() *User_UserGrowth {
-	if x != nil {
-		return x.UserGrowth
-	}
-	return nil
-}
-
 type GetUserByTiebaUidResIdl struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -376,7 +34,7 @@ type GetUserByTiebaUidResIdl struct {
 func (x *GetUserByTiebaUidResIdl) Reset() {
 	*x = GetUserByTiebaUidResIdl{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[2]
+		mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -389,7 +47,7 @@ func (x *GetUserByTiebaUidResIdl) String() string {
 func (*GetUserByTiebaUidResIdl) ProtoMessage() {}
 
 func (x *GetUserByTiebaUidResIdl) ProtoReflect() protoreflect.Message {
-	mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[2]
+	mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -402,7 +60,7 @@ func (x *GetUserByTiebaUidResIdl) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserByTiebaUidResIdl.ProtoReflect.Descriptor instead.
 func (*GetUserByTiebaUidResIdl) Descriptor() ([]byte, []int) {
-	return file_GetUserByTiebaUidResIdl_proto_rawDescGZIP(), []int{2}
+	return file_GetUserByTiebaUidResIdl_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GetUserByTiebaUidResIdl) GetError() *Error {
@@ -419,533 +77,6 @@ func (x *GetUserByTiebaUidResIdl) GetData() *GetUserByTiebaUidResIdl_DataRes {
 	return nil
 }
 
-type User_Icon struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-}
-
-func (x *User_Icon) Reset() {
-	*x = User_Icon{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *User_Icon) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*User_Icon) ProtoMessage() {}
-
-func (x *User_Icon) ProtoReflect() protoreflect.Message {
-	mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use User_Icon.ProtoReflect.Descriptor instead.
-func (*User_Icon) Descriptor() ([]byte, []int) {
-	return file_GetUserByTiebaUidResIdl_proto_rawDescGZIP(), []int{1, 0}
-}
-
-func (x *User_Icon) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-type User_PrivSets struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Location         int32 `protobuf:"varint,1,opt,name=location,proto3" json:"location,omitempty"`
-	Like             int32 `protobuf:"varint,2,opt,name=like,proto3" json:"like,omitempty"`
-	Group            int32 `protobuf:"varint,3,opt,name=group,proto3" json:"group,omitempty"`
-	Post             int32 `protobuf:"varint,4,opt,name=post,proto3" json:"post,omitempty"`
-	Friend           int32 `protobuf:"varint,5,opt,name=friend,proto3" json:"friend,omitempty"`
-	Live             int32 `protobuf:"varint,6,opt,name=live,proto3" json:"live,omitempty"`
-	Reply            int32 `protobuf:"varint,7,opt,name=reply,proto3" json:"reply,omitempty"`
-	BazhuShowInside  int32 `protobuf:"varint,8,opt,name=bazhu_show_inside,json=bazhuShowInside,proto3" json:"bazhu_show_inside,omitempty"`
-	BazhuShowOutside int32 `protobuf:"varint,9,opt,name=bazhu_show_outside,json=bazhuShowOutside,proto3" json:"bazhu_show_outside,omitempty"`
-}
-
-func (x *User_PrivSets) Reset() {
-	*x = User_PrivSets{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *User_PrivSets) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*User_PrivSets) ProtoMessage() {}
-
-func (x *User_PrivSets) ProtoReflect() protoreflect.Message {
-	mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use User_PrivSets.ProtoReflect.Descriptor instead.
-func (*User_PrivSets) Descriptor() ([]byte, []int) {
-	return file_GetUserByTiebaUidResIdl_proto_rawDescGZIP(), []int{1, 1}
-}
-
-func (x *User_PrivSets) GetLocation() int32 {
-	if x != nil {
-		return x.Location
-	}
-	return 0
-}
-
-func (x *User_PrivSets) GetLike() int32 {
-	if x != nil {
-		return x.Like
-	}
-	return 0
-}
-
-func (x *User_PrivSets) GetGroup() int32 {
-	if x != nil {
-		return x.Group
-	}
-	return 0
-}
-
-func (x *User_PrivSets) GetPost() int32 {
-	if x != nil {
-		return x.Post
-	}
-	return 0
-}
-
-func (x *User_PrivSets) GetFriend() int32 {
-	if x != nil {
-		return x.Friend
-	}
-	return 0
-}
-
-func (x *User_PrivSets) GetLive() int32 {
-	if x != nil {
-		return x.Live
-	}
-	return 0
-}
-
-func (x *User_PrivSets) GetReply() int32 {
-	if x != nil {
-		return x.Reply
-	}
-	return 0
-}
-
-func (x *User_PrivSets) GetBazhuShowInside() int32 {
-	if x != nil {
-		return x.BazhuShowInside
-	}
-	return 0
-}
-
-func (x *User_PrivSets) GetBazhuShowOutside() int32 {
-	if x != nil {
-		return x.BazhuShowOutside
-	}
-	return 0
-}
-
-type User_LikeForumInfo struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	ForumName string `protobuf:"bytes,1,opt,name=forum_name,json=forumName,proto3" json:"forum_name,omitempty"`
-	ForumId   uint64 `protobuf:"varint,2,opt,name=forum_id,json=forumId,proto3" json:"forum_id,omitempty"`
-}
-
-func (x *User_LikeForumInfo) Reset() {
-	*x = User_LikeForumInfo{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[5]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *User_LikeForumInfo) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*User_LikeForumInfo) ProtoMessage() {}
-
-func (x *User_LikeForumInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use User_LikeForumInfo.ProtoReflect.Descriptor instead.
-func (*User_LikeForumInfo) Descriptor() ([]byte, []int) {
-	return file_GetUserByTiebaUidResIdl_proto_rawDescGZIP(), []int{1, 2}
-}
-
-func (x *User_LikeForumInfo) GetForumName() string {
-	if x != nil {
-		return x.ForumName
-	}
-	return ""
-}
-
-func (x *User_LikeForumInfo) GetForumId() uint64 {
-	if x != nil {
-		return x.ForumId
-	}
-	return 0
-}
-
-type User_UserVipInfo struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	VStatus uint32 `protobuf:"varint,1,opt,name=v_status,json=vStatus,proto3" json:"v_status,omitempty"`
-	VLevel  uint32 `protobuf:"varint,5,opt,name=v_level,json=vLevel,proto3" json:"v_level,omitempty"`
-}
-
-func (x *User_UserVipInfo) Reset() {
-	*x = User_UserVipInfo{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *User_UserVipInfo) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*User_UserVipInfo) ProtoMessage() {}
-
-func (x *User_UserVipInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use User_UserVipInfo.ProtoReflect.Descriptor instead.
-func (*User_UserVipInfo) Descriptor() ([]byte, []int) {
-	return file_GetUserByTiebaUidResIdl_proto_rawDescGZIP(), []int{1, 3}
-}
-
-func (x *User_UserVipInfo) GetVStatus() uint32 {
-	if x != nil {
-		return x.VStatus
-	}
-	return 0
-}
-
-func (x *User_UserVipInfo) GetVLevel() uint32 {
-	if x != nil {
-		return x.VLevel
-	}
-	return 0
-}
-
-type User_TshowInfo struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-}
-
-func (x *User_TshowInfo) Reset() {
-	*x = User_TshowInfo{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[7]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *User_TshowInfo) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*User_TshowInfo) ProtoMessage() {}
-
-func (x *User_TshowInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[7]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use User_TshowInfo.ProtoReflect.Descriptor instead.
-func (*User_TshowInfo) Descriptor() ([]byte, []int) {
-	return file_GetUserByTiebaUidResIdl_proto_rawDescGZIP(), []int{1, 4}
-}
-
-func (x *User_TshowInfo) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-type User_NewGodInfo struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Status    int32  `protobuf:"varint,1,opt,name=status,proto3" json:"status,omitempty"`
-	FieldId   uint32 `protobuf:"varint,2,opt,name=field_id,json=fieldId,proto3" json:"field_id,omitempty"`
-	FieldName string `protobuf:"bytes,3,opt,name=field_name,json=fieldName,proto3" json:"field_name,omitempty"`
-}
-
-func (x *User_NewGodInfo) Reset() {
-	*x = User_NewGodInfo{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[8]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *User_NewGodInfo) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*User_NewGodInfo) ProtoMessage() {}
-
-func (x *User_NewGodInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[8]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use User_NewGodInfo.ProtoReflect.Descriptor instead.
-func (*User_NewGodInfo) Descriptor() ([]byte, []int) {
-	return file_GetUserByTiebaUidResIdl_proto_rawDescGZIP(), []int{1, 5}
-}
-
-func (x *User_NewGodInfo) GetStatus() int32 {
-	if x != nil {
-		return x.Status
-	}
-	return 0
-}
-
-func (x *User_NewGodInfo) GetFieldId() uint32 {
-	if x != nil {
-		return x.FieldId
-	}
-	return 0
-}
-
-func (x *User_NewGodInfo) GetFieldName() string {
-	if x != nil {
-		return x.FieldName
-	}
-	return ""
-}
-
-type User_VirtualImageInfo struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	IssetVirtualImage int32                            `protobuf:"varint,1,opt,name=isset_virtual_image,json=issetVirtualImage,proto3" json:"isset_virtual_image,omitempty"`
-	PersonalState     *User_VirtualImageInfo_StateInfo `protobuf:"bytes,9,opt,name=personal_state,json=personalState,proto3" json:"personal_state,omitempty"`
-}
-
-func (x *User_VirtualImageInfo) Reset() {
-	*x = User_VirtualImageInfo{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[9]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *User_VirtualImageInfo) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*User_VirtualImageInfo) ProtoMessage() {}
-
-func (x *User_VirtualImageInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[9]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use User_VirtualImageInfo.ProtoReflect.Descriptor instead.
-func (*User_VirtualImageInfo) Descriptor() ([]byte, []int) {
-	return file_GetUserByTiebaUidResIdl_proto_rawDescGZIP(), []int{1, 6}
-}
-
-func (x *User_VirtualImageInfo) GetIssetVirtualImage() int32 {
-	if x != nil {
-		return x.IssetVirtualImage
-	}
-	return 0
-}
-
-func (x *User_VirtualImageInfo) GetPersonalState() *User_VirtualImageInfo_StateInfo {
-	if x != nil {
-		return x.PersonalState
-	}
-	return nil
-}
-
-type User_UserGrowth struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	LevelId uint32 `protobuf:"varint,1,opt,name=level_id,json=levelId,proto3" json:"level_id,omitempty"`
-}
-
-func (x *User_UserGrowth) Reset() {
-	*x = User_UserGrowth{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[10]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *User_UserGrowth) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*User_UserGrowth) ProtoMessage() {}
-
-func (x *User_UserGrowth) ProtoReflect() protoreflect.Message {
-	mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[10]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use User_UserGrowth.ProtoReflect.Descriptor instead.
-func (*User_UserGrowth) Descriptor() ([]byte, []int) {
-	return file_GetUserByTiebaUidResIdl_proto_rawDescGZIP(), []int{1, 7}
-}
-
-func (x *User_UserGrowth) GetLevelId() uint32 {
-	if x != nil {
-		return x.LevelId
-	}
-	return 0
-}
-
-type User_VirtualImageInfo_StateInfo struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Text string `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
-}
-
-func (x *User_VirtualImageInfo_StateInfo) Reset() {
-	*x = User_VirtualImageInfo_StateInfo{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[11]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *User_VirtualImageInfo_StateInfo) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*User_VirtualImageInfo_StateInfo) ProtoMessage() {}
-
-func (x *User_VirtualImageInfo_StateInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[11]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use User_VirtualImageInfo_StateInfo.ProtoReflect.Descriptor instead.
-func (*User_VirtualImageInfo_StateInfo) Descriptor() ([]byte, []int) {
-	return file_GetUserByTiebaUidResIdl_proto_rawDescGZIP(), []int{1, 6, 0}
-}
-
-func (x *User_VirtualImageInfo_StateInfo) GetText() string {
-	if x != nil {
-		return x.Text
-	}
-	return ""
-}
-
 type GetUserByTiebaUidResIdl_DataRes struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -957,7 +88,7 @@ type GetUserByTiebaUidResIdl_DataRes struct {
 func (x *GetUserByTiebaUidResIdl_DataRes) Reset() {
 	*x = GetUserByTiebaUidResIdl_DataRes{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[12]
+		mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -970,7 +101,7 @@ func (x *GetUserByTiebaUidResIdl_DataRes) String() string {
 func (*GetUserByTiebaUidResIdl_DataRes) ProtoMessage() {}
 
 func (x *GetUserByTiebaUidResIdl_DataRes) ProtoReflect() protoreflect.Message {
-	mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[12]
+	mi := &file_GetUserByTiebaUidResIdl_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -983,7 +114,7 @@ func (x *GetUserByTiebaUidResIdl_DataRes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserByTiebaUidResIdl_DataRes.ProtoReflect.Descriptor instead.
 func (*GetUserByTiebaUidResIdl_DataRes) Descriptor() ([]byte, []int) {
-	return file_GetUserByTiebaUidResIdl_proto_rawDescGZIP(), []int{2, 0}
+	return file_GetUserByTiebaUidResIdl_proto_rawDescGZIP(), []int{0, 0}
 }
 
 func (x *GetUserByTiebaUidResIdl_DataRes) GetUser() *User {
@@ -997,137 +128,19 @@ var File_GetUserByTiebaUidResIdl_proto protoreflect.FileDescriptor
 
 var file_GetUserByTiebaUidResIdl_proto_rawDesc = []byte{
 	0x0a, 0x1d, 0x47, 0x65, 0x74, 0x55, 0x73, 0x65, 0x72, 0x42, 0x79, 0x54, 0x69, 0x65, 0x62, 0x61,
-	0x55, 0x69, 0x64, 0x52, 0x65, 0x73, 0x49, 0x64, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22,
-	0x39, 0x0a, 0x05, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x12, 0x18, 0x0a, 0x07, 0x65, 0x72, 0x72, 0x6f,
-	0x72, 0x6e, 0x6f, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x07, 0x65, 0x72, 0x72, 0x6f, 0x72,
-	0x6e, 0x6f, 0x12, 0x16, 0x0a, 0x06, 0x65, 0x72, 0x72, 0x6d, 0x73, 0x67, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x06, 0x65, 0x72, 0x72, 0x6d, 0x73, 0x67, 0x22, 0x99, 0x0e, 0x0a, 0x04, 0x55,
-	0x73, 0x65, 0x72, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52,
-	0x02, 0x69, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x1b, 0x0a, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x5f,
-	0x73, 0x68, 0x6f, 0x77, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x6e, 0x61, 0x6d, 0x65,
-	0x53, 0x68, 0x6f, 0x77, 0x12, 0x1a, 0x0a, 0x08, 0x70, 0x6f, 0x72, 0x74, 0x72, 0x61, 0x69, 0x74,
-	0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x70, 0x6f, 0x72, 0x74, 0x72, 0x61, 0x69, 0x74,
-	0x12, 0x26, 0x0a, 0x08, 0x69, 0x63, 0x6f, 0x6e, 0x69, 0x6e, 0x66, 0x6f, 0x18, 0x11, 0x20, 0x03,
-	0x28, 0x0b, 0x32, 0x0a, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x2e, 0x49, 0x63, 0x6f, 0x6e, 0x52, 0x08,
-	0x69, 0x63, 0x6f, 0x6e, 0x69, 0x6e, 0x66, 0x6f, 0x12, 0x1f, 0x0a, 0x0b, 0x69, 0x73, 0x5f, 0x63,
-	0x6f, 0x72, 0x65, 0x75, 0x73, 0x65, 0x72, 0x18, 0x14, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0a, 0x69,
-	0x73, 0x43, 0x6f, 0x72, 0x65, 0x75, 0x73, 0x65, 0x72, 0x12, 0x19, 0x0a, 0x08, 0x6c, 0x65, 0x76,
-	0x65, 0x6c, 0x5f, 0x69, 0x64, 0x18, 0x17, 0x20, 0x01, 0x28, 0x05, 0x52, 0x07, 0x6c, 0x65, 0x76,
-	0x65, 0x6c, 0x49, 0x64, 0x12, 0x17, 0x0a, 0x07, 0x69, 0x73, 0x5f, 0x62, 0x61, 0x77, 0x75, 0x18,
-	0x19, 0x20, 0x01, 0x28, 0x05, 0x52, 0x06, 0x69, 0x73, 0x42, 0x61, 0x77, 0x75, 0x12, 0x1b, 0x0a,
-	0x09, 0x62, 0x61, 0x77, 0x75, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x1a, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x08, 0x62, 0x61, 0x77, 0x75, 0x54, 0x79, 0x70, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x42, 0x44,
-	0x55, 0x53, 0x53, 0x18, 0x1d, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x42, 0x44, 0x55, 0x53, 0x53,
-	0x12, 0x19, 0x0a, 0x08, 0x66, 0x61, 0x6e, 0x73, 0x5f, 0x6e, 0x75, 0x6d, 0x18, 0x1e, 0x20, 0x01,
-	0x28, 0x05, 0x52, 0x07, 0x66, 0x61, 0x6e, 0x73, 0x4e, 0x75, 0x6d, 0x12, 0x1f, 0x0a, 0x0b, 0x63,
-	0x6f, 0x6e, 0x63, 0x65, 0x72, 0x6e, 0x5f, 0x6e, 0x75, 0x6d, 0x18, 0x1f, 0x20, 0x01, 0x28, 0x05,
-	0x52, 0x0a, 0x63, 0x6f, 0x6e, 0x63, 0x65, 0x72, 0x6e, 0x4e, 0x75, 0x6d, 0x12, 0x10, 0x0a, 0x03,
-	0x73, 0x65, 0x78, 0x18, 0x20, 0x20, 0x01, 0x28, 0x05, 0x52, 0x03, 0x73, 0x65, 0x78, 0x12, 0x1e,
-	0x0a, 0x0b, 0x6d, 0x79, 0x5f, 0x6c, 0x69, 0x6b, 0x65, 0x5f, 0x6e, 0x75, 0x6d, 0x18, 0x21, 0x20,
-	0x01, 0x28, 0x05, 0x52, 0x09, 0x6d, 0x79, 0x4c, 0x69, 0x6b, 0x65, 0x4e, 0x75, 0x6d, 0x12, 0x14,
-	0x0a, 0x05, 0x69, 0x6e, 0x74, 0x72, 0x6f, 0x18, 0x22, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x69,
-	0x6e, 0x74, 0x72, 0x6f, 0x12, 0x19, 0x0a, 0x08, 0x70, 0x6f, 0x73, 0x74, 0x5f, 0x6e, 0x75, 0x6d,
-	0x18, 0x25, 0x20, 0x01, 0x28, 0x05, 0x52, 0x07, 0x70, 0x6f, 0x73, 0x74, 0x4e, 0x75, 0x6d, 0x12,
-	0x15, 0x0a, 0x06, 0x74, 0x62, 0x5f, 0x61, 0x67, 0x65, 0x18, 0x26, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x05, 0x74, 0x62, 0x41, 0x67, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x67, 0x65, 0x6e, 0x64, 0x65, 0x72,
-	0x18, 0x2a, 0x20, 0x01, 0x28, 0x05, 0x52, 0x06, 0x67, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x12, 0x2b,
-	0x0a, 0x09, 0x70, 0x72, 0x69, 0x76, 0x5f, 0x73, 0x65, 0x74, 0x73, 0x18, 0x2d, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x0e, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x2e, 0x50, 0x72, 0x69, 0x76, 0x53, 0x65, 0x74,
-	0x73, 0x52, 0x08, 0x70, 0x72, 0x69, 0x76, 0x53, 0x65, 0x74, 0x73, 0x12, 0x1b, 0x0a, 0x09, 0x69,
-	0x73, 0x5f, 0x66, 0x72, 0x69, 0x65, 0x6e, 0x64, 0x18, 0x2e, 0x20, 0x01, 0x28, 0x05, 0x52, 0x08,
-	0x69, 0x73, 0x46, 0x72, 0x69, 0x65, 0x6e, 0x64, 0x12, 0x31, 0x0a, 0x09, 0x6c, 0x69, 0x6b, 0x65,
-	0x46, 0x6f, 0x72, 0x75, 0x6d, 0x18, 0x2f, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x55, 0x73,
-	0x65, 0x72, 0x2e, 0x4c, 0x69, 0x6b, 0x65, 0x46, 0x6f, 0x72, 0x75, 0x6d, 0x49, 0x6e, 0x66, 0x6f,
-	0x52, 0x09, 0x6c, 0x69, 0x6b, 0x65, 0x46, 0x6f, 0x72, 0x75, 0x6d, 0x12, 0x1f, 0x0a, 0x0b, 0x69,
-	0x73, 0x5f, 0x67, 0x75, 0x61, 0x6e, 0x66, 0x61, 0x6e, 0x67, 0x18, 0x34, 0x20, 0x01, 0x28, 0x05,
-	0x52, 0x0a, 0x69, 0x73, 0x47, 0x75, 0x61, 0x6e, 0x66, 0x61, 0x6e, 0x67, 0x12, 0x2b, 0x0a, 0x07,
-	0x76, 0x69, 0x70, 0x49, 0x6e, 0x66, 0x6f, 0x18, 0x3d, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e,
-	0x55, 0x73, 0x65, 0x72, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x56, 0x69, 0x70, 0x49, 0x6e, 0x66, 0x6f,
-	0x52, 0x07, 0x76, 0x69, 0x70, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x35, 0x0a, 0x0e, 0x6e, 0x65, 0x77,
-	0x5f, 0x74, 0x73, 0x68, 0x6f, 0x77, 0x5f, 0x69, 0x63, 0x6f, 0x6e, 0x18, 0x41, 0x20, 0x03, 0x28,
-	0x0b, 0x32, 0x0f, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x2e, 0x54, 0x73, 0x68, 0x6f, 0x77, 0x49, 0x6e,
-	0x66, 0x6f, 0x52, 0x0c, 0x6e, 0x65, 0x77, 0x54, 0x73, 0x68, 0x6f, 0x77, 0x49, 0x63, 0x6f, 0x6e,
-	0x12, 0x17, 0x0a, 0x07, 0x69, 0x73, 0x5f, 0x66, 0x61, 0x6e, 0x73, 0x18, 0x5b, 0x20, 0x01, 0x28,
-	0x05, 0x52, 0x06, 0x69, 0x73, 0x46, 0x61, 0x6e, 0x73, 0x12, 0x32, 0x0a, 0x0c, 0x6e, 0x65, 0x77,
-	0x5f, 0x67, 0x6f, 0x64, 0x5f, 0x64, 0x61, 0x74, 0x61, 0x18, 0x65, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x10, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x2e, 0x4e, 0x65, 0x77, 0x47, 0x6f, 0x64, 0x49, 0x6e, 0x66,
-	0x6f, 0x52, 0x0a, 0x6e, 0x65, 0x77, 0x47, 0x6f, 0x64, 0x44, 0x61, 0x74, 0x61, 0x12, 0x2a, 0x0a,
-	0x11, 0x69, 0x73, 0x5f, 0x64, 0x65, 0x66, 0x61, 0x75, 0x6c, 0x74, 0x5f, 0x61, 0x76, 0x61, 0x74,
-	0x61, 0x72, 0x18, 0x6a, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0f, 0x69, 0x73, 0x44, 0x65, 0x66, 0x61,
-	0x75, 0x6c, 0x74, 0x41, 0x76, 0x61, 0x74, 0x61, 0x72, 0x12, 0x1b, 0x0a, 0x09, 0x74, 0x69, 0x65,
-	0x62, 0x61, 0x5f, 0x75, 0x69, 0x64, 0x18, 0x78, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x74, 0x69,
-	0x65, 0x62, 0x61, 0x55, 0x69, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x69, 0x70, 0x5f, 0x61, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x18, 0x7f, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x69, 0x70, 0x41, 0x64,
-	0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x45, 0x0a, 0x12, 0x76, 0x69, 0x72, 0x74, 0x75, 0x61, 0x6c,
-	0x5f, 0x69, 0x6d, 0x61, 0x67, 0x65, 0x5f, 0x69, 0x6e, 0x66, 0x6f, 0x18, 0x88, 0x01, 0x20, 0x01,
-	0x28, 0x0b, 0x32, 0x16, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x2e, 0x56, 0x69, 0x72, 0x74, 0x75, 0x61,
-	0x6c, 0x49, 0x6d, 0x61, 0x67, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x10, 0x76, 0x69, 0x72, 0x74,
-	0x75, 0x61, 0x6c, 0x49, 0x6d, 0x61, 0x67, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x32, 0x0a, 0x0b,
-	0x75, 0x73, 0x65, 0x72, 0x5f, 0x67, 0x72, 0x6f, 0x77, 0x74, 0x68, 0x18, 0x89, 0x01, 0x20, 0x01,
-	0x28, 0x0b, 0x32, 0x10, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x47, 0x72,
-	0x6f, 0x77, 0x74, 0x68, 0x52, 0x0a, 0x75, 0x73, 0x65, 0x72, 0x47, 0x72, 0x6f, 0x77, 0x74, 0x68,
-	0x1a, 0x1a, 0x0a, 0x04, 0x49, 0x63, 0x6f, 0x6e, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x1a, 0x80, 0x02, 0x0a,
-	0x08, 0x50, 0x72, 0x69, 0x76, 0x53, 0x65, 0x74, 0x73, 0x12, 0x1a, 0x0a, 0x08, 0x6c, 0x6f, 0x63,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x08, 0x6c, 0x6f, 0x63,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x12, 0x0a, 0x04, 0x6c, 0x69, 0x6b, 0x65, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x05, 0x52, 0x04, 0x6c, 0x69, 0x6b, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x67, 0x72, 0x6f,
-	0x75, 0x70, 0x18, 0x03, 0x20, 0x01, 0x28, 0x05, 0x52, 0x05, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x12,
-	0x12, 0x0a, 0x04, 0x70, 0x6f, 0x73, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x05, 0x52, 0x04, 0x70,
-	0x6f, 0x73, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x66, 0x72, 0x69, 0x65, 0x6e, 0x64, 0x18, 0x05, 0x20,
-	0x01, 0x28, 0x05, 0x52, 0x06, 0x66, 0x72, 0x69, 0x65, 0x6e, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x6c,
-	0x69, 0x76, 0x65, 0x18, 0x06, 0x20, 0x01, 0x28, 0x05, 0x52, 0x04, 0x6c, 0x69, 0x76, 0x65, 0x12,
-	0x14, 0x0a, 0x05, 0x72, 0x65, 0x70, 0x6c, 0x79, 0x18, 0x07, 0x20, 0x01, 0x28, 0x05, 0x52, 0x05,
-	0x72, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x2a, 0x0a, 0x11, 0x62, 0x61, 0x7a, 0x68, 0x75, 0x5f, 0x73,
-	0x68, 0x6f, 0x77, 0x5f, 0x69, 0x6e, 0x73, 0x69, 0x64, 0x65, 0x18, 0x08, 0x20, 0x01, 0x28, 0x05,
-	0x52, 0x0f, 0x62, 0x61, 0x7a, 0x68, 0x75, 0x53, 0x68, 0x6f, 0x77, 0x49, 0x6e, 0x73, 0x69, 0x64,
-	0x65, 0x12, 0x2c, 0x0a, 0x12, 0x62, 0x61, 0x7a, 0x68, 0x75, 0x5f, 0x73, 0x68, 0x6f, 0x77, 0x5f,
-	0x6f, 0x75, 0x74, 0x73, 0x69, 0x64, 0x65, 0x18, 0x09, 0x20, 0x01, 0x28, 0x05, 0x52, 0x10, 0x62,
-	0x61, 0x7a, 0x68, 0x75, 0x53, 0x68, 0x6f, 0x77, 0x4f, 0x75, 0x74, 0x73, 0x69, 0x64, 0x65, 0x1a,
-	0x49, 0x0a, 0x0d, 0x4c, 0x69, 0x6b, 0x65, 0x46, 0x6f, 0x72, 0x75, 0x6d, 0x49, 0x6e, 0x66, 0x6f,
-	0x12, 0x1d, 0x0a, 0x0a, 0x66, 0x6f, 0x72, 0x75, 0x6d, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x66, 0x6f, 0x72, 0x75, 0x6d, 0x4e, 0x61, 0x6d, 0x65, 0x12,
-	0x19, 0x0a, 0x08, 0x66, 0x6f, 0x72, 0x75, 0x6d, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x04, 0x52, 0x07, 0x66, 0x6f, 0x72, 0x75, 0x6d, 0x49, 0x64, 0x1a, 0x41, 0x0a, 0x0b, 0x55, 0x73,
-	0x65, 0x72, 0x56, 0x69, 0x70, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x19, 0x0a, 0x08, 0x76, 0x5f, 0x73,
-	0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x07, 0x76, 0x53, 0x74,
-	0x61, 0x74, 0x75, 0x73, 0x12, 0x17, 0x0a, 0x07, 0x76, 0x5f, 0x6c, 0x65, 0x76, 0x65, 0x6c, 0x18,
-	0x05, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x06, 0x76, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x1a, 0x1f, 0x0a,
-	0x09, 0x54, 0x73, 0x68, 0x6f, 0x77, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61,
-	0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x1a, 0x5e,
-	0x0a, 0x0a, 0x4e, 0x65, 0x77, 0x47, 0x6f, 0x64, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x16, 0x0a, 0x06,
-	0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x06, 0x73, 0x74,
-	0x61, 0x74, 0x75, 0x73, 0x12, 0x19, 0x0a, 0x08, 0x66, 0x69, 0x65, 0x6c, 0x64, 0x5f, 0x69, 0x64,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x07, 0x66, 0x69, 0x65, 0x6c, 0x64, 0x49, 0x64, 0x12,
-	0x1d, 0x0a, 0x0a, 0x66, 0x69, 0x65, 0x6c, 0x64, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x03, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x09, 0x66, 0x69, 0x65, 0x6c, 0x64, 0x4e, 0x61, 0x6d, 0x65, 0x1a, 0xac,
-	0x01, 0x0a, 0x10, 0x56, 0x69, 0x72, 0x74, 0x75, 0x61, 0x6c, 0x49, 0x6d, 0x61, 0x67, 0x65, 0x49,
-	0x6e, 0x66, 0x6f, 0x12, 0x2e, 0x0a, 0x13, 0x69, 0x73, 0x73, 0x65, 0x74, 0x5f, 0x76, 0x69, 0x72,
-	0x74, 0x75, 0x61, 0x6c, 0x5f, 0x69, 0x6d, 0x61, 0x67, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05,
-	0x52, 0x11, 0x69, 0x73, 0x73, 0x65, 0x74, 0x56, 0x69, 0x72, 0x74, 0x75, 0x61, 0x6c, 0x49, 0x6d,
-	0x61, 0x67, 0x65, 0x12, 0x47, 0x0a, 0x0e, 0x70, 0x65, 0x72, 0x73, 0x6f, 0x6e, 0x61, 0x6c, 0x5f,
-	0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x55, 0x73,
-	0x65, 0x72, 0x2e, 0x56, 0x69, 0x72, 0x74, 0x75, 0x61, 0x6c, 0x49, 0x6d, 0x61, 0x67, 0x65, 0x49,
-	0x6e, 0x66, 0x6f, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x0d, 0x70,
-	0x65, 0x72, 0x73, 0x6f, 0x6e, 0x61, 0x6c, 0x53, 0x74, 0x61, 0x74, 0x65, 0x1a, 0x1f, 0x0a, 0x09,
-	0x53, 0x74, 0x61, 0x74, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x65, 0x78,
-	0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74, 0x65, 0x78, 0x74, 0x1a, 0x27, 0x0a,
-	0x0a, 0x55, 0x73, 0x65, 0x72, 0x47, 0x72, 0x6f, 0x77, 0x74, 0x68, 0x12, 0x19, 0x0a, 0x08, 0x6c,
-	0x65, 0x76, 0x65, 0x6c, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x07, 0x6c,
-	0x65, 0x76, 0x65, 0x6c, 0x49, 0x64, 0x22, 0x93, 0x01, 0x0a, 0x17, 0x47, 0x65, 0x74, 0x55, 0x73,
-	0x65, 0x72, 0x42, 0x79, 0x54, 0x69, 0x65, 0x62, 0x61, 0x55, 0x69, 0x64, 0x52, 0x65, 0x73, 0x49,
-	0x64, 0x6c, 0x12, 0x1c, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x06, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72,
-	0x12, 0x34, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x20,
-	0x2e, 0x47, 0x65, 0x74, 0x55, 0x73, 0x65, 0x72, 0x42, 0x79, 0x54, 0x69, 0x65, 0x62, 0x61, 0x55,
-	0x69, 0x64, 0x52, 0x65, 0x73, 0x49, 0x64, 0x6c, 0x2e, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65, 0x73,
-	0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x1a, 0x24, 0x0a, 0x07, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65,
-	0x73, 0x12, 0x19, 0x0a, 0x04, 0x75, 0x73, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x05, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x52, 0x04, 0x75, 0x73, 0x65, 0x72, 0x42, 0x26, 0x5a, 0x24,
-	0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x42, 0x41, 0x4e, 0x4b, 0x41,
-	0x32, 0x30, 0x31, 0x37, 0x2f, 0x74, 0x62, 0x73, 0x69, 0x67, 0x6e, 0x5f, 0x67, 0x6f, 0x2f, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x55, 0x69, 0x64, 0x52, 0x65, 0x73, 0x49, 0x64, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a,
+	0x0b, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x0a, 0x55, 0x73,
+	0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x93, 0x01, 0x0a, 0x17, 0x47, 0x65, 0x74,
+	0x55, 0x73, 0x65, 0x72, 0x42, 0x79, 0x54, 0x69, 0x65, 0x62, 0x61, 0x55, 0x69, 0x64, 0x52, 0x65,
+	0x73, 0x49, 0x64, 0x6c, 0x12, 0x1c, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x06, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72,
+	0x6f, 0x72, 0x12, 0x34, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x20, 0x2e, 0x47, 0x65, 0x74, 0x55, 0x73, 0x65, 0x72, 0x42, 0x79, 0x54, 0x69, 0x65, 0x62,
+	0x61, 0x55, 0x69, 0x64, 0x52, 0x65, 0x73, 0x49, 0x64, 0x6c, 0x2e, 0x44, 0x61, 0x74, 0x61, 0x52,
+	0x65, 0x73, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x1a, 0x24, 0x0a, 0x07, 0x44, 0x61, 0x74, 0x61,
+	0x52, 0x65, 0x73, 0x12, 0x19, 0x0a, 0x04, 0x75, 0x73, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x05, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x52, 0x04, 0x75, 0x73, 0x65, 0x72, 0x42, 0x04,
+	0x5a, 0x02, 0x2e, 0x2f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1142,40 +155,22 @@ func file_GetUserByTiebaUidResIdl_proto_rawDescGZIP() []byte {
 	return file_GetUserByTiebaUidResIdl_proto_rawDescData
 }
 
-var file_GetUserByTiebaUidResIdl_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_GetUserByTiebaUidResIdl_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_GetUserByTiebaUidResIdl_proto_goTypes = []interface{}{
-	(*Error)(nil),                           // 0: Error
-	(*User)(nil),                            // 1: User
-	(*GetUserByTiebaUidResIdl)(nil),         // 2: GetUserByTiebaUidResIdl
-	(*User_Icon)(nil),                       // 3: User.Icon
-	(*User_PrivSets)(nil),                   // 4: User.PrivSets
-	(*User_LikeForumInfo)(nil),              // 5: User.LikeForumInfo
-	(*User_UserVipInfo)(nil),                // 6: User.UserVipInfo
-	(*User_TshowInfo)(nil),                  // 7: User.TshowInfo
-	(*User_NewGodInfo)(nil),                 // 8: User.NewGodInfo
-	(*User_VirtualImageInfo)(nil),           // 9: User.VirtualImageInfo
-	(*User_UserGrowth)(nil),                 // 10: User.UserGrowth
-	(*User_VirtualImageInfo_StateInfo)(nil), // 11: User.VirtualImageInfo.StateInfo
-	(*GetUserByTiebaUidResIdl_DataRes)(nil), // 12: GetUserByTiebaUidResIdl.DataRes
+	(*GetUserByTiebaUidResIdl)(nil),         // 0: GetUserByTiebaUidResIdl
+	(*GetUserByTiebaUidResIdl_DataRes)(nil), // 1: GetUserByTiebaUidResIdl.DataRes
+	(*Error)(nil),                           // 2: Error
+	(*User)(nil),                            // 3: User
 }
 var file_GetUserByTiebaUidResIdl_proto_depIdxs = []int32{
-	3,  // 0: User.iconinfo:type_name -> User.Icon
-	4,  // 1: User.priv_sets:type_name -> User.PrivSets
-	5,  // 2: User.likeForum:type_name -> User.LikeForumInfo
-	6,  // 3: User.vipInfo:type_name -> User.UserVipInfo
-	7,  // 4: User.new_tshow_icon:type_name -> User.TshowInfo
-	8,  // 5: User.new_god_data:type_name -> User.NewGodInfo
-	9,  // 6: User.virtual_image_info:type_name -> User.VirtualImageInfo
-	10, // 7: User.user_growth:type_name -> User.UserGrowth
-	0,  // 8: GetUserByTiebaUidResIdl.error:type_name -> Error
-	12, // 9: GetUserByTiebaUidResIdl.data:type_name -> GetUserByTiebaUidResIdl.DataRes
-	11, // 10: User.VirtualImageInfo.personal_state:type_name -> User.VirtualImageInfo.StateInfo
-	1,  // 11: GetUserByTiebaUidResIdl.DataRes.user:type_name -> User
-	12, // [12:12] is the sub-list for method output_type
-	12, // [12:12] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	2, // 0: GetUserByTiebaUidResIdl.error:type_name -> Error
+	1, // 1: GetUserByTiebaUidResIdl.data:type_name -> GetUserByTiebaUidResIdl.DataRes
+	3, // 2: GetUserByTiebaUidResIdl.DataRes.user:type_name -> User
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_GetUserByTiebaUidResIdl_proto_init() }
@@ -1183,32 +178,10 @@ func file_GetUserByTiebaUidResIdl_proto_init() {
 	if File_GetUserByTiebaUidResIdl_proto != nil {
 		return
 	}
+	file_Error_proto_init()
+	file_User_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_GetUserByTiebaUidResIdl_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Error); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_GetUserByTiebaUidResIdl_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*User); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_GetUserByTiebaUidResIdl_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*GetUserByTiebaUidResIdl); i {
 			case 0:
 				return &v.state
@@ -1220,115 +193,7 @@ func file_GetUserByTiebaUidResIdl_proto_init() {
 				return nil
 			}
 		}
-		file_GetUserByTiebaUidResIdl_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*User_Icon); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_GetUserByTiebaUidResIdl_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*User_PrivSets); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_GetUserByTiebaUidResIdl_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*User_LikeForumInfo); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_GetUserByTiebaUidResIdl_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*User_UserVipInfo); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_GetUserByTiebaUidResIdl_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*User_TshowInfo); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_GetUserByTiebaUidResIdl_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*User_NewGodInfo); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_GetUserByTiebaUidResIdl_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*User_VirtualImageInfo); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_GetUserByTiebaUidResIdl_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*User_UserGrowth); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_GetUserByTiebaUidResIdl_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*User_VirtualImageInfo_StateInfo); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_GetUserByTiebaUidResIdl_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+		file_GetUserByTiebaUidResIdl_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*GetUserByTiebaUidResIdl_DataRes); i {
 			case 0:
 				return &v.state
@@ -1347,7 +212,7 @@ func file_GetUserByTiebaUidResIdl_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_GetUserByTiebaUidResIdl_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   13,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

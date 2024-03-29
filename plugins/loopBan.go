@@ -7,7 +7,9 @@ import (
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
+	tbpb "github.com/BANKA2017/tbsign_go/proto"
 	_type "github.com/BANKA2017/tbsign_go/types"
+	"google.golang.org/protobuf/proto"
 )
 
 type BanAccountResponse struct {
@@ -21,13 +23,24 @@ type BanAccountResponse struct {
 	Info       []any  `json:"info,omitempty"`
 }
 
+type IsManagerPreCheckResponse struct {
+	IsManager bool   `json:"is_manager"`
+	Role      string `json:"role"`
+}
+
 var LoopBanPluginName = "ver4_ban"
 
 func PostClientBan(cookie _type.TypeCookie, fid int32, portrait string, day int32, reason string) (*BanAccountResponse, error) {
+	isSvipBlock := "0"
+	if day == 90 {
+		isSvipBlock = "1"
+	}
+
 	var form = make(map[string]string)
 	form["BDUSS"] = cookie.Bduss
 	form["day"] = strconv.Itoa(int(day))
 	form["fid"] = strconv.Itoa(int(fid))
+	form["is_loop_ban"] = isSvipBlock // <- Users have to check their svip status in advance
 	form["ntn"] = "banid"
 	form["portrait"] = portrait
 	form["reason"] = reason
@@ -50,6 +63,61 @@ func PostClientBan(cookie _type.TypeCookie, fid int32, portrait string, day int3
 	var banDecode BanAccountResponse
 	err = _function.JsonDecode(banResponse, &banDecode)
 	return &banDecode, err
+}
+
+func GetManagerInfo(fid uint64) (*tbpb.GetBawuInfoResIdl_DataRes, error) {
+	pbBytes, err := proto.Marshal(&tbpb.GetBawuInfoReqIdl_DataReq{
+		Common: &tbpb.CommonReq{
+			XClientVersion: "12.57.4.2",
+		},
+		Fid: fid,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	body, contentType, err := _function.MultipartBodyBuilder(pbBytes)
+
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := _function.Fetch("http://tiebac.baidu.com/c/f/forum/getBawuInfo?cmd=301007", "POST", body, map[string]string{
+		"Content-Type":   contentType,
+		"x_bd_data_type": "protobuf",
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	log.Println(resp, string(resp))
+	var res tbpb.GetBawuInfoResIdl
+	err = proto.Unmarshal(resp, &res)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.GetData(), nil
+}
+
+func GetManagerStatus(portrait string, tiebaName string) (*IsManagerPreCheckResponse, error) {
+	fid := _function.GetFid(tiebaName)
+	managerList, _ := GetManagerInfo(uint64(fid))
+	for _, v := range managerList.BawuTeamInfo.BawuTeamList {
+		if v.RoleName == "吧主助手" {
+			continue
+		}
+		for _, v2 := range v.RoleInfo {
+			if v2.Portrait == portrait {
+				return &IsManagerPreCheckResponse{
+					IsManager: true,
+					Role:      v.RoleName,
+				}, nil
+			}
+		}
+	}
+
+	return &IsManagerPreCheckResponse{}, nil
 }
 
 func LoopBanAction() {

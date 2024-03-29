@@ -90,4 +90,5 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 ## 感谢
 
-- [Starry-OvO/aiotieba](https://github.com/Starry-OvO/aiotieba)
+- [百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/)
+- [Starry-OvO/aiotieba](https://github.com/Starry-OvO/aiotieba/)

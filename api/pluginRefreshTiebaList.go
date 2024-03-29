@@ -10,7 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func GetVer4RefList(c echo.Context) error {
+func PluginRefreshTiebaListGetAccountList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	var tiebaAccounts []model.TcBaiduid
@@ -19,14 +19,14 @@ func GetVer4RefList(c echo.Context) error {
 	var tiebaList []model.TcTieba
 	_function.GormDB.Where("uid = ?", uid).Find(&tiebaList)
 
-	type ver4RefListResponse struct {
+	type accountListResponse struct {
 		PID      int32  `json:"pid"`
 		Name     string `json:"name"`
 		Portrait string `json:"portrait"`
 		Count    int32  `json:"count"`
 	}
 
-	var response []ver4RefListResponse
+	var response []accountListResponse
 	for _, v := range tiebaAccounts {
 		var count int32
 		for _, v1 := range tiebaList {
@@ -34,7 +34,7 @@ func GetVer4RefList(c echo.Context) error {
 				count++
 			}
 		}
-		response = append(response, ver4RefListResponse{
+		response = append(response, accountListResponse{
 			PID:      v.ID,
 			Name:     v.Name,
 			Portrait: v.Portrait,
@@ -46,7 +46,7 @@ func GetVer4RefList(c echo.Context) error {
 
 }
 
-func RefreshVer4RefTiebaList(c echo.Context) error {
+func PluginRefreshTiebaListRefreshTiebaList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	pid := c.FormValue("pid")

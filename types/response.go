@@ -104,3 +104,48 @@ type BaiduUserInfoResponse struct {
 	ErrorCode string `json:"error_code,omitempty"`
 	ErrorMsg  string `json:"error_msg,omitempty"`
 }
+
+type TiebaPanelUserInfoResponse struct {
+	No    int    `json:"no,omitempty"`
+	Error string `json:"error,omitempty"`
+	Data  struct {
+		Name                      string `json:"name,omitempty"`
+		Identity                  int    `json:"identity,omitempty"`
+		NameShow                  string `json:"name_show,omitempty"`
+		ShowNickname              string `json:"show_nickname,omitempty"`
+		ProfessionManagerNickName string `json:"profession_manager_nick_name,omitempty"`
+		Portrait                  string `json:"portrait,omitempty"`
+		TbAge                     string `json:"tb_age,omitempty"`
+		PostNum                   string `json:"post_num,omitempty"`
+		Honor                     struct {
+			Manager struct {
+				Assist struct {
+					Count     int      `json:"count,omitempty"`
+					ForumList []string `json:"forum_list,omitempty"`
+				} `json:"assist,omitempty"`
+				Manager struct {
+					Count     int      `json:"count,omitempty"`
+					ForumList []string `json:"forum_list,omitempty"`
+				} `json:"manager,omitempty"`
+			} `json:"manager,omitempty"`
+			Grade map[string]struct {
+				Count     int      `json:"count,omitempty"`
+				ForumList []string `json:"forum_list,omitempty"`
+			} `json:"grade,omitempty"`
+			Novice int `json:"novice,omitempty"`
+		} `json:"honor,omitempty"`
+		VipInfo struct {
+			AScore   int    `json:"a_score,omitempty"`
+			ETime    string `json:"e_time,omitempty"`
+			ExtScore string `json:"ext_score,omitempty"`
+			IconURL  string `json:"icon_url,omitempty"`
+			NScore   int    `json:"n_score,omitempty"`
+			STime    string `json:"s_time,omitempty"`
+			VLevel   int    `json:"v_level,omitempty"`
+			VStatus  string `json:"v_status,omitempty"`
+			YScore   int    `json:"y_score,omitempty"`
+		} `json:"vipInfo,omitempty"`
+		TbVip         bool `json:"tb_vip,omitempty"`
+		FollowedCount int  `json:"followed_count,omitempty"`
+	} `json:"data,omitempty"`
+}

@@ -22,7 +22,8 @@ var PreCheckWhiteList = []string{
 	"/passport/login",
 	"/passport/logout",
 	"/passport/register",
-	"/tool/tiebauid2userinfo/:tiebauid",
+	"/tools/userinfo/tieba_uid/:tiebauid",
+	"/tools/userinfo/panel/:query_type/:user_value",
 }
 
 func PreCheckWhiteListExists(path string) bool {

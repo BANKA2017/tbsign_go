@@ -20,3 +20,16 @@ func GetUserByTiebaUID(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", response, "tbsign"))
 }
+
+func GetUserByUsernameOrPortrait(c echo.Context) error {
+	queryType := c.Param("query_type")
+	userValue := c.Param("user_value")
+
+	response, err := _function.GetUserInfoByUsernameOrPortrait(queryType, userValue)
+	if err != nil {
+		log.Println(err)
+		return c.JSON(http.StatusOK, apiTemplate(500, "Unknown error", echoEmptyObject, "tbsign"))
+	}
+
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", response, "tbsign"))
+}

@@ -2,6 +2,7 @@ package _function
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"log"
 	"mime/multipart"
@@ -19,13 +20,18 @@ import (
 	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/proto"
 
-	pb "github.com/BANKA2017/tbsign_go/proto"
+	tbpb "github.com/BANKA2017/tbsign_go/proto"
 	_type "github.com/BANKA2017/tbsign_go/types"
 )
 
 var Client = &http.Client{
 	Timeout: time.Second * 10,
 }
+
+var EmptyHeaders = map[string]string{}
+
+var BrowserUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
+var ClientUserAgent = "Mozilla/5.0 (Linux; Android 9; ONEPLUS A3010 Build/PKQ1.181203.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/117.0.0.0 Mobile Safari/537.36 tieba/12.22.1.0"
 
 func Fetch(_url string, _method string, _body []byte, _headers map[string]string) ([]byte, error) {
 	var body io.Reader
@@ -40,13 +46,13 @@ func Fetch(_url string, _method string, _body []byte, _headers map[string]string
 		log.Println("fetch:", err)
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Linux; Android 9; ONEPLUS A3010 Build/PKQ1.181203.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/117.0.0.0 Mobile Safari/537.36 tieba/12.22.1.0")
+	req.Header.Set("User-Agent", ClientUserAgent)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	for k, v := range _headers {
 		req.Header.Set(k, v)
 	}
-	log.Println(req.Header.Clone())
+
 	resp, err := Client.Do(req)
 	if err != nil {
 		log.Println("fetch:", err)
@@ -61,6 +67,28 @@ func Fetch(_url string, _method string, _body []byte, _headers map[string]string
 	//log.Println(string())
 
 	return response[:], err
+}
+
+func MultipartBodyBuilder(data []byte) ([]byte, string, error) {
+	pbBytesLen := make([]byte, 8)
+	binary.BigEndian.PutUint64(pbBytesLen, uint64(len(data)))
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	multipartHeader := textproto.MIMEHeader{}
+	multipartHeader.Set("Content-Disposition", "form-data; name=\"data\"; filename=\"file\"")
+	part, err := writer.CreatePart(multipartHeader)
+	if err != nil {
+		return nil, "", err
+	}
+	part.Write([]byte("\n"))
+	part.Write(RemoveLeadingZeros(pbBytesLen))
+	part.Write(data)
+	err = writer.Close()
+	if err != nil {
+		return nil, "", err
+	}
+	return body.Bytes(), writer.FormDataContentType(), nil
 }
 
 func AddSign(form *map[string]string) {
@@ -151,7 +179,7 @@ func GetForumNameShare(name string) (*_type.ForumNameShareResponse, error) {
 	queryStr.Set("ie", "utf-8")
 	queryStr.Set("fname", name)
 
-	forumNameShare, err := Fetch("http://tieba.baidu.com/f/commit/share/fnameShareApi?"+queryStr.Encode(), "GET", nil, map[string]string{})
+	forumNameShare, err := Fetch("http://tieba.baidu.com/f/commit/share/fnameShareApi?"+queryStr.Encode(), "GET", nil, EmptyHeaders)
 
 	if err != nil {
 		return nil, err
@@ -188,9 +216,9 @@ func GetBaiduUserInfo(cookie _type.TypeCookie) (*_type.BaiduUserInfoResponse, er
 	return &accountInfoDecode, err
 }
 
-func GetUserInfoByTiebaUID(tbuid string) (*pb.GetUserByTiebaUidResIdl_DataRes, error) {
-	pbBytes, err := proto.Marshal(&pb.GetUserByTiebaUidReqIdl_DataReq{
-		Common: &pb.CommonReq{
+func GetUserInfoByTiebaUID(tbuid string) (*tbpb.GetUserByTiebaUidResIdl_DataRes, error) {
+	pbBytes, err := proto.Marshal(&tbpb.GetUserByTiebaUidReqIdl_DataReq{
+		Common: &tbpb.CommonReq{
 			XClientVersion: "12.57.4.2",
 		},
 		TiebaUid: tbuid,
@@ -199,27 +227,14 @@ func GetUserInfoByTiebaUID(tbuid string) (*pb.GetUserByTiebaUidResIdl_DataRes, e
 		return nil, err
 	}
 
-	pbBytesLen := make([]byte, 8)
-	binary.BigEndian.PutUint64(pbBytesLen, uint64(len(pbBytes)))
+	body, contentType, err := MultipartBodyBuilder(pbBytes)
 
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	multipartHeader := textproto.MIMEHeader{}
-	multipartHeader.Set("Content-Disposition", "form-data; name=\"data\"; filename=\"file\"")
-	part, err := writer.CreatePart(multipartHeader)
-	if err != nil {
-		return nil, err
-	}
-	part.Write([]byte("\n"))
-	part.Write(RemoveLeadingZeros(pbBytesLen))
-	part.Write(pbBytes)
-	err = writer.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := Fetch("http://tiebac.baidu.com/c/u/user/getUserByTiebaUid?cmd=309702", "POST", body.Bytes(), map[string]string{
-		"Content-Type":   writer.FormDataContentType(),
+	resp, err := Fetch("http://tiebac.baidu.com/c/u/user/getUserByTiebaUid?cmd=309702", "POST", body, map[string]string{
+		"Content-Type":   contentType,
 		"x_bd_data_type": "protobuf",
 	})
 
@@ -227,11 +242,32 @@ func GetUserInfoByTiebaUID(tbuid string) (*pb.GetUserByTiebaUidResIdl_DataRes, e
 		return nil, err
 	}
 	//log.Println(resp, string(resp))
-	var res pb.GetUserByTiebaUidResIdl
+	var res tbpb.GetUserByTiebaUidResIdl
 	err = proto.Unmarshal(resp, &res)
 	if err != nil {
 		return nil, err
 	}
 
 	return res.GetData(), nil
+}
+
+func GetUserInfoByUsernameOrPortrait(requestType string, value string) (*_type.TiebaPanelUserInfoResponse, error) {
+	query := "ie=utf-8"
+	if requestType == "portrait" && strings.HasPrefix(value, "tb.1.") {
+		query += "&id=" + value
+	} else if requestType == "username" && value != "" {
+		query += "&un=" + value
+	} else {
+		return nil, errors.New("invalid type or portrait/username")
+	}
+	resp, err := Fetch("https://tieba.baidu.com/home/get/panel?"+query, "GET", nil, map[string]string{
+		"User-Agent": BrowserUserAgent,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var res _type.TiebaPanelUserInfoResponse
+	err = JsonDecode(resp, &res)
+	return &res, err
 }

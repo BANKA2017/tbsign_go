@@ -1,6 +1,6 @@
 package _function
 
-// from chatcpt
+// from chatgpt
 func RemoveLeadingZeros(data []byte) []byte {
 	for i := 0; i < len(data); i++ {
 		if data[i] != 0 {

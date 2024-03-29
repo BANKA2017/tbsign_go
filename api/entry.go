@@ -63,15 +63,29 @@ func Api(address string, variables ...any) {
 	e.GET("/server/status", GetServerStatus)
 
 	// plugins
-	e.GET("/plugins/ver4_rank/list", GetVer4RankList)
-	e.GET("/plugins/ver4_rank/settings", GetVer4RankSettings)
-	e.PUT("/plugins/ver4_rank/settings", UpdateVer4RankSettings)
 
-	e.GET("/plugins/ver4_ref/list", GetVer4RefList)
-	e.POST("/plugins/ver4_ref/refresh", RefreshVer4RefTiebaList)
+	// ForumSupport
+	e.POST("/plugins/ver4_rank/switch", PluginForumSupportSwitch)
+	e.GET("/plugins/ver4_rank/list", PluginForumSupportGetCharactersList)
+	e.GET("/plugins/ver4_rank/settings", PluginForumSupportGetSettings)
+	e.PUT("/plugins/ver4_rank/settings", PluginForumSupportUpdateSettings)
+
+	// RefreshTiebaList
+	e.GET("/plugins/ver4_ref/list", PluginRefreshTiebaListGetAccountList)
+	e.POST("/plugins/ver4_ref/refresh", PluginRefreshTiebaListRefreshTiebaList)
+
+	// LoopBan
+	e.POST("/plugins/ver4_ban/switch", PluginLoopBanSwitch)
+	e.GET("/plugins/ver4_ban/reason", PluginLoopBanGetReason)
+	e.PUT("/plugins/ver4_ban/reason", PluginLoopBanSetReason)
+
+	e.DELETE("/plugins/ver4_ban/list/:id", PluginLoopBanDelAccount)
+	e.POST("/plugins/ver4_ban/list/empty", PluginLoopBanDelAllAccounts)
+	e.GET("/plugins/ver4_ban/check/:pid/is_manager/:tieba_name", PluginLoopBanPreCheckIsManager)
 
 	// tools
-	e.GET("/tool/tieba_uid2user_info/:tiebauid", GetUserByTiebaUID)
+	e.GET("/tools/userinfo/tieba_uid/:tiebauid", GetUserByTiebaUID)
+	e.GET("/tools/userinfo/panel/:query_type/:user_value", GetUserByUsernameOrPortrait)
 
 	e.Logger.Fatal(e.Start(address))
 }

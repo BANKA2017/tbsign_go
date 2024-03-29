@@ -12,10 +12,10 @@ import (
 )
 
 // ver4_rank
-func GetVer4RankList(c echo.Context) error {
+func PluginForumSupportGetCharactersList(c echo.Context) error {
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", _plugin.ForumSupportList, "tbsign"))
 }
-func GetVer4RankSettings(c echo.Context) error {
+func PluginForumSupportGetSettings(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	var rankList []model.TcVer4RankLog
@@ -24,7 +24,7 @@ func GetVer4RankSettings(c echo.Context) error {
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", rankList, "tbsign"))
 }
 
-func UpdateVer4RankSettings(c echo.Context) error {
+func PluginForumSupportUpdateSettings(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	numberUID, _ := strconv.ParseInt(uid, 10, 64)
@@ -121,4 +121,21 @@ func UpdateVer4RankSettings(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resp, "tbsign"))
+}
+
+func PluginForumSupportSwitch(c echo.Context) error {
+	uid := c.Get("uid").(string)
+	status := _function.GetUserOption("ver4_rank_check", uid) != "0"
+
+	newValue := "1"
+	if status {
+		newValue = "0"
+	}
+	err := _function.SetUserOption("ver4_rank_check", newValue, uid)
+
+	if err != nil {
+		log.Println(err)
+		return c.JSON(http.StatusOK, apiTemplate(500, "Unable to update status", status, "tbsign"))
+	}
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", !status, "tbsign"))
 }

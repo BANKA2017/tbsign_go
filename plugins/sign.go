@@ -58,10 +58,6 @@ func Dosign(table string, retry bool) (bool, error) {
 		sleep = 100
 	}
 
-	// get all cookies
-	for _, v := range tiebaList {
-		_function.GetCookie(v.Pid)
-	}
 	for _, v := range tiebaList {
 		// we will not auto update fid
 		if v.Fid == 0 {

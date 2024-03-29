@@ -34,12 +34,6 @@ func GetOption(keyName string) string {
 	return ""
 }
 
-func GetUserOption(keyName string, uid string) string {
-	var tmpUserOption model.TcUsersOption
-	GormDB.Model(&model.TcUsersOption{}).Where("uid = ? AND name = ?", uid, keyName).First(&tmpUserOption)
-	return tmpUserOption.Value
-}
-
 func SetOption(keyName string, value string) {
 	GormDB.Model(&model.TcOption{}).Where("name = ?", keyName).Update("value", value)
 	for i := range Options {
@@ -48,6 +42,16 @@ func SetOption(keyName string, value string) {
 			break
 		}
 	}
+}
+
+func GetUserOption(keyName string, uid string) string {
+	var tmpUserOption model.TcUsersOption
+	GormDB.Model(&model.TcUsersOption{}).Where("uid = ? AND name = ?", uid, keyName).First(&tmpUserOption)
+	return tmpUserOption.Value
+}
+
+func SetUserOption(keyName string, value string, uid string) error {
+	return GormDB.Model(&model.TcUsersOption{}).Where("uid = ?", uid).Update(keyName, value).Error
 }
 
 func GetCookie(pid int32) _type.TypeCookie {
