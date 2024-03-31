@@ -33,7 +33,7 @@ func Api(address string, variables ...any) {
 	e.GET("/passport", GetAccountInfo)
 	e.POST("/passport/login", Login)
 	e.POST("/passport/logout", Logout)
-	// e.POST("/passport/register", Register)
+	e.POST("/passport/signup", Signup)
 	// e.POST("/passport/delete", DeleteAccount)
 	e.PUT("/passport/update_pwd", UpdatePassword)
 	e.GET("/passport/settings", GetSettings)
@@ -41,51 +41,62 @@ func Api(address string, variables ...any) {
 
 	// tieba account
 	e.GET("/account", GetTiebaAccountList)
-	e.PUT("/account", AddTiebaAccount)
+	e.GET("/account/:pid", GetTiebaAccountItem)
+	e.PATCH("/account", AddTiebaAccount)
 	e.DELETE("/account/:pid", RemoveTiebaAccount)
-	e.GET("/account/status/:pid", CheckTiebaAccount)
+	e.GET("/account/:pid/status", CheckTiebaAccount)
 
 	// tieba list
 	e.GET("/list", GetTiebaList)
-	e.PUT("/list", AddTieba)
-	e.DELETE("/list/:pid/:fid", RemoveTieba)
-	e.PUT("/list/ignore/:pid/:fid", IgnoreTieba)
-	e.DELETE("/list/ignore/:pid/:fid", IgnoreTieba)
+	e.PATCH("/list", AddTieba)
+	e.DELETE("/list", CleanTiebaList)
 	e.POST("/list/refresh", RefreshTiebaList)
-	e.POST("/list/clean", CleanTiebaList)
+	e.DELETE("/list/:pid/:fid", RemoveTieba)
+	e.PUT("/list/:pid/:fid/ignore", IgnoreTieba)
+	e.DELETE("/list/:pid/:fid/ignore", IgnoreTieba)
 
 	// manage
 	e.GET("/admin/settings", GetAdminSettings)
 	e.PUT("/admin/settings", UpdateAdminSettings)
-	e.GET("/admin/account", GetAccountList)
-
-	// server status
-	e.GET("/server/status", GetServerStatus)
+	e.GET("/admin/accounts", GetAccountsList)
+	e.GET("/admin/plugins", GetPluginsList)
+	e.POST("/admin/plugins/:plugin_name/switch", PluginSwitch)
+	e.GET("/admin/server/status", GetServerStatus)
 
 	// plugins
-
 	// ForumSupport
-	e.POST("/plugins/ver4_rank/switch", PluginForumSupportSwitch)
-	e.GET("/plugins/ver4_rank/list", PluginForumSupportGetCharactersList)
-	e.GET("/plugins/ver4_rank/settings", PluginForumSupportGetSettings)
-	e.PUT("/plugins/ver4_rank/settings", PluginForumSupportUpdateSettings)
+	e.POST("/plugins/forum_support/switch", PluginForumSupportSwitch)
+	e.GET("/plugins/forum_support/list", PluginForumSupportGetCharactersList)
+	e.GET("/plugins/forum_support/settings", PluginForumSupportGetSettings)
+	e.PUT("/plugins/forum_support/settings", PluginForumSupportUpdateSettings)
 
 	// RefreshTiebaList
-	e.GET("/plugins/ver4_ref/list", PluginRefreshTiebaListGetAccountList)
-	e.POST("/plugins/ver4_ref/refresh", PluginRefreshTiebaListRefreshTiebaList)
+	e.GET("/plugins/refresh_tieba_list/list", PluginRefreshTiebaListGetAccountList)
+	e.POST("/plugins/refresh_tieba_list/refresh", PluginRefreshTiebaListRefreshTiebaList)
 
 	// LoopBan
-	e.POST("/plugins/ver4_ban/switch", PluginLoopBanSwitch)
-	e.GET("/plugins/ver4_ban/reason", PluginLoopBanGetReason)
-	e.PUT("/plugins/ver4_ban/reason", PluginLoopBanSetReason)
+	e.POST("/plugins/loop_ban/switch", PluginLoopBanSwitch)
+	e.GET("/plugins/loop_ban/reason", PluginLoopBanGetReason)
+	e.PUT("/plugins/loop_ban/reason", PluginLoopBanSetReason)
+	e.GET("/plugins/loop_ban/list", PluginLoopBanGetList)
+	e.PATCH("/plugins/loop_ban/list/", PluginLoopBanAddAccounts)
+	e.DELETE("/plugins/loop_ban/list/:id", PluginLoopBanDelAccount)
+	e.POST("/plugins/loop_ban/list/empty", PluginLoopBanDelAllAccounts)
+	e.GET("/plugins/loop_ban/check/:pid/is_manager/:fname", PluginLoopBanPreCheckIsManager)
 
-	e.DELETE("/plugins/ver4_ban/list/:id", PluginLoopBanDelAccount)
-	e.POST("/plugins/ver4_ban/list/empty", PluginLoopBanDelAllAccounts)
-	e.GET("/plugins/ver4_ban/check/:pid/is_manager/:tieba_name", PluginLoopBanPreCheckIsManager)
+	// GrowthTasks
+	e.GET("/plugins/growth_tasks/settings", PluginGrowthTasksGetSettings)
+	e.PUT("/plugins/growth_tasks/settings", PluginGrowthTasksSetSettings)
+	e.GET("/plugins/growth_tasks/list", PluginGrowthTasksGetList)
+	e.PATCH("/plugins/growth_tasks/list", PluginGrowthTasksAddAccount)
+	e.DELETE("/plugins/growth_tasks/list/:id", PluginGrowthTasksDelAccount)
+	e.POST("/plugins/growth_tasks/list/empty", PluginGrowthTasksDelAllAccounts)
+	e.GET("/plugins/growth_tasks/status/:pid", PluginGrowthTasksGetTasksStatus)
 
 	// tools
 	e.GET("/tools/userinfo/tieba_uid/:tiebauid", GetUserByTiebaUID)
 	e.GET("/tools/userinfo/panel/:query_type/:user_value", GetUserByUsernameOrPortrait)
+	e.GET("/tools/tieba/fname_to_fid/:fname", GetFidByFname)
 
 	e.Logger.Fatal(e.Start(address))
 }

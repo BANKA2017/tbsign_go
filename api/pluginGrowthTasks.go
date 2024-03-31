@@ -1,0 +1,132 @@
+package _api
+
+import (
+	"net/http"
+	"strconv"
+
+	"github.com/BANKA2017/tbsign_go/dao/model"
+	_function "github.com/BANKA2017/tbsign_go/functions"
+	_plugin "github.com/BANKA2017/tbsign_go/plugins"
+	"github.com/labstack/echo/v4"
+)
+
+func PluginGrowthTasksGetSettings(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	signOnly := _function.GetUserOption("kd_growth_sign_only", uid)
+
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
+		"sign_only": signOnly,
+	}, "tbsign"))
+}
+
+func PluginGrowthTasksSetSettings(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	signOnly := c.FormValue("sign_only") == "0"
+	newValue := "0"
+	if !signOnly {
+		newValue = "1"
+	}
+
+	_function.SetUserOption("kd_growth_sign_only", newValue, uid)
+
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
+		"success": true,
+	}, "tbsign"))
+}
+
+func PluginGrowthTasksGetList(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	var accounts []model.TcKdGrowth
+	_function.GormDB.Where("uid = ?", uid).Find(&accounts)
+
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", accounts, "tbsign"))
+}
+
+func PluginGrowthTasksAddAccount(c echo.Context) error {
+	uid := c.Get("uid").(string)
+	numUID, _ := strconv.ParseInt(uid, 10, 64)
+
+	pid := c.Param("pid")
+	numPid, err := strconv.ParseInt(pid, 10, 64)
+	if err != nil || numPid <= 0 {
+		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
+	}
+
+	// pre check
+	var count int64
+	_function.GormDB.Model(&model.TcKdGrowth{}).Where("uid = ? AND pid = ?", uid, numPid).Count(&count)
+	if count > 0 {
+		return c.JSON(http.StatusOK, apiTemplate(200, "Account exists", echoEmptyObject, "tbsign"))
+	} else {
+		dataToInsert := model.TcKdGrowth{
+			UID:  numUID,
+			Pid:  numPid,
+			Date: 0,
+		}
+		_function.GormDB.Create(&dataToInsert)
+		_function.GormDB.Model(&model.TcKdGrowth{}).Where("uid = ? AND pid = ?", uid, numPid).First(&dataToInsert)
+		return c.JSON(http.StatusOK, apiTemplate(200, "OK", dataToInsert, "tbsign"))
+	}
+}
+
+func PluginGrowthTasksDelAccount(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	id := c.Param("id")
+
+	numUID, _ := strconv.ParseInt(uid, 10, 64)
+	numID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusOK, apiTemplate(500, "Invalid id", map[string]any{
+			"success": false,
+			"id":      id,
+		}, "tbsign"))
+	}
+
+	_function.GormDB.Model(&model.TcKdGrowth{}).Delete(&model.TcKdGrowth{
+		UID: numUID,
+		ID:  numID,
+	})
+
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
+		"success": true,
+		"id":      id,
+	}, "tbsign"))
+}
+
+func PluginGrowthTasksDelAllAccounts(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	numUID, _ := strconv.ParseInt(uid, 10, 64)
+
+	_function.GormDB.Model(&model.TcKdGrowth{}).Delete(&model.TcKdGrowth{
+		UID: numUID,
+	})
+
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
+}
+
+func PluginGrowthTasksGetTasksStatus(c echo.Context) error {
+	uid := c.Get("uid").(string)
+	pid := c.Param("pid")
+
+	// pre check
+	var count int64
+	_function.GormDB.Model(&model.TcBaiduid{}).Where("id = ? AND uid = ?", pid, uid).Count(&count)
+
+	if count > 0 {
+		numPid, _ := strconv.ParseInt(pid, 10, 64)
+		status, err := _plugin.GetUserGrowthTasksList(_function.GetCookie(int32(numPid)))
+		if err != nil {
+			return c.JSON(http.StatusOK, apiTemplate(500, "Fetch tasks failed", echoEmptyObject, "tbsign"))
+		} else if status.No != 0 {
+			return c.JSON(http.StatusOK, apiTemplate(500, status.Error, echoEmptyObject, "tbsign"))
+		}
+		return c.JSON(http.StatusOK, apiTemplate(200, "OK", status.Data, "tbsign"))
+	} else {
+		return c.JSON(http.StatusOK, apiTemplate(404, "Account is not exists", echoEmptyObject, "tbsign"))
+	}
+}

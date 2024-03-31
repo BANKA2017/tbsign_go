@@ -20,6 +20,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		db:                       db,
 		TcBaiduid:                newTcBaiduid(db, opts...),
 		TcCron:                   newTcCron(db, opts...),
+		TcKdGrowth:               newTcKdGrowth(db, opts...),
 		TcOption:                 newTcOption(db, opts...),
 		TcPlugin:                 newTcPlugin(db, opts...),
 		TcTieba:                  newTcTieba(db, opts...),
@@ -37,6 +38,7 @@ type Query struct {
 
 	TcBaiduid                tcBaiduid
 	TcCron                   tcCron
+	TcKdGrowth               tcKdGrowth
 	TcOption                 tcOption
 	TcPlugin                 tcPlugin
 	TcTieba                  tcTieba
@@ -55,6 +57,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		db:                       db,
 		TcBaiduid:                q.TcBaiduid.clone(db),
 		TcCron:                   q.TcCron.clone(db),
+		TcKdGrowth:               q.TcKdGrowth.clone(db),
 		TcOption:                 q.TcOption.clone(db),
 		TcPlugin:                 q.TcPlugin.clone(db),
 		TcTieba:                  q.TcTieba.clone(db),
@@ -80,6 +83,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		db:                       db,
 		TcBaiduid:                q.TcBaiduid.replaceDB(db),
 		TcCron:                   q.TcCron.replaceDB(db),
+		TcKdGrowth:               q.TcKdGrowth.replaceDB(db),
 		TcOption:                 q.TcOption.replaceDB(db),
 		TcPlugin:                 q.TcPlugin.replaceDB(db),
 		TcTieba:                  q.TcTieba.replaceDB(db),
@@ -95,6 +99,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 type queryCtx struct {
 	TcBaiduid                *tcBaiduidDo
 	TcCron                   *tcCronDo
+	TcKdGrowth               *tcKdGrowthDo
 	TcOption                 *tcOptionDo
 	TcPlugin                 *tcPluginDo
 	TcTieba                  *tcTiebaDo
@@ -110,6 +115,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
 		TcBaiduid:                q.TcBaiduid.WithContext(ctx),
 		TcCron:                   q.TcCron.WithContext(ctx),
+		TcKdGrowth:               q.TcKdGrowth.WithContext(ctx),
 		TcOption:                 q.TcOption.WithContext(ctx),
 		TcPlugin:                 q.TcPlugin.WithContext(ctx),
 		TcTieba:                  q.TcTieba.WithContext(ctx),

@@ -36,17 +36,18 @@ func PostClientBan(cookie _type.TypeCookie, fid int32, portrait string, day int3
 		isSvipBlock = "1"
 	}
 
-	var form = make(map[string]string)
-	form["BDUSS"] = cookie.Bduss
-	form["day"] = strconv.Itoa(int(day))
-	form["fid"] = strconv.Itoa(int(fid))
-	form["is_loop_ban"] = isSvipBlock // <- Users have to check their svip status in advance
-	form["ntn"] = "banid"
-	form["portrait"] = portrait
-	form["reason"] = reason
-	form["tbs"] = cookie.Tbs
-	form["word"] = "-"
-	form["z"] = "6"
+	var form = map[string]string{
+		"BDUSS":       cookie.Bduss,
+		"day":         strconv.Itoa(int(day)),
+		"fid":         strconv.Itoa(int(fid)),
+		"is_loop_ban": isSvipBlock, // <- Users have to check their svip status in advance
+		"ntn":         "banid",
+		"portrait":    portrait,
+		"reason":      reason,
+		"tbs":         cookie.Tbs,
+		"word":        "-",
+		"z":           "6",
+	}
 	_function.AddSign(&form)
 	_body := url.Values{}
 	for k, v := range form {
@@ -54,7 +55,7 @@ func PostClientBan(cookie _type.TypeCookie, fid int32, portrait string, day int3
 			_body.Set(k, v)
 		}
 	}
-	banResponse, err := _function.Fetch("http://c.tieba.baidu.com/c/c/bawu/commitprison", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), map[string]string{})
+	banResponse, err := _function.Fetch("http://c.tieba.baidu.com/c/c/bawu/commitprison", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), _function.EmptyHeaders)
 
 	if err != nil {
 		return nil, err
@@ -68,7 +69,7 @@ func PostClientBan(cookie _type.TypeCookie, fid int32, portrait string, day int3
 func GetManagerInfo(fid uint64) (*tbpb.GetBawuInfoResIdl_DataRes, error) {
 	pbBytes, err := proto.Marshal(&tbpb.GetBawuInfoReqIdl_DataReq{
 		Common: &tbpb.CommonReq{
-			XClientVersion: "12.57.4.2",
+			XClientVersion: _function.ClientVersion,
 		},
 		Fid: fid,
 	})
@@ -100,8 +101,7 @@ func GetManagerInfo(fid uint64) (*tbpb.GetBawuInfoResIdl_DataRes, error) {
 	return res.GetData(), nil
 }
 
-func GetManagerStatus(portrait string, tiebaName string) (*IsManagerPreCheckResponse, error) {
-	fid := _function.GetFid(tiebaName)
+func GetManagerStatus(portrait string, fid int64) (*IsManagerPreCheckResponse, error) {
 	managerList, _ := GetManagerInfo(uint64(fid))
 	for _, v := range managerList.BawuTeamInfo.BawuTeamList {
 		if v.RoleName == "吧主助手" {

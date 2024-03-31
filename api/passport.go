@@ -11,13 +11,66 @@ import (
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/labstack/echo/v4"
-	"golang.org/x/crypto/bcrypt"
 )
 
-// func Register(c echo.Context) error {
-//
-// }
-//
+func Signup(c echo.Context) error {
+	// site status
+	isRegistrationEnable := _function.GetOption("enable_reg") == "1"
+	if !isRegistrationEnable {
+		return c.JSON(http.StatusOK, apiTemplate(403, "Registration is disabled", echoEmptyObject, "tbsign"))
+	}
+
+	// form
+	name := c.FormValue("name")
+	email := c.FormValue("email")
+	password := c.FormValue("password")
+	//inviteCode := c.FormValue("invite_code")
+
+	if name == "" || strings.Contains(name, "@") || !_function.VerifyEmail(email) || password == "" {
+		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid name/email/password", echoEmptyObject, "tbsign"))
+	}
+
+	role := "user"
+
+	// pre check
+	var userCount int64
+	_function.GormDB.Model(&model.TcUser{}).Count(&userCount)
+	if userCount > 0 {
+		var emailOrNameExistsCount int64
+		_function.GormDB.Model(&model.TcUser{}).Where("email = ? OR name = ?", email, name).Count(&emailOrNameExistsCount)
+		if emailOrNameExistsCount > 0 {
+			return c.JSON(http.StatusOK, apiTemplate(403, "Name or Email has already been registered", echoEmptyObject, "tbsign"))
+		}
+	} else {
+		role = "admin"
+	}
+
+	passwordHash, err := _function.CreatePasswordHash(password)
+	if err != nil {
+		return c.JSON(http.StatusOK, apiTemplate(500, "Unable to create account", echoEmptyObject, "tbsign"))
+	}
+
+	_function.GormDB.Create(&model.TcUser{
+		Name:  name,
+		Email: email,
+		Pw:    string(passwordHash),
+		Role:  role,
+		T:     "tieba",
+	})
+
+	msg := "Account created successfully"
+	if userCount <= 0 {
+		msg = "Account created successfully, you are the first user, so you are the administrator"
+	}
+
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]string{
+		"name": name,
+		"role": role,
+		"msg":  msg,
+	}, "tbsign"))
+}
+
+// TODO
 // func DeleteAccount(c echo.Context) error {
 //
 // }
@@ -35,7 +88,7 @@ func Login(c echo.Context) error {
 	_function.GormDB.Where("name = ? OR email = ?", account, account).Limit(1).Find(&accountInfo)
 	//log.Println(accountInfo[0].Pw, password, "password")
 
-	err := bcrypt.CompareHashAndPassword([]byte(accountInfo[0].Pw), []byte(password))
+	err := _function.VerifyPasswordHash(accountInfo[0].Pw, password)
 	if err != nil {
 		// Compatible with older versions
 		md5_ := _function.Md5(_function.Md5(_function.Md5(password)))
@@ -71,7 +124,7 @@ func UpdatePassword(c echo.Context) error {
 	_function.GormDB.Where("id = ?", uid).Limit(1).Find(&accountInfo)
 
 	// compare old password
-	err := bcrypt.CompareHashAndPassword([]byte(accountInfo[0].Pw), []byte(oldPwd))
+	err := _function.VerifyPasswordHash(accountInfo[0].Pw, oldPwd)
 	if err != nil {
 		// Compatible with older versions
 		md5_ := _function.Md5(_function.Md5(_function.Md5(oldPwd)))
@@ -83,20 +136,20 @@ func UpdatePassword(c echo.Context) error {
 	}
 
 	// create new password
-	hash, err := bcrypt.GenerateFromPassword([]byte(newPwd), 12)
+	hash, err := _function.CreatePasswordHash(newPwd)
 	if err != nil {
 		return c.JSON(http.StatusOK, apiTemplate(500, "Encrypt password failed...", echoEmptyObject, "tbsign"))
 	}
 
 	_function.GormDB.Model(model.TcUser{}).Where("id = ?", uid).Update("pw", string(hash))
 
-	numberUID, _ := strconv.ParseInt(uid, 10, 64)
+	numUID, _ := strconv.ParseInt(uid, 10, 64)
 
 	var resp = struct {
 		UID int32  `json:"uid"`
 		Pwd string `json:"pwd"` // <- static session
 	}{
-		UID: int32(numberUID),
+		UID: int32(numUID),
 		Pwd: hex.EncodeToString(_function.GenHMAC256([]byte(string(hash)), []byte(uid+string(hash)))),
 	}
 

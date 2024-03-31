@@ -11,6 +11,7 @@ import (
 	_api "github.com/BANKA2017/tbsign_go/api"
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
+	_type "github.com/BANKA2017/tbsign_go/types"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -102,6 +103,9 @@ func main() {
 		log.Println("db: mysql connected!")
 	}
 
+	// init
+	_function.GetOptionsAndPluginList()
+
 	// Interval
 	oneMinuteInterval := time.NewTicker(time.Minute)
 	defer oneMinuteInterval.Stop()
@@ -133,11 +137,19 @@ func main() {
 				if _function.PluginList["ver4_ban"] {
 					go _plugin.LoopBanAction()
 				}
+
+				if _function.PluginList["kd_growth"] {
+					go _plugin.DoGrowthTasksAction()
+				}
 			case <-fourHoursInterval.C:
 				_function.GetOptionsAndPluginList()
 				if _function.PluginList["ver4_ref"] {
 					go _plugin.RefreshTiebaListAction()
 				}
+
+				// clean cookie/fid cache
+				_function.CookieList = make(map[int32]_type.TypeCookie)
+				_function.FidList = make(map[string]int64)
 			}
 		}
 	}()

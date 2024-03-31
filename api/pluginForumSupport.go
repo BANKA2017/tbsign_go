@@ -27,12 +27,12 @@ func PluginForumSupportGetSettings(c echo.Context) error {
 func PluginForumSupportUpdateSettings(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	numberUID, _ := strconv.ParseInt(uid, 10, 64)
+	numUID, _ := strconv.ParseInt(uid, 10, 64)
 
 	pid := c.FormValue("pid")
-	numberPid, err := strconv.ParseInt(pid, 10, 64)
-	log.Println(pid, numberPid, err)
-	if err != nil || numberPid <= 0 {
+	numPid, err := strconv.ParseInt(pid, 10, 64)
+	log.Println(pid, numPid, err)
+	if err != nil || numPid <= 0 {
 		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
 	}
 
@@ -57,32 +57,32 @@ func PluginForumSupportUpdateSettings(c echo.Context) error {
 			}
 		}
 		if !exist {
-			numberNid, err := strconv.ParseInt(v, 10, 64)
+			numNid, err := strconv.ParseInt(v, 10, 64)
 			if err != nil {
-				failedList = append(failedList, numberNid)
+				failedList = append(failedList, numNid)
 				continue
 			}
 
 			// fid nid
 			var forum _plugin.TypeForumSupportList
 			for _, _forum := range _plugin.ForumSupportList {
-				if _forum.Nid == numberNid {
+				if _forum.Nid == numNid {
 					forum = _forum
 					break
 				}
 			}
 
 			if forum.Nid <= 0 {
-				failedList = append(failedList, numberNid)
+				failedList = append(failedList, numNid)
 				continue
 			}
 
-			numberFid, _ := strconv.ParseInt(forum.Fid, 10, 64)
+			numFid, _ := strconv.ParseInt(forum.Fid, 10, 64)
 
 			addRankList = append(addRankList, model.TcVer4RankLog{
-				UID:   int32(numberUID),
-				Pid:   int32(numberPid),
-				Fid:   int32(numberFid),
+				UID:   int32(numUID),
+				Pid:   int32(numPid),
+				Fid:   int32(numFid),
 				Nid:   v,
 				Name:  forum.Name,
 				Tieba: forum.Tieba,

@@ -21,9 +21,10 @@ var PreCheckWhiteList = []string{
 	"/robots.txt",
 	"/passport/login",
 	"/passport/logout",
-	"/passport/register",
+	"/passport/signup",
 	"/tools/userinfo/tieba_uid/:tiebauid",
 	"/tools/userinfo/panel/:query_type/:user_value",
+	"/tools/tieba/fname_to_fid/:fname",
 }
 
 func PreCheckWhiteListExists(path string) bool {

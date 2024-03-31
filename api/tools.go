@@ -33,3 +33,14 @@ func GetUserByUsernameOrPortrait(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", response, "tbsign"))
 }
+
+func GetFidByFname(c echo.Context) error {
+	fname := c.Param("fname")
+
+	fid := _function.GetFid(fname)
+
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
+		"fname": fname,
+		"fid":   fid,
+	}, "tbsign"))
+}

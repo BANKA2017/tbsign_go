@@ -11,13 +11,9 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// TODO QR login
-// func LoginTiebaAccount(c echo.Context) error {
-// 	uid := c.Get("uid").(string)
-//
-// 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", "", "tbsign"))
-//
-// }
+/**
+* QR login...Maybe not...
+ */
 
 func AddTiebaAccount(c echo.Context) error {
 	uid := c.Get("uid").(string)
@@ -56,10 +52,10 @@ func AddTiebaAccount(c echo.Context) error {
 		}
 	}
 
-	numberUID, _ := strconv.ParseInt(uid, 10, 64)
+	numUID, _ := strconv.ParseInt(uid, 10, 64)
 
 	newAccount := model.TcBaiduid{
-		UID:      int32(numberUID),
+		UID:      int32(numUID),
 		Bduss:    bduss,
 		Stoken:   stoken,
 		Name:     baiduAccountInfo.User.Name,
@@ -74,7 +70,7 @@ func RemoveTiebaAccount(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	pid := c.Param("pid")
-	numberPid, err := strconv.ParseInt(pid, 10, 64)
+	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
 		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
 	}
@@ -84,7 +80,7 @@ func RemoveTiebaAccount(c echo.Context) error {
 	_function.GormDB.Where("uid = ?", uid).Find(&tiebaAccounts)
 
 	for _, v := range tiebaAccounts {
-		if v.ID == int32(numberPid) {
+		if v.ID == int32(numPid) {
 			_function.GormDB.Model(&model.TcBaiduid{}).Delete("id = ?", v.ID)
 			_function.GormDB.Model(&model.TcTieba{}).Delete("pid = ?", v.ID)
 			return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]int32{
@@ -104,17 +100,34 @@ func GetTiebaAccountList(c echo.Context) error {
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", tiebaAccounts, "tbsign"))
 }
 
-func CheckTiebaAccount(c echo.Context) error {
+func GetTiebaAccountItem(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
 	pid := c.Param("pid")
-	numberPid, err := strconv.ParseInt(pid, 10, 64)
+
+	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
 		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
 	}
 
 	var tiebaAccount model.TcBaiduid
-	_function.GormDB.Where("id = ?", pid).Find(&tiebaAccount)
+	_function.GormDB.Where("uid = ? AND id = ?", uid, numPid).First(&tiebaAccount)
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", tiebaAccount, "tbsign"))
+}
 
-	if tiebaAccount.ID != 0 && tiebaAccount.ID != int32(numberPid) {
+func CheckTiebaAccount(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	pid := c.Param("pid")
+	numPid, err := strconv.ParseInt(pid, 10, 64)
+	if err != nil {
+		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
+	}
+
+	var tiebaAccount model.TcBaiduid
+	_function.GormDB.Where("id = ? AND uid = ?", pid, uid).Find(&tiebaAccount)
+
+	if tiebaAccount.ID != 0 && tiebaAccount.ID != int32(numPid) {
 		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
 	}
 

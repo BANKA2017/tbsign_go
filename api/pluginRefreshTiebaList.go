@@ -51,8 +51,8 @@ func PluginRefreshTiebaListRefreshTiebaList(c echo.Context) error {
 
 	pid := c.FormValue("pid")
 
-	numberPid, err := strconv.ParseInt(pid, 10, 64)
-	if err != nil || numberPid <= 0 {
+	numPid, err := strconv.ParseInt(pid, 10, 64)
+	if err != nil || numPid <= 0 {
 		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
 	}
 
@@ -61,7 +61,7 @@ func PluginRefreshTiebaListRefreshTiebaList(c echo.Context) error {
 
 	// get account list
 	for _, v := range tiebaAccounts {
-		if v.ID == int32(numberPid) {
+		if v.ID == int32(numPid) {
 			_plugin.ScanTiebaByPid(v.ID)
 			var tiebaList []model.TcTieba
 			_function.GormDB.Where("uid = ? AND pid = ?", uid, pid).Find(&tiebaList)

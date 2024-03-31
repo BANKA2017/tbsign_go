@@ -25,8 +25,8 @@ func AddTieba(c echo.Context) error {
 		return c.JSON(http.StatusOK, apiTemplate(404, "Tieba \""+fname+"\" is not exists", echoEmptyObject, "tbsign"))
 	}
 
-	numberUID, _ := strconv.ParseInt(uid, 10, 64)
-	numberPid, err := strconv.ParseInt(pid, 10, 64)
+	numUID, _ := strconv.ParseInt(uid, 10, 64)
+	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
 		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
 	}
@@ -40,8 +40,8 @@ func AddTieba(c echo.Context) error {
 	}
 
 	newTieba := model.TcTieba{
-		UID:       int32(numberUID),
-		Pid:       int32(numberPid),
+		UID:       int32(numUID),
+		Pid:       int32(numPid),
 		Fid:       int32(fid),
 		Tieba:     fname,
 		No:        false,
@@ -61,20 +61,20 @@ func RemoveTieba(c echo.Context) error {
 	pid := c.Param("pid")
 	fid := c.Param("fid")
 
-	numberUID, _ := strconv.ParseInt(uid, 10, 64)
-	numberPid, err := strconv.ParseInt(pid, 10, 64)
+	numUID, _ := strconv.ParseInt(uid, 10, 64)
+	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
 		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
 	}
-	numberFid, err := strconv.ParseInt(fid, 10, 64)
+	numFid, err := strconv.ParseInt(fid, 10, 64)
 	if err != nil {
 		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid fid", echoEmptyObject, "tbsign"))
 	}
 
 	_function.GormDB.Delete(&model.TcTieba{
-		UID: int32(numberUID),
-		Pid: int32(numberPid),
-		Fid: int32(numberFid),
+		UID: int32(numUID),
+		Pid: int32(numPid),
+		Fid: int32(numFid),
 	})
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", echoEmptyObject, "tbsign"))
@@ -88,26 +88,26 @@ func IgnoreTieba(c echo.Context) error {
 
 	method := c.Request().Method
 
-	numberUID, _ := strconv.ParseInt(uid, 10, 64)
-	numberPid, err := strconv.ParseInt(pid, 10, 64)
+	numUID, _ := strconv.ParseInt(uid, 10, 64)
+	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
 		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
 	}
-	numberFid, err := strconv.ParseInt(fid, 10, 64)
+	numFid, err := strconv.ParseInt(fid, 10, 64)
 	if err != nil {
 		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid fid", echoEmptyObject, "tbsign"))
 	}
 
 	if method == "DELETE" {
-		_function.GormDB.Model(&model.TcTieba{}).Where("uid = ? AND pid = ? AND fid = ?", numberUID, numberPid, numberFid).Update("no", false)
+		_function.GormDB.Model(&model.TcTieba{}).Where("uid = ? AND pid = ? AND fid = ?", numUID, numPid, numFid).Update("no", false)
 	} else {
-		_function.GormDB.Model(&model.TcTieba{}).Where("uid = ? AND pid = ? AND fid = ?", numberUID, numberPid, numberFid).Update("no", true)
+		_function.GormDB.Model(&model.TcTieba{}).Where("uid = ? AND pid = ? AND fid = ?", numUID, numPid, numFid).Update("no", true)
 	}
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
-		"uid": numberUID,
-		"pid": numberPid,
-		"fid": numberFid,
+		"uid": numUID,
+		"pid": numPid,
+		"fid": numFid,
 		"no":  method != "DELETE",
 	}, "tbsign"))
 }

@@ -30,8 +30,10 @@ var Client = &http.Client{
 
 var EmptyHeaders = map[string]string{}
 
-var BrowserUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
-var ClientUserAgent = "Mozilla/5.0 (Linux; Android 9; ONEPLUS A3010 Build/PKQ1.181203.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/117.0.0.0 Mobile Safari/537.36 tieba/12.22.1.0"
+const BrowserUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
+
+const ClientVersion = "12.57.4.2"
+const ClientUserAgent = "tieba/" + ClientVersion
 
 func Fetch(_url string, _method string, _body []byte, _headers map[string]string) ([]byte, error) {
 	var body io.Reader
@@ -219,7 +221,7 @@ func GetBaiduUserInfo(cookie _type.TypeCookie) (*_type.BaiduUserInfoResponse, er
 func GetUserInfoByTiebaUID(tbuid string) (*tbpb.GetUserByTiebaUidResIdl_DataRes, error) {
 	pbBytes, err := proto.Marshal(&tbpb.GetUserByTiebaUidReqIdl_DataReq{
 		Common: &tbpb.CommonReq{
-			XClientVersion: "12.57.4.2",
+			XClientVersion: ClientVersion,
 		},
 		TiebaUid: tbuid,
 	})
