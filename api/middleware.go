@@ -26,7 +26,6 @@ func PreCheck(next echo.HandlerFunc) echo.HandlerFunc {
 		log.Println(c.Request().Method, c.Path(), c.QueryString())
 
 		if PreCheckWhiteListExists(c.Path()) {
-			//log.Println("echo: whitelist")
 			return next(c)
 		}
 
@@ -39,7 +38,6 @@ func PreCheck(next echo.HandlerFunc) echo.HandlerFunc {
 
 		// login
 		if uid == "0" {
-			//log.Println("echo: invalid uid")
 			return c.JSON(http.StatusOK, apiTemplate(401, "Invalid session", echoEmptyObject, "tbsign"))
 		}
 
@@ -47,11 +45,9 @@ func PreCheck(next echo.HandlerFunc) echo.HandlerFunc {
 		if strings.HasPrefix(c.Path(), "/admin/") && role != "admin" {
 			return c.JSON(http.StatusOK, apiTemplate(403, "Invalid role", echoEmptyObject, "tbsign"))
 		}
-		//log.Println("echo: next")
+
 		c.Set("uid", uid)
 		c.Set("role", role)
-
-		// set variables
 
 		return next(c)
 	}

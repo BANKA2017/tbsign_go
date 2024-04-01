@@ -3,7 +3,6 @@ package _api
 import (
 	"encoding/base64"
 	"encoding/hex"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -86,15 +85,11 @@ func Login(c echo.Context) error {
 	// check
 	var accountInfo []model.TcUser
 	_function.GormDB.Where("name = ? OR email = ?", account, account).Limit(1).Find(&accountInfo)
-	//log.Println(accountInfo[0].Pw, password, "password")
 
 	err := _function.VerifyPasswordHash(accountInfo[0].Pw, password)
 	if err != nil {
-		// Compatible with older versions
-		md5_ := _function.Md5(_function.Md5(_function.Md5(password)))
-		if md5_ == accountInfo[0].Pw {
-			log.Println("md5")
-		} else {
+		// Compatible with older versions -> md5(md5(md5($pwd)))
+		if _function.Md5(_function.Md5(_function.Md5(password))) != accountInfo[0].Pw {
 			return c.JSON(http.StatusOK, apiTemplate(401, "Invalid account or password", echoEmptyObject, "tbsign"))
 		}
 	}
@@ -127,10 +122,7 @@ func UpdatePassword(c echo.Context) error {
 	err := _function.VerifyPasswordHash(accountInfo[0].Pw, oldPwd)
 	if err != nil {
 		// Compatible with older versions
-		md5_ := _function.Md5(_function.Md5(_function.Md5(oldPwd)))
-		if md5_ == accountInfo[0].Pw {
-			log.Println("md5")
-		} else {
+		if _function.Md5(_function.Md5(_function.Md5(oldPwd))) != accountInfo[0].Pw {
 			return c.JSON(http.StatusOK, apiTemplate(403, "Invalid password", echoEmptyObject, "tbsign"))
 		}
 	}

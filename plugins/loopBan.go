@@ -91,7 +91,7 @@ func GetManagerInfo(fid uint64) (*tbpb.GetBawuInfoResIdl_DataRes, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Println(resp, string(resp))
+	// log.Println(resp, string(resp))
 	var res tbpb.GetBawuInfoResIdl
 	err = proto.Unmarshal(resp, &res)
 	if err != nil {

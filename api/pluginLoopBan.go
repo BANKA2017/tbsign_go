@@ -262,7 +262,7 @@ func PluginLoopBanDelAccount(c echo.Context) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	numID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusOK, apiTemplate(500, "Invalid id", map[string]any{
+		return c.JSON(http.StatusOK, apiTemplate(500, "Invalid id", map[string]any{
 			"success": false,
 			"id":      id,
 		}, "tbsign"))

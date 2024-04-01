@@ -31,7 +31,7 @@ func PluginForumSupportUpdateSettings(c echo.Context) error {
 
 	pid := c.FormValue("pid")
 	numPid, err := strconv.ParseInt(pid, 10, 64)
-	log.Println(pid, numPid, err)
+
 	if err != nil || numPid <= 0 {
 		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
 	}

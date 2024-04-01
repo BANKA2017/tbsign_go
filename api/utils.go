@@ -46,8 +46,7 @@ func apiTemplate[T any](code int, message string, data T, version string) _type.
 }
 
 func echoReject(c echo.Context) error {
-	var response = apiTemplate(403, "Invalid Request", echoEmptyObject, "tbsign")
-	return c.JSON(http.StatusForbidden, response)
+	return c.JSON(http.StatusForbidden, apiTemplate(403, "Invalid Request", echoEmptyObject, "tbsign"))
 }
 
 func echoNoContent(c echo.Context) error {
