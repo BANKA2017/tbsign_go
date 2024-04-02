@@ -31,19 +31,26 @@ func PreCheck(next echo.HandlerFunc) echo.HandlerFunc {
 
 		authorization := c.Request().Header.Get("Authorization")
 		if len(authorization) < 6 || !strings.EqualFold("basic ", authorization[0:6]) {
-			return c.JSON(http.StatusOK, apiTemplate(401, "Invalid session", echoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, apiTemplate(401, "无效 session", echoEmptyObject, "tbsign"))
 		}
 
 		uid, role := verifyAuthorization(authorization[6:])
 
 		// login
 		if uid == "0" {
-			return c.JSON(http.StatusOK, apiTemplate(401, "Invalid session", echoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, apiTemplate(401, "无效 session", echoEmptyObject, "tbsign"))
+		}
+
+		// banned
+		if role == "banned" {
+			return c.JSON(http.StatusOK, apiTemplate(403, "帐号已封禁", echoEmptyObject, "tbsign"))
+		} else if role == "deleted" {
+			return c.JSON(http.StatusOK, apiTemplate(403, "帐号已删除", echoEmptyObject, "tbsign"))
 		}
 
 		// admin
 		if strings.HasPrefix(c.Path(), "/admin/") && role != "admin" {
-			return c.JSON(http.StatusOK, apiTemplate(403, "Invalid role", echoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, apiTemplate(403, "无效用户组", echoEmptyObject, "tbsign"))
 		}
 
 		c.Set("uid", uid)

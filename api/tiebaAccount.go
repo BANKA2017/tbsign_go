@@ -22,13 +22,13 @@ func AddTiebaAccount(c echo.Context) error {
 	stoken := strings.TrimSpace(c.FormValue("stoken"))
 
 	if bduss == "" || stoken == "" {
-		return c.JSON(http.StatusOK, apiTemplate(401, "Invalid BDUSS or stoken", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(401, "BDUSS 或 Stoken 无效", echoEmptyObject, "tbsign"))
 	}
 
 	// get tieba account info
 	baiduAccountInfo, err := _function.GetBaiduUserInfo(_type.TypeCookie{Bduss: bduss})
 	if err != nil || baiduAccountInfo.User.Portrait == "" {
-		return c.JSON(http.StatusOK, apiTemplate(404, "Unable to verify BDUSS", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(404, "无法验证登录状态 BDUSS", echoEmptyObject, "tbsign"))
 	}
 
 	// pre-check
@@ -48,7 +48,7 @@ func AddTiebaAccount(c echo.Context) error {
 			newData.UID = tiebaAccounts[0].UID
 			return c.JSON(http.StatusOK, apiTemplate(200, "OK", newData, "tbsign"))
 		} else if tiebaAccounts[0].Bduss == bduss && tiebaAccounts[0].Stoken == stoken {
-			return c.JSON(http.StatusOK, apiTemplate(200, "Account already exists", tiebaAccounts[0], "tbsign"))
+			return c.JSON(http.StatusOK, apiTemplate(200, "贴吧账号已存在", tiebaAccounts[0], "tbsign"))
 		}
 	}
 
@@ -72,7 +72,7 @@ func RemoveTiebaAccount(c echo.Context) error {
 	pid := c.Param("pid")
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "无效 pid", echoEmptyObject, "tbsign"))
 	}
 
 	// fid pid
@@ -89,7 +89,7 @@ func RemoveTiebaAccount(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, apiTemplate(404, "pid not found", echoEmptyObject, "tbsign"))
+	return c.JSON(http.StatusOK, apiTemplate(404, "Pid 不存在", echoEmptyObject, "tbsign"))
 }
 
 func GetTiebaAccountList(c echo.Context) error {
@@ -107,7 +107,7 @@ func GetTiebaAccountItem(c echo.Context) error {
 
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "无效 pid", echoEmptyObject, "tbsign"))
 	}
 
 	var tiebaAccount model.TcBaiduid
@@ -121,14 +121,14 @@ func CheckTiebaAccount(c echo.Context) error {
 	pid := c.Param("pid")
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "无效 pid", echoEmptyObject, "tbsign"))
 	}
 
 	var tiebaAccount model.TcBaiduid
 	_function.GormDB.Where("id = ? AND uid = ?", pid, uid).Find(&tiebaAccount)
 
 	if tiebaAccount.ID != 0 && tiebaAccount.ID != int32(numPid) {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "无效 pid", echoEmptyObject, "tbsign"))
 	}
 
 	// get tieba account info

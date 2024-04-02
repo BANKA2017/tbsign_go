@@ -15,7 +15,7 @@ func GetUserByTiebaUID(c echo.Context) error {
 
 	if err != nil {
 		log.Println(err)
-		return c.JSON(http.StatusOK, apiTemplate(500, "Unknown error", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(500, "未知错误", echoEmptyObject, "tbsign"))
 	}
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", response, "tbsign"))
@@ -28,7 +28,7 @@ func GetUserByUsernameOrPortrait(c echo.Context) error {
 	response, err := _function.GetUserInfoByUsernameOrPortrait(queryType, userValue)
 	if err != nil {
 		log.Println(err)
-		return c.JSON(http.StatusOK, apiTemplate(500, "Unknown error", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(500, "未知错误", echoEmptyObject, "tbsign"))
 	}
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", response, "tbsign"))

@@ -52,14 +52,14 @@ func PluginGrowthTasksAddAccount(c echo.Context) error {
 	pid := c.Param("pid")
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil || numPid <= 0 {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "无效 pid", echoEmptyObject, "tbsign"))
 	}
 
 	// pre check
 	var count int64
 	_function.GormDB.Model(&model.TcKdGrowth{}).Where("uid = ? AND pid = ?", uid, numPid).Count(&count)
 	if count > 0 {
-		return c.JSON(http.StatusOK, apiTemplate(200, "Account exists", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(200, "帐号已存在", echoEmptyObject, "tbsign"))
 	} else {
 		dataToInsert := model.TcKdGrowth{
 			UID:  numUID,
@@ -80,7 +80,7 @@ func PluginGrowthTasksDelAccount(c echo.Context) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	numID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(500, "Invalid id", map[string]any{
+		return c.JSON(http.StatusOK, apiTemplate(500, "无效任务 id", map[string]any{
 			"success": false,
 			"id":      id,
 		}, "tbsign"))
@@ -121,12 +121,12 @@ func PluginGrowthTasksGetTasksStatus(c echo.Context) error {
 		numPid, _ := strconv.ParseInt(pid, 10, 64)
 		status, err := _plugin.GetUserGrowthTasksList(_function.GetCookie(int32(numPid)))
 		if err != nil {
-			return c.JSON(http.StatusOK, apiTemplate(500, "Fetch tasks failed", echoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, apiTemplate(500, "获取任务列表失败", echoEmptyObject, "tbsign"))
 		} else if status.No != 0 {
 			return c.JSON(http.StatusOK, apiTemplate(500, status.Error, echoEmptyObject, "tbsign"))
 		}
 		return c.JSON(http.StatusOK, apiTemplate(200, "OK", status.Data, "tbsign"))
 	} else {
-		return c.JSON(http.StatusOK, apiTemplate(404, "Account is not exists", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(404, "帐号不存在", echoEmptyObject, "tbsign"))
 	}
 }

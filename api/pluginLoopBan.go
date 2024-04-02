@@ -36,7 +36,7 @@ func PluginLoopBanSwitch(c echo.Context) error {
 
 	if err != nil {
 		log.Println(err)
-		return c.JSON(http.StatusOK, apiTemplate(500, "Unable to update status", status, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(500, "无法启用循环封禁功能", status, "tbsign"))
 	}
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", !status, "tbsign"))
 }
@@ -60,7 +60,7 @@ func PluginLoopBanSetReason(c echo.Context) error {
 	err := _function.GormDB.Model(&model.TcVer4BanUserset{}).Where("uid = ?", uid).Update("c", reason).Error
 	if err != nil {
 		log.Println(err)
-		return c.JSON(http.StatusOK, apiTemplate(500, "Unable to update the ban reason", map[string]string{
+		return c.JSON(http.StatusOK, apiTemplate(500, "无法更新封禁理由", map[string]string{
 			"reason": reason,
 		}, "tbsign"))
 	}
@@ -119,7 +119,7 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "无效 pid", echoEmptyObject, "tbsign"))
 	}
 
 	// time
@@ -127,33 +127,33 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 	if start != "" {
 		startTime, err = time.Parse("2006-01-02", start)
 		if err != nil {
-			return c.JSON(http.StatusOK, apiTemplate(403, "Invalid start date format", echoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, apiTemplate(403, "开始日期格式错误", echoEmptyObject, "tbsign"))
 		}
 	}
 
 	endTime, err := time.Parse("2006-01-02", end)
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid end date format", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "结束日期格式错误", echoEmptyObject, "tbsign"))
 	}
 
 	if startTime.Unix() >= endTime.Unix() {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Start time is greater than end time", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "开始时刻晚于结束时刻", echoEmptyObject, "tbsign"))
 	}
 
 	if endTime.Unix() < time.Now().Unix() {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Now time is greater than end time", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "现在时刻晚于结束时刻", echoEmptyObject, "tbsign"))
 	}
 
 	// pre check
 	var accountInfo model.TcBaiduid
 	_function.GormDB.Model(&model.TcBaiduid{}).Where("id = ? AND uid = ?", pid, uid).First(&accountInfo)
 	if accountInfo.Portrait == "" {
-		return c.JSON(http.StatusOK, apiTemplate(404, "Invalid pid", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(404, "无效 pid", echoEmptyObject, "tbsign"))
 	}
 
 	// portrait
 	if portraits == "" {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Value of portrait is empty!", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "待封禁 portrait 列表为空!", echoEmptyObject, "tbsign"))
 	}
 	portraitList := []string{}
 	for _, portrait := range strings.Split(portraits, "\n") {
@@ -171,7 +171,7 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 
 	count := int64(len(existsAccountList))
 	if count >= numLimit || count+int64(len(portraitList)) > numLimit {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Account limit exceeded", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "添加帐号数超限（"+strconv.Itoa(int(count+int64(len(portraitList))))+"/"+limit+"）", echoEmptyObject, "tbsign"))
 	}
 
 	fid := _function.GetFid(fname)
@@ -183,10 +183,10 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 	if _function.GetOption("ver4_ban_break_check") == "0" {
 		managerStatus, err := _plugin.GetManagerStatus(_function.GetCookie(int32(numPid)).Portrait, fid)
 		if err != nil {
-			return c.JSON(http.StatusOK, apiTemplate(500, "Unable to check manager status", echoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, apiTemplate(500, "无法获取吧务列表", echoEmptyObject, "tbsign"))
 		}
 		if !managerStatus.IsManager {
-			return c.JSON(http.StatusOK, apiTemplate(403, "You are NOT the manager of fid:"+fname, echoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, apiTemplate(403, "您不是 fid:"+fname+" 的吧务成员", echoEmptyObject, "tbsign"))
 		}
 	}
 
@@ -206,7 +206,7 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 					Start:    int64(v.Stime),
 					End:      int64(v.Etime),
 					Success:  false,
-					Msg:      "Account is already exists",
+					Msg:      "账号已存在",
 				})
 				dbExists = true
 				break
@@ -222,7 +222,7 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 			accountsResult = append(accountsResult, addAccountsResponseList{
 				Portrait: portrait,
 				Success:  false,
-				Msg:      "Portrait not found",
+				Msg:      "帐号不存在",
 			})
 		}
 		accountsResult = append(accountsResult, addAccountsResponseList{
@@ -262,7 +262,7 @@ func PluginLoopBanDelAccount(c echo.Context) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	numID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(500, "Invalid id", map[string]any{
+		return c.JSON(http.StatusOK, apiTemplate(500, "无效 id", map[string]any{
 			"success": false,
 			"id":      id,
 		}, "tbsign"))
@@ -302,7 +302,7 @@ func PluginLoopBanPreCheckIsManager(c echo.Context) error {
 	_function.GormDB.Where("uid = ? AND id = ?", uid, pid).Limit(1).Find(&pidCheck)
 
 	if len(pidCheck) == 0 {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", _plugin.IsManagerPreCheckResponse{}, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "无效 pid", _plugin.IsManagerPreCheckResponse{}, "tbsign"))
 	}
 
 	fid := _function.GetFid(fname)

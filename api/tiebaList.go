@@ -17,18 +17,18 @@ func AddTieba(c echo.Context) error {
 	fname := c.FormValue("fname")
 
 	if fname == "" {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid fname", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "贴吧名无效", echoEmptyObject, "tbsign"))
 	}
 	// get tieba info by fname
 	fid := _function.GetFid(fname)
 	if fid == 0 {
-		return c.JSON(http.StatusOK, apiTemplate(404, "Tieba \""+fname+"\" is not exists", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(404, "\""+fname+"吧\" 不存在", echoEmptyObject, "tbsign"))
 	}
 
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "无效 pid", echoEmptyObject, "tbsign"))
 	}
 
 	// pre-check
@@ -36,7 +36,7 @@ func AddTieba(c echo.Context) error {
 	_function.GormDB.Where("uid = ? AND pid = ? AND fid = ?", uid, pid, fid).Limit(1).Find(&tiebaItems)
 
 	if len(tiebaItems) > 0 {
-		return c.JSON(http.StatusOK, apiTemplate(200, "Tieba is already exists", tiebaItems[0], "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(200, "贴吧已存在", tiebaItems[0], "tbsign"))
 	}
 
 	newTieba := model.TcTieba{
@@ -64,11 +64,11 @@ func RemoveTieba(c echo.Context) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "无效 pid", echoEmptyObject, "tbsign"))
 	}
 	numFid, err := strconv.ParseInt(fid, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid fid", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "无效 fid", echoEmptyObject, "tbsign"))
 	}
 
 	_function.GormDB.Delete(&model.TcTieba{
@@ -91,11 +91,11 @@ func IgnoreTieba(c echo.Context) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "无效 pid", echoEmptyObject, "tbsign"))
 	}
 	numFid, err := strconv.ParseInt(fid, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid fid", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "无效 fid", echoEmptyObject, "tbsign"))
 	}
 
 	if method == "DELETE" {

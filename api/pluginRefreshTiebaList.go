@@ -53,7 +53,7 @@ func PluginRefreshTiebaListRefreshTiebaList(c echo.Context) error {
 
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil || numPid <= 0 {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "无效 pid", echoEmptyObject, "tbsign"))
 	}
 
 	var tiebaAccounts []model.TcBaiduid
@@ -69,5 +69,5 @@ func PluginRefreshTiebaListRefreshTiebaList(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, apiTemplate(404, "Pid not found", echoEmptyObject, "tbsign"))
+	return c.JSON(http.StatusOK, apiTemplate(404, "找不到 pid:"+pid, echoEmptyObject, "tbsign"))
 }

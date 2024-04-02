@@ -9,12 +9,6 @@ import (
 )
 
 func GetServerStatus(c echo.Context) error {
-	role := c.Get("role").(string)
-
-	if role != "admin" {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid role", echoEmptyObject, "tbsign"))
-	}
-
 	hostname, _ := os.Hostname()
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{

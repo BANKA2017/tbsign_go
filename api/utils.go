@@ -27,6 +27,8 @@ var PreCheckWhiteList = []string{
 	"/tools/tieba/fname_to_fid/:fname",
 }
 
+var RoleList = []string{"deleted", "banned", "user", "vip", "admin"}
+
 func PreCheckWhiteListExists(path string) bool {
 	for _, v := range PreCheckWhiteList {
 		if path == v {
@@ -46,7 +48,7 @@ func apiTemplate[T any](code int, message string, data T, version string) _type.
 }
 
 func echoReject(c echo.Context) error {
-	return c.JSON(http.StatusForbidden, apiTemplate(403, "Invalid Request", echoEmptyObject, "tbsign"))
+	return c.JSON(http.StatusForbidden, apiTemplate(403, "非法请求", echoEmptyObject, "tbsign"))
 }
 
 func echoNoContent(c echo.Context) error {

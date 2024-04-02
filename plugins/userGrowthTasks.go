@@ -13,6 +13,7 @@ import (
 )
 
 var UserGrowthTasksPluginName = "kd_growth"
+var UserGrowthTasksBreakList = []string{"open_push_switch", "add_post", "agree"}
 
 type UserGrowthTasksWebResponse struct {
 	No    int    `json:"no"`
@@ -215,7 +216,7 @@ func DoGrowthTasksAction() {
 
 		var result []UserGrowthTaskToSave
 		for _, task := range tasksList {
-			if task.SortStatus == -1 {
+			if task.SortStatus == -1 || slices.Contains(UserGrowthTasksBreakList, task.ActType) {
 				continue
 			} else if task.SortStatus == 2 {
 				result = append(result, UserGrowthTaskToSave{
