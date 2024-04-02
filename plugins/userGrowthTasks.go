@@ -13,7 +13,7 @@ import (
 )
 
 var UserGrowthTasksPluginName = "kd_growth"
-var UserGrowthTasksBreakList = []string{"open_push_switch", "add_post", "agree"}
+var UserGrowthTasksBreakList = []string{"open_push_switch"}
 
 type UserGrowthTasksWebResponse struct {
 	No    int    `json:"no"`
