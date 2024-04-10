@@ -2,7 +2,6 @@ package _function
 
 import (
 	"fmt"
-	"log"
 	"mime"
 	"regexp"
 	"strconv"
@@ -66,9 +65,5 @@ func SendEmail(_to, _subject, _body string) error {
 		"Message-ID: <" + Now.Format("20060102150405") + "." + strconv.Itoa(Now.Nanosecond()) + "." + mail + ">\r\n" +
 		"\r\n" +
 		_body + "\r\n")
-	err := smtp.SendMail(smtp_host+":"+smtp_port, client, mail, to, msg)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return nil
+	return smtp.SendMail(smtp_host+":"+smtp_port, client, mail, to, msg)
 }
