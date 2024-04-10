@@ -63,6 +63,7 @@ func Api(address string, variables ...any) {
 	e.GET("/admin/plugins", GetPluginsList)
 	e.POST("/admin/plugins/:plugin_name/switch", PluginSwitch)
 	e.GET("/admin/server/status", GetServerStatus)
+	e.POST("/admin/service/push/mail/test", SendTestMail)
 
 	// plugins
 	// ForumSupport

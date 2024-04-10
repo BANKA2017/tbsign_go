@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/url"
 	"strconv"
-	"time"
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
@@ -225,7 +224,7 @@ func DoGrowthTasksAction() {
 					Status:  1,
 					Msg:     "success",
 				})
-			} else if task.SortStatus == 1 && (task.ExpireTime == 0 || task.ExpireTime > int(time.Now().Unix())) {
+			} else if task.SortStatus == 1 && (task.ExpireTime == 0 || task.ExpireTime > int(_function.Now.Unix())) {
 				response, err := PostGrowthTaskByWeb(cookie, task.ActType)
 				if err != nil {
 					result = append(result, UserGrowthTaskToSave{

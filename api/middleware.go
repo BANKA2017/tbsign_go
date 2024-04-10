@@ -4,8 +4,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
+	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/labstack/echo/v4"
 )
 
@@ -22,7 +22,7 @@ func SetHeaders(next echo.HandlerFunc) echo.HandlerFunc {
 
 func PreCheck(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		c.Set("start_date", time.Now().UnixNano())
+		c.Set("start_date", _function.Now.UnixNano())
 		log.Println(c.Request().Method, c.Path(), c.QueryString())
 
 		if PreCheckWhiteListExists(c.Path()) {

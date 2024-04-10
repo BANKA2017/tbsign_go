@@ -18,6 +18,9 @@ type SiteAccountsResponse struct {
 	T     string `json:"t"`
 }
 
+// ?
+// var InviteCodeList = make(map[string]string)
+
 func GetAdminSettings(c echo.Context) error {
 	var adminSettings []model.TcOption
 	_function.GormDB.Find(&adminSettings)
@@ -191,4 +194,18 @@ func PluginSwitch(c echo.Context) error {
 		"exists": true,
 		"status": newStatus,
 	}, "tblist"))
+}
+
+func SendTestMail(c echo.Context) error {
+	uid := c.Get("uid").(string)
+	var accountInfo model.TcUser
+
+	_function.GormDB.Where("id = ?", uid).Find(&accountInfo)
+
+	err := _function.SendEmail(accountInfo.Email, "TbSign 测试邮件", "-- begin --><br />这是一封来自 TbSign 的测试邮件<br />您能够看到这里说明邮件发送成功<br />下面是一条链接，指向本项目仓库<br /><a href=\"https://github.com/BANKA2017/tbsign_go\" target=\"blank\">TbSign</a><br />接下来是验证码，用于模拟用户认证：<br /><br /><pre style=\"font: monospace\">12345</pre><br /><br /><-- end --")
+	if err != nil {
+		return c.JSON(http.StatusOK, apiTemplate(500, err.Error(), false, "tblist"))
+	} else {
+		return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tblist"))
+	}
 }

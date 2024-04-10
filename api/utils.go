@@ -13,7 +13,13 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+type resetPwdStruct struct {
+	Expire int
+	Value  string
+}
+
 var echoEmptyObject = make(map[string]any, 0)
+var resetPwdObject = make(map[string]resetPwdStruct)
 
 var PreCheckWhiteList = []string{
 	"/*",

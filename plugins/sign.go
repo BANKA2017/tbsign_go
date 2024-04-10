@@ -98,7 +98,7 @@ func Dosign(table string, retry bool) (bool, error) {
 		time.Sleep(time.Millisecond * time.Duration(sleep))
 	}
 	wg.Wait()
-	log.Println("sign: done!", time.Now().UnixMilli()-_function.Now.UnixMilli())
+	log.Println("sign: done!")
 	return hasFailed, nil
 }
 

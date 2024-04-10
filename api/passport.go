@@ -23,10 +23,18 @@ func Signup(c echo.Context) error {
 	name := c.FormValue("name")
 	email := c.FormValue("email")
 	password := c.FormValue("password")
-	//inviteCode := c.FormValue("invite_code")
+	inviteCode := c.FormValue("invite_code")
 
 	if name == "" || strings.Contains(name, "@") || !_function.VerifyEmail(email) || password == "" {
 		return c.JSON(http.StatusOK, apiTemplate(403, "无效 用户名/邮箱/密码", echoEmptyObject, "tbsign"))
+	}
+
+	// invite code
+	localInviteCode := _function.GetOption("yr_reg")
+	if localInviteCode != "" {
+		if localInviteCode != inviteCode {
+			return c.JSON(http.StatusOK, apiTemplate(403, "无效邀请码", echoEmptyObject, "tbsign"))
+		}
 	}
 
 	role := "user"
@@ -266,4 +274,9 @@ func UpdateSettings(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", settings, "tbsign"))
+}
+
+func ResetPassword(c echo.Context) error {
+	// TODO
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
 }

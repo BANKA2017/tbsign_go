@@ -107,6 +107,7 @@ func main() {
 	_function.GetOptionsAndPluginList()
 
 	// Interval
+	oneSecondInterval := time.NewTicker(time.Second)
 	oneMinuteInterval := time.NewTicker(time.Minute)
 	defer oneMinuteInterval.Stop()
 	fourHoursInterval := time.NewTicker(time.Hour * 4)
@@ -122,10 +123,10 @@ func main() {
 		defer wg.Done()
 		for {
 			select {
+			case <-oneSecondInterval.C:
+				_function.UpdateNow()
 			case <-oneMinuteInterval.C:
 				_function.GetOptionsAndPluginList()
-
-				_function.UpdateNow()
 				_plugin.DoSignAction()
 				_plugin.DoReSignAction()
 
