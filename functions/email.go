@@ -30,6 +30,7 @@ func VerifyEmail(email string) bool {
 	return len(regexp.MustCompile(`(?m)^[\w\.\-]+@\w+(?:[\.\-]\w+)*$`).FindAllString(email, -1)) == 1
 }
 
+// TODO GPG?
 func SendEmail(_to, _subject, _body string) error {
 	mail := GetOption("mail_name")
 	mail_name := GetOption("mail_yourname")
@@ -64,6 +65,28 @@ func SendEmail(_to, _subject, _body string) error {
 		"Content-Transfer-Encoding: 8bit\r\n" +
 		"Message-ID: <" + Now.Format("20060102150405") + "." + strconv.Itoa(Now.Nanosecond()) + "." + mail + ">\r\n" +
 		"\r\n" +
-		_body + "\r\n")
+		_body + "<br /><br />" + Now.Format("2006-01-02") + "\r\n")
 	return smtp.SendMail(smtp_host+":"+smtp_port, client, mail, to, msg)
+}
+
+type emailTemplateStruct struct {
+	Object string
+	Body   string
+}
+
+func EmailTemplateResetPassword(email, code string) emailTemplateStruct {
+	return emailTemplateStruct{
+		Object: code + " 是你的验证码",
+		Body: "亲爱的 " + email + "<br /><br />" +
+			"你正在 TbSign 进行找回密码，需要进行身份验证。 本次行为的验证码是:<br /><br />" +
+			code + "<br /><br />" +
+			"请在页面输入验证码，进行重置。<br />" +
+			"该邮件" + strconv.Itoa(ResetPwdExpire/60) + "分钟内有效，为了你的帐号安全，请勿将验证码提供给他人。",
+	}
+}
+func EmailTestTemplate() emailTemplateStruct {
+	return emailTemplateStruct{
+		Object: "TbSign 测试邮件",
+		Body:   "TbSign 推送服务测试<br />这是一封测试消息，如果您能阅读到这里，说明邮件已经发送成功",
+	}
 }

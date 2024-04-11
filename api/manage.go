@@ -169,7 +169,7 @@ func GetAccountsList(c echo.Context) error {
 }
 
 func GetPluginsList(c echo.Context) error {
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", _function.PluginList, "tblist"))
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", _function.PluginList, "tbsign"))
 }
 
 func PluginSwitch(c echo.Context) error {
@@ -183,7 +183,7 @@ func PluginSwitch(c echo.Context) error {
 			"name":   pluginName,
 			"exists": false,
 			"status": false,
-		}, "tblist"))
+		}, "tbsign"))
 	}
 	newStatus := !_function.PluginList[pluginName]
 	_function.GormDB.Model(&model.TcPlugin{}).Where("name = ?", pluginName).Update("status", newStatus)
@@ -193,7 +193,7 @@ func PluginSwitch(c echo.Context) error {
 		"name":   pluginName,
 		"exists": true,
 		"status": newStatus,
-	}, "tblist"))
+	}, "tbsign"))
 }
 
 func SendTestMail(c echo.Context) error {
@@ -202,10 +202,11 @@ func SendTestMail(c echo.Context) error {
 
 	_function.GormDB.Where("id = ?", uid).Find(&accountInfo)
 
-	err := _function.SendEmail(accountInfo.Email, "TbSign 测试邮件", "-- begin --><br />这是一封来自 TbSign 的测试邮件<br />您能够看到这里说明邮件发送成功<br />下面是一条链接，指向本项目仓库<br /><a href=\"https://github.com/BANKA2017/tbsign_go\" target=\"blank\">TbSign</a><br />接下来是验证码，用于模拟用户认证：<br /><br /><pre style=\"font: monospace\">12345</pre><br /><br /><-- end --")
+	mailObject := _function.EmailTestTemplate()
+	err := _function.SendEmail(accountInfo.Email, mailObject.Object, mailObject.Body)
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(500, err.Error(), false, "tblist"))
+		return c.JSON(http.StatusOK, apiTemplate(500, err.Error(), false, "tbsign"))
 	} else {
-		return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tblist"))
+		return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
 	}
 }

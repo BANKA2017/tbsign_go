@@ -16,6 +16,17 @@ var PluginListDB []model.TcPlugin
 var PluginList = make(map[string]bool)
 var GormDB *gorm.DB
 
+type ResetPwdStruct struct {
+	Expire int64
+	Value  string
+	Time   int64
+}
+
+const ResetPwdMaxTimes = 5
+const ResetPwdExpire = 60 * 30
+
+var ResetPwdList = make(map[string]*ResetPwdStruct)
+
 // Tieba works in GMT+8
 var LocalTime, _ = time.LoadLocation("Asia/Shanghai")
 

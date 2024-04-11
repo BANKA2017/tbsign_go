@@ -3,6 +3,7 @@ package _api
 import (
 	"encoding/base64"
 	"encoding/hex"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
@@ -277,6 +278,72 @@ func UpdateSettings(c echo.Context) error {
 }
 
 func ResetPassword(c echo.Context) error {
-	// TODO
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
+	email := c.FormValue("email")
+	verifyCode := c.FormValue("code")
+	newPwd := c.FormValue("password")
+
+	if !_function.VerifyEmail(email) {
+		return c.JSON(http.StatusOK, apiTemplate(404, "邮箱不存在", false, "tbsign"))
+	}
+
+	// try to find account
+	var accountInfo model.TcUser
+	_function.GormDB.Where("email = ?", email).Find(&accountInfo)
+	if accountInfo.ID == 0 {
+		return c.JSON(http.StatusOK, apiTemplate(404, "帐号不存在", false, "tbsign"))
+	}
+
+	if verifyCode != "" {
+		if _, ok := _function.ResetPwdList[accountInfo.Email]; !ok {
+			return c.JSON(http.StatusOK, apiTemplate(404, "无效验证码", false, "tbsign"))
+		}
+		if _function.ResetPwdList[accountInfo.Email].Value != verifyCode {
+			return c.JSON(http.StatusOK, apiTemplate(404, "无效验证码", false, "tbsign"))
+		} else {
+			if newPwd == "" {
+				return c.JSON(http.StatusOK, apiTemplate(404, "密码不能为空", false, "tbsign"))
+			} else {
+				// create new password
+				hash, err := _function.CreatePasswordHash(newPwd)
+				if err != nil {
+					return c.JSON(http.StatusOK, apiTemplate(500, "无法更新密码...", false, "tbsign"))
+				}
+
+				_function.GormDB.Model(model.TcUser{}).Where("id = ?", accountInfo.ID).Update("pw", string(hash))
+
+				delete(_function.ResetPwdList, accountInfo.Email)
+				return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
+			}
+		}
+	} else if verifyCode == "" && newPwd != "" {
+		return c.JSON(http.StatusOK, apiTemplate(404, "无效验证码", false, "tbsign"))
+	} else {
+		if _, ok := _function.ResetPwdList[accountInfo.Email]; !ok {
+			_function.ResetPwdList[accountInfo.Email] = &_function.ResetPwdStruct{
+				Expire: _function.Now.Unix() + _function.ResetPwdExpire,
+			}
+		} else {
+			if _function.ResetPwdList[accountInfo.Email].Time >= _function.ResetPwdMaxTimes {
+				return c.JSON(http.StatusOK, apiTemplate(403, "已超过最大验证次数，请稍后再试", false, "tbsign"))
+			}
+		}
+		// init a callback code
+		code := strconv.Itoa(int(rand.Uint32()))
+		for len(code) < 6 {
+			code = "0" + code
+		}
+
+		code = code[0:6]
+
+		(*_function.ResetPwdList[accountInfo.Email]).Value = code
+		(*_function.ResetPwdList[accountInfo.Email]).Time += 1
+
+		mailObject := _function.EmailTemplateResetPassword(accountInfo.Email, code)
+		err := _function.SendEmail(accountInfo.Email, mailObject.Object, mailObject.Body)
+		if err != nil {
+			return c.JSON(http.StatusOK, apiTemplate(500, err.Error(), false, "tbsign"))
+		} else {
+			return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
+		}
+	}
 }

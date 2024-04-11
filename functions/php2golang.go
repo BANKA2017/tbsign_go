@@ -55,6 +55,12 @@ func Sha1(str string) string {
 	return hex.EncodeToString(hash.Sum(nil))
 }
 
+func Sha256(str string) string {
+	hash := sha256.New()
+	hash.Write([]byte(str))
+	return hex.EncodeToString(hash.Sum(nil))
+}
+
 func GenHMAC256(ciphertext, key []byte) []byte {
 	mac := hmac.New(sha256.New, key)
 	mac.Write([]byte(ciphertext))

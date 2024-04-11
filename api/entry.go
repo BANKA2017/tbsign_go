@@ -38,6 +38,7 @@ func Api(address string, variables ...any) {
 	e.PUT("/passport/update_pwd", UpdatePassword)
 	e.GET("/passport/settings", GetSettings)
 	e.PUT("/passport/settings", UpdateSettings)
+	e.POST("/passport/reset_password", ResetPassword)
 
 	// tieba account
 	e.GET("/account", GetTiebaAccountList)

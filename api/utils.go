@@ -13,13 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type resetPwdStruct struct {
-	Expire int
-	Value  string
-}
-
 var echoEmptyObject = make(map[string]any, 0)
-var resetPwdObject = make(map[string]resetPwdStruct)
 
 var PreCheckWhiteList = []string{
 	"/*",
@@ -28,6 +22,7 @@ var PreCheckWhiteList = []string{
 	"/passport/login",
 	"/passport/logout",
 	"/passport/signup",
+	"/passport/reset_password",
 	"/tools/userinfo/tieba_uid/:tiebauid",
 	"/tools/userinfo/panel/:query_type/:user_value",
 	"/tools/tieba/fname_to_fid/:fname",

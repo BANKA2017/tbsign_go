@@ -142,6 +142,15 @@ func main() {
 				if _function.PluginList["kd_growth"] {
 					go _plugin.DoGrowthTasksAction()
 				}
+
+				// clean pwd list
+				if len(_function.ResetPwdList) > 0 {
+					for email, value := range _function.ResetPwdList {
+						if value.Expire < _function.Now.Unix() {
+							delete(_function.ResetPwdList, email)
+						}
+					}
+				}
 			case <-fourHoursInterval.C:
 				_function.GetOptionsAndPluginList()
 				if _function.PluginList["ver4_ref"] {
