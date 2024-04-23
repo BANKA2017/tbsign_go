@@ -9,6 +9,7 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	tbpb "github.com/BANKA2017/tbsign_go/proto"
 	_type "github.com/BANKA2017/tbsign_go/types"
+	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -30,9 +31,11 @@ type IsManagerPreCheckResponse struct {
 
 var LoopBanPluginName = "ver4_ban"
 
+var banDays = []int32{1, 3, 10}
+
 func PostClientBan(cookie _type.TypeCookie, fid int32, portrait string, day int32, reason string) (*BanAccountResponse, error) {
 	isSvipBlock := "0"
-	if day == 90 {
+	if day <= 90 && !slices.Contains(banDays, day) {
 		isSvipBlock = "1"
 	}
 
