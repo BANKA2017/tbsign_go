@@ -82,6 +82,11 @@ type UserGrowthTaskToSave struct {
 	Msg     string `json:"msg"`
 }
 
+type UserGrowthTaskCollectStampResponse struct {
+	No    int    `json:"no,omitempty"`
+	Error string `json:"error,omitempty"`
+}
+
 func PostGrowthTaskByWeb(cookie _type.TypeCookie, task string) (*UserGrowthTasksWebResponse, error) {
 	_body := url.Values{}
 	_body.Set("tbs", cookie.Tbs)
@@ -126,6 +131,27 @@ func PostGrowthTaskByClient(cookie _type.TypeCookie, task string) (*UserGrowthTa
 	}
 
 	var resp UserGrowthTasksClientResponse
+	err = _function.JsonDecode(response, &resp)
+	return &resp, err
+}
+
+func PostCollectStamp(cookie _type.TypeCookie, task_id int) (*UserGrowthTaskCollectStampResponse, error) {
+	headersMap := map[string]string{
+		"Cookie": "BDUSS=" + cookie.Bduss,
+	}
+	_body := url.Values{
+		"type":     {"3"}, // why 3?
+		"task_id":  {strconv.Itoa(task_id)},
+		"act_type": {"active"},
+		"tbs":      {cookie.Tbs},
+	}
+	response, err := _function.Fetch("https://tieba.baidu.com/mo/q/icon/collectStamp", "POST", []byte(_body.Encode()), headersMap)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var resp UserGrowthTaskCollectStampResponse
 	err = _function.JsonDecode(response, &resp)
 	return &resp, err
 }
@@ -200,6 +226,13 @@ func DoGrowthTasksAction() {
 						if slices.Contains(activeTasks, taskTypeList.TaskType) {
 							tasksList = append(tasksList, taskTypeList.TaskList...)
 						}
+						// if taskTypeList.TaskType == "icon_task" {
+						// 	for _, iconTaskItem := range taskTypeList.TaskList {
+						// 		if iconTaskItem.SortStatus == 0 {
+						// 			PostCollectStamp(cookie, iconTaskItem.ID)
+						// 		}
+						// 	}
+						// }
 					}
 				}
 			}
