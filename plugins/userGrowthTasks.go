@@ -144,6 +144,7 @@ func PostCollectStamp(cookie _type.TypeCookie, task_id int) (*UserGrowthTaskColl
 		"task_id":  {strconv.Itoa(task_id)},
 		"act_type": {"active"},
 		"tbs":      {cookie.Tbs},
+		"cuid":     {"-"},
 	}
 	response, err := _function.Fetch("https://tieba.baidu.com/mo/q/icon/collectStamp", "POST", []byte(_body.Encode()), headersMap)
 
