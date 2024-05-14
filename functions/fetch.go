@@ -114,20 +114,25 @@ func AddSign(form *map[string]string) {
 }
 
 func GetTbs(bduss string) string {
-	headersMap := map[string]string{
-		"Cookie": "BDUSS=" + bduss,
-	}
-	tbsResponse, err := Fetch("http://tieba.baidu.com/dc/common/tbs", "GET", nil, headersMap)
-
+	/// headersMap := map[string]string{
+	/// 	"Cookie": "BDUSS=" + bduss,
+	/// }
+	/// tbsResponse, err := Fetch("http://tieba.baidu.com/dc/common/tbs", "GET", nil, headersMap)
+	///
+	/// if err != nil {
+	/// 	return ""
+	/// }
+	///
+	/// var tbsDecode _type.TbsResponse
+	/// if err = JsonDecode(tbsResponse, &tbsDecode); err != nil {
+	/// 	return ""
+	/// }
+	userInfo, err := GetBaiduUserInfo(_type.TypeCookie{Bduss: bduss})
 	if err != nil {
 		return ""
+	} else {
+		return userInfo.Anti.Tbs
 	}
-
-	var tbsDecode _type.TbsResponse
-	if err = JsonDecode(tbsResponse, &tbsDecode); err != nil {
-		return ""
-	}
-	return tbsDecode.Tbs
 }
 
 func PostSignClient(cookie _type.TypeCookie, kw string, fid int32) (*_type.ClientSignResponse, error) {
@@ -194,7 +199,7 @@ func GetForumNameShare(name string) (*_type.ForumNameShareResponse, error) {
 
 func GetBaiduUserInfo(cookie _type.TypeCookie) (*_type.BaiduUserInfoResponse, error) {
 	var form = make(map[string]string)
-	form["bdusstoken"] = cookie.Bduss
+	form["bdusstoken"] = cookie.Bduss + "|null" //why '|null' ?
 	AddSign(&form)
 	_body := url.Values{}
 	for k, v := range form {

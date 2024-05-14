@@ -100,7 +100,9 @@ type BaiduUserInfoResponse struct {
 		BDUSS    string `json:"BDUSS,omitempty"`
 		Portrait string `json:"portrait,omitempty"`
 	} `json:"user"`
-
+	Anti struct {
+		Tbs string `json:"tbs,omitempty"`
+	} `json:"anti,omitempty"`
 	ErrorCode string `json:"error_code,omitempty"`
 	ErrorMsg  string `json:"error_msg,omitempty"`
 }
