@@ -213,7 +213,7 @@ func DoGrowthTasksAction() {
 		}
 		cookie := accountCookiesList[taskUserItem.Pid]
 		var tasksList []UserGrowthTask
-
+		var result []UserGrowthTaskToSave
 		if accountStatusList[taskUserItem.UID] == "1" {
 			tasksResponse, err := GetUserGrowthTasksList(cookie)
 			if err != nil {
@@ -227,13 +227,37 @@ func DoGrowthTasksAction() {
 						if slices.Contains(activeTasks, taskTypeList.TaskType) {
 							tasksList = append(tasksList, taskTypeList.TaskList...)
 						}
-						// if taskTypeList.TaskType == "icon_task" {
-						// 	for _, iconTaskItem := range taskTypeList.TaskList {
-						// 		if iconTaskItem.SortStatus == 0 {
-						// 			PostCollectStamp(cookie, iconTaskItem.ID)
-						// 		}
-						// 	}
-						// }
+						if taskTypeList.TaskType == "icon_task" {
+							for _, iconTaskItem := range taskTypeList.TaskList {
+								if iconTaskItem.SortStatus == 0 {
+									postCollectStampRES, err := PostCollectStamp(cookie, iconTaskItem.ID)
+									if err != nil {
+										result = append(result, UserGrowthTaskToSave{
+											Name:    iconTaskItem.Name,
+											ActType: iconTaskItem.ActType,
+											Status:  0,
+											Msg:     "failed",
+										})
+									} else {
+										if postCollectStampRES.No == 0 {
+											result = append(result, UserGrowthTaskToSave{
+												Name:    iconTaskItem.Name,
+												ActType: iconTaskItem.ActType,
+												Status:  1,
+												Msg:     "success",
+											})
+										} else {
+											result = append(result, UserGrowthTaskToSave{
+												Name:    iconTaskItem.Name,
+												ActType: iconTaskItem.ActType,
+												Status:  0,
+												Msg:     postCollectStampRES.Error,
+											})
+										}
+									}
+								}
+							}
+						}
 					}
 				}
 			}
@@ -247,7 +271,6 @@ func DoGrowthTasksAction() {
 			})
 		}
 
-		var result []UserGrowthTaskToSave
 		for _, task := range tasksList {
 			if task.SortStatus == -1 || slices.Contains(UserGrowthTasksBreakList, task.ActType) {
 				continue
@@ -268,7 +291,7 @@ func DoGrowthTasksAction() {
 						Msg:     "failed",
 					})
 				} else {
-					if response.No == 0 && response.Error == "success" {
+					if response.No == 0 {
 						result = append(result, UserGrowthTaskToSave{
 							Name:    task.Name,
 							ActType: task.ActType,
