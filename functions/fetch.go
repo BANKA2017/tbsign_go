@@ -114,25 +114,27 @@ func AddSign(form *map[string]string) {
 }
 
 func GetTbs(bduss string) string {
-	/// headersMap := map[string]string{
-	/// 	"Cookie": "BDUSS=" + bduss,
-	/// }
-	/// tbsResponse, err := Fetch("http://tieba.baidu.com/dc/common/tbs", "GET", nil, headersMap)
-	///
-	/// if err != nil {
-	/// 	return ""
-	/// }
-	///
-	/// var tbsDecode _type.TbsResponse
-	/// if err = JsonDecode(tbsResponse, &tbsDecode); err != nil {
-	/// 	return ""
-	/// }
-	userInfo, err := GetBaiduUserInfo(_type.TypeCookie{Bduss: bduss})
+	headersMap := map[string]string{
+		"Cookie": "BDUSS=" + bduss,
+	}
+	tbsResponse, err := Fetch("http://tieba.baidu.com/dc/common/tbs", "GET", nil, headersMap)
+
 	if err != nil {
 		return ""
-	} else {
-		return userInfo.Anti.Tbs
 	}
+
+	var tbsDecode _type.TbsResponse
+	if err = JsonDecode(tbsResponse, &tbsDecode); err != nil {
+		return ""
+	}
+	return tbsDecode.Tbs
+
+	/// userInfo, err := GetBaiduUserInfo(_type.TypeCookie{Bduss: bduss})
+	/// if err != nil {
+	/// 	return ""
+	/// } else {
+	/// 	return userInfo.Anti.Tbs
+	/// }
 }
 
 func PostSignClient(cookie _type.TypeCookie, kw string, fid int32) (*_type.ClientSignResponse, error) {
@@ -277,4 +279,29 @@ func GetUserInfoByUsernameOrPortrait(requestType string, value string) (*_type.T
 	var res _type.TiebaPanelUserInfoResponse
 	err = JsonDecode(resp, &res)
 	return &res, err
+}
+
+// DO NOT ASK ME WHY THE RESPONSE IS `ANY`!!!
+func PostSync(cookie _type.TypeCookie) (any, error) {
+	form := map[string]string{
+		"BDUSS": cookie.Bduss,
+		"cuid":  "-", //TODO cuid
+	}
+	AddSign(&form)
+	_body := url.Values{}
+	for k, v := range form {
+		if k != "sign" {
+			_body.Set(k, v)
+		}
+	}
+
+	response, err := Fetch("https://tiebac.baidu.com/c/s/sync", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), EmptyHeaders)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var resp any
+	err = JsonDecode(response, &resp)
+	return &resp, err
 }

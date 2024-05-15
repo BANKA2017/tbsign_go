@@ -310,6 +310,26 @@ func DoGrowthTasksAction() {
 			}
 		}
 
+		// do sync
+		if len(tasksList) > 0 {
+			_, err := _function.PostSync(cookie)
+			if err != nil {
+				result = append(result, UserGrowthTaskToSave{
+					Name:    "签到类集章任务",
+					ActType: "active",
+					Status:  0,
+					Msg:     "failed",
+				})
+			} else {
+				result = append(result, UserGrowthTaskToSave{
+					Name:    "签到类集章任务",
+					ActType: "active",
+					Status:  1,
+					Msg:     "success",
+				})
+			}
+		}
+
 		jsonResult, _ := _function.JsonEncode(result)
 
 		log.Println("user_tasks:", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, string(jsonResult))
