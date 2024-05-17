@@ -214,6 +214,7 @@ func DoGrowthTasksAction() {
 		cookie := accountCookiesList[taskUserItem.Pid]
 		var tasksList []UserGrowthTask
 		var result []UserGrowthTaskToSave
+		doCollectStampTasks := false
 		if accountStatusList[taskUserItem.UID] == "1" {
 			tasksResponse, err := GetUserGrowthTasksList(cookie)
 			if err != nil {
@@ -255,6 +256,9 @@ func DoGrowthTasksAction() {
 											})
 										}
 									}
+									doCollectStampTasks = true
+								} else if iconTaskItem.SortStatus == 1 {
+									doCollectStampTasks = true
 								}
 							}
 						}
@@ -311,7 +315,7 @@ func DoGrowthTasksAction() {
 		}
 
 		// do sync
-		if len(tasksList) > 0 {
+		if doCollectStampTasks {
 			_, err := _function.PostSync(cookie)
 			if err != nil {
 				result = append(result, UserGrowthTaskToSave{
