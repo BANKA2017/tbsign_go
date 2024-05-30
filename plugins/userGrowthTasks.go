@@ -175,6 +175,7 @@ func GetUserGrowthTasksList(cookie _type.TypeCookie) (*UserGrowthTasksListRespon
 
 var activeTasks = []string{"daily_task", "live_task"}
 
+// TODO redo growth tasks(?)
 func DoGrowthTasksAction() {
 	id, err := strconv.ParseInt(_function.GetOption("kd_growth_offset"), 10, 64)
 	if err != nil {
@@ -334,14 +335,16 @@ func DoGrowthTasksAction() {
 			}
 		}
 
-		jsonResult, _ := _function.JsonEncode(result)
+		if len(result) > 0 {
+			jsonResult, _ := _function.JsonEncode(result)
 
-		log.Println("user_tasks:", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, string(jsonResult))
-		_function.GormDB.Model(&model.TcKdGrowth{}).Where("id = ?", taskUserItem.ID).Updates(model.TcKdGrowth{
-			Status: string(jsonResult),
-			Log:    "<br/>" + _function.Now.Local().Format("2006-01-02") + ": " + string(jsonResult) + taskUserItem.Log,
-			Date:   int32(_function.Now.Unix()),
-		})
+			log.Println("user_tasks:", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, string(jsonResult))
+			_function.GormDB.Model(&model.TcKdGrowth{}).Where("id = ?", taskUserItem.ID).Updates(model.TcKdGrowth{
+				Status: string(jsonResult),
+				Log:    "<br/>" + _function.Now.Local().Format("2006-01-02") + ": " + string(jsonResult) + taskUserItem.Log,
+				Date:   int32(_function.Now.Unix()),
+			})
+		}
 
 		_function.SetOption("kd_growth_offset", strconv.Itoa(int(taskUserItem.ID)))
 

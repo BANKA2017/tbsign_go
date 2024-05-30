@@ -108,6 +108,7 @@ func main() {
 
 	// Interval
 	oneSecondInterval := time.NewTicker(time.Second)
+	defer oneSecondInterval.Stop()
 	oneMinuteInterval := time.NewTicker(time.Minute)
 	defer oneMinuteInterval.Stop()
 	fourHoursInterval := time.NewTicker(time.Hour * 4)
