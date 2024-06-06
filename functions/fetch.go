@@ -103,13 +103,16 @@ func AddSign(form *map[string]string) {
 	}
 
 	slices.Sort(formKeys)
-	payload := ""
+
+	var payload strings.Builder
 
 	for _, v := range formKeys {
-		payload += v + "=" + (*form)[v]
+		payload.WriteString(v)
+		payload.WriteString("=")
+		payload.WriteString((*form)[v])
 	}
 	//log.Println("payload", payload)
-	_md5 := md5.Sum([]byte(payload + "tiebaclient!!!"))
+	_md5 := md5.Sum([]byte(AppendStrings(payload.String() + "tiebaclient!!!")))
 	(*form)["sign"] = strings.ToUpper(hex.EncodeToString(_md5[:]))
 }
 

@@ -1,5 +1,7 @@
 package _function
 
+import "strings"
+
 // from chatgpt
 func RemoveLeadingZeros(data []byte) []byte {
 	for i := 0; i < len(data); i++ {
@@ -8,4 +10,8 @@ func RemoveLeadingZeros(data []byte) []byte {
 		}
 	}
 	return []byte{0}
+}
+
+func AppendStrings(s ...string) string {
+	return strings.Join(s, "")
 }

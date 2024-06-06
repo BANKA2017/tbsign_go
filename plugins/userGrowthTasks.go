@@ -337,11 +337,18 @@ func DoGrowthTasksAction() {
 
 		if len(result) > 0 {
 			jsonResult, _ := _function.JsonEncode(result)
+			tmpLog := ""
+			for i, r := range result {
+				if i > 0 {
+					tmpLog += ","
+				}
+				tmpLog += r.ActType + ":" + strconv.Itoa(r.Status)
+			}
 
 			log.Println("user_tasks:", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, string(jsonResult))
 			_function.GormDB.Model(&model.TcKdGrowth{}).Where("id = ?", taskUserItem.ID).Updates(model.TcKdGrowth{
 				Status: string(jsonResult),
-				Log:    "<br/>" + _function.Now.Local().Format("2006-01-02") + ": " + string(jsonResult) + taskUserItem.Log,
+				Log:    _function.AppendStrings("<br/>", _function.Now.Local().Format("2006-01-02"), ": ", tmpLog, taskUserItem.Log),
 				Date:   int32(_function.Now.Unix()),
 			})
 		}
