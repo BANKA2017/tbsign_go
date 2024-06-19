@@ -24,8 +24,21 @@ import (
 	_type "github.com/BANKA2017/tbsign_go/types"
 )
 
-var Client = &http.Client{
-	Timeout: time.Second * 10,
+var IgnoreProxy bool
+
+var Client *http.Client
+
+func InitClient() {
+	transport := http.DefaultTransport
+
+	if IgnoreProxy {
+		transport.(*http.Transport).Proxy = nil
+	}
+
+	Client = &http.Client{
+		Timeout:   time.Second * 10,
+		Transport: transport,
+	}
 }
 
 var EmptyHeaders = map[string]string{}

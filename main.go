@@ -41,6 +41,9 @@ func main() {
 	flag.StringVar(&dbEndpoint, "endpoint", "127.0.0.1:3306", "endpoint")
 	flag.StringVar(&dbName, "db", "tbsign", "Database name")
 
+	//proxy
+	flag.BoolVar(&_function.IgnoreProxy, "no_proxy", false, "Ignore the http proxy config from environment vars")
+
 	flag.BoolVar(&testMode, "test", false, "Not send any requests to tieba servers")
 	flag.BoolVar(&enableApi, "api", false, "active backend endpoints")
 
@@ -104,6 +107,7 @@ func main() {
 	}
 
 	// init
+	_function.InitClient()
 	_function.GetOptionsAndPluginList()
 
 	// Interval
