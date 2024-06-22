@@ -20,10 +20,11 @@ type SiteAccountsResponse struct {
 
 // ?
 // var InviteCodeList = make(map[string]string)
+var settingsFilter = []string{"ann", "system_url", "system_keywords", "system_name", "system_description", "enable_reg", "yr_reg", "ver4_ban_limit", "ver4_ban_break_check", "mail_name", "mail_yourname", "mail_host", "mail_port", "mail_secure", "mail_auth", "mail_smtpname", "mail_smtppw", "ver4_ref_lastdo", "sign_mode", "sign_hour", "cron_limit", "sign_sleep", "cron_sign_again", "retry_max"}
 
 func GetAdminSettings(c echo.Context) error {
 	var adminSettings []model.TcOption
-	_function.GormDB.Find(&adminSettings)
+	_function.GormDB.Where("name in ?", settingsFilter).Find(&adminSettings)
 
 	settings := make(map[string]string)
 	for _, v := range adminSettings {
