@@ -123,6 +123,12 @@ func PluginForumSupportUpdateSettings(c echo.Context) error {
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resp, "tbsign"))
 }
 
+func PluginForumSupportGetSwitch(c echo.Context) error {
+	uid := c.Get("uid").(string)
+	status := _function.GetUserOption("ver4_rank_check", uid) != "0"
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", status, "tbsign"))
+}
+
 func PluginForumSupportSwitch(c echo.Context) error {
 	uid := c.Get("uid").(string)
 	status := _function.GetUserOption("ver4_rank_check", uid) != "0"

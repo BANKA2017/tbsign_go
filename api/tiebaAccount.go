@@ -83,6 +83,12 @@ func RemoveTiebaAccount(c echo.Context) error {
 		if v.ID == int32(numPid) {
 			_function.GormDB.Model(&model.TcBaiduid{}).Delete("id = ?", v.ID)
 			_function.GormDB.Model(&model.TcTieba{}).Delete("pid = ?", v.ID)
+
+			// plugins
+			_function.GormDB.Model(&model.TcVer4BanList{}).Delete("pid = ?", v.ID)
+			_function.GormDB.Model(&model.TcVer4RankLog{}).Delete("pid = ?", v.ID)
+			_function.GormDB.Model(&model.TcKdGrowth{}).Delete("pid = ?", v.ID)
+
 			return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]int32{
 				"pid": v.ID,
 			}, "tbsign"))

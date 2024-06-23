@@ -62,7 +62,7 @@ func GetUserOption(keyName string, uid string) string {
 }
 
 func SetUserOption(keyName string, value string, uid string) error {
-	return GormDB.Model(&model.TcUsersOption{}).Where("uid = ?", uid).Update(keyName, value).Error
+	return GormDB.Model(&model.TcUsersOption{}).Where("uid = ? AND name = ?", uid, keyName).Update("value", value).Error
 }
 
 func GetCookie(pid int32) _type.TypeCookie {

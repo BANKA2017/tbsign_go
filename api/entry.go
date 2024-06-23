@@ -68,6 +68,7 @@ func Api(address string, variables ...any) {
 
 	// plugins
 	// ForumSupport
+	e.GET("/plugins/forum_support/switch", PluginForumSupportGetSwitch)
 	e.POST("/plugins/forum_support/switch", PluginForumSupportSwitch)
 	e.GET("/plugins/forum_support/list", PluginForumSupportGetCharactersList)
 	e.GET("/plugins/forum_support/settings", PluginForumSupportGetSettings)
@@ -100,6 +101,9 @@ func Api(address string, variables ...any) {
 	e.GET("/tools/userinfo/tieba_uid/:tiebauid", GetUserByTiebaUID)
 	e.GET("/tools/userinfo/panel/:query_type/:user_value", GetUserByUsernameOrPortrait)
 	e.GET("/tools/tieba/fname_to_fid/:fname", GetFidByFname)
+
+	// notifications
+	e.GET("/notifications", GetNotifications)
 
 	e.Logger.Fatal(e.Start(address))
 }

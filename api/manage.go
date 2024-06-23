@@ -58,9 +58,7 @@ func UpdateAdminSettings(c echo.Context) error {
 	if len(newSettings) > 0 {
 		for _, v := range newSettings {
 			settings[v.Name] = v.Value
-			_function.GormDB.Model(model.TcOption{}).Where("name = ?", v.Name).Updates(&model.TcOption{
-				Value: v.Value,
-			})
+			_function.SetOption(v.Name, v.Value)
 		}
 	}
 

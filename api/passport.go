@@ -268,9 +268,7 @@ func UpdateSettings(c echo.Context) error {
 	if len(newSettings) > 0 {
 		for _, v := range newSettings {
 			settings[v.Name] = v.Value
-			_function.GormDB.Model(model.TcUsersOption{}).Where("uid = ? AND name = ?", uid, v.Name).Updates(&model.TcUsersOption{
-				Value: v.Value,
-			})
+			_function.SetUserOption(v.Name, v.Value, uid)
 		}
 	}
 
