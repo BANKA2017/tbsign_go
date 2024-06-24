@@ -49,7 +49,7 @@ func PluginGrowthTasksAddAccount(c echo.Context) error {
 	uid := c.Get("uid").(string)
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 
-	pid := c.Param("pid")
+	pid := c.FormValue("pid")
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil || numPid <= 0 {
 		return c.JSON(http.StatusOK, apiTemplate(403, "无效 pid", echoEmptyObject, "tbsign"))
