@@ -14,14 +14,24 @@ import (
 )
 
 type addAccountsResponseList struct {
+	ID       int32  `json:"id"`
+	PID      int32  `json:"pid"`
 	Name     string `json:"name,omitempty"`
 	NameShow string `json:"name_show,omitempty"`
 	Portrait string `json:"portrait"`
 	Fname    string `json:"fname,omitempty"`
 	Start    int64  `json:"start,omitempty"`
 	End      int64  `json:"end,omitempty"`
-	Success  bool   `json:"success,omitempty"`
+	Success  bool   `json:"success"`
 	Msg      string `json:"msg,omitempty"`
+	Log      string `json:"log,omitempty"`
+	Date     int32  `json:"date,omitempty"`
+}
+
+func PluginLoopBanGetSwitch(c echo.Context) error {
+	uid := c.Get("uid").(string)
+	status := _function.GetUserOption("ver4_ban_open", uid) != "0"
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", status, "tbsign"))
 }
 
 func PluginLoopBanSwitch(c echo.Context) error {
@@ -84,6 +94,8 @@ func PluginLoopBanGetList(c echo.Context) error {
 
 	for _, v := range loopBanList {
 		responseList = append(responseList, addAccountsResponseList{
+			ID:       v.ID,
+			PID:      v.Pid,
 			Name:     v.Name,
 			NameShow: v.NameShow,
 			Portrait: v.Portrait,
@@ -91,6 +103,8 @@ func PluginLoopBanGetList(c echo.Context) error {
 			Start:    int64(v.Stime),
 			End:      int64(v.Etime),
 			Success:  true,
+			Log:      v.Log,
+			Date:     v.Date,
 		})
 	}
 
@@ -114,7 +128,7 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 	start := c.FormValue("start")
 	end := c.FormValue("end")
 	fname := c.FormValue("fname")
-	portraits := c.FormValue("portrait")
+	portraits := strings.TrimSpace(c.FormValue("portrait"))
 
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 
@@ -186,19 +200,22 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 			return c.JSON(http.StatusOK, apiTemplate(500, "无法获取吧务列表", echoEmptyObject, "tbsign"))
 		}
 		if !managerStatus.IsManager {
-			return c.JSON(http.StatusOK, apiTemplate(403, "您不是 fid:"+fname+" 的吧务成员", echoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, apiTemplate(403, "您不是 fname:"+fname+" 的吧务成员", echoEmptyObject, "tbsign"))
 		}
 	}
 
 	// get account info
 	var accountsResult []addAccountsResponseList
 	var accountsToInsert []model.TcVer4BanList
+	var successPortraitList []string
 	for _, portrait := range portraitList {
 		// check db
 		dbExists := false
 		for _, v := range existsAccountList {
 			if v.Portrait == portrait {
 				accountsResult = append(accountsResult, addAccountsResponseList{
+					ID:       v.ID,
+					PID:      v.Pid,
 					Name:     v.Name,
 					NameShow: v.NameShow,
 					Portrait: portrait,
@@ -218,23 +235,15 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 
 		// check exists
 		banUserInfo, err := _function.GetUserInfoByUsernameOrPortrait("portrait", portrait)
-		if err != nil || banUserInfo.No != 0 {
+		if err != nil && banUserInfo.No != 0 {
 			accountsResult = append(accountsResult, addAccountsResponseList{
+				PID:      int32(numPid),
 				Portrait: portrait,
 				Success:  false,
 				Msg:      "帐号不存在",
 			})
 		}
-		accountsResult = append(accountsResult, addAccountsResponseList{
-			Name:     banUserInfo.Data.Name,
-			NameShow: banUserInfo.Data.NameShow,
-			Portrait: portrait,
-			Fname:    fname,
-			Start:    startTime.Unix(),
-			End:      endTime.Unix(),
-			Success:  true,
-			Msg:      "OK",
-		})
+		successPortraitList = append(successPortraitList, portrait)
 		accountsToInsert = append(accountsToInsert, model.TcVer4BanList{
 			UID:      int32(numUID),
 			Pid:      int32(numPid),
@@ -248,7 +257,28 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 		})
 	}
 
-	_function.GormDB.Create(&accountsToInsert)
+	if len(accountsToInsert) > 0 {
+		_function.GormDB.Create(&accountsToInsert)
+	}
+
+	var loopBanList []model.TcVer4BanList
+	_function.GormDB.Model(&model.TcVer4BanList{}).Where("uid = ? AND portrait IN ?", uid, successPortraitList).Find(&loopBanList)
+
+	for _, v := range loopBanList {
+		accountsResult = append(accountsResult, addAccountsResponseList{
+			ID:       v.ID,
+			PID:      v.Pid,
+			Name:     v.Name,
+			NameShow: v.NameShow,
+			Portrait: v.Portrait,
+			Fname:    v.Tieba,
+			Start:    int64(v.Stime),
+			End:      int64(v.Etime),
+			Success:  true,
+			Log:      v.Log,
+			Date:     v.Date,
+		})
+	}
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", accountsResult, "tbsign"))
 

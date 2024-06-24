@@ -79,11 +79,12 @@ func Api(address string, variables ...any) {
 	e.POST("/plugins/refresh_tieba_list/refresh", PluginRefreshTiebaListRefreshTiebaList)
 
 	// LoopBan
+	e.GET("/plugins/loop_ban/switch", PluginLoopBanGetSwitch)
 	e.POST("/plugins/loop_ban/switch", PluginLoopBanSwitch)
 	e.GET("/plugins/loop_ban/reason", PluginLoopBanGetReason)
 	e.PUT("/plugins/loop_ban/reason", PluginLoopBanSetReason)
 	e.GET("/plugins/loop_ban/list", PluginLoopBanGetList)
-	e.PATCH("/plugins/loop_ban/list/", PluginLoopBanAddAccounts)
+	e.PATCH("/plugins/loop_ban/list", PluginLoopBanAddAccounts)
 	e.DELETE("/plugins/loop_ban/list/:id", PluginLoopBanDelAccount)
 	e.POST("/plugins/loop_ban/list/empty", PluginLoopBanDelAllAccounts)
 	e.GET("/plugins/loop_ban/check/:pid/is_manager/:fname", PluginLoopBanPreCheckIsManager)

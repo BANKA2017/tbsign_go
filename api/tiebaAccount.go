@@ -15,6 +15,8 @@ import (
 * QR login...Maybe not...
  */
 
+//TODO remove ALL bduss and stoken from response
+
 func AddTiebaAccount(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
