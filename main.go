@@ -5,7 +5,6 @@ import (
 	"flag"
 	"log"
 	"os"
-	"sync"
 	"time"
 
 	_api "github.com/BANKA2017/tbsign_go/api"
@@ -28,8 +27,6 @@ var testMode bool
 var enableApi bool
 
 var address string
-
-var wg sync.WaitGroup
 
 func main() {
 	// sqlite
@@ -110,6 +107,10 @@ func main() {
 	_function.InitClient()
 	_function.GetOptionsAndPluginList()
 
+	if enableApi {
+		go _api.Api(address, "dbmode", dbMode, "testmode", testMode)
+	}
+
 	// Interval
 	oneSecondInterval := time.NewTicker(time.Second)
 	defer oneSecondInterval.Stop()
@@ -119,59 +120,51 @@ func main() {
 	defer fourHoursInterval.Stop()
 
 	// cron
-	wg.Add(1)
-	go func() {
-		if testMode {
-			return
-		}
+	for {
+		select {
+		case <-oneSecondInterval.C:
+			_function.UpdateNow()
+		case <-oneMinuteInterval.C:
+			if testMode {
+				return
+			}
+			_function.GetOptionsAndPluginList()
+			_plugin.DoSignAction()
+			_plugin.DoReSignAction()
 
-		defer wg.Done()
-		for {
-			select {
-			case <-oneSecondInterval.C:
-				_function.UpdateNow()
-			case <-oneMinuteInterval.C:
-				_function.GetOptionsAndPluginList()
-				_plugin.DoSignAction()
-				_plugin.DoReSignAction()
+			// plugins
+			if _function.PluginList["ver4_rank"] {
+				go _plugin.DoForumSupportAction()
+			}
 
-				// plugins
-				if _function.PluginList["ver4_rank"] {
-					go _plugin.DoForumSupportAction()
-				}
+			if _function.PluginList["ver4_ban"] {
+				go _plugin.LoopBanAction()
+			}
 
-				if _function.PluginList["ver4_ban"] {
-					go _plugin.LoopBanAction()
-				}
+			if _function.PluginList["kd_growth"] {
+				go _plugin.DoGrowthTasksAction()
+			}
 
-				if _function.PluginList["kd_growth"] {
-					go _plugin.DoGrowthTasksAction()
-				}
-
-				// clean pwd list
-				if len(_function.ResetPwdList) > 0 {
-					for email, value := range _function.ResetPwdList {
-						if value.Expire < _function.Now.Unix() {
-							delete(_function.ResetPwdList, email)
-						}
+			// clean pwd list
+			if len(_function.ResetPwdList) > 0 {
+				for email, value := range _function.ResetPwdList {
+					if value.Expire < _function.Now.Unix() {
+						delete(_function.ResetPwdList, email)
 					}
 				}
-			case <-fourHoursInterval.C:
-				_function.GetOptionsAndPluginList()
-				if _function.PluginList["ver4_ref"] {
-					go _plugin.RefreshTiebaListAction()
-				}
-
-				// clean cookie/fid cache
-				_function.CookieList = make(map[int32]_type.TypeCookie)
-				_function.FidList = make(map[string]int64)
 			}
+		case <-fourHoursInterval.C:
+			if testMode {
+				return
+			}
+			_function.GetOptionsAndPluginList()
+			if _function.PluginList["ver4_ref"] {
+				go _plugin.RefreshTiebaListAction()
+			}
+
+			// clean cookie/fid cache
+			_function.CookieList = make(map[int32]_type.TypeCookie)
+			_function.FidList = make(map[string]int64)
 		}
-	}()
-
-	if enableApi {
-		_api.Api(address, "dbmode", dbMode, "testmode", testMode)
 	}
-
-	wg.Wait()
 }

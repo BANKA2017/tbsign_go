@@ -65,6 +65,7 @@ func Dosign(table string, retry bool) (bool, error) {
 		}
 		wg.Add(1)
 		go func(pid int32, kw string, fid int32, id int32, now time.Time) {
+			defer wg.Done()
 			// success := false
 			ck := _function.GetCookie(pid)
 			if ck.Bduss == "" {
@@ -92,7 +93,6 @@ func Dosign(table string, retry bool) (bool, error) {
 			}
 
 			log.Println("sign:", pid, kw, fid, id, now.Local().Day(), time.Now().UnixMilli()-now.UnixMilli())
-			defer wg.Done()
 		}(v.Pid, v.Tieba, v.Fid, v.ID, _function.Now)
 
 		time.Sleep(time.Millisecond * time.Duration(sleep))
