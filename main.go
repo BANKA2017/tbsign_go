@@ -84,6 +84,8 @@ func main() {
 		if err != nil {
 			log.Fatal("db:", err)
 		}
+		_function.GormDB.Exec("PRAGMA journal_mode = WAL;PRAGMA busy_timeout = 5000;PRAGMA synchronous = NORMAL;PRAGMA cache_size = 100000;PRAGMA foreign_keys = true;PRAGMA temp_store = memory;")
+
 		dbMode = "sqlite"
 		log.Println("db: sqlite connected!")
 	} else {
@@ -108,7 +110,7 @@ func main() {
 	_function.GetOptionsAndPluginList()
 
 	if enableApi {
-		go _api.Api(address, "dbmode", dbMode, "testmode", testMode)
+		go _api.Api(address, "dbmode", dbMode, "testmode", testMode, "compat", _function.GetOption("core_version"))
 	}
 
 	// Interval

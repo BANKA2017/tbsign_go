@@ -12,7 +12,6 @@ type TcPlugin struct {
 	Status  bool   `gorm:"column:status;not null" json:"status"`
 	Ver     string `gorm:"column:ver;not null" json:"ver"`
 	Options string `gorm:"column:options" json:"options"`
-	Order   int32  `gorm:"column:order;not null" json:"order"`
 }
 
 // TableName TcPlugin's table name

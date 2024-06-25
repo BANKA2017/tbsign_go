@@ -118,7 +118,7 @@ func GetTiebaAccountList(c echo.Context) error {
 	includeBDUSSAndStoken := c.QueryParams().Get("all") == "1"
 
 	var tiebaAccounts []model.TcBaiduid
-	_function.GormDB.Where("uid = ?", uid).Find(&tiebaAccounts)
+	_function.GormDB.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
 
 	if !includeBDUSSAndStoken {
 		for k := range tiebaAccounts {
@@ -142,7 +142,7 @@ func GetTiebaAccountItem(c echo.Context) error {
 	}
 
 	var tiebaAccount model.TcBaiduid
-	_function.GormDB.Where("uid = ? AND id = ?", uid, numPid).First(&tiebaAccount)
+	_function.GormDB.Where("id = ? AND uid = ?", numPid, uid).First(&tiebaAccount)
 
 	if !includeBDUSSAndStoken {
 		tiebaAccount.Bduss = ""
@@ -161,7 +161,7 @@ func CheckTiebaAccount(c echo.Context) error {
 	}
 
 	var tiebaAccount model.TcBaiduid
-	_function.GormDB.Where("id = ? AND uid = ?", pid, uid).Find(&tiebaAccount)
+	_function.GormDB.Where("id = ? AND uid = ?", pid, uid).Order("id ASC").Find(&tiebaAccount)
 
 	if tiebaAccount.ID != 0 && tiebaAccount.ID != int32(numPid) {
 		return c.JSON(http.StatusOK, apiTemplate(403, "无效 pid", echoEmptyObject, "tbsign"))

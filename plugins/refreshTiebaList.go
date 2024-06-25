@@ -14,7 +14,7 @@ func ScanTiebaByPid(pid int32) {
 	account := _function.GetCookie(pid)
 
 	var localTiebaList = &[]model.TcTieba{}
-	_function.GormDB.Model(&model.TcTieba{ID: account.UID}).Find(&localTiebaList)
+	_function.GormDB.Model(&model.TcTieba{UID: account.UID}).Find(&localTiebaList)
 	var pn int64 = 1
 
 	var wholeTiebaList = []model.TcTieba{}
@@ -92,6 +92,7 @@ func RefreshTiebaListAction() {
 		lastdo, _ := strconv.ParseInt(_function.GetOption("ver4_ref_lastdo"), 10, 64)
 		if _function.Now.Unix() > lastdo+90 {
 			var accounts = &[]model.TcBaiduid{}
+			//TODO account limit per query
 			_function.GormDB.Model(&model.TcBaiduid{}).Find(accounts)
 			for _, account := range *accounts {
 				ScanTiebaByPid(account.ID)

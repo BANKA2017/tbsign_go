@@ -27,7 +27,6 @@ func newTcVer4BanUserset(db *gorm.DB, opts ...gen.DOOption) tcVer4BanUserset {
 
 	tableName := _tcVer4BanUserset.tcVer4BanUsersetDo.TableName()
 	_tcVer4BanUserset.ALL = field.NewAsterisk(tableName)
-	_tcVer4BanUserset.ID = field.NewInt32(tableName, "id")
 	_tcVer4BanUserset.UID = field.NewInt32(tableName, "uid")
 	_tcVer4BanUserset.C = field.NewString(tableName, "c")
 
@@ -40,7 +39,6 @@ type tcVer4BanUserset struct {
 	tcVer4BanUsersetDo tcVer4BanUsersetDo
 
 	ALL field.Asterisk
-	ID  field.Int32
 	UID field.Int32
 	C   field.String
 
@@ -59,7 +57,6 @@ func (t tcVer4BanUserset) As(alias string) *tcVer4BanUserset {
 
 func (t *tcVer4BanUserset) updateTableName(table string) *tcVer4BanUserset {
 	t.ALL = field.NewAsterisk(table)
-	t.ID = field.NewInt32(table, "id")
 	t.UID = field.NewInt32(table, "uid")
 	t.C = field.NewString(table, "c")
 
@@ -90,8 +87,7 @@ func (t *tcVer4BanUserset) GetFieldByName(fieldName string) (field.OrderExpr, bo
 }
 
 func (t *tcVer4BanUserset) fillFieldMap() {
-	t.fieldMap = make(map[string]field.Expr, 3)
-	t.fieldMap["id"] = t.ID
+	t.fieldMap = make(map[string]field.Expr, 2)
 	t.fieldMap["uid"] = t.UID
 	t.fieldMap["c"] = t.C
 }

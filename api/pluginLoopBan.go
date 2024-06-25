@@ -340,7 +340,7 @@ func PluginLoopBanPreCheckIsManager(c echo.Context) error {
 
 	// pre-check pid
 	var pidCheck []model.TcBaiduid
-	_function.GormDB.Where("uid = ? AND id = ?", uid, pid).Limit(1).Find(&pidCheck)
+	_function.GormDB.Where("id = ? AND uid = ?", pid, uid).Limit(1).Find(&pidCheck)
 
 	if len(pidCheck) == 0 {
 		return c.JSON(http.StatusOK, apiTemplate(403, "无效 pid", _plugin.IsManagerPreCheckResponse{}, "tbsign"))

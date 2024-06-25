@@ -14,7 +14,10 @@ func PluginGrowthTasksGetSettings(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	signOnly := _function.GetUserOption("kd_growth_sign_only", uid)
-
+	if signOnly == "" {
+		signOnly = "0"
+		_function.SetUserOption("kd_growth_sign_only", signOnly, uid)
+	}
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
 		"sign_only": signOnly,
 	}, "tbsign"))

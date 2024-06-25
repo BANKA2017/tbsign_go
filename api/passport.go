@@ -108,6 +108,11 @@ func DeleteAccount(c echo.Context) error {
 	_function.GormDB.Model(&model.TcBaiduid{}).Delete("uid = ?", uid)
 	_function.GormDB.Model(&model.TcUsersOption{}).Delete("uid = ?", uid)
 
+	// plugins
+	_function.GormDB.Model(&model.TcVer4BanList{}).Delete("uid = ?", uid)
+	_function.GormDB.Model(&model.TcVer4RankLog{}).Delete("uid = ?", uid)
+	_function.GormDB.Model(&model.TcKdGrowth{}).Delete("uid = ?", uid)
+
 	return c.JSON(http.StatusOK, apiTemplate(200, "帐号已删除，感谢您的使用", map[string]any{
 		"uid":  int64(accountInfo.ID),
 		"name": accountInfo.Name,

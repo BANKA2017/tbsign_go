@@ -51,6 +51,16 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 数据库的选择顺序是 SQLite > MySQL，只要 `db_path`/`tc_db_path` 的文件存在，就会使用 SQLite
 
+## 安装
+
+- 迁移法 (仅 MySQL)
+  - 直接安装 [百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/)
+  - 启动时使用数据库配置
+- 全新安装 (MySQL, SQLite)
+  - 导入 `/assets` 目录里面的 sql 文件，MySQL 和 SQLite 二选一即可
+  - 完成简单的配置（细节还没公开，还在筛选）
+  - 启动
+
 ## Api (WIP)
 
 仅供参考，未来可能还会大改，等到稳定后随缘出文档和前端

@@ -14,7 +14,7 @@ func PluginRefreshTiebaListGetAccountList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	var tiebaAccounts []model.TcBaiduid
-	_function.GormDB.Where("uid = ?", uid).Find(&tiebaAccounts)
+	_function.GormDB.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
 
 	var tiebaList []model.TcTieba
 	_function.GormDB.Where("uid = ?", uid).Find(&tiebaList)

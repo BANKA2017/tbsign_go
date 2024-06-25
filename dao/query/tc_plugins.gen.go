@@ -31,7 +31,6 @@ func newTcPlugin(db *gorm.DB, opts ...gen.DOOption) tcPlugin {
 	_tcPlugin.Status = field.NewBool(tableName, "status")
 	_tcPlugin.Ver = field.NewString(tableName, "ver")
 	_tcPlugin.Options = field.NewString(tableName, "options")
-	_tcPlugin.Order = field.NewInt32(tableName, "order")
 
 	_tcPlugin.fillFieldMap()
 
@@ -46,7 +45,6 @@ type tcPlugin struct {
 	Status  field.Bool
 	Ver     field.String
 	Options field.String
-	Order   field.Int32
 
 	fieldMap map[string]field.Expr
 }
@@ -67,7 +65,6 @@ func (t *tcPlugin) updateTableName(table string) *tcPlugin {
 	t.Status = field.NewBool(table, "status")
 	t.Ver = field.NewString(table, "ver")
 	t.Options = field.NewString(table, "options")
-	t.Order = field.NewInt32(table, "order")
 
 	t.fillFieldMap()
 
@@ -92,12 +89,11 @@ func (t *tcPlugin) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (t *tcPlugin) fillFieldMap() {
-	t.fieldMap = make(map[string]field.Expr, 5)
+	t.fieldMap = make(map[string]field.Expr, 4)
 	t.fieldMap["name"] = t.Name
 	t.fieldMap["status"] = t.Status
 	t.fieldMap["ver"] = t.Ver
 	t.fieldMap["options"] = t.Options
-	t.fieldMap["order"] = t.Order
 }
 
 func (t tcPlugin) clone(db *gorm.DB) tcPlugin {

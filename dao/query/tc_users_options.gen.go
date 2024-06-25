@@ -27,7 +27,6 @@ func newTcUsersOption(db *gorm.DB, opts ...gen.DOOption) tcUsersOption {
 
 	tableName := _tcUsersOption.tcUsersOptionDo.TableName()
 	_tcUsersOption.ALL = field.NewAsterisk(tableName)
-	_tcUsersOption.ID = field.NewInt32(tableName, "id")
 	_tcUsersOption.UID = field.NewInt32(tableName, "uid")
 	_tcUsersOption.Name = field.NewString(tableName, "name")
 	_tcUsersOption.Value = field.NewString(tableName, "value")
@@ -41,7 +40,6 @@ type tcUsersOption struct {
 	tcUsersOptionDo tcUsersOptionDo
 
 	ALL   field.Asterisk
-	ID    field.Int32
 	UID   field.Int32
 	Name  field.String
 	Value field.String
@@ -61,7 +59,6 @@ func (t tcUsersOption) As(alias string) *tcUsersOption {
 
 func (t *tcUsersOption) updateTableName(table string) *tcUsersOption {
 	t.ALL = field.NewAsterisk(table)
-	t.ID = field.NewInt32(table, "id")
 	t.UID = field.NewInt32(table, "uid")
 	t.Name = field.NewString(table, "name")
 	t.Value = field.NewString(table, "value")
@@ -93,8 +90,7 @@ func (t *tcUsersOption) GetFieldByName(fieldName string) (field.OrderExpr, bool)
 }
 
 func (t *tcUsersOption) fillFieldMap() {
-	t.fieldMap = make(map[string]field.Expr, 4)
-	t.fieldMap["id"] = t.ID
+	t.fieldMap = make(map[string]field.Expr, 3)
 	t.fieldMap["uid"] = t.UID
 	t.fieldMap["name"] = t.Name
 	t.fieldMap["value"] = t.Value

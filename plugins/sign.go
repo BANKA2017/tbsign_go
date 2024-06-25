@@ -25,7 +25,7 @@ var tableList = []string{"tieba"}
 var today string
 
 func Dosign(table string, retry bool) (bool, error) {
-	//signMode := GetOption(options, "sign_mode")// client mode only
+	//signMode := _function.GetOption("sign_mode")// client mode only
 	hasFailed := false
 	signHour, _ := strconv.ParseInt(_function.GetOption("sign_hour"), 10, 64)
 	if int64(_function.Now.Hour()) <= signHour {

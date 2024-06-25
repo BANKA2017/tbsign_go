@@ -17,56 +17,50 @@ import (
 
 func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
-		db:                       db,
-		TcBaiduid:                newTcBaiduid(db, opts...),
-		TcCron:                   newTcCron(db, opts...),
-		TcKdGrowth:               newTcKdGrowth(db, opts...),
-		TcOption:                 newTcOption(db, opts...),
-		TcPlugin:                 newTcPlugin(db, opts...),
-		TcTieba:                  newTcTieba(db, opts...),
-		TcUser:                   newTcUser(db, opts...),
-		TcUsersOption:            newTcUsersOption(db, opts...),
-		TcVer4BanList:            newTcVer4BanList(db, opts...),
-		TcVer4BanUserset:         newTcVer4BanUserset(db, opts...),
-		TcVer4RankList:           newTcVer4RankList(db, opts...),
-		TcVer4RankLog:            newTcVer4RankLog(db, opts...),
+		db:               db,
+		TcBaiduid:        newTcBaiduid(db, opts...),
+		TcKdGrowth:       newTcKdGrowth(db, opts...),
+		TcOption:         newTcOption(db, opts...),
+		TcPlugin:         newTcPlugin(db, opts...),
+		TcTieba:          newTcTieba(db, opts...),
+		TcUser:           newTcUser(db, opts...),
+		TcUsersOption:    newTcUsersOption(db, opts...),
+		TcVer4BanList:    newTcVer4BanList(db, opts...),
+		TcVer4BanUserset: newTcVer4BanUserset(db, opts...),
+		TcVer4RankLog:    newTcVer4RankLog(db, opts...),
 	}
 }
 
 type Query struct {
 	db *gorm.DB
 
-	TcBaiduid                tcBaiduid
-	TcCron                   tcCron
-	TcKdGrowth               tcKdGrowth
-	TcOption                 tcOption
-	TcPlugin                 tcPlugin
-	TcTieba                  tcTieba
-	TcUser                   tcUser
-	TcUsersOption            tcUsersOption
-	TcVer4BanList            tcVer4BanList
-	TcVer4BanUserset         tcVer4BanUserset
-	TcVer4RankList           tcVer4RankList
-	TcVer4RankLog            tcVer4RankLog
+	TcBaiduid        tcBaiduid
+	TcKdGrowth       tcKdGrowth
+	TcOption         tcOption
+	TcPlugin         tcPlugin
+	TcTieba          tcTieba
+	TcUser           tcUser
+	TcUsersOption    tcUsersOption
+	TcVer4BanList    tcVer4BanList
+	TcVer4BanUserset tcVer4BanUserset
+	TcVer4RankLog    tcVer4RankLog
 }
 
 func (q *Query) Available() bool { return q.db != nil }
 
 func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
-		db:                       db,
-		TcBaiduid:                q.TcBaiduid.clone(db),
-		TcCron:                   q.TcCron.clone(db),
-		TcKdGrowth:               q.TcKdGrowth.clone(db),
-		TcOption:                 q.TcOption.clone(db),
-		TcPlugin:                 q.TcPlugin.clone(db),
-		TcTieba:                  q.TcTieba.clone(db),
-		TcUser:                   q.TcUser.clone(db),
-		TcUsersOption:            q.TcUsersOption.clone(db),
-		TcVer4BanList:            q.TcVer4BanList.clone(db),
-		TcVer4BanUserset:         q.TcVer4BanUserset.clone(db),
-		TcVer4RankList:           q.TcVer4RankList.clone(db),
-		TcVer4RankLog:            q.TcVer4RankLog.clone(db),
+		db:               db,
+		TcBaiduid:        q.TcBaiduid.clone(db),
+		TcKdGrowth:       q.TcKdGrowth.clone(db),
+		TcOption:         q.TcOption.clone(db),
+		TcPlugin:         q.TcPlugin.clone(db),
+		TcTieba:          q.TcTieba.clone(db),
+		TcUser:           q.TcUser.clone(db),
+		TcUsersOption:    q.TcUsersOption.clone(db),
+		TcVer4BanList:    q.TcVer4BanList.clone(db),
+		TcVer4BanUserset: q.TcVer4BanUserset.clone(db),
+		TcVer4RankLog:    q.TcVer4RankLog.clone(db),
 	}
 }
 
@@ -80,51 +74,45 @@ func (q *Query) WriteDB() *Query {
 
 func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
-		db:                       db,
-		TcBaiduid:                q.TcBaiduid.replaceDB(db),
-		TcCron:                   q.TcCron.replaceDB(db),
-		TcKdGrowth:               q.TcKdGrowth.replaceDB(db),
-		TcOption:                 q.TcOption.replaceDB(db),
-		TcPlugin:                 q.TcPlugin.replaceDB(db),
-		TcTieba:                  q.TcTieba.replaceDB(db),
-		TcUser:                   q.TcUser.replaceDB(db),
-		TcUsersOption:            q.TcUsersOption.replaceDB(db),
-		TcVer4BanList:            q.TcVer4BanList.replaceDB(db),
-		TcVer4BanUserset:         q.TcVer4BanUserset.replaceDB(db),
-		TcVer4RankList:           q.TcVer4RankList.replaceDB(db),
-		TcVer4RankLog:            q.TcVer4RankLog.replaceDB(db),
+		db:               db,
+		TcBaiduid:        q.TcBaiduid.replaceDB(db),
+		TcKdGrowth:       q.TcKdGrowth.replaceDB(db),
+		TcOption:         q.TcOption.replaceDB(db),
+		TcPlugin:         q.TcPlugin.replaceDB(db),
+		TcTieba:          q.TcTieba.replaceDB(db),
+		TcUser:           q.TcUser.replaceDB(db),
+		TcUsersOption:    q.TcUsersOption.replaceDB(db),
+		TcVer4BanList:    q.TcVer4BanList.replaceDB(db),
+		TcVer4BanUserset: q.TcVer4BanUserset.replaceDB(db),
+		TcVer4RankLog:    q.TcVer4RankLog.replaceDB(db),
 	}
 }
 
 type queryCtx struct {
-	TcBaiduid                *tcBaiduidDo
-	TcCron                   *tcCronDo
-	TcKdGrowth               *tcKdGrowthDo
-	TcOption                 *tcOptionDo
-	TcPlugin                 *tcPluginDo
-	TcTieba                  *tcTiebaDo
-	TcUser                   *tcUserDo
-	TcUsersOption            *tcUsersOptionDo
-	TcVer4BanList            *tcVer4BanListDo
-	TcVer4BanUserset         *tcVer4BanUsersetDo
-	TcVer4RankList           *tcVer4RankListDo
-	TcVer4RankLog            *tcVer4RankLogDo
+	TcBaiduid        *tcBaiduidDo
+	TcKdGrowth       *tcKdGrowthDo
+	TcOption         *tcOptionDo
+	TcPlugin         *tcPluginDo
+	TcTieba          *tcTiebaDo
+	TcUser           *tcUserDo
+	TcUsersOption    *tcUsersOptionDo
+	TcVer4BanList    *tcVer4BanListDo
+	TcVer4BanUserset *tcVer4BanUsersetDo
+	TcVer4RankLog    *tcVer4RankLogDo
 }
 
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
-		TcBaiduid:                q.TcBaiduid.WithContext(ctx),
-		TcCron:                   q.TcCron.WithContext(ctx),
-		TcKdGrowth:               q.TcKdGrowth.WithContext(ctx),
-		TcOption:                 q.TcOption.WithContext(ctx),
-		TcPlugin:                 q.TcPlugin.WithContext(ctx),
-		TcTieba:                  q.TcTieba.WithContext(ctx),
-		TcUser:                   q.TcUser.WithContext(ctx),
-		TcUsersOption:            q.TcUsersOption.WithContext(ctx),
-		TcVer4BanList:            q.TcVer4BanList.WithContext(ctx),
-		TcVer4BanUserset:         q.TcVer4BanUserset.WithContext(ctx),
-		TcVer4RankList:           q.TcVer4RankList.WithContext(ctx),
-		TcVer4RankLog:            q.TcVer4RankLog.WithContext(ctx),
+		TcBaiduid:        q.TcBaiduid.WithContext(ctx),
+		TcKdGrowth:       q.TcKdGrowth.WithContext(ctx),
+		TcOption:         q.TcOption.WithContext(ctx),
+		TcPlugin:         q.TcPlugin.WithContext(ctx),
+		TcTieba:          q.TcTieba.WithContext(ctx),
+		TcUser:           q.TcUser.WithContext(ctx),
+		TcUsersOption:    q.TcUsersOption.WithContext(ctx),
+		TcVer4BanList:    q.TcVer4BanList.WithContext(ctx),
+		TcVer4BanUserset: q.TcVer4BanUserset.WithContext(ctx),
+		TcVer4RankLog:    q.TcVer4RankLog.WithContext(ctx),
 	}
 }
 
