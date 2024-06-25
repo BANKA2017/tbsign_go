@@ -14,7 +14,7 @@ func ScanTiebaByPid(pid int32) {
 	account := _function.GetCookie(pid)
 
 	var localTiebaList = &[]model.TcTieba{}
-	_function.GormDB.Model(&model.TcTieba{UID: account.UID}).Find(&localTiebaList)
+	_function.GormDB.Model(&model.TcTieba{Pid: account.ID}).Find(&localTiebaList)
 	var pn int64 = 1
 
 	var wholeTiebaList = []model.TcTieba{}
