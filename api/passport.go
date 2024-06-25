@@ -127,6 +127,10 @@ func Login(c echo.Context) error {
 	var accountInfo []model.TcUser
 	_function.GormDB.Where("name = ? OR email = ?", account, account).Limit(1).Find(&accountInfo)
 
+	if len(accountInfo) == 0 {
+		return c.JSON(http.StatusOK, apiTemplate(401, "帐号或密码错误", echoEmptyObject, "tbsign"))
+	}
+
 	err := _function.VerifyPasswordHash(accountInfo[0].Pw, password)
 	if err != nil {
 		// Compatible with older versions -> md5(md5(md5($pwd)))
@@ -164,6 +168,10 @@ func UpdatePassword(c echo.Context) error {
 
 	var accountInfo []model.TcUser
 	_function.GormDB.Where("id = ?", uid).Limit(1).Find(&accountInfo)
+
+	if len(accountInfo) == 0 {
+		return c.JSON(http.StatusOK, apiTemplate(403, "帐号不存在", echoEmptyObject, "tbsign"))
+	}
 
 	// compare old password
 	err := _function.VerifyPasswordHash(accountInfo[0].Pw, oldPwd)
@@ -205,6 +213,10 @@ func GetAccountInfo(c echo.Context) error {
 
 	var accountSettings []model.TcUsersOption
 	_function.GormDB.Where("uid = ?", uid).Find(&accountSettings)
+
+	if len(accountInfo) == 0 {
+		return c.JSON(http.StatusOK, apiTemplate(403, "帐号不存在", echoEmptyObject, "tbsign"))
+	}
 
 	var resp = struct {
 		UID      int32             `json:"uid"`

@@ -2,11 +2,13 @@ package _function
 
 import (
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var Options []model.TcOption
@@ -46,11 +48,13 @@ func GetOption(keyName string) string {
 }
 
 func SetOption(keyName string, value string) {
-	GormDB.Model(&model.TcOption{}).Where("name = ?", keyName).Update("value", value)
-	for i := range Options {
-		if Options[i].Name == keyName {
-			Options[i].Value = value
-			break
+	err := GormDB.Model(&model.TcOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcOption{Name: keyName, Value: value}).Error
+	if err != nil {
+		for i := range Options {
+			if Options[i].Name == keyName {
+				Options[i].Value = value
+				break
+			}
 		}
 	}
 }
@@ -62,7 +66,8 @@ func GetUserOption(keyName string, uid string) string {
 }
 
 func SetUserOption(keyName string, value string, uid string) error {
-	return GormDB.Model(&model.TcUsersOption{}).Where("uid = ? AND name = ?", uid, keyName).Update("value", value).Error
+	numUID, _ := strconv.ParseInt(uid, 10, 64)
+	return GormDB.Model(&model.TcUsersOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcUsersOption{UID: int32(numUID), Name: keyName, Value: value}).Error
 }
 
 func GetCookie(pid int32) _type.TypeCookie {

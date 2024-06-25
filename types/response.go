@@ -136,17 +136,17 @@ type TiebaPanelUserInfoResponse struct {
 			} `json:"grade,omitempty"`
 			Novice int `json:"novice,omitempty"`
 		} `json:"honor,omitempty"`
-		VipInfo struct {
-			AScore   int    `json:"a_score,omitempty"`
-			ETime    string `json:"e_time,omitempty"`
-			ExtScore string `json:"ext_score,omitempty"`
-			IconURL  string `json:"icon_url,omitempty"`
-			NScore   int    `json:"n_score,omitempty"`
-			STime    string `json:"s_time,omitempty"`
-			VLevel   int    `json:"v_level,omitempty"`
-			VStatus  string `json:"v_status,omitempty"`
-			YScore   int    `json:"y_score,omitempty"`
-		} `json:"vipInfo,omitempty"`
+		// VipInfo struct {
+		// 	AScore   int    `json:"a_score,omitempty"`
+		// 	ETime    string `json:"e_time,omitempty"`
+		// 	ExtScore string `json:"ext_score,omitempty"`
+		// 	IconURL  string `json:"icon_url,omitempty"`
+		// 	NScore   int    `json:"n_score,omitempty"`
+		// 	STime    string `json:"s_time,omitempty"`
+		// 	VLevel   int    `json:"v_level,omitempty"`
+		// 	VStatus  string `json:"v_status,omitempty"`
+		// 	YScore   int    `json:"y_score,omitempty"`
+		// } `json:"vipInfo,omitempty"`
 		TbVip         bool `json:"tb_vip,omitempty"`
 		FollowedCount int  `json:"followed_count,omitempty"`
 	} `json:"data,omitempty"`

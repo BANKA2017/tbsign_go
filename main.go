@@ -126,7 +126,7 @@ func main() {
 			_function.UpdateNow()
 		case <-oneMinuteInterval.C:
 			if testMode {
-				return
+				continue
 			}
 			_function.GetOptionsAndPluginList()
 			_plugin.DoSignAction()
@@ -155,7 +155,7 @@ func main() {
 			}
 		case <-fourHoursInterval.C:
 			if testMode {
-				return
+				continue
 			}
 			_function.GetOptionsAndPluginList()
 			if _function.PluginList["ver4_ref"] {

@@ -30,8 +30,12 @@ type addAccountsResponseList struct {
 
 func PluginLoopBanGetSwitch(c echo.Context) error {
 	uid := c.Get("uid").(string)
-	status := _function.GetUserOption("ver4_ban_open", uid) != "0"
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", status, "tbsign"))
+	status := _function.GetUserOption("ver4_ban_open", uid)
+	if status == "" {
+		status = "0"
+		_function.SetUserOption("ver4_ban_open", status, uid)
+	}
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", status != "0", "tbsign"))
 }
 
 func PluginLoopBanSwitch(c echo.Context) error {
@@ -57,8 +61,15 @@ func PluginLoopBanGetReason(c echo.Context) error {
 	var loopBanSettings []model.TcVer4BanUserset
 	_function.GormDB.Where("uid = ?", uid).Limit(1).Find(&loopBanSettings)
 
+	reason := ""
+	if len(loopBanSettings) == 0 {
+		reason = "您因为违反吧规，已被吧务封禁，如有疑问请联系吧务！"
+	} else {
+		reason = loopBanSettings[0].C
+	}
+
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]string{
-		"reason": loopBanSettings[0].C,
+		"reason": reason,
 	}, "tbsign"))
 }
 
