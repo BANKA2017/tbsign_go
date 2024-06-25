@@ -15,13 +15,13 @@ import (
 * QR login...Maybe not...
  */
 
-//TODO remove ALL bduss and stoken from response
-
 func AddTiebaAccount(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	bduss := strings.TrimSpace(c.FormValue("bduss"))
 	stoken := strings.TrimSpace(c.FormValue("stoken"))
+
+	includeBDUSSAndStoken := c.QueryParams().Get("all") == "1"
 
 	if bduss == "" || stoken == "" {
 		return c.JSON(http.StatusOK, apiTemplate(401, "BDUSS 或 Stoken 无效", echoEmptyObject, "tbsign"))
@@ -48,8 +48,16 @@ func AddTiebaAccount(c echo.Context) error {
 			_function.GormDB.Model(model.TcBaiduid{}).Where("id = ?", tiebaAccounts[0].ID).Updates(&newData)
 			newData.ID = tiebaAccounts[0].ID
 			newData.UID = tiebaAccounts[0].UID
+			if !includeBDUSSAndStoken {
+				newData.Bduss = ""
+				newData.Stoken = ""
+			}
 			return c.JSON(http.StatusOK, apiTemplate(200, "OK", newData, "tbsign"))
 		} else if tiebaAccounts[0].Bduss == bduss && tiebaAccounts[0].Stoken == stoken {
+			if !includeBDUSSAndStoken {
+				tiebaAccounts[0].Bduss = ""
+				tiebaAccounts[0].Stoken = ""
+			}
 			return c.JSON(http.StatusOK, apiTemplate(200, "贴吧账号已存在", tiebaAccounts[0], "tbsign"))
 		}
 	}
@@ -64,6 +72,10 @@ func AddTiebaAccount(c echo.Context) error {
 		Portrait: baiduAccountInfo.User.Portrait,
 	}
 	_function.GormDB.Create(&newAccount)
+	if !includeBDUSSAndStoken {
+		newAccount.Bduss = ""
+		newAccount.Stoken = ""
+	}
 	return c.JSON(http.StatusOK, apiTemplate(201, "OK", newAccount, "tbsign"))
 
 }
@@ -103,8 +115,17 @@ func RemoveTiebaAccount(c echo.Context) error {
 func GetTiebaAccountList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
+	includeBDUSSAndStoken := c.QueryParams().Get("all") == "1"
+
 	var tiebaAccounts []model.TcBaiduid
 	_function.GormDB.Where("uid = ?", uid).Find(&tiebaAccounts)
+
+	if !includeBDUSSAndStoken {
+		for k := range tiebaAccounts {
+			tiebaAccounts[k].Bduss = ""
+			tiebaAccounts[k].Stoken = ""
+		}
+	}
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", tiebaAccounts, "tbsign"))
 }
 
@@ -113,6 +134,8 @@ func GetTiebaAccountItem(c echo.Context) error {
 
 	pid := c.Param("pid")
 
+	includeBDUSSAndStoken := c.QueryParams().Get("all") == "1"
+
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
 		return c.JSON(http.StatusOK, apiTemplate(403, "无效 pid", echoEmptyObject, "tbsign"))
@@ -120,6 +143,11 @@ func GetTiebaAccountItem(c echo.Context) error {
 
 	var tiebaAccount model.TcBaiduid
 	_function.GormDB.Where("uid = ? AND id = ?", uid, numPid).First(&tiebaAccount)
+
+	if !includeBDUSSAndStoken {
+		tiebaAccount.Bduss = ""
+		tiebaAccount.Stoken = ""
+	}
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", tiebaAccount, "tbsign"))
 }
 
