@@ -293,14 +293,16 @@ func ResetPassword(c echo.Context) error {
 	newPwd := c.FormValue("password")
 
 	if !_function.VerifyEmail(email) {
-		return c.JSON(http.StatusOK, apiTemplate(404, "邮箱不存在", false, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(404, "邮箱不合法", false, "tbsign"))
 	}
 
-	// try to find account
+	// find account
 	var accountInfo model.TcUser
 	_function.GormDB.Where("email = ?", email).Find(&accountInfo)
 	if accountInfo.ID == 0 {
-		return c.JSON(http.StatusOK, apiTemplate(404, "帐号不存在", false, "tbsign"))
+		// defense scan
+		// TODO Implement a delay of several seconds to prevent a side-channel attack.
+		return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
 	}
 
 	if verifyCode != "" {
