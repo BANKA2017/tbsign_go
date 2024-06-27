@@ -15,7 +15,7 @@ var Options []model.TcOption
 var CookieList = make(map[int32]_type.TypeCookie)
 var FidList = make(map[string]int64)
 var PluginListDB []model.TcPlugin
-var PluginList = make(map[string]bool)
+var PluginList = make(map[string]model.TcPlugin)
 var GormDB *gorm.DB
 
 type ResetPwdStruct struct {
@@ -47,9 +47,9 @@ func GetOption(keyName string) string {
 	return ""
 }
 
-func SetOption(keyName string, value string) {
+func SetOption(keyName string, value string) error {
 	err := GormDB.Model(&model.TcOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcOption{Name: keyName, Value: value}).Error
-	if err != nil {
+	if err == nil {
 		for i := range Options {
 			if Options[i].Name == keyName {
 				Options[i].Value = value
@@ -57,6 +57,7 @@ func SetOption(keyName string, value string) {
 			}
 		}
 	}
+	return err
 }
 
 func GetUserOption(keyName string, uid string) string {
@@ -118,7 +119,7 @@ func GetOptionsAndPluginList() {
 	GormDB.Find(&PluginListDB)
 
 	for _, pluginStatus := range PluginListDB {
-		PluginList[pluginStatus.Name] = pluginStatus.Status
+		PluginList[pluginStatus.Name] = pluginStatus
 	}
 }
 

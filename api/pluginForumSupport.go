@@ -19,7 +19,7 @@ func PluginForumSupportGetSettings(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	var rankList []model.TcVer4RankLog
-	_function.GormDB.Where("uid = ?", uid).Find(&rankList)
+	_function.GormDB.Where("uid = ?", uid).Order("id ASC").Find(&rankList)
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", rankList, "tbsign"))
 }
@@ -37,7 +37,7 @@ func PluginForumSupportUpdateSettings(c echo.Context) error {
 	}
 
 	var rankList []model.TcVer4RankLog
-	_function.GormDB.Where("uid = ? AND pid = ?", uid, pid).Find(&rankList)
+	_function.GormDB.Where("uid = ? AND pid = ?", uid, pid).Order("id ASC").Find(&rankList)
 
 	c.Request().ParseForm()
 

@@ -1,10 +1,16 @@
 package main
 
 import (
+	"bufio"
 	"database/sql"
+	_ "embed"
 	"flag"
+	"fmt"
 	"log"
+	"math/rand"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	_api "github.com/BANKA2017/tbsign_go/api"
@@ -28,9 +34,22 @@ var enableApi bool
 
 var address string
 
+var setup bool
+
+//go:embed assets/tc_init_system.sql
+var _tc_init_system string
+
+//go:embed assets/tc_mysql.sql
+var _tc_mysql string
+
+//go:embed assets/tc_sqlite.sql
+var _tc_sqlite string
+
+var err error
+
 func main() {
 	// sqlite
-	flag.StringVar(&dbPath, "db_path", "tbsign.db", "Database path")
+	flag.StringVar(&dbPath, "db_path", "", "Database path")
 
 	// mysql
 	flag.StringVar(&dbUsername, "username", "", "Username")
@@ -41,10 +60,13 @@ func main() {
 	//proxy
 	flag.BoolVar(&_function.IgnoreProxy, "no_proxy", false, "Ignore the http proxy config from environment vars")
 
-	flag.BoolVar(&testMode, "test", false, "Not send any requests to tieba servers")
+	// api
 	flag.BoolVar(&enableApi, "api", false, "active backend endpoints")
-
 	flag.StringVar(&address, "address", ":1323", "address :1323")
+
+	// others
+	flag.BoolVar(&testMode, "test", false, "Not send any requests to tieba servers")
+	flag.BoolVar(&setup, "setup", false, "Init the system")
 
 	flag.Parse()
 
@@ -77,7 +99,7 @@ func main() {
 	// connect to db
 	dbMode := "mysql"
 
-	if _, err := os.Stat(dbPath); err == nil {
+	if dbPath != "" {
 		// sqlite
 		_function.GormDB, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 
@@ -103,6 +125,44 @@ func main() {
 			log.Fatal("db:", err)
 		}
 		log.Println("db: mysql connected!")
+	}
+
+	// setup
+	if setup {
+		fmt.Println("现在正在安装 TbSign➡️，如果数据库内含有数据，这样做会导致数据丢失，请提前做好备份，如果已经完成备份，请输入以下随机文字并按下回车（显示为 \"--> 1234 <--\" 代表需要输入 \"1234\"）")
+		randValue := strconv.Itoa(int(rand.Int63()))
+		fmt.Println("-->", randValue, "<--")
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("请输入: ")
+		text, _ := reader.ReadString('\n')
+		text = strings.TrimSpace(text)
+		if text != randValue {
+			fmt.Println("输入错误，请重试")
+			os.Exit(0)
+		}
+
+		fmt.Println("正在建立数据表和索引")
+		if dbMode == "mysql" {
+			err := _function.GormDB.Exec(_tc_mysql).Error
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			err := _function.GormDB.Exec(_tc_sqlite).Error
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+
+		fmt.Println("正在导入数据")
+		err := _function.GormDB.Exec(_tc_init_system).Error
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println("🎉 安装成功！请移除掉 `--setup=true` 后重新执行本文件以启动系统")
+		fmt.Println("🔔 首位注册的帐号将会被自动提权为管理员")
+		os.Exit(0)
 	}
 
 	// init
@@ -135,15 +195,15 @@ func main() {
 			_plugin.DoReSignAction()
 
 			// plugins
-			if _function.PluginList["ver4_rank"] {
+			if p, ok := _function.PluginList["ver4_rank"]; ok && p.Status {
 				go _plugin.DoForumSupportAction()
 			}
 
-			if _function.PluginList["ver4_ban"] {
+			if p, ok := _function.PluginList["ver4_ban"]; ok && p.Status {
 				go _plugin.LoopBanAction()
 			}
 
-			if _function.PluginList["kd_growth"] {
+			if p, ok := _function.PluginList["kd_growth"]; ok && p.Status {
 				go _plugin.DoGrowthTasksAction()
 			}
 
@@ -160,7 +220,7 @@ func main() {
 				continue
 			}
 			_function.GetOptionsAndPluginList()
-			if _function.PluginList["ver4_ref"] {
+			if p, ok := _function.PluginList["ver4_ref"]; ok && p.Status {
 				go _plugin.RefreshTiebaListAction()
 			}
 

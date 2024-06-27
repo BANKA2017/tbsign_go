@@ -17,7 +17,7 @@ func PluginRefreshTiebaListGetAccountList(c echo.Context) error {
 	_function.GormDB.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
 
 	var tiebaList []model.TcTieba
-	_function.GormDB.Where("uid = ?", uid).Find(&tiebaList)
+	_function.GormDB.Where("uid = ?", uid).Order("id ASC").Find(&tiebaList)
 
 	type accountListResponse struct {
 		PID      int32  `json:"pid"`
@@ -57,14 +57,14 @@ func PluginRefreshTiebaListRefreshTiebaList(c echo.Context) error {
 	}
 
 	var tiebaAccounts []model.TcBaiduid
-	_function.GormDB.Where("uid = ?", uid).Find(&tiebaAccounts)
+	_function.GormDB.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
 
 	// get account list
 	for _, v := range tiebaAccounts {
 		if v.ID == int32(numPid) {
 			_plugin.ScanTiebaByPid(v.ID)
 			var tiebaList []model.TcTieba
-			_function.GormDB.Where("uid = ? AND pid = ?", uid, pid).Find(&tiebaList)
+			_function.GormDB.Where("uid = ? AND pid = ?", uid, pid).Order("id ASC").Find(&tiebaList)
 			return c.JSON(http.StatusOK, apiTemplate(200, "OK", tiebaList, "tbsign"))
 		}
 	}

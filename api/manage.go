@@ -1,12 +1,16 @@
 package _api
 
 import (
+	"log"
 	"net/http"
+	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/labstack/echo/v4"
+	"github.com/leeqvip/gophp"
 	"golang.org/x/exp/slices"
 )
 
@@ -18,9 +22,7 @@ type SiteAccountsResponse struct {
 	T     string `json:"t"`
 }
 
-// ?
-// var InviteCodeList = make(map[string]string)
-var settingsFilter = []string{"ann", "system_url", "system_keywords", "system_name", "system_description", "enable_reg", "yr_reg", "ver4_ban_limit", "ver4_ban_break_check", "mail_name", "mail_yourname", "mail_host", "mail_port", "mail_secure", "mail_auth", "mail_smtpname", "mail_smtppw", "ver4_ref_lastdo", "sign_mode", "sign_hour", "cron_limit", "sign_sleep", "cron_sign_again", "retry_max"}
+var settingsFilter = []string{"ann", "system_url", "system_name", "system_keywords", "system_description", "stop_reg", "enable_reg", "yr_reg", "sign_mode", "sign_hour", "cron_limit", "sign_sleep", "retry_max", "mail_name", "mail_yourname", "mail_host", "mail_port", "mail_secure", "mail_auth", "mail_smtpname", "mail_smtppw", "ver4_ban_limit", "ver4_ban_break_check"}
 
 func GetAdminSettings(c echo.Context) error {
 	var adminSettings []model.TcOption
@@ -28,7 +30,15 @@ func GetAdminSettings(c echo.Context) error {
 
 	settings := make(map[string]string)
 	for _, v := range adminSettings {
-		settings[v.Name] = v.Value
+		if v.Name == "sign_mode" {
+			tmpOption := []string{}
+			for _, match := range regexp.MustCompile(`(?m)\"([123])\"`).FindAllString(v.Value, -1) {
+				tmpOption = append(tmpOption, strings.ReplaceAll(match, "\"", ""))
+			}
+			settings[v.Name] = strings.Join(tmpOption, ",")
+		} else {
+			settings[v.Name] = v.Value
+		}
 	}
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", settings, "tbsign"))
@@ -38,31 +48,92 @@ func UpdateAdminSettings(c echo.Context) error {
 	c.Request().ParseForm()
 
 	var adminSettings []model.TcOption
-	_function.GormDB.Find(&adminSettings)
+	_function.GormDB.Where("name in ?", settingsFilter).Find(&adminSettings)
 
-	var newSettings []model.TcOption
-
+	var errStr []string
+	settings := make(map[string]string)
 	for _, v := range adminSettings {
 		for k1, v1 := range c.Request().Form {
-			if v.Name == k1 {
+			if v.Name == k1 && len(v1) > 0 {
 				if v.Value != v1[0] {
-					v.Value = v1[0]
-					newSettings = append(newSettings, v)
+					// verify
+					switch v.Name {
+					case "sign_mode":
+						signMode := strings.Split(v1[0], ",")
+						check := true
+						for _, signModeItem := range signMode {
+							if !slices.Contains([]string{"1", "2", "3"}, signModeItem) {
+								check = false
+								break
+							}
+						}
+						if !check {
+							errStr = append(errStr, v.Name+": Invalid value `"+v1[0]+"`")
+							continue
+						}
+
+						signModeEncoded, err := gophp.Serialize(signMode)
+						if err != nil {
+							errStr = append(errStr, "sign_mode: encode php serialize failed")
+							log.Println("sign_mode: encode php serialize failed", err)
+							continue
+						}
+						if string(signModeEncoded) != v.Value {
+							settings[v.Name] = v1[0]
+							_function.SetOption(v.Name, string(signModeEncoded))
+						}
+
+					case "enable_reg", "ver4_ban_break_check", "mail_auth":
+						if v1[0] == "0" || v1[0] == "1" {
+							settings[v.Name] = v1[0]
+							_function.SetOption(v.Name, v1[0])
+						} else {
+							errStr = append(errStr, v.Name+": Invalid value `"+v1[0]+"`")
+						}
+					case "mail_secure":
+						if v1[0] == "none" || v1[0] == "ssl" || v1[0] == "tls" {
+							settings[v.Name] = v1[0]
+							_function.SetOption(v.Name, v1[0])
+						} else {
+							errStr = append(errStr, v.Name+": Invalid value `"+v1[0]+"`")
+						}
+					case "cron_limit", "retry_max", "sign_sleep", "ver4_ban_limit", "mail_port":
+						numValue, err := strconv.ParseInt(v1[0], 10, 64)
+						if err == nil && numValue >= 0 {
+							settings[v.Name] = v1[0]
+							_function.SetOption(v.Name, v1[0])
+						} else {
+							errStr = append(errStr, v.Name+": Invalid value `"+v1[0]+"`")
+							log.Println(v.Name, numValue, err)
+						}
+					case "sign_hour":
+						numValue, err := strconv.ParseInt(v1[0], 10, 64)
+						if err != nil {
+							errStr = append(errStr, v.Name+": Invalid value `"+v1[0]+"`")
+							log.Println(v.Name, err)
+							continue
+						} else if numValue < -1 {
+							numValue = -1
+						} else if numValue > 23 {
+							numValue = 23
+						}
+						settings[v.Name] = strconv.Itoa(int(numValue))
+						_function.SetOption(v.Name, settings[v.Name])
+					default:
+						settings[v.Name] = v1[0]
+						_function.SetOption(v.Name, v1[0])
+					}
 				}
 				break
 			}
 		}
 	}
 
-	settings := make(map[string]string)
-	if len(newSettings) > 0 {
-		for _, v := range newSettings {
-			settings[v.Name] = v.Value
-			_function.SetOption(v.Name, v.Value)
-		}
+	if len(errStr) == 0 {
+		errStr = append(errStr, "OK")
 	}
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", settings, "tbsign"))
+	return c.JSON(http.StatusOK, apiTemplate(200, strings.Join(errStr, "\n"), settings, "tbsign"))
 }
 
 func AdminUpdateAccount(c echo.Context) error {
@@ -167,10 +238,6 @@ func GetAccountsList(c echo.Context) error {
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", respAccountInfo, "tbsign"))
 }
 
-func GetPluginsList(c echo.Context) error {
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", _function.PluginList, "tbsign"))
-}
-
 func PluginSwitch(c echo.Context) error {
 	c.Request().ParseForm()
 	pluginName := c.Param("plugin_name")
@@ -184,14 +251,16 @@ func PluginSwitch(c echo.Context) error {
 			"status": false,
 		}, "tbsign"))
 	}
-	newStatus := !_function.PluginList[pluginName]
-	_function.GormDB.Model(&model.TcPlugin{}).Where("name = ?", pluginName).Update("status", newStatus)
-	_function.PluginList[pluginName] = newStatus
+
+	pluginValue := _function.PluginList[pluginName]
+	pluginValue.Status = !pluginValue.Status
+	_function.GormDB.Model(&model.TcPlugin{}).Where("name = ?", pluginName).Update("status", pluginValue.Status)
+	_function.PluginList[pluginName] = pluginValue
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
 		"name":   pluginName,
 		"exists": true,
-		"status": newStatus,
+		"status": pluginValue.Status,
 	}, "tbsign"))
 }
 

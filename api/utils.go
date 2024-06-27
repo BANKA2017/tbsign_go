@@ -26,6 +26,7 @@ var PreCheckWhiteList = []string{
 	"/tools/userinfo/tieba_uid/:tiebauid",
 	"/tools/userinfo/panel/:query_type/:user_value",
 	"/tools/tieba/fname_to_fid/:fname",
+	"/config/page/login",
 }
 
 var RoleList = []string{"deleted", "banned", "user", "vip", "admin"}
@@ -81,4 +82,8 @@ func verifyAuthorization(authorization string) (string, string) {
 			return "0", "guest"
 		}
 	}
+}
+
+func basicTokenBuilder(uid int32, password string) string {
+	return base64.RawURLEncoding.EncodeToString([]byte(strconv.Itoa(int(uid)) + ":" + hex.EncodeToString(_function.GenHMAC256([]byte(password), []byte(strconv.Itoa(int(uid))+password)))))
 }

@@ -35,6 +35,7 @@ func Api(address string, variables ...any) {
 	e.POST("/passport/logout", Logout)
 	e.POST("/passport/signup", Signup)
 	e.DELETE("/passport/delete", DeleteAccount)
+	e.PUT("/passport/update_email", UpdateEmail)
 	e.PUT("/passport/update_pwd", UpdatePassword)
 	e.GET("/passport/settings", GetSettings)
 	e.PUT("/passport/settings", UpdateSettings)
@@ -58,10 +59,9 @@ func Api(address string, variables ...any) {
 
 	// manage
 	e.GET("/admin/settings", GetAdminSettings)
-	e.PUT("/admin/settings", UpdateAdminSettings)
+	e.POST("/admin/settings", UpdateAdminSettings)
 	e.GET("/admin/accounts", GetAccountsList)
 	e.PATCH("/admin/accounts/:uid", AdminUpdateAccount)
-	e.GET("/admin/plugins", GetPluginsList)
 	e.POST("/admin/plugins/:plugin_name/switch", PluginSwitch)
 	e.GET("/admin/server/status", GetServerStatus)
 	e.POST("/admin/service/push/mail/test", SendTestMail)
@@ -105,6 +105,10 @@ func Api(address string, variables ...any) {
 
 	// notifications
 	e.GET("/notifications", GetNotifications)
+
+	// others
+	e.GET("/plugins", GetPluginsList)
+	e.GET("/config/page/login", GetLoginPageConfig)
 
 	e.Logger.Fatal(e.Start(address))
 }

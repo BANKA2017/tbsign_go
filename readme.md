@@ -1,8 +1,8 @@
-# Tieba-Cloud-Sign-Go (Dev)
+# TbSign ➡️ (Dev)
 
 ---
 
-只是一个签到程序，需要配合[百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/)使用
+只是一个签到程序，可以配合[百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/)使用，也可以独立运作
 
 ## ⚠ 警告
 
@@ -17,17 +17,18 @@
 | pwd      |                  | 数据库密码                         |
 | endpoint | `127.0.0.1:3306` | 数据库端点                         |
 | db       | `tbsign`         | 数据库名称                         |
-| db_path  | `tbsign.db`      | SQLite 文件目录                    |
+| db_path  |                  | SQLite 文件目录                    |
 | test     | `false`          | 测试模式，此模式下不会运行计划任务 |
 | api      | `false`          | 是否启动后端 api                   |
 | address  | `:1323`          | 后端运行地址                       |
+| setup    | `false`          | 安装程序                           |
 
 示例
 
 ```shell
-go run run.go --username=<dbUsername> --pwd=<DBPassword>
+go run main.go --username=<dbUsername> --pwd=<DBPassword>
 # or
-./run --username=<dbUsername> --pwd=<DBPassword>
+./tbsign_go --username=<dbUsername> --pwd=<DBPassword>
 # or https://github.com/cosmtrek/air
 air -- --db_path=tbsign.db --test=true --api=true
 ```
@@ -49,17 +50,46 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 ## 数据库
 
-数据库的选择顺序是 SQLite > MySQL，只要 `db_path`/`tc_db_path` 的文件存在，就会使用 SQLite
+只要 `db_path`/`tc_db_path` 的值不为空字符串，就会使用 SQLite；否则使用 MySQL
 
 ## 安装
 
 - 迁移法 (仅 MySQL)
   - 直接安装 [百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/)
-  - 启动时使用数据库配置
+  - 使用原数据库配置启动
 - 全新安装 (MySQL, SQLite)
-  - 导入 `/assets` 目录里面的 sql 文件，MySQL 和 SQLite 二选一即可
-  - 完成简单的配置（细节还没公开，还在筛选）
-  - 启动
+  - 自动安装
+    - 启动程序，添加 `flag` `setup=true` (示例: `./tbsign_go --db=tbsign.db --api=true --address=:8080 --setup=true`)
+    - 根据文字提示完成自动安装流程
+
+      ```plaintext
+      ➜  tbsign_go git:(master) ✗ ./tbsign_go --db_path=tbsign1.db --api=true --setup=true
+      2024/06/27 19:10:53 db: sqlite connected!
+      现在正在安装 TbSign➡️，如果数据库内含有数据，这样做会导致数据丢失，请提前做好备份，如果已经完成备份，请输入以下随机文字并按下回车（显示为 "--> 1234 <--" 代表 需要输入 "1234"）
+      --> 7451648477214040135 <--
+      请输入: 7451648477214040135
+      正在建立数据表和索引
+      正在导入数据
+      🎉 安装成功！请移除掉 `--setup=true` 后重新执行本文件以启动系统
+      🔔 首位注册的帐号将会被自动提权为管理员
+      ➜  tbsign_go git:(master) ✗ ./tbsign_go --db_path=tbsign1.db --api=true
+      ```
+
+  - 手动安装
+    - 导入 `/assets` 目录里面的 sql 文件，[MySQL](https://github.com/BANKA2017/tbsign_go/blob/master/assets/tc_mysql.sql) 或 [SQLite](https://github.com/BANKA2017/tbsign_go/blob/master/assets/tc_sqlite.sql)，根据实际情况选择
+    - 根据需要修改 [tc_init_system.sql](https://github.com/BANKA2017/tbsign_go/blob/master/assets/tc_init_system.sql) 的内容（或者不做修改），将其导入到数据库
+  - 去掉 `--setup=true`，启动程序
+  - 注册帐号，当数据表中没有用户时，第**一**位的用户会自动提升到 `admin` 用户组 (这样可能会带来不必要的安全风险，未来将会提供开关用于禁止这种提权行为)
+  - \*(选做) 登录管理员帐号，打开 **系统管理** 即可手动开启自带插件
+
+### 兼容性
+
+- [⚠️] 通过 *迁移法* 启动的程序能够与 [百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/) 共存，但无法使用 *用户成长任务* 插件，因为这是一个未公开的插件
+- [❌] 通过 *全新安装* 启动的程序无法兼容 [百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/)，因为缺少相关数据表和设置选项
+
+## 前端
+
+➡️ <https://github.com/BANKA2017/tbsign_go_fe>
 
 ## Api (WIP)
 
@@ -109,7 +139,7 @@ air -- --db_path=tbsign.db --test=true --api=true
   - [ ] [删贴机](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_review)（可能会拖很久甚至不会做）
 - [ ] 优化 PHP 原版的相关功能
 - [x] 不再考虑 ~~通过读取 `config.php` 取得数据库连接信息~~
-- [ ] 自动清理解除绑定的帐号的插件设置
+- [x] 自动清理解除绑定的帐号的插件设置
 - [ ] 打包/Docker/或者别的
 - [ ] ……更多的想起来再加
 

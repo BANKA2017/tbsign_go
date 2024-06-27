@@ -11,6 +11,7 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm/clause"
 )
 
 type addAccountsResponseList struct {
@@ -78,7 +79,9 @@ func PluginLoopBanSetReason(c echo.Context) error {
 
 	reason := c.FormValue("reason")
 
-	err := _function.GormDB.Model(&model.TcVer4BanUserset{}).Where("uid = ?", uid).Update("c", reason).Error
+	numUID, _ := strconv.ParseInt(uid, 10, 64)
+
+	err := _function.GormDB.Model(&model.TcVer4BanUserset{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcVer4BanUserset{UID: int32(numUID), C: reason}).Error
 	if err != nil {
 		log.Println(err)
 		return c.JSON(http.StatusOK, apiTemplate(500, "无法更新封禁理由", map[string]string{
@@ -96,7 +99,7 @@ func PluginLoopBanGetList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	var loopBanList []model.TcVer4BanList
-	_function.GormDB.Model(&model.TcVer4BanList{}).Where("uid = ?", uid).Find(&loopBanList)
+	_function.GormDB.Model(&model.TcVer4BanList{}).Where("uid = ?", uid).Order("id ASC").Find(&loopBanList)
 
 	limit := _function.GetOption("ver4_ban_limit")
 	numLimit, _ := strconv.ParseInt(limit, 10, 64)
@@ -192,7 +195,7 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 	numLimit, _ := strconv.ParseInt(limit, 10, 64)
 
 	var existsAccountList []model.TcVer4BanList
-	_function.GormDB.Model(&model.TcVer4BanList{}).Where("uid = ?", uid).Find(&existsAccountList)
+	_function.GormDB.Model(&model.TcVer4BanList{}).Where("uid = ?", uid).Order("id ASC").Find(&existsAccountList)
 
 	count := int64(len(existsAccountList))
 	if count >= numLimit || count+int64(len(portraitList)) > numLimit {
@@ -273,7 +276,7 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 	}
 
 	var loopBanList []model.TcVer4BanList
-	_function.GormDB.Model(&model.TcVer4BanList{}).Where("uid = ? AND portrait IN ?", uid, successPortraitList).Find(&loopBanList)
+	_function.GormDB.Model(&model.TcVer4BanList{}).Where("uid = ? AND portrait IN ?", uid, successPortraitList).Order("id ASC").Find(&loopBanList)
 
 	for _, v := range loopBanList {
 		accountsResult = append(accountsResult, addAccountsResponseList{

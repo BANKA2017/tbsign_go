@@ -1,8 +1,6 @@
 package _api
 
 import (
-	"encoding/base64"
-	"encoding/hex"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -155,7 +153,7 @@ func Login(c echo.Context) error {
 		Token string `json:"token"` // <- static session
 	}{
 		Type:  "basic",
-		Token: base64.RawURLEncoding.EncodeToString([]byte(strconv.Itoa(int(accountInfo[0].ID)) + ":" + hex.EncodeToString(_function.GenHMAC256([]byte(accountInfo[0].Pw), []byte(strconv.Itoa(int(accountInfo[0].ID))+accountInfo[0].Pw))))),
+		Token: basicTokenBuilder(accountInfo[0].ID, accountInfo[0].Pw),
 	}
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resp, "tbsign"))
@@ -163,6 +161,42 @@ func Login(c echo.Context) error {
 
 func Logout(c echo.Context) error {
 	return c.JSON(http.StatusOK, apiTemplate(200, "无效接口，清理本地缓存即可", echoEmptyObject, "tbsign"))
+}
+
+func UpdateEmail(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	email := c.FormValue("email")
+
+	if !_function.VerifyEmail(email) {
+		return c.JSON(http.StatusOK, apiTemplate(404, "邮箱不合法", false, "tbsign"))
+	}
+
+	var accountInfo []model.TcUser
+	_function.GormDB.Where("id = ?", uid).Limit(1).Find(&accountInfo)
+
+	if len(accountInfo) == 0 {
+		return c.JSON(http.StatusOK, apiTemplate(403, "帐号不存在", echoEmptyObject, "tbsign"))
+	}
+
+	// compare email
+	if email == accountInfo[0].Email {
+		return c.JSON(http.StatusOK, apiTemplate(403, "修改前后邮箱不变", echoEmptyObject, "tbsign"))
+	}
+
+	_function.GormDB.Model(model.TcUser{}).Where("id = ?", uid).Update("email", email)
+
+	numUID, _ := strconv.ParseInt(uid, 10, 64)
+
+	var resp = struct {
+		UID   int32  `json:"uid"`
+		Email string `json:"email"`
+	}{
+		UID:   int32(numUID),
+		Email: email,
+	}
+
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resp, "tbsign"))
 }
 
 func UpdatePassword(c echo.Context) error {
@@ -198,11 +232,11 @@ func UpdatePassword(c echo.Context) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 
 	var resp = struct {
-		UID int32  `json:"uid"`
-		Pwd string `json:"pwd"` // <- static session
+		Type  string `json:"type"`
+		Token string `json:"token"` // <- static session
 	}{
-		UID: int32(numUID),
-		Pwd: hex.EncodeToString(_function.GenHMAC256([]byte(string(hash)), []byte(uid+string(hash)))),
+		Type:  "basic",
+		Token: basicTokenBuilder(int32(numUID), string(hash)),
 	}
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resp, "tbsign"))

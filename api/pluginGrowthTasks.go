@@ -43,7 +43,7 @@ func PluginGrowthTasksGetList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	var accounts []model.TcKdGrowth
-	_function.GormDB.Where("uid = ?", uid).Find(&accounts)
+	_function.GormDB.Where("uid = ?", uid).Order("id ASC").Find(&accounts)
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", accounts, "tbsign"))
 }
