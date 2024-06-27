@@ -386,8 +386,8 @@ func ResetPassword(c echo.Context) error {
 
 		code = code[0:6]
 
-		(*_function.ResetPwdList[accountInfo.Email]).Value = code
-		(*_function.ResetPwdList[accountInfo.Email]).Time += 1
+		_function.ResetPwdList[accountInfo.Email].Value = code
+		_function.ResetPwdList[accountInfo.Email].Time += 1
 
 		mailObject := _function.EmailTemplateResetPassword(accountInfo.Email, code)
 		err := _function.SendEmail(accountInfo.Email, mailObject.Object, mailObject.Body)

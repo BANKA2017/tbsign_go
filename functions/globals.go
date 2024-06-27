@@ -15,6 +15,8 @@ var Options []model.TcOption
 var CookieList = make(map[int32]_type.TypeCookie)
 var FidList = make(map[string]int64)
 var PluginListDB []model.TcPlugin
+
+var PluginNameList = []string{"kd_growth", "ver4_ban", "ver4_rank", "ver4_ref"}
 var PluginList = make(map[string]model.TcPlugin)
 var GormDB *gorm.DB
 
@@ -116,7 +118,7 @@ func GetOptionsAndPluginList() {
 	GormDB.Find(&Options)
 
 	// get plugin list
-	GormDB.Find(&PluginListDB)
+	GormDB.Where("name in ?", PluginNameList).Find(&PluginListDB)
 
 	for _, pluginStatus := range PluginListDB {
 		PluginList[pluginStatus.Name] = pluginStatus
