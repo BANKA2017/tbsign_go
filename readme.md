@@ -58,7 +58,6 @@ air -- --db_path=tbsign.db --test=true --api=true
   - 直接安装 [百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/)
   - 使用原数据库配置启动
 - 全新安装 (MySQL, SQLite)
-  - 自动安装
   - 启动程序，添加 `flag` `setup=true` (示例: `./tbsign_go --db=tbsign.db --api=true --address=:8080 --setup=true`)
   - 根据文字提示完成自动安装流程
 
