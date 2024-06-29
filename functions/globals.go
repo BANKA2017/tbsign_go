@@ -27,7 +27,7 @@ type ResetPwdStruct struct {
 const ResetPwdMaxTimes = 5
 const ResetPwdExpire = 60 * 30
 
-var ResetPwdList = make(map[string]*ResetPwdStruct)
+var ResetPwdList = make(map[int32]*ResetPwdStruct)
 
 // Tieba works in GMT+8
 var LocalTime, _ = time.LoadLocation("Asia/Shanghai")

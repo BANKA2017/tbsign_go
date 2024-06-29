@@ -44,7 +44,7 @@ func SetupSystem(dbMode string, _tc_mysql string, _tc_sqlite string, _tc_init_sy
 			if len(strings.TrimSpace(v)) == 0 {
 				continue
 			}
-			fmt.Println("⌛导入第" + strconv.Itoa(i+1) + "行...")
+			fmt.Println("⌛导入第" + strconv.Itoa(i+1) + "项...")
 			err := GormDB.W.Exec(v).Error
 			if err != nil {
 				log.Fatal(err)

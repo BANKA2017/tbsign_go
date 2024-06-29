@@ -173,9 +173,9 @@ func main() {
 
 			// clean pwd list
 			if len(_function.ResetPwdList) > 0 {
-				for email, value := range _function.ResetPwdList {
+				for uid, value := range _function.ResetPwdList {
 					if value.Expire < _function.Now.Unix() {
-						delete(_function.ResetPwdList, email)
+						delete(_function.ResetPwdList, uid)
 					}
 				}
 			}

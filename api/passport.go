@@ -340,10 +340,10 @@ func ResetPassword(c echo.Context) error {
 	}
 
 	if verifyCode != "" {
-		if _, ok := _function.ResetPwdList[accountInfo.Email]; !ok {
+		if _, ok := _function.ResetPwdList[accountInfo.ID]; !ok {
 			return c.JSON(http.StatusOK, apiTemplate(404, "无效验证码", false, "tbsign"))
 		}
-		if _function.ResetPwdList[accountInfo.Email].Value != verifyCode {
+		if _function.ResetPwdList[accountInfo.ID].Value != verifyCode {
 			return c.JSON(http.StatusOK, apiTemplate(404, "无效验证码", false, "tbsign"))
 		} else {
 			if newPwd == "" {
@@ -357,19 +357,19 @@ func ResetPassword(c echo.Context) error {
 
 				_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", accountInfo.ID).Update("pw", string(hash))
 
-				delete(_function.ResetPwdList, accountInfo.Email)
+				delete(_function.ResetPwdList, accountInfo.ID)
 				return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
 			}
 		}
 	} else if verifyCode == "" && newPwd != "" {
 		return c.JSON(http.StatusOK, apiTemplate(404, "无效验证码", false, "tbsign"))
 	} else {
-		if _, ok := _function.ResetPwdList[accountInfo.Email]; !ok {
-			_function.ResetPwdList[accountInfo.Email] = &_function.ResetPwdStruct{
+		if _, ok := _function.ResetPwdList[accountInfo.ID]; !ok {
+			_function.ResetPwdList[accountInfo.ID] = &_function.ResetPwdStruct{
 				Expire: _function.Now.Unix() + _function.ResetPwdExpire,
 			}
 		} else {
-			if _function.ResetPwdList[accountInfo.Email].Time >= _function.ResetPwdMaxTimes {
+			if _function.ResetPwdList[accountInfo.ID].Time >= _function.ResetPwdMaxTimes {
 				return c.JSON(http.StatusOK, apiTemplate(403, "已超过最大验证次数，请稍后再试", false, "tbsign"))
 			}
 		}
@@ -381,8 +381,8 @@ func ResetPassword(c echo.Context) error {
 
 		code = code[0:6]
 
-		_function.ResetPwdList[accountInfo.Email].Value = code
-		_function.ResetPwdList[accountInfo.Email].Time += 1
+		_function.ResetPwdList[accountInfo.ID].Value = code
+		_function.ResetPwdList[accountInfo.ID].Time += 1
 
 		mailObject := _function.EmailTemplateResetPassword(accountInfo.Email, code)
 		err := _function.SendEmail(accountInfo.Email, mailObject.Object, mailObject.Body)
