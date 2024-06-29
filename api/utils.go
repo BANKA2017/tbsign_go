@@ -119,7 +119,7 @@ func sessionTokenBuilder(uid int32, password string) string {
 	return base64.RawURLEncoding.EncodeToString([]byte(strconv.Itoa(int(uid)) + ":" + hex.EncodeToString(_function.GenHMAC256([]byte(password), []byte(strconv.Itoa(int(uid))+password)))))
 }
 
-var keyBucket = make(map[string]*ecdsa.PrivateKey) // uis -> key
+var keyBucket = make(map[string]*ecdsa.PrivateKey) // uid -> key
 
 func bearerTokenBuilder(uid string, forceUpdate bool) string {
 	var privateKey *ecdsa.PrivateKey

@@ -33,7 +33,7 @@ func PluginForumSupportUpdateSettings(c echo.Context) error {
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 
 	if err != nil || numPid <= 0 {
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid pid", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(403, "非法 pid", echoEmptyObject, "tbsign"))
 	}
 
 	var rankList []model.TcVer4RankLog

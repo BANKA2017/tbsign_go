@@ -22,7 +22,7 @@ type SiteAccountsResponse struct {
 	T     string `json:"t"`
 }
 
-var settingsFilter = []string{"ann", "system_url", "system_name", "system_keywords", "system_description", "stop_reg", "enable_reg", "yr_reg", "sign_mode", "sign_hour", "cron_limit", "sign_sleep", "retry_max", "mail_name", "mail_yourname", "mail_host", "mail_port", "mail_secure", "mail_auth", "mail_smtpname", "mail_smtppw", "ver4_ban_limit", "ver4_ban_break_check"}
+var settingsFilter = []string{"ann", "system_url", "system_name", "system_keywords", "system_description", "stop_reg", "enable_reg", "yr_reg", "cktime", "sign_mode", "sign_hour", "cron_limit", "sign_sleep", "retry_max", "mail_name", "mail_yourname", "mail_host", "mail_port", "mail_secure", "mail_auth", "mail_smtpname", "mail_smtppw", "ver4_ban_limit", "ver4_ban_break_check"}
 
 func GetAdminSettings(c echo.Context) error {
 	var adminSettings []model.TcOption
@@ -97,7 +97,7 @@ func UpdateAdminSettings(c echo.Context) error {
 						} else {
 							errStr = append(errStr, v.Name+": Invalid value `"+v1[0]+"`")
 						}
-					case "cron_limit", "retry_max", "sign_sleep", "ver4_ban_limit", "mail_port":
+					case "cron_limit", "retry_max", "sign_sleep", "ver4_ban_limit", "mail_port", "cktime":
 						numValue, err := strconv.ParseInt(v1[0], 10, 64)
 						if err == nil && numValue >= 0 {
 							settings[v.Name] = v1[0]
@@ -136,7 +136,7 @@ func UpdateAdminSettings(c echo.Context) error {
 	return c.JSON(http.StatusOK, apiTemplate(200, strings.Join(errStr, "\n"), settings, "tbsign"))
 }
 
-func AdminUpdateAccount(c echo.Context) error {
+func AdminModifyAccountInfo(c echo.Context) error {
 	uid := c.Get("uid").(string)
 	targetUID := c.Param("uid")
 
@@ -157,18 +157,18 @@ func AdminUpdateAccount(c echo.Context) error {
 	if accountInfo.ID == 0 {
 		return c.JSON(http.StatusOK, apiTemplate(404, "用户不存在", echoEmptyObject, "tbsign"))
 	}
-	if accountInfo.Role == "admin" {
-		return c.JSON(http.StatusOK, apiTemplate(403, "无法修改管理员帐号", echoEmptyObject, "tbsign"))
+	if accountInfo.Role == "admin" && uid != "1" {
+		return c.JSON(http.StatusOK, apiTemplate(403, "只有根管理员允许改变管理员状态", echoEmptyObject, "tbsign"))
 	}
 
-	var newAccountInfo model.TcUser
+	var newAccountInfo = accountInfo
 
 	newName := c.FormValue("name")
 	newEmail := c.FormValue("email")
 	newRole := c.FormValue("role")
 
 	// email
-	if newEmail != "" {
+	if newEmail != "" && accountInfo.Email != newEmail {
 		if !_function.VerifyEmail(newEmail) {
 			return c.JSON(http.StatusOK, apiTemplate(403, "无效邮箱", echoEmptyObject, "tbsign"))
 		} else {
@@ -198,7 +198,7 @@ func AdminUpdateAccount(c echo.Context) error {
 	}
 
 	// role
-	if newRole != "" {
+	if newRole != "" && accountInfo.Role != newRole {
 		if !slices.Contains(RoleList, newRole) {
 			return c.JSON(http.StatusOK, apiTemplate(403, "新用户组 "+newRole+" 不存在", echoEmptyObject, "tbsign"))
 		} else {
@@ -208,7 +208,22 @@ func AdminUpdateAccount(c echo.Context) error {
 		newRole = accountInfo.Role
 	}
 
-	_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", accountInfo.ID).Updates(&newAccountInfo)
+	// soft delete?
+	if newRole == "delete" {
+		// account
+		_function.GormDB.W.Model(&model.TcUser{}).Delete("id = ?", accountInfo.ID)
+		_function.GormDB.W.Model(&model.TcTieba{}).Delete("uid = ?", accountInfo.ID)
+		_function.GormDB.W.Model(&model.TcBaiduid{}).Delete("uid = ?", accountInfo.ID)
+		_function.GormDB.W.Model(&model.TcUsersOption{}).Delete("uid = ?", accountInfo.ID)
+
+		// plugins
+		_function.GormDB.W.Model(&model.TcVer4BanList{}).Delete("uid = ?", accountInfo.ID)
+		_function.GormDB.W.Model(&model.TcVer4RankLog{}).Delete("uid = ?", accountInfo.ID)
+		_function.GormDB.W.Model(&model.TcKdGrowth{}).Delete("uid = ?", accountInfo.ID)
+		delete(keyBucket, strconv.Itoa(int(accountInfo.ID)))
+	} else {
+		_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", accountInfo.ID).Updates(&newAccountInfo)
+	}
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", &SiteAccountsResponse{
 		ID:    accountInfo.ID,
@@ -219,11 +234,69 @@ func AdminUpdateAccount(c echo.Context) error {
 	}, "tbsign"))
 }
 
+func AdminDeleteTiebaAccountList(c echo.Context) error {
+	targetUID := c.QueryParams().Get("uid")
+
+	var PIDCount int64
+	_function.GormDB.R.Model(&model.TcBaiduid{}).Where("uid = ?", targetUID).Count(&PIDCount)
+	if PIDCount > 0 {
+		_function.GormDB.W.Model(&model.TcBaiduid{}).Delete("uid = ?", targetUID)
+		_function.GormDB.W.Model(&model.TcTieba{}).Delete("uid = ?", targetUID)
+
+		// plugins
+		_function.GormDB.W.Model(&model.TcVer4BanList{}).Delete("uid = ?", targetUID)
+		_function.GormDB.W.Model(&model.TcVer4RankLog{}).Delete("uid = ?", targetUID)
+		_function.GormDB.W.Model(&model.TcKdGrowth{}).Delete("uid = ?", targetUID)
+		return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
+	} else {
+		return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
+	}
+}
+
+func AdminDeleteAccountToken(c echo.Context) error {
+	uid := c.Get("uid").(string)
+	targetUID := c.Param("uid")
+
+	if uid == targetUID {
+		return c.JSON(http.StatusOK, apiTemplate(403, "无法踢自己下线", false, "tbsign"))
+	}
+
+	if _, ok := keyBucket[targetUID]; ok {
+		delete(keyBucket, targetUID)
+		return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
+	} else {
+		return c.JSON(http.StatusOK, apiTemplate(404, "用户不在线上", false, "tbsign"))
+	}
+}
+
 func GetAccountsList(c echo.Context) error {
-	var accountInfo []model.TcUser
-	_function.GormDB.R.Find(&accountInfo)
+	page := c.QueryParams().Get("page")
+	count := c.QueryParams().Get("count")
+
+	if page == "" {
+		page = "1"
+	}
+	if count == "" {
+		count = "10"
+	}
 
 	var respAccountInfo []SiteAccountsResponse
+	numPage, err := strconv.ParseInt(page, 10, 64)
+	if err != nil || numPage <= 0 {
+		log.Println(err, page)
+		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid page", respAccountInfo, "tbsign"))
+	}
+	numCount, err := strconv.ParseInt(count, 10, 64)
+	if err != nil || numCount <= 0 {
+		log.Println(err, count)
+		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid count", respAccountInfo, "tbsign"))
+	}
+
+	var accountInfoCount int64
+	_function.GormDB.R.Model(&model.TcUser{}).Count(&accountInfoCount)
+
+	var accountInfo []model.TcUser
+	_function.GormDB.R.Offset(int((numPage - 1) * numCount)).Limit(int(numCount)).Find(&accountInfo)
 
 	for _, v := range accountInfo {
 		respAccountInfo = append(respAccountInfo, SiteAccountsResponse{
@@ -235,7 +308,11 @@ func GetAccountsList(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", respAccountInfo, "tbsign"))
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
+		"list":  respAccountInfo,
+		"page":  numPage,
+		"total": accountInfoCount,
+	}, "tbsign"))
 }
 
 func PluginSwitch(c echo.Context) error {

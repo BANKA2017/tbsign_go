@@ -34,6 +34,7 @@ func Api(address string, variables ...any) {
 	e.POST("/passport/login", Login)
 	e.POST("/passport/logout", Logout)
 	e.POST("/passport/signup", Signup)
+	//e.POST("/passport/export", ExportAccountData)
 	e.DELETE("/passport/delete", DeleteAccount)
 	e.PUT("/passport/update_email", UpdateEmail)
 	e.PUT("/passport/update_pwd", UpdatePassword)
@@ -60,9 +61,11 @@ func Api(address string, variables ...any) {
 	// manage
 	e.GET("/admin/settings", GetAdminSettings)
 	e.POST("/admin/settings", UpdateAdminSettings)
-	e.GET("/admin/accounts", GetAccountsList)
-	e.PATCH("/admin/accounts/:uid", AdminUpdateAccount)
-	e.POST("/admin/plugins/:plugin_name/switch", PluginSwitch)
+	e.GET("/admin/account", GetAccountsList)
+	e.PATCH("/admin/account/modify/:uid", AdminModifyAccountInfo)
+	e.DELETE("/admin/account/token/:uid", AdminDeleteAccountToken)
+	e.DELETE("/admin/account/list/:uid", AdminDeleteTiebaAccountList)
+	e.POST("/admin/plugin/:plugin_name/switch", PluginSwitch)
 	e.GET("/admin/server/status", GetServerStatus)
 	e.POST("/admin/service/push/mail/test", SendTestMail)
 

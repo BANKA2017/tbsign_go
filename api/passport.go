@@ -89,11 +89,9 @@ func DeleteAccount(c echo.Context) error {
 		return c.JSON(http.StatusOK, apiTemplate(403, "无效密码", echoEmptyObject, "tbsign"))
 	}
 
-	// find other admin
-	var adminCount int64
-	_function.GormDB.R.Model(&model.TcUser{}).Where("role = ?", "admin").Count(&adminCount)
-	if adminCount <= 1 {
-		return c.JSON(http.StatusOK, apiTemplate(403, "您不能删除此账号，因为您是本站唯一的管理员", echoEmptyObject, "tbsign"))
+	// find root admin
+	if uid == "1" {
+		return c.JSON(http.StatusOK, apiTemplate(403, "您不能删除账号，因为您是根管理员", echoEmptyObject, "tbsign"))
 	}
 
 	// set role -> delete
@@ -106,6 +104,8 @@ func DeleteAccount(c echo.Context) error {
 	_function.GormDB.W.Model(&model.TcVer4BanList{}).Delete("uid = ?", uid)
 	_function.GormDB.W.Model(&model.TcVer4RankLog{}).Delete("uid = ?", uid)
 	_function.GormDB.W.Model(&model.TcKdGrowth{}).Delete("uid = ?", uid)
+
+	delete(keyBucket, uid)
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "帐号已删除，感谢您的使用", map[string]any{
 		"uid":  int64(accountInfo.ID),
@@ -392,4 +392,48 @@ func ResetPassword(c echo.Context) error {
 			return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
 		}
 	}
+}
+
+func ExportAccountData(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	password := c.FormValue("password")
+
+	var tcUser []model.TcUser
+	_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", uid).Find(&tcUser)
+	if len(tcUser) > 0 {
+		err := _function.VerifyPasswordHash(tcUser[0].Pw, password)
+		if err != nil {
+			return c.JSON(http.StatusOK, apiTemplate(403, "密码错误", echoEmptyObject, "tbsign"))
+		}
+	} else {
+		return c.JSON(http.StatusOK, apiTemplate(403, "账号不存在 (请问是如何登录的)", echoEmptyObject, "tbsign"))
+	}
+	oneTcUser := tcUser[0]
+	oneTcUser.Pw = ""
+	oneTcUser.T = ""
+
+	var tcTieba []model.TcTieba
+	var tcBaiduid []model.TcBaiduid
+	var tcUsersOption []model.TcUsersOption
+	var tcVer4BanList []model.TcVer4BanList
+	var tcVer4RankLog []model.TcVer4RankLog
+	var tcKdGrowth []model.TcKdGrowth
+
+	_function.GormDB.W.Model(&model.TcTieba{}).Where("uid = ?", uid).Find(&tcTieba)
+	_function.GormDB.W.Model(&model.TcBaiduid{}).Where("uid = ?", uid).Find(&tcBaiduid)
+	_function.GormDB.W.Model(&model.TcUsersOption{}).Where("uid = ?", uid).Find(&tcUsersOption)
+	_function.GormDB.W.Model(&model.TcVer4BanList{}).Where("uid = ?", uid).Find(&tcVer4BanList)
+	_function.GormDB.W.Model(&model.TcVer4RankLog{}).Where("uid = ?", uid).Find(&tcVer4RankLog)
+	_function.GormDB.W.Model(&model.TcKdGrowth{}).Where("uid = ?", uid).Find(&tcKdGrowth)
+
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
+		"tc_user":          oneTcUser,
+		"tc_tieba":         tcTieba,
+		"tc_baiduid":       tcBaiduid,
+		"tc_users_option":  tcUsersOption,
+		"tc_ver4_ban_list": tcVer4BanList,
+		"tc_ver4_bank_log": tcVer4RankLog,
+		"tc_kd_growth":     tcKdGrowth,
+	}, "tbsign"))
 }

@@ -25,9 +25,11 @@ func SetHeaders(next echo.HandlerFunc) echo.HandlerFunc {
 func PreCheck(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		c.Set("start_date", _function.Now.UnixNano())
-		log.Println(c.Request().Method, c.Path(), c.QueryString())
+		method := c.Request().Method
+		path := c.Path()
+		log.Println(method, path, c.QueryString())
 
-		if PreCheckWhiteListExists(c.Path()) {
+		if PreCheckWhiteListExists(path) {
 			return next(c)
 		}
 
@@ -46,15 +48,20 @@ func PreCheck(next echo.HandlerFunc) echo.HandlerFunc {
 			return c.JSON(http.StatusOK, apiTemplate(401, "无效 session", echoEmptyObject, "tbsign"))
 		}
 
-		// banned
-		if role == "banned" {
-			return c.JSON(http.StatusOK, apiTemplate(403, "帐号已封禁", echoEmptyObject, "tbsign"))
-		} else if role == "deleted" {
+		// deleted
+		if role == "deleted" {
 			return c.JSON(http.StatusOK, apiTemplate(403, "帐号已删除", echoEmptyObject, "tbsign"))
 		}
 
+		// TODO banned
+		if role == "banned" {
+			if !(path == "/passport" || strings.HasPrefix(path, "/passport/") || path == "/notifications") {
+				return c.JSON(http.StatusOK, apiTemplate(403, "受限帐号", echoEmptyObject, "tbsign"))
+			}
+		}
+
 		// admin
-		if strings.HasPrefix(c.Path(), "/admin/") && role != "admin" {
+		if strings.HasPrefix(path, "/admin/") && role != "admin" {
 			return c.JSON(http.StatusOK, apiTemplate(403, "无效用户组", echoEmptyObject, "tbsign"))
 		}
 
