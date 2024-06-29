@@ -19,7 +19,7 @@ func PluginForumSupportGetSettings(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	var rankList []model.TcVer4RankLog
-	_function.GormDB.Where("uid = ?", uid).Order("id ASC").Find(&rankList)
+	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&rankList)
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", rankList, "tbsign"))
 }
@@ -37,7 +37,7 @@ func PluginForumSupportUpdateSettings(c echo.Context) error {
 	}
 
 	var rankList []model.TcVer4RankLog
-	_function.GormDB.Where("uid = ? AND pid = ?", uid, pid).Order("id ASC").Find(&rankList)
+	_function.GormDB.R.Where("uid = ? AND pid = ?", uid, pid).Order("id ASC").Find(&rankList)
 
 	c.Request().ParseForm()
 
@@ -92,7 +92,7 @@ func PluginForumSupportUpdateSettings(c echo.Context) error {
 		}
 	}
 
-	_function.GormDB.Create(&addRankList)
+	_function.GormDB.W.Create(&addRankList)
 
 	// del
 	for _, v := range rankList {
@@ -108,7 +108,7 @@ func PluginForumSupportUpdateSettings(c echo.Context) error {
 		}
 	}
 
-	_function.GormDB.Delete(&model.TcVer4RankLog{}, delRankIDList)
+	_function.GormDB.W.Delete(&model.TcVer4RankLog{}, delRankIDList)
 
 	var resp = struct {
 		Add    []model.TcVer4RankLog `json:"add"`

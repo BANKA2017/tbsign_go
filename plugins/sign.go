@@ -40,9 +40,9 @@ func Dosign(table string, retry bool) (bool, error) {
 	}
 	if retry {
 		// 重签
-		_function.GormDB.Where("no = ? AND latest != ? AND status IN ?", 0, _function.Now.Local().Day(), []int64{340011, 2280007, 110001, 1989004, 255}).Limit(int(limit)).Find(&tiebaList)
+		_function.GormDB.R.Where("no = ? AND latest != ? AND status IN ?", 0, _function.Now.Local().Day(), []int64{340011, 2280007, 110001, 1989004, 255}).Limit(int(limit)).Find(&tiebaList)
 	} else {
-		_function.GormDB.Where("no = ? AND latest != ?", 0, _function.Now.Local().Day()).Limit(int(limit)).Find(&tiebaList)
+		_function.GormDB.R.Where("no = ? AND latest != ?", 0, _function.Now.Local().Day()).Limit(int(limit)).Find(&tiebaList)
 	}
 
 	if len(tiebaList) <= 0 {
@@ -82,7 +82,7 @@ func Dosign(table string, retry bool) (bool, error) {
 					errorMsg = response.ErrorMsg
 				}
 				//TODO better sql update
-				_function.GormDB.Model(model.TcTieba{}).Where("id = ?", id).Updates(&model.TcTieba{
+				_function.GormDB.W.Model(model.TcTieba{}).Where("id = ?", id).Updates(&model.TcTieba{
 					Latest:    int32(now.Local().Day()),
 					Status:    int32(errorCode),
 					LastError: errorMsg,

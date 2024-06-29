@@ -7,7 +7,6 @@ import (
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_type "github.com/BANKA2017/tbsign_go/types"
-	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -18,7 +17,6 @@ var PluginListDB []model.TcPlugin
 
 var PluginNameList = []string{"kd_growth", "ver4_ban", "ver4_rank", "ver4_ref"}
 var PluginList = make(map[string]model.TcPlugin)
-var GormDB *gorm.DB
 
 type ResetPwdStruct struct {
 	Expire int64
@@ -50,7 +48,7 @@ func GetOption(keyName string) string {
 }
 
 func SetOption(keyName string, value string) error {
-	err := GormDB.Model(&model.TcOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcOption{Name: keyName, Value: value}).Error
+	err := GormDB.W.Model(&model.TcOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcOption{Name: keyName, Value: value}).Error
 	if err == nil {
 		for i := range Options {
 			if Options[i].Name == keyName {
@@ -64,20 +62,20 @@ func SetOption(keyName string, value string) error {
 
 func GetUserOption(keyName string, uid string) string {
 	var tmpUserOption model.TcUsersOption
-	GormDB.Model(&model.TcUsersOption{}).Where("uid = ? AND name = ?", uid, keyName).First(&tmpUserOption)
+	GormDB.R.Model(&model.TcUsersOption{}).Where("uid = ? AND name = ?", uid, keyName).First(&tmpUserOption)
 	return tmpUserOption.Value
 }
 
 func SetUserOption(keyName string, value string, uid string) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
-	return GormDB.Model(&model.TcUsersOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcUsersOption{UID: int32(numUID), Name: keyName, Value: value}).Error
+	return GormDB.W.Model(&model.TcUsersOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcUsersOption{UID: int32(numUID), Name: keyName, Value: value}).Error
 }
 
 func GetCookie(pid int32) _type.TypeCookie {
 	cookie, ok := CookieList[pid]
 	if !ok {
 		var cookieDB model.TcBaiduid
-		GormDB.Model(&model.TcBaiduid{}).Where("id = ?", pid).First(&cookieDB)
+		GormDB.R.Model(&model.TcBaiduid{}).Where("id = ?", pid).First(&cookieDB)
 		cookie.Tbs = GetTbs(cookieDB.Bduss)
 		if cookie.Tbs == "" {
 			return cookie
@@ -99,7 +97,7 @@ func GetFid(name string) int64 {
 	if !ok {
 		// find in db
 		var tiebaInfo model.TcTieba
-		GormDB.Model(&model.TcTieba{}).Where("tieba = ? AND fid IS NOT NULL AND fid != ''", name).First(&tiebaInfo)
+		GormDB.R.Model(&model.TcTieba{}).Where("tieba = ? AND fid IS NOT NULL AND fid != ''", name).First(&tiebaInfo)
 		fid = int64(tiebaInfo.Fid)
 		if fid == 0 {
 			forumNameInfo, err := GetForumNameShare(name)
@@ -115,10 +113,10 @@ func GetFid(name string) int64 {
 
 func GetOptionsAndPluginList() {
 	// get options
-	GormDB.Find(&Options)
+	GormDB.R.Find(&Options)
 
 	// get plugin list
-	GormDB.Where("name in ?", PluginNameList).Find(&PluginListDB)
+	GormDB.R.Where("name in ?", PluginNameList).Find(&PluginListDB)
 
 	for _, pluginStatus := range PluginListDB {
 		PluginList[pluginStatus.Name] = pluginStatus

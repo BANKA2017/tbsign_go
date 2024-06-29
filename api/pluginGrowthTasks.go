@@ -43,7 +43,7 @@ func PluginGrowthTasksGetList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	var accounts []model.TcKdGrowth
-	_function.GormDB.Where("uid = ?", uid).Order("id ASC").Find(&accounts)
+	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&accounts)
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", accounts, "tbsign"))
 }
@@ -60,7 +60,7 @@ func PluginGrowthTasksAddAccount(c echo.Context) error {
 
 	// pre check
 	var count int64
-	_function.GormDB.Model(&model.TcKdGrowth{}).Where("uid = ? AND pid = ?", uid, numPid).Count(&count)
+	_function.GormDB.R.Model(&model.TcKdGrowth{}).Where("uid = ? AND pid = ?", uid, numPid).Count(&count)
 	if count > 0 {
 		return c.JSON(http.StatusOK, apiTemplate(200, "帐号已存在", echoEmptyObject, "tbsign"))
 	} else {
@@ -69,8 +69,8 @@ func PluginGrowthTasksAddAccount(c echo.Context) error {
 			Pid:  numPid,
 			Date: 0,
 		}
-		_function.GormDB.Create(&dataToInsert)
-		_function.GormDB.Model(&model.TcKdGrowth{}).Where("uid = ? AND pid = ?", uid, numPid).First(&dataToInsert)
+		_function.GormDB.W.Create(&dataToInsert)
+		_function.GormDB.R.Model(&model.TcKdGrowth{}).Where("uid = ? AND pid = ?", uid, numPid).First(&dataToInsert)
 		return c.JSON(http.StatusOK, apiTemplate(200, "OK", dataToInsert, "tbsign"))
 	}
 }
@@ -89,7 +89,7 @@ func PluginGrowthTasksDelAccount(c echo.Context) error {
 		}, "tbsign"))
 	}
 
-	_function.GormDB.Model(&model.TcKdGrowth{}).Delete(&model.TcKdGrowth{
+	_function.GormDB.W.Model(&model.TcKdGrowth{}).Delete(&model.TcKdGrowth{
 		UID: numUID,
 		ID:  numID,
 	})
@@ -105,7 +105,7 @@ func PluginGrowthTasksDelAllAccounts(c echo.Context) error {
 
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 
-	_function.GormDB.Model(&model.TcKdGrowth{}).Delete(&model.TcKdGrowth{
+	_function.GormDB.W.Model(&model.TcKdGrowth{}).Delete(&model.TcKdGrowth{
 		UID: numUID,
 	})
 
@@ -118,7 +118,7 @@ func PluginGrowthTasksGetTasksStatus(c echo.Context) error {
 
 	// pre check
 	var count int64
-	_function.GormDB.Model(&model.TcBaiduid{}).Where("id = ? AND uid = ?", pid, uid).Count(&count)
+	_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id = ? AND uid = ?", pid, uid).Count(&count)
 
 	if count > 0 {
 		numPid, _ := strconv.ParseInt(pid, 10, 64)

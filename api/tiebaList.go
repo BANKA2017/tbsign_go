@@ -33,7 +33,7 @@ func AddTieba(c echo.Context) error {
 
 	// pre-check
 	var tiebaItems []model.TcTieba
-	_function.GormDB.Where("uid = ? AND pid = ? AND fid = ?", uid, pid, fid).Limit(1).Find(&tiebaItems)
+	_function.GormDB.R.Where("uid = ? AND pid = ? AND fid = ?", uid, pid, fid).Limit(1).Find(&tiebaItems)
 
 	if len(tiebaItems) > 0 {
 		return c.JSON(http.StatusOK, apiTemplate(200, "贴吧已存在", tiebaItems[0], "tbsign"))
@@ -50,7 +50,7 @@ func AddTieba(c echo.Context) error {
 		LastError: "NULL",
 	}
 
-	_function.GormDB.Create(&newTieba)
+	_function.GormDB.W.Create(&newTieba)
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", newTieba, "tbsign"))
 }
@@ -71,7 +71,7 @@ func RemoveTieba(c echo.Context) error {
 		return c.JSON(http.StatusOK, apiTemplate(403, "无效 fid", echoEmptyObject, "tbsign"))
 	}
 
-	_function.GormDB.Delete(&model.TcTieba{
+	_function.GormDB.W.Delete(&model.TcTieba{
 		UID: int32(numUID),
 		Pid: int32(numPid),
 		Fid: int32(numFid),
@@ -99,9 +99,9 @@ func IgnoreTieba(c echo.Context) error {
 	}
 
 	if method == "DELETE" {
-		_function.GormDB.Model(&model.TcTieba{}).Where("uid = ? AND pid = ? AND fid = ?", numUID, numPid, numFid).Update("no", false)
+		_function.GormDB.W.Model(&model.TcTieba{}).Where("uid = ? AND pid = ? AND fid = ?", numUID, numPid, numFid).Update("no", false)
 	} else {
-		_function.GormDB.Model(&model.TcTieba{}).Where("uid = ? AND pid = ? AND fid = ?", numUID, numPid, numFid).Update("no", true)
+		_function.GormDB.W.Model(&model.TcTieba{}).Where("uid = ? AND pid = ? AND fid = ?", numUID, numPid, numFid).Update("no", true)
 	}
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
@@ -115,7 +115,7 @@ func IgnoreTieba(c echo.Context) error {
 func CleanTiebaList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	_function.GormDB.Where("uid = ?", uid).Delete(&model.TcTieba{})
+	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcTieba{})
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]string{
 		"uid": uid,
 	}, "tbsign"))
@@ -125,7 +125,7 @@ func RefreshTiebaList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	var tiebaAccounts []model.TcBaiduid
-	_function.GormDB.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
+	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
 
 	// get account list
 	for _, v := range tiebaAccounts {
@@ -133,7 +133,7 @@ func RefreshTiebaList(c echo.Context) error {
 	}
 
 	var tiebaList []model.TcTieba
-	_function.GormDB.Where("uid = ?", uid).Order("id ASC").Find(&tiebaList)
+	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaList)
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", tiebaList, "tbsign"))
 }
 
@@ -141,6 +141,6 @@ func GetTiebaList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	var tiebaList []model.TcTieba
-	_function.GormDB.Where("uid = ?", uid).Order("id ASC").Find(&tiebaList)
+	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaList)
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", tiebaList, "tbsign"))
 }

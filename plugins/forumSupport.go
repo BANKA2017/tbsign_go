@@ -606,14 +606,14 @@ func DoForumSupportAction() {
 	// get list
 	todayBeginning := _function.TodayBeginning() //GMT+8
 	ver4RankLog := &[]model.TcVer4RankLog{}
-	_function.GormDB.Model(&model.TcVer4RankLog{}).Where("date < ? AND id > ?", todayBeginning, id).Find(&ver4RankLog)
+	_function.GormDB.R.Model(&model.TcVer4RankLog{}).Where("date < ? AND id > ?", todayBeginning, id).Find(&ver4RankLog)
 	for _, forumSupportItem := range *ver4RankLog {
 		if _, ok := accountStatusList[forumSupportItem.UID]; !ok {
 			accountStatusList[forumSupportItem.UID] = _function.GetUserOption("ver4_rank_check", strconv.Itoa(int(forumSupportItem.UID)))
 		}
 		if accountStatusList[forumSupportItem.UID] == "" {
 			// clean
-			_function.GormDB.Where("uid = ?", forumSupportItem.UID).Delete(&model.TcVer4RankLog{})
+			_function.GormDB.W.Where("uid = ?", forumSupportItem.UID).Delete(&model.TcVer4RankLog{})
 			accountStatusList[forumSupportItem.UID] = "NOT_EXISTS"
 		} else if accountStatusList[forumSupportItem.UID] == "1" {
 			response, err := PostForumSupport(_function.GetCookie(forumSupportItem.Pid), forumSupportItem.Fid, forumSupportItem.Nid)
@@ -633,7 +633,7 @@ func DoForumSupportAction() {
 			}
 
 			log.Println("support:", forumSupportItem.Tieba, forumSupportItem.Name, message)
-			_function.GormDB.Model(&model.TcVer4RankLog{}).Where("id = ?", forumSupportItem.ID).Updates(model.TcVer4RankLog{
+			_function.GormDB.W.Model(&model.TcVer4RankLog{}).Where("id = ?", forumSupportItem.ID).Updates(model.TcVer4RankLog{
 				Log:  "<br/>" + _function.Now.Local().Format("2006-01-02") + " #" + strconv.Itoa(response.No) + "," + message + forumSupportItem.Log,
 				Date: int32(_function.Now.Unix()),
 			})

@@ -130,11 +130,11 @@ func LoopBanAction() {
 	}
 	otime := _function.Now.Unix() - 86400
 	var localBanAccountList = &[]model.TcVer4BanList{}
-	subQuery := _function.GormDB.Select("uid").Where("name = 'ver4_ban_open' AND value = '1'").Table("tc_users_options")
-	_function.GormDB.Model(&model.TcVer4BanList{}).Where("id > ? AND date < ? AND stime < ? AND etime > ? AND uid IN (?)", id, otime, _function.Now.Unix(), _function.Now.Unix(), subQuery).Order("id ASC").Find(&localBanAccountList)
+	subQuery := _function.GormDB.R.Select("uid").Where("name = 'ver4_ban_open' AND value = '1'").Table("tc_users_options")
+	_function.GormDB.R.Model(&model.TcVer4BanList{}).Where("id > ? AND date < ? AND stime < ? AND etime > ? AND uid IN (?)", id, otime, _function.Now.Unix(), _function.Now.Unix(), subQuery).Order("id ASC").Find(&localBanAccountList)
 
 	var reasonList = &[]model.TcVer4BanUserset{}
-	_function.GormDB.Model(&model.TcVer4BanUserset{}).Find(&reasonList)
+	_function.GormDB.R.Model(&model.TcVer4BanUserset{}).Find(&reasonList)
 
 	for _, banAccountInfo := range *localBanAccountList {
 		// find reason
@@ -166,7 +166,7 @@ func LoopBanAction() {
 			msg += _function.Now.Local().Format("2006-01-02 15:04:05") + " 执行结果：<font color=\"green\">操作成功</font><br>"
 		}
 
-		_function.GormDB.Model(&model.TcVer4BanList{}).Where("id = ?", banAccountInfo.ID).Updates(model.TcVer4BanList{
+		_function.GormDB.W.Model(&model.TcVer4BanList{}).Where("id = ?", banAccountInfo.ID).Updates(model.TcVer4BanList{
 			Log:  msg,
 			Date: int32(_function.Now.Unix()),
 		})

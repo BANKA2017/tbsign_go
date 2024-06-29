@@ -26,7 +26,7 @@ var settingsFilter = []string{"ann", "system_url", "system_name", "system_keywor
 
 func GetAdminSettings(c echo.Context) error {
 	var adminSettings []model.TcOption
-	_function.GormDB.Where("name in ?", settingsFilter).Find(&adminSettings)
+	_function.GormDB.R.Where("name in ?", settingsFilter).Find(&adminSettings)
 
 	settings := make(map[string]string)
 	for _, v := range adminSettings {
@@ -48,7 +48,7 @@ func UpdateAdminSettings(c echo.Context) error {
 	c.Request().ParseForm()
 
 	var adminSettings []model.TcOption
-	_function.GormDB.Where("name in ?", settingsFilter).Find(&adminSettings)
+	_function.GormDB.R.Where("name in ?", settingsFilter).Find(&adminSettings)
 
 	var errStr []string
 	settings := make(map[string]string)
@@ -153,7 +153,7 @@ func AdminUpdateAccount(c echo.Context) error {
 
 	// exists?
 	var accountInfo model.TcUser
-	_function.GormDB.Model([]model.TcUser{}).Where("id = ?", targetUID).Find(&accountInfo)
+	_function.GormDB.R.Model([]model.TcUser{}).Where("id = ?", targetUID).Find(&accountInfo)
 	if accountInfo.ID == 0 {
 		return c.JSON(http.StatusOK, apiTemplate(404, "用户不存在", echoEmptyObject, "tbsign"))
 	}
@@ -173,7 +173,7 @@ func AdminUpdateAccount(c echo.Context) error {
 			return c.JSON(http.StatusOK, apiTemplate(403, "无效邮箱", echoEmptyObject, "tbsign"))
 		} else {
 			var emailExistsCount int64
-			_function.GormDB.Model(&model.TcUser{}).Where("email = ?", newEmail).Count(&emailExistsCount)
+			_function.GormDB.R.Model(&model.TcUser{}).Where("email = ?", newEmail).Count(&emailExistsCount)
 			if emailExistsCount > 0 {
 				return c.JSON(http.StatusOK, apiTemplate(403, "邮箱已存在", echoEmptyObject, "tbsign"))
 			} else {
@@ -187,7 +187,7 @@ func AdminUpdateAccount(c echo.Context) error {
 	// name
 	if newName != "" && newName != accountInfo.Name {
 		var nameExistsCount int64
-		_function.GormDB.Model(&model.TcUser{}).Where("name = ?", newName).Count(&nameExistsCount)
+		_function.GormDB.R.Model(&model.TcUser{}).Where("name = ?", newName).Count(&nameExistsCount)
 		if nameExistsCount > 0 {
 			return c.JSON(http.StatusOK, apiTemplate(403, "用户名已存在", echoEmptyObject, "tbsign"))
 		} else {
@@ -208,7 +208,7 @@ func AdminUpdateAccount(c echo.Context) error {
 		newRole = accountInfo.Role
 	}
 
-	_function.GormDB.Model(model.TcUser{}).Where("id = ?", accountInfo.ID).Updates(&newAccountInfo)
+	_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", accountInfo.ID).Updates(&newAccountInfo)
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", &SiteAccountsResponse{
 		ID:    accountInfo.ID,
@@ -221,7 +221,7 @@ func AdminUpdateAccount(c echo.Context) error {
 
 func GetAccountsList(c echo.Context) error {
 	var accountInfo []model.TcUser
-	_function.GormDB.Find(&accountInfo)
+	_function.GormDB.R.Find(&accountInfo)
 
 	var respAccountInfo []SiteAccountsResponse
 
@@ -254,7 +254,7 @@ func PluginSwitch(c echo.Context) error {
 
 	pluginValue := _function.PluginList[pluginName]
 	pluginValue.Status = !pluginValue.Status
-	_function.GormDB.Model(&model.TcPlugin{}).Where("name = ?", pluginName).Update("status", pluginValue.Status)
+	_function.GormDB.W.Model(&model.TcPlugin{}).Where("name = ?", pluginName).Update("status", pluginValue.Status)
 	_function.PluginList[pluginName] = pluginValue
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
@@ -268,7 +268,7 @@ func SendTestMail(c echo.Context) error {
 	uid := c.Get("uid").(string)
 	var accountInfo model.TcUser
 
-	_function.GormDB.Where("id = ?", uid).Find(&accountInfo)
+	_function.GormDB.R.Where("id = ?", uid).Find(&accountInfo)
 
 	mailObject := _function.EmailTestTemplate()
 	err := _function.SendEmail(accountInfo.Email, mailObject.Object, mailObject.Body)

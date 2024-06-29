@@ -18,6 +18,8 @@ func GetServerStatus(c echo.Context) error {
 		"goversion":       runtime.Version(),
 		"variables":       c.Get("variables"),
 		"cron_sign_again": _function.GetOption("cron_sign_again"),
+		"compat":          _function.GetOption("core_version"),
+		"pure_go":         _function.GetOption("go_ver") == "1",
 	}, "tbsign"))
 }
 

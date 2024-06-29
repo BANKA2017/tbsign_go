@@ -9,9 +9,11 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+const authorizationPrefix = "bearer "
+
 func SetHeaders(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		c.Response().Header().Add("X-Powered-By", "TbSignGo!")
+		c.Response().Header().Add("X-Powered-By", "TbSignGo->")
 		c.Response().Header().Add("Access-Control-Allow-Methods", "*")
 		c.Response().Header().Add("Access-Control-Allow-Credentials", "true")
 		c.Response().Header().Add("Access-Control-Allow-Origin", "*")
@@ -30,11 +32,14 @@ func PreCheck(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		authorization := c.Request().Header.Get("Authorization")
-		if len(authorization) < 6 || !strings.EqualFold("basic ", authorization[0:6]) {
+
+		lengthOfAuthorizationPrefix := len(authorizationPrefix)
+
+		if len(authorization) <= lengthOfAuthorizationPrefix || !strings.EqualFold(authorizationPrefix, authorization[0:lengthOfAuthorizationPrefix]) {
 			return c.JSON(http.StatusOK, apiTemplate(401, "无效 session", echoEmptyObject, "tbsign"))
 		}
 
-		uid, role := verifyAuthorization(authorization[6:])
+		uid, role := verifyAuthorization(authorization[lengthOfAuthorizationPrefix:])
 
 		// login
 		if uid == "0" {

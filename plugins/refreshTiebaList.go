@@ -14,7 +14,7 @@ func ScanTiebaByPid(pid int32) {
 	account := _function.GetCookie(pid)
 
 	var localTiebaList = &[]model.TcTieba{}
-	_function.GormDB.Model(&model.TcTieba{Pid: account.ID}).Find(&localTiebaList)
+	_function.GormDB.R.Model(&model.TcTieba{Pid: account.ID}).Find(&localTiebaList)
 	var pn int64 = 1
 
 	var wholeTiebaList = []model.TcTieba{}
@@ -53,7 +53,7 @@ func ScanTiebaByPid(pid int32) {
 			}
 		}
 		if len(tiebaList) > 0 {
-			err := _function.GormDB.Create(tiebaList)
+			err := _function.GormDB.W.Create(tiebaList)
 			log.Println("scanTiebaByPid:", err)
 		}
 
@@ -78,7 +78,7 @@ func ScanTiebaByPid(pid int32) {
 			}
 		}
 		if len(delList) > 0 {
-			_function.GormDB.Delete(&model.TcTieba{}, delList)
+			_function.GormDB.W.Delete(&model.TcTieba{}, delList)
 		}
 	}
 }
@@ -93,7 +93,7 @@ func RefreshTiebaListAction() {
 		if _function.Now.Unix() > lastdo+90 {
 			var accounts = &[]model.TcBaiduid{}
 			//TODO account limit per query
-			_function.GormDB.Model(&model.TcBaiduid{}).Find(accounts)
+			_function.GormDB.R.Model(&model.TcBaiduid{}).Find(accounts)
 			for _, account := range *accounts {
 				ScanTiebaByPid(account.ID)
 				_function.SetOption("ver4_ref_id", strconv.Itoa(int(account.ID)))

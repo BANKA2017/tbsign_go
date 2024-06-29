@@ -1,16 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"database/sql"
 	_ "embed"
 	"flag"
-	"fmt"
 	"log"
-	"math/rand"
 	"os"
-	"strconv"
-	"strings"
 	"time"
 
 	_api "github.com/BANKA2017/tbsign_go/api"
@@ -18,8 +13,8 @@ import (
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"gorm.io/driver/mysql"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var dbUsername string
@@ -36,13 +31,13 @@ var address string
 
 var setup bool
 
-//go:embed assets/tc_init_system.sql
+//go:embed assets/sql/tc_init_system.sql
 var _tc_init_system string
 
-//go:embed assets/tc_mysql.sql
+//go:embed assets/sql/tc_mysql.sql
 var _tc_mysql string
 
-//go:embed assets/tc_sqlite.sql
+//go:embed assets/sql/tc_sqlite.sql
 var _tc_sqlite string
 
 var err error
@@ -98,18 +93,18 @@ func main() {
 
 	// connect to db
 	dbMode := "mysql"
+	logLevel := logger.Error
+	if testMode {
+		logLevel = logger.Info
+	}
 
 	if dbPath != "" {
 		// sqlite
-		_function.GormDB, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
-
+		dbMode = "sqlite"
+		_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToSQLite(dbPath, logLevel, "tbsign")
 		if err != nil {
 			log.Fatal("db:", err)
 		}
-		_function.GormDB.Exec("PRAGMA journal_mode = WAL;PRAGMA busy_timeout = 5000;PRAGMA synchronous = NORMAL;PRAGMA cache_size = 100000;PRAGMA foreign_keys = true;PRAGMA temp_store = memory;")
-
-		dbMode = "sqlite"
-		log.Println("db: sqlite connected!")
 	} else {
 		// mysql
 		if dbUsername == "" || dbPassword == "" {
@@ -117,9 +112,11 @@ func main() {
 		}
 		dsn := dbUsername + ":" + dbPassword + "@tcp(" + dbEndpoint + ")/" + dbName + "?charset=utf8mb4&parseTime=True&loc=Local"
 		sqlDB, _ := sql.Open("mysql", dsn)
-		_function.GormDB, err = gorm.Open(mysql.New(mysql.Config{
+		defer sqlDB.Close()
+		_function.GormDB.W, err = gorm.Open(mysql.New(mysql.Config{
 			Conn: sqlDB,
-		}), &gorm.Config{})
+		}), &gorm.Config{Logger: logger.Default.LogMode(logLevel)})
+		_function.GormDB.R = _function.GormDB.W
 
 		if err != nil {
 			log.Fatal("db:", err)
@@ -129,40 +126,7 @@ func main() {
 
 	// setup
 	if setup {
-		fmt.Println("现在正在安装 TbSign➡️，如果数据库内含有数据，这样做会导致数据丢失，请提前做好备份，如果已经完成备份，请输入以下随机文字并按下回车（显示为 \"--> 1234 <--\" 代表需要输入 \"1234\"）")
-		randValue := strconv.Itoa(int(rand.Int63()))
-		fmt.Println("-->", randValue, "<--")
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("请输入: ")
-		text, _ := reader.ReadString('\n')
-		text = strings.TrimSpace(text)
-		if text != randValue {
-			fmt.Println("输入错误，请重试")
-			os.Exit(0)
-		}
-
-		fmt.Println("正在建立数据表和索引")
-		if dbMode == "mysql" {
-			err := _function.GormDB.Exec(_tc_mysql).Error
-			if err != nil {
-				log.Fatal(err)
-			}
-		} else {
-			err := _function.GormDB.Exec(_tc_sqlite).Error
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-
-		fmt.Println("正在导入数据")
-		err := _function.GormDB.Exec(_tc_init_system).Error
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Println("🎉 安装成功！请移除掉 `--setup=true` 后重新执行本文件以启动系统")
-		fmt.Println("🔔 首位注册的帐号将会被自动提权为管理员")
-		os.Exit(0)
+		_function.SetupSystem(dbMode, _tc_mysql, _tc_sqlite, _tc_init_system)
 	}
 
 	// init
@@ -170,7 +134,7 @@ func main() {
 	_function.GetOptionsAndPluginList()
 
 	if enableApi {
-		go _api.Api(address, "dbmode", dbMode, "testmode", testMode, "compat", _function.GetOption("core_version"))
+		go _api.Api(address, "dbmode", dbMode, "testmode", testMode)
 	}
 
 	// Interval

@@ -189,7 +189,7 @@ func DoGrowthTasksAction() {
 	// get list
 	todayBeginning := _function.TodayBeginning() //GMT+8
 	kdGrowthTasksUserList := &[]model.TcKdGrowth{}
-	_function.GormDB.Model(&model.TcKdGrowth{}).Where("date < ? AND id > ?", todayBeginning, id).Find(&kdGrowthTasksUserList)
+	_function.GormDB.R.Model(&model.TcKdGrowth{}).Where("date < ? AND id > ?", todayBeginning, id).Find(&kdGrowthTasksUserList)
 	for _, taskUserItem := range *kdGrowthTasksUserList {
 		if _, ok := accountStatusList[taskUserItem.UID]; !ok {
 			accountStatusList[taskUserItem.UID] = _function.GetUserOption("kd_growth_sign_only", strconv.Itoa(int(taskUserItem.UID)))
@@ -197,10 +197,10 @@ func DoGrowthTasksAction() {
 		if accountStatusList[taskUserItem.UID] == "" {
 			// check uid is exists
 			var accountInfo model.TcBaiduid
-			_function.GormDB.Model(&model.TcBaiduid{}).Where("uid = ?", taskUserItem.UID).First(&accountInfo)
+			_function.GormDB.R.Model(&model.TcBaiduid{}).Where("uid = ?", taskUserItem.UID).First(&accountInfo)
 			if accountInfo.Portrait == "" {
 				// clean
-				_function.GormDB.Where("uid = ?", taskUserItem.UID).Delete(&model.TcKdGrowth{})
+				_function.GormDB.W.Where("uid = ?", taskUserItem.UID).Delete(&model.TcKdGrowth{})
 				accountStatusList[taskUserItem.UID] = "NOT_EXISTS"
 				continue
 			}
@@ -346,7 +346,7 @@ func DoGrowthTasksAction() {
 			}
 
 			log.Println("user_tasks:", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, string(jsonResult))
-			_function.GormDB.Model(&model.TcKdGrowth{}).Where("id = ?", taskUserItem.ID).Updates(model.TcKdGrowth{
+			_function.GormDB.W.Model(&model.TcKdGrowth{}).Where("id = ?", taskUserItem.ID).Updates(model.TcKdGrowth{
 				Status: string(jsonResult),
 				Log:    _function.AppendStrings("<br/>", _function.Now.Local().Format("2006-01-02"), ": ", tmpLog, taskUserItem.Log),
 				Date:   int32(_function.Now.Unix()),

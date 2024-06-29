@@ -35,7 +35,7 @@ func AddTiebaAccount(c echo.Context) error {
 
 	// pre-check
 	var tiebaAccounts []model.TcBaiduid
-	_function.GormDB.Where("uid = ? AND portrait = ?", uid, baiduAccountInfo.User.Portrait).Limit(1).Find(&tiebaAccounts)
+	_function.GormDB.R.Where("uid = ? AND portrait = ?", uid, baiduAccountInfo.User.Portrait).Limit(1).Find(&tiebaAccounts)
 
 	if len(tiebaAccounts) > 0 {
 		if tiebaAccounts[0].Bduss != bduss || tiebaAccounts[0].Stoken != stoken {
@@ -45,7 +45,7 @@ func AddTiebaAccount(c echo.Context) error {
 				Name:     baiduAccountInfo.User.Name,
 				Portrait: baiduAccountInfo.User.Portrait,
 			}
-			_function.GormDB.Model(model.TcBaiduid{}).Where("id = ?", tiebaAccounts[0].ID).Updates(&newData)
+			_function.GormDB.W.Model(model.TcBaiduid{}).Where("id = ?", tiebaAccounts[0].ID).Updates(&newData)
 			newData.ID = tiebaAccounts[0].ID
 			newData.UID = tiebaAccounts[0].UID
 			if !includeBDUSSAndStoken {
@@ -71,7 +71,7 @@ func AddTiebaAccount(c echo.Context) error {
 		Name:     baiduAccountInfo.User.Name,
 		Portrait: baiduAccountInfo.User.Portrait,
 	}
-	_function.GormDB.Create(&newAccount)
+	_function.GormDB.W.Create(&newAccount)
 	if !includeBDUSSAndStoken {
 		newAccount.Bduss = ""
 		newAccount.Stoken = ""
@@ -91,17 +91,17 @@ func RemoveTiebaAccount(c echo.Context) error {
 
 	// fid pid
 	var tiebaAccounts []model.TcBaiduid
-	_function.GormDB.Where("uid = ?", uid).Find(&tiebaAccounts)
+	_function.GormDB.R.Where("uid = ?", uid).Find(&tiebaAccounts)
 
 	for _, v := range tiebaAccounts {
 		if v.ID == int32(numPid) {
-			_function.GormDB.Model(&model.TcBaiduid{}).Delete("id = ?", v.ID)
-			_function.GormDB.Model(&model.TcTieba{}).Delete("pid = ?", v.ID)
+			_function.GormDB.W.Model(&model.TcBaiduid{}).Delete("id = ?", v.ID)
+			_function.GormDB.W.Model(&model.TcTieba{}).Delete("pid = ?", v.ID)
 
 			// plugins
-			_function.GormDB.Model(&model.TcVer4BanList{}).Delete("pid = ?", v.ID)
-			_function.GormDB.Model(&model.TcVer4RankLog{}).Delete("pid = ?", v.ID)
-			_function.GormDB.Model(&model.TcKdGrowth{}).Delete("pid = ?", v.ID)
+			_function.GormDB.W.Model(&model.TcVer4BanList{}).Delete("pid = ?", v.ID)
+			_function.GormDB.W.Model(&model.TcVer4RankLog{}).Delete("pid = ?", v.ID)
+			_function.GormDB.W.Model(&model.TcKdGrowth{}).Delete("pid = ?", v.ID)
 
 			return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]int32{
 				"pid": v.ID,
@@ -118,7 +118,7 @@ func GetTiebaAccountList(c echo.Context) error {
 	includeBDUSSAndStoken := c.QueryParams().Get("all") == "1"
 
 	var tiebaAccounts []model.TcBaiduid
-	_function.GormDB.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
+	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
 
 	if !includeBDUSSAndStoken {
 		for k := range tiebaAccounts {
@@ -142,7 +142,7 @@ func GetTiebaAccountItem(c echo.Context) error {
 	}
 
 	var tiebaAccount model.TcBaiduid
-	_function.GormDB.Where("id = ? AND uid = ?", numPid, uid).First(&tiebaAccount)
+	_function.GormDB.R.Where("id = ? AND uid = ?", numPid, uid).First(&tiebaAccount)
 
 	if !includeBDUSSAndStoken {
 		tiebaAccount.Bduss = ""
@@ -161,7 +161,7 @@ func CheckTiebaAccount(c echo.Context) error {
 	}
 
 	var tiebaAccount model.TcBaiduid
-	_function.GormDB.Where("id = ? AND uid = ?", pid, uid).Order("id ASC").Find(&tiebaAccount)
+	_function.GormDB.R.Where("id = ? AND uid = ?", pid, uid).Order("id ASC").Find(&tiebaAccount)
 
 	if tiebaAccount.ID != 0 && tiebaAccount.ID != int32(numPid) {
 		return c.JSON(http.StatusOK, apiTemplate(403, "无效 pid", echoEmptyObject, "tbsign"))
