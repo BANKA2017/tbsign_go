@@ -5,12 +5,26 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/labstack/echo/v4"
 )
 
 func GetServerStatus(c echo.Context) error {
 	hostname, _ := os.Hostname()
+
+	// count
+	/// accounts
+	var UIDCount int64
+	_function.GormDB.R.Model(&model.TcUser{}).Count(&UIDCount)
+
+	/// pid
+	var PIDCount int64
+	_function.GormDB.R.Model(&model.TcBaiduid{}).Count(&PIDCount)
+
+	/// pid
+	var ForumCount int64
+	_function.GormDB.R.Model(&model.TcTieba{}).Count(&ForumCount)
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
 		"hostname":        hostname,
@@ -20,6 +34,9 @@ func GetServerStatus(c echo.Context) error {
 		"cron_sign_again": _function.GetOption("cron_sign_again"),
 		"compat":          _function.GetOption("core_version"),
 		"pure_go":         _function.GetOption("go_ver") == "1",
+		"uid_count":       UIDCount,
+		"pid_count":       PIDCount,
+		"forum_count":     ForumCount,
 	}, "tbsign"))
 }
 
@@ -62,11 +79,13 @@ func GetLoginPageConfig(c echo.Context) error {
 		EnabledInviteCode         bool   `json:"enabled_invite_code"`
 		EnabledSignup             bool   `json:"enabled_signup"`
 		ClosedRegistrationMessage string `json:"closed_registration_message"`
+		SystemURL                 string `json:"system_url"`
 	}{
 		EnabedResetPassword:       enabledEmail,
 		EnabledInviteCode:         enabledInviteCode,
 		EnabledSignup:             enabledSignup,
 		ClosedRegistrationMessage: closedCRegistrationMessage,
+		SystemURL:                 _function.GetOption("system_url"),
 	}
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resp, "tbsign"))

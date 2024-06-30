@@ -203,6 +203,10 @@ func UpdatePassword(c echo.Context) error {
 	oldPwd := c.FormValue("old_password")
 	newPwd := c.FormValue("new_password")
 
+	if oldPwd == "" || newPwd == "" {
+		return c.JSON(http.StatusOK, apiTemplate(403, "新/旧密码都不可为空", echoEmptyObject, "tbsign"))
+	}
+
 	var accountInfo []model.TcUser
 	_function.GormDB.R.Where("id = ?", uid).Limit(1).Find(&accountInfo)
 
