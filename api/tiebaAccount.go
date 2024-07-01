@@ -52,7 +52,7 @@ func AddTiebaAccount(c echo.Context) error {
 				newData.Bduss = ""
 				newData.Stoken = ""
 			}
-			return c.JSON(http.StatusOK, apiTemplate(200, "OK", newData, "tbsign"))
+			return c.JSON(http.StatusOK, apiTemplate(200, "已更新 BDUSS", newData, "tbsign"))
 		} else if tiebaAccounts[0].Bduss == bduss && tiebaAccounts[0].Stoken == stoken {
 			if !includeBDUSSAndStoken {
 				tiebaAccounts[0].Bduss = ""

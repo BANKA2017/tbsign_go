@@ -94,9 +94,9 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 ➡️ <https://github.com/BANKA2017/tbsign_go_fe>
 
-## Api (WIP)
+## API (WIP)
 
-仅供参考，未来可能还会大改，等到稳定后随缘出文档和前端
+仅供参考，未来可能还会修改，等到稳定后随缘出文档
 
 ## 插件
 
@@ -134,16 +134,21 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 ## TODO
 
+\* 带 `?` 开头的表示有考虑，但可能永远不做
+
 - [ ] 解决已知问题
 - [ ] 兼容官方已收录插件中关于贴吧的部分
   - [x] [自动刷新贴吧列表](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_ref)
   - [x] [名人堂](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_rank)
   - [x] [循环封禁](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_ban)
-  - [ ] [删贴机](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_review)（可能会拖很久甚至不会做）
+  - [ ] ?[删贴机](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_review)（可能会拖很久甚至不会做）
 - [ ] 优化 PHP 原版的相关功能
 - [x] 不再考虑 ~~通过读取 `config.php` 取得数据库连接信息~~
 - [x] 自动清理解除绑定的帐号的插件设置
-- [ ] 打包/Docker/或者别的
+- [ ] ?打包/Docker/或者别的
+- [ ] ?自动化部署
+- [ ] ?支持更多 Gorm 也支持的数据库
+- [ ] ?邮箱以外的推送方式
 - [ ] 完善权限控制
 - [ ] 个人数据导出 (接口 `/passport/export` 已写好，但没想好如何处理好安全问题，当前所有接口都会自动删除 `bduss` 和 `stoken` 的值，但导出会不可避免地需要处理这个问题)
 - [ ] ……更多的想起来再加
