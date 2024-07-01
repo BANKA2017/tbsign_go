@@ -1,6 +1,7 @@
 package _api
 
 import (
+	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -391,7 +392,8 @@ func ResetPassword(c echo.Context) error {
 		mailObject := _function.EmailTemplateResetPassword(accountInfo.Email, code)
 		err := _function.SendEmail(accountInfo.Email, mailObject.Object, mailObject.Body)
 		if err != nil {
-			return c.JSON(http.StatusOK, apiTemplate(500, err.Error(), false, "tbsign"))
+			log.Println(err)
+			return c.JSON(http.StatusOK, apiTemplate(500, "邮件发送失败", false, "tbsign"))
 		} else {
 			return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
 		}
