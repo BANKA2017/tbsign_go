@@ -23,7 +23,7 @@ func ConnectToSQLite(path string, logLevel logger.LogLevel, servicePrefix string
 	var writeDBHandle = new(gorm.DB)
 	var readDBHandle = new(gorm.DB)
 	var err error
-	if _, err = os.Stat(path); err == nil {
+	if _, err = os.Stat(path); err != nil {
 		log.Println("db:", path, "is not exists")
 	}
 	// sqlite

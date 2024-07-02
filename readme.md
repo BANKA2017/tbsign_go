@@ -122,6 +122,12 @@ air -- --db_path=tbsign.db --test=true --api=true
 - [x] [循环封禁](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_ban)
 - [x] ?用户成长任务(beta)
 
+## 编译
+
+### CGO
+
+需要设置 `CGO_ENABLED=1`， go-sqlite3 需要用到 CGO
+
 ## 已知问题
 
 - [x] 不支持限制单次签到贴吧总数，会一次性全部签完

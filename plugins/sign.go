@@ -19,12 +19,8 @@ const AgainErrorId = "160002"
 // again_error_id_2 := "1101"
 // 特殊的重复签到错误代码！！！签到过快=已签到
 // again_error_id_3 := "1102"
-type cornSignAgainStruct struct {
-	Num    int    `json:"num"`
-	LastDo string `json:"lastdo"`
-}
 
-var cornSignAgainInterface cornSignAgainStruct
+var cornSignAgainInterface map[string]any
 var tableList = []string{"tieba"}
 var today string
 
@@ -117,15 +113,15 @@ func DoSignAction() {
 	}
 
 	var ok bool
-	if cornSignAgainInterface, ok = cornSignAgainParsed.(cornSignAgainStruct); !ok {
+	if cornSignAgainInterface, ok = cornSignAgainParsed.(map[string]any); !ok {
 		log.Println("sign: parse config failed (lastdo)")
 		return
 	}
 
-	if today != cornSignAgainInterface.LastDo {
+	if today != cornSignAgainInterface["lastdo"].(string) {
 		// update lastdo
-		cornSignAgainInterface.Num = 0
-		cornSignAgainInterface.LastDo = today
+		cornSignAgainInterface["num"] = 0
+		cornSignAgainInterface["lastdo"] = today
 		cornSignAgainEncoded, err := gophp.Serialize(cornSignAgainInterface)
 		if err != nil {
 			log.Println("sign: encode php serialize failed", err)
@@ -146,9 +142,9 @@ func DoSignAction() {
 func DoReSignAction() {
 	retryMax, _ := strconv.ParseInt(_function.GetOption("retry_max"), 10, 64)
 
-	retryNum := cornSignAgainInterface.Num
+	retryNum := cornSignAgainInterface["num"].(int)
 
-	if retryMax == 0 || cornSignAgainInterface.LastDo == today && int64(retryNum) <= retryMax && retryMax > -1 {
+	if retryMax == 0 || cornSignAgainInterface["lastdo"] == today && int64(retryNum) <= retryMax && retryMax > -1 {
 		for retryMax == 0 || int64(retryNum) <= retryMax {
 			retryAgain := false
 			for _, table := range tableList {
@@ -158,7 +154,7 @@ func DoReSignAction() {
 				}
 			}
 			retryNum++
-			cornSignAgainInterface.Num = retryNum
+			cornSignAgainInterface["num"] = retryNum
 			cornSignAgainEncoded, err := gophp.Serialize(cornSignAgainInterface)
 			if err != nil {
 				log.Println("sign_retry: encode failed")
