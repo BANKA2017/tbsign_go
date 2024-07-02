@@ -1,6 +1,7 @@
 package _api
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -197,9 +198,9 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 	var existsAccountList []model.TcVer4BanList
 	_function.GormDB.R.Model(&model.TcVer4BanList{}).Where("uid = ?", uid).Order("id ASC").Find(&existsAccountList)
 
-	count := int64(len(existsAccountList))
-	if count >= numLimit || count+int64(len(portraitList)) > numLimit {
-		return c.JSON(http.StatusOK, apiTemplate(403, "添加帐号数超限（"+strconv.Itoa(int(count+int64(len(portraitList))))+"/"+limit+"）", echoEmptyObject, "tbsign"))
+	count := len(existsAccountList)
+	if count >= int(numLimit) || count+len(portraitList) > int(numLimit) {
+		return c.JSON(http.StatusOK, apiTemplate(403, fmt.Sprintf("添加帐号数超限（%d/%s）", count+len(portraitList), limit), echoEmptyObject, "tbsign"))
 	}
 
 	fid := _function.GetFid(fname)

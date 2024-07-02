@@ -10,20 +10,45 @@ import (
 	"strings"
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
+	"gorm.io/gorm/logger"
 )
 
-func SetupSystem(dbMode string, _tc_mysql string, _tc_sqlite string, _tc_init_system string) {
-	fmt.Println("📌现在正在安装 TbSign➡️，如果数据库内含有数据，这样做会导致数据丢失，请提前做好备份。")
-	fmt.Println("如果已经完成备份，请输入以下随机数字并按下回车（显示为 \"--> 1234 <--\" 代表需要输入 \"1234\"）")
-	randValue := strconv.Itoa(int(rand.Int31()))
-	fmt.Println("-->", randValue, "<--")
+func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword string, dbEndpoint string, dbName string, logLevel logger.LogLevel, dbExists bool, _tc_mysql string, _tc_sqlite string, _tc_init_system string, autoInstall bool, name string, email string, password string) {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("请输入: ")
-	verifyText, _ := reader.ReadString('\n')
-	verifyText = strings.TrimSpace(verifyText)
-	if verifyText != randValue {
-		fmt.Println("❌输入错误，请重试")
-		os.Exit(0)
+	var err error
+
+	fmt.Println("📌现在正在安装 TbSign➡️")
+	if dbExists {
+		fmt.Println("⚠️检测到数据库已存在，覆盖安装会导致原有数据丢失，请提前做好备份。")
+	}
+	if !autoInstall {
+		fmt.Println("请输入以下随机数字并按下回车（显示为 \"--> 1234 <--\" 代表需要输入 \"1234\"）")
+		randValue := strconv.Itoa(int(rand.Int31()))
+		fmt.Println("-->", randValue, "<--")
+		fmt.Print("请输入: ")
+		verifyText, _ := reader.ReadString('\n')
+		verifyText = strings.TrimSpace(verifyText)
+		if verifyText != randValue {
+			fmt.Println("❌输入错误，请重试")
+			os.Exit(0)
+		}
+	}
+
+	// mysql
+	if dbMode == "mysql" {
+		if !dbExists {
+			fmt.Println("⌛正在建立数据库:", dbName)
+			err = GormDB.W.Exec("CREATE DATABASE IF NOT EXISTS " + dbName + ";").Error
+			if err != nil {
+				log.Fatal(err)
+			} else {
+				fmt.Println("已建立数据库:", dbName)
+			}
+		}
+		GormDB.R, GormDB.W, err = ConnectToMySQL(dbUsername, dbPassword, dbEndpoint, dbName, logLevel, "db")
+		if err != nil {
+			log.Fatal("db:", err)
+		}
 	}
 
 	fmt.Println("⌛正在清理旧表")
@@ -68,32 +93,38 @@ func SetupSystem(dbMode string, _tc_mysql string, _tc_sqlite string, _tc_init_sy
 	}
 
 	fmt.Println("🔒注册管理员帐号...")
-	fmt.Print("管理员用户名: ")
-	name, err := reader.ReadString('\n')
-	if err != nil {
-		log.Fatal("❌无效用户名", err)
-	}
-	name = strings.TrimSuffix(name, "\n")
-	if name == "" || strings.Contains(name, "@") {
-		log.Fatal("❌无效用户名")
-	}
-	fmt.Print("管理员邮箱: ")
-	email, err := reader.ReadString('\n')
-	if err != nil {
-		log.Fatal("❌无效邮箱", err)
-	}
-	email = strings.TrimSuffix(email, "\n")
-	if !VerifyEmail(email) {
-		log.Fatal("❌无效邮箱")
-	}
-	fmt.Print("管理员密码 (注意空格): ")
-	password, err := reader.ReadString('\n')
-	if err != nil {
-		log.Fatal("❌无效密码", err)
-	}
-	password = strings.TrimSuffix(password, "\n")
-	if password == "" {
-		log.Fatal("❌无效密码")
+	if !autoInstall {
+		fmt.Print("管理员用户名: ")
+		name, err := reader.ReadString('\n')
+		if err != nil {
+			log.Fatal("❌无效用户名", err)
+		}
+		name = strings.TrimSuffix(strings.TrimSuffix(name, "\r\n"), "\n")
+		if name == "" || strings.Contains(name, "@") {
+			log.Fatal("❌无效用户名")
+		}
+		fmt.Print("管理员邮箱: ")
+		email, err := reader.ReadString('\n')
+		if err != nil {
+			log.Fatal("❌无效邮箱", err)
+		}
+		email = strings.TrimSuffix(strings.TrimSuffix(email, "\r\n"), "\n")
+		if !VerifyEmail(email) {
+			log.Fatal("❌无效邮箱")
+		}
+		fmt.Print("管理员密码 (注意空格): ")
+		password, err := reader.ReadString('\n')
+		if err != nil {
+			log.Fatal("❌无效密码", err)
+		}
+		password = strings.TrimSuffix(strings.TrimSuffix(password, "\r\n"), "\n")
+		if password == "" {
+			log.Fatal("❌无效密码")
+		}
+	} else {
+		fmt.Println("管理员用户名:", name)
+		fmt.Println("管理员邮箱:", email)
+		fmt.Println("管理员密码:", password)
 	}
 
 	passwordHash, err := CreatePasswordHash(password)
@@ -110,7 +141,12 @@ func SetupSystem(dbMode string, _tc_mysql string, _tc_sqlite string, _tc_init_sy
 		Role:  "admin",
 		T:     "tieba",
 	})
+	if dbMode == "sqlite" {
+		err := GormDB.W.Exec("VACUUM;").Error
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
-	fmt.Println("🎉安装成功！请移除掉 `--setup=true` 后重新执行本文件以启动系统")
-	os.Exit(0)
+	fmt.Println("🎉安装成功！")
 }

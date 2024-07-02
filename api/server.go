@@ -1,8 +1,8 @@
 package _api
 
 import (
+	"fmt"
 	"net/http"
-	"os"
 	"runtime"
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
@@ -11,7 +11,9 @@ import (
 )
 
 func GetServerStatus(c echo.Context) error {
-	hostname, _ := os.Hostname()
+	//system
+	//var memstats runtime.MemStats
+	//runtime.ReadMemStats(&memstats)
 
 	// count
 	/// accounts
@@ -27,14 +29,14 @@ func GetServerStatus(c echo.Context) error {
 	_function.GormDB.R.Model(&model.TcTieba{}).Count(&ForumCount)
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
-		"hostname":        hostname,
-		"goroutine":       runtime.NumGoroutine(),
-		"goversion":       runtime.Version(),
+		"goroutine": runtime.NumGoroutine(),
+		"goversion": fmt.Sprintf("%s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH),
+		//"system":          fmt.Sprintf("cpu:%d, mem: [Alloc %d / Sys %d] MiB", runtime.NumCPU(), memstats.Alloc/1024/1024, memstats.Sys/1024/1024),
 		"variables":       c.Get("variables"),
 		"cron_sign_again": _function.GetOption("cron_sign_again"),
 		"compat":          _function.GetOption("core_version"),
 		"pure_go":         _function.GetOption("go_ver") == "1",
-		"uid_count":       UIDCount,
+		"uid_count":       fmt.Sprintf("%d [online:%d]", UIDCount, len(keyBucket)),
 		"pid_count":       PIDCount,
 		"forum_count":     ForumCount,
 	}, "tbsign"))

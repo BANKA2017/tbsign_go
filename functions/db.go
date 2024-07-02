@@ -1,9 +1,12 @@
 package _function
 
 import (
+	"database/sql"
+	"fmt"
 	"log"
 	"os"
 
+	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -56,4 +59,17 @@ func ConnectToSQLite(path string, logLevel logger.LogLevel, servicePrefix string
 
 	writeDBHandle.Exec("PRAGMA journal_mode = WAL;PRAGMA busy_timeout = 5000;PRAGMA synchronous = NORMAL;PRAGMA cache_size = 100000;PRAGMA foreign_keys = true;PRAGMA temp_store = memory;")
 	return readDBHandle, writeDBHandle, err
+}
+
+func ConnectToMySQL(username string, password string, endpoint string, dbname string, logLevel logger.LogLevel, servicePrefix string) (*gorm.DB, *gorm.DB, error) {
+	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", username, password, endpoint, dbname)
+
+	sqlDB, _ := sql.Open("mysql", dsn)
+	//defer sqlDB.Close()
+	dbHandle, err := gorm.Open(mysql.New(mysql.Config{
+		Conn: sqlDB,
+	}), &gorm.Config{Logger: logger.Default.LogMode(logLevel)})
+
+	log.Println(servicePrefix, ": mysql connected!")
+	return dbHandle, dbHandle, err
 }

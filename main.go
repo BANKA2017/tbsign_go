@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	_ "embed"
 	"flag"
 	"log"
@@ -12,8 +11,6 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	_type "github.com/BANKA2017/tbsign_go/types"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
@@ -30,6 +27,10 @@ var enableApi bool
 var address string
 
 var setup bool
+var autoInstall bool
+var _adminName string
+var _adminEmail string
+var _adminPassword string
 
 //go:embed assets/sql/tc_init_system.sql
 var _tc_init_system string
@@ -59,11 +60,21 @@ func main() {
 	flag.BoolVar(&enableApi, "api", false, "active backend endpoints")
 	flag.StringVar(&address, "address", ":1323", "address :1323")
 
+	// setup
+	flag.BoolVar(&setup, "setup", false, "Init the system [force]")
+	flag.BoolVar(&autoInstall, "auto_install", false, "Auto install the system when tables are not exist")
+	flag.StringVar(&_adminName, "admin_name", "", "Name of admin")
+	flag.StringVar(&_adminEmail, "admin_email", "", "Email of admin")
+	flag.StringVar(&_adminPassword, "admin_password", "", "Password of admin")
+
 	// others
 	flag.BoolVar(&testMode, "test", false, "Not send any requests to tieba servers")
-	flag.BoolVar(&setup, "setup", false, "Init the system")
 
 	flag.Parse()
+
+	if setup {
+		log.Println("WARNING: 覆盖安装已启用，会覆盖现有数据，请做好备份")
+	}
 
 	// from env
 	if dbUsername == "" {
@@ -91,6 +102,27 @@ func main() {
 		address = os.Getenv("tc_address")
 	}
 
+	if !autoInstall && os.Getenv("tc_auto_install") != "" {
+		autoInstall = true
+	}
+	if _adminName == "" && os.Getenv("tc_admin_name") != "" {
+		_adminName = os.Getenv("tc_admin_name")
+	}
+	if _adminEmail == "" && os.Getenv("tc_admin_email") != "" {
+		_adminEmail = os.Getenv("tc_admin_email")
+	}
+	if _adminPassword == "" && os.Getenv("tc_admin_password") != "" {
+		_adminPassword = os.Getenv("tc_admin_password")
+	}
+
+	if setup && autoInstall {
+		log.Fatal("ERROR: 不允许自动化覆盖安装!!!")
+	} else if autoInstall && _adminName != "" && _adminEmail != "" && _adminPassword != "" {
+		log.Println("WARNING: 已启用自动安装")
+	} else if autoInstall {
+		log.Fatal("ERROR: 管理员信息不完整，无法安装")
+	}
+
 	// connect to db
 	dbMode := "mysql"
 	logLevel := logger.Error
@@ -98,35 +130,56 @@ func main() {
 		logLevel = logger.Info
 	}
 
+	dbExists := true
+
 	if dbPath != "" {
 		// sqlite
 		dbMode = "sqlite"
+		if _, err := os.Stat(dbPath); err != nil && os.IsNotExist(err) {
+			dbExists = false
+			setup = true
+		}
 		_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToSQLite(dbPath, logLevel, "tbsign")
 		if err != nil {
 			log.Fatal("db:", err)
+		}
+
+		// setup
+		if setup {
+			_function.SetupSystem(dbMode, dbPath, "", "", "", "", logLevel, dbExists, _tc_mysql, _tc_sqlite, _tc_init_system, autoInstall, _adminName, _adminEmail, _adminPassword)
 		}
 	} else {
 		// mysql
 		if dbUsername == "" || dbPassword == "" {
 			log.Fatal("global: Empty username or password")
 		}
-		dsn := dbUsername + ":" + dbPassword + "@tcp(" + dbEndpoint + ")/" + dbName + "?charset=utf8mb4&parseTime=True&loc=Local"
-		sqlDB, _ := sql.Open("mysql", dsn)
-		defer sqlDB.Close()
-		_function.GormDB.W, err = gorm.Open(mysql.New(mysql.Config{
-			Conn: sqlDB,
-		}), &gorm.Config{Logger: logger.Default.LogMode(logLevel)})
-		_function.GormDB.R = _function.GormDB.W
+		// precheck table
+		_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToMySQL(dbUsername, dbPassword, dbEndpoint, "", logLevel, "db")
 
 		if err != nil {
 			log.Fatal("db:", err)
 		}
-		log.Println("db: mysql connected!")
-	}
 
-	// setup
-	if setup {
-		_function.SetupSystem(dbMode, _tc_mysql, _tc_sqlite, _tc_init_system)
+		var count struct {
+			Count int64
+		}
+
+		_function.GormDB.R.Raw("SELECT (COUNT(*) > 0) AS count FROM information_schema.tables WHERE table_schema = ?;", dbName).Scan(&count)
+		dbExists = count.Count > 0
+		if !dbExists {
+			log.Println("db:", dbName, "is not exists")
+			setup = true
+		}
+
+		// setup
+		if setup {
+			_function.SetupSystem(dbMode, "", dbUsername, dbPassword, dbEndpoint, dbName, logLevel, dbExists, _tc_mysql, _tc_sqlite, _tc_init_system, autoInstall, _adminName, _adminEmail, _adminPassword)
+		} else {
+			_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToMySQL(dbUsername, dbPassword, dbEndpoint, dbName, logLevel, "db")
+			if err != nil {
+				log.Fatal("db:", err)
+			}
+		}
 	}
 
 	// init

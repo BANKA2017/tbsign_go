@@ -1,6 +1,7 @@
 package _plugin
 
 import (
+	"fmt"
 	"log"
 	"net/url"
 	"strconv"
@@ -634,7 +635,7 @@ func DoForumSupportAction() {
 
 			log.Println("support:", forumSupportItem.Tieba, forumSupportItem.Name, message)
 			_function.GormDB.W.Model(&model.TcVer4RankLog{}).Where("id = ?", forumSupportItem.ID).Updates(model.TcVer4RankLog{
-				Log:  "<br/>" + _function.Now.Local().Format("2006-01-02") + " #" + strconv.Itoa(response.No) + "," + message + forumSupportItem.Log,
+				Log:  fmt.Sprintf("<br/>%s #%d,%s%s", _function.Now.Local().Format("2006-01-02"), response.No, message, forumSupportItem.Log),
 				Date: int32(_function.Now.Unix()),
 			})
 
