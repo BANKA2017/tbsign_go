@@ -2,6 +2,7 @@ package _plugin
 
 import (
 	"log"
+	"slices"
 	"strconv"
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
@@ -15,6 +16,13 @@ func ScanTiebaByPid(pid int32) {
 
 	var localTiebaList = &[]model.TcTieba{}
 	_function.GormDB.R.Model(&model.TcTieba{Pid: account.ID}).Find(&localTiebaList)
+
+	localTiebaFidList := []int{}
+
+	for _, v := range *localTiebaList {
+		localTiebaFidList = append(localTiebaFidList, int(v.Fid))
+	}
+
 	var pn int64 = 1
 
 	var wholeTiebaList = []model.TcTieba{}
@@ -33,14 +41,8 @@ func ScanTiebaByPid(pid int32) {
 		var tiebaList = []*model.TcTieba{}
 		for _, tiebaInfo := range response.Data.LikeForum.List {
 			//log.Println(tiebaInfo)
-			exists := false
-			for _, tiebaInfoDB := range *localTiebaList {
-				//合并或被封禁的贴吧会怎样?
-				if tiebaInfoDB.Fid == int32(tiebaInfo.ForumID) && tiebaInfoDB.Pid == pid {
-					exists = true
-					break
-				}
-			}
+			//合并或被封禁的贴吧会怎样?
+
 			tmpTcTieba := model.TcTieba{
 				Pid:   pid,
 				Fid:   int32(tiebaInfo.ForumID),
@@ -48,7 +50,7 @@ func ScanTiebaByPid(pid int32) {
 				Tieba: tiebaInfo.ForumName,
 			}
 			wholeTiebaList = append(wholeTiebaList, tmpTcTieba)
-			if !exists {
+			if !slices.Contains(localTiebaFidList, tiebaInfo.ForumID) {
 				tiebaList = append(tiebaList, &tmpTcTieba)
 			}
 		}
@@ -63,17 +65,10 @@ func ScanTiebaByPid(pid int32) {
 		}
 	}
 
-	if len(wholeTiebaList) != len(*localTiebaList) {
+	if len(wholeTiebaList) != len(localTiebaFidList) {
 		delList := []int32{}
 		for _, v := range wholeTiebaList {
-			exists := false
-			for _, v2 := range *localTiebaList {
-				if v.Fid == v2.Fid {
-					exists = true
-					break
-				}
-			}
-			if !exists {
+			if !slices.Contains(localTiebaFidList, int(v.Fid)) {
 				delList = append(delList, v.ID)
 			}
 		}

@@ -98,11 +98,7 @@ func IgnoreTieba(c echo.Context) error {
 		return c.JSON(http.StatusOK, apiTemplate(403, "无效 fid", echoEmptyObject, "tbsign"))
 	}
 
-	if method == "DELETE" {
-		_function.GormDB.W.Model(&model.TcTieba{}).Where("uid = ? AND pid = ? AND fid = ?", numUID, numPid, numFid).Update("no", false)
-	} else {
-		_function.GormDB.W.Model(&model.TcTieba{}).Where("uid = ? AND pid = ? AND fid = ?", numUID, numPid, numFid).Update("no", true)
-	}
+	_function.GormDB.W.Model(&model.TcTieba{}).Where("uid = ? AND pid = ? AND fid = ?", numUID, numPid, numFid).Update("no", method != "DELETE")
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
 		"uid": numUID,
