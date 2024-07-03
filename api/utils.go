@@ -13,14 +13,17 @@ import (
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
+	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/exp/slices"
 )
 
 var echoEmptyObject = make(map[string]any, 0)
 
-var PreCheckWhiteList = []string{
+var PreCheckWhiteListWithoutFE = []string{
+	"/",
 	"/*",
 	"/favicon.ico",
 	"/robots.txt",
@@ -32,16 +35,24 @@ var PreCheckWhiteList = []string{
 	"/tools/tieba/fname_to_fid/:fname",
 	"/config/page/login",
 }
+var PreCheckWhiteListWithFE = []string{
+	"/api/passport/login",
+	"/api/passport/signup",
+	"/api/passport/reset_password",
+	"/api/tools/userinfo/tieba_uid/:tiebauid",
+	"/api/tools/userinfo/panel/:query_type/:user_value",
+	"/api/tools/tieba/fname_to_fid/:fname",
+	"/api/config/page/login",
+}
 
 var RoleList = []string{"deleted", "banned", "user", "vip", "admin"}
 
 func PreCheckWhiteListExists(path string) bool {
-	for _, v := range PreCheckWhiteList {
-		if path == v {
-			return true
-		}
+	if share.EnableFrontend {
+		return slices.Contains(PreCheckWhiteListWithFE, path)
+	} else {
+		return slices.Contains(PreCheckWhiteListWithoutFE, path)
 	}
-	return false
 }
 
 func apiTemplate[T any](code int, message string, data T, version string) _type.ApiTemplate {

@@ -11,55 +11,38 @@ import (
 	_api "github.com/BANKA2017/tbsign_go/api"
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
+	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"gorm.io/gorm/logger"
 )
 
-var dbUsername string
-var dbPassword string
-var dbEndpoint string
-var dbName string
-
-var dbPath string
-
-var testMode bool
-var enableApi bool
-
-var address string
-
+// install
 var setup bool
 var autoInstall bool
+
 var _adminName string
 var _adminEmail string
 var _adminPassword string
-
-//go:embed assets/sql/tc_init_system.sql
-var _tc_init_system string
-
-//go:embed assets/sql/tc_mysql.sql
-var _tc_mysql string
-
-//go:embed assets/sql/tc_sqlite.sql
-var _tc_sqlite string
 
 var err error
 
 func main() {
 	// sqlite
-	flag.StringVar(&dbPath, "db_path", "", "Database path")
+	flag.StringVar(&share.DBPath, "db_path", "", "Database path")
 
 	// mysql
-	flag.StringVar(&dbUsername, "username", "", "Username")
-	flag.StringVar(&dbPassword, "pwd", "", "Password")
-	flag.StringVar(&dbEndpoint, "endpoint", "127.0.0.1:3306", "endpoint")
-	flag.StringVar(&dbName, "db", "tbsign", "Database name")
+	flag.StringVar(&share.DBUsername, "username", "", "Username")
+	flag.StringVar(&share.DBPassword, "pwd", "", "Password")
+	flag.StringVar(&share.DBEndpoint, "endpoint", "127.0.0.1:3306", "endpoint")
+	flag.StringVar(&share.DBName, "db", "tbsign", "Database name")
 
 	//proxy
 	flag.BoolVar(&_function.IgnoreProxy, "no_proxy", false, "Ignore the http proxy config from environment vars")
 
 	// api
-	flag.BoolVar(&enableApi, "api", false, "active backend endpoints")
-	flag.StringVar(&address, "address", ":1323", "address :1323")
+	flag.BoolVar(&share.EnableApi, "api", false, "active backend endpoints")
+	flag.BoolVar(&share.EnableFrontend, "fe", false, "active frontend endpoints")
+	flag.StringVar(&share.Address, "address", ":1323", "address :1323")
 
 	// setup
 	flag.BoolVar(&setup, "setup", false, "Init the system [force]")
@@ -69,7 +52,7 @@ func main() {
 	flag.StringVar(&_adminPassword, "admin_password", "", "Password of admin")
 
 	// others
-	flag.BoolVar(&testMode, "test", false, "Not send any requests to tieba servers")
+	flag.BoolVar(&share.TestMode, "test", false, "Not send any requests to tieba servers")
 
 	flag.Parse()
 
@@ -78,29 +61,37 @@ func main() {
 	}
 
 	// from env
-	if dbUsername == "" {
-		dbUsername = os.Getenv("tc_username")
+	if share.DBUsername == "" {
+		share.DBUsername = os.Getenv("tc_username")
 	}
-	if dbPassword == "" {
-		dbPassword = os.Getenv("tc_pwd")
+	if share.DBPassword == "" {
+		share.DBPassword = os.Getenv("tc_pwd")
 	}
-	if dbEndpoint == "" && os.Getenv("tc_endpoint") != "" {
-		dbEndpoint = os.Getenv("tc_endpoint")
+	if share.DBEndpoint == "" && os.Getenv("tc_endpoint") != "" {
+		share.DBEndpoint = os.Getenv("tc_endpoint")
 	}
-	if dbName == "" && os.Getenv("tc_db") != "" {
-		dbName = os.Getenv("tc_db")
+	if share.DBName == "" && os.Getenv("tc_db") != "" {
+		share.DBName = os.Getenv("tc_db")
 	}
-	if dbPath == "" && os.Getenv("tc_db_path") != "" {
-		dbPath = os.Getenv("tc_db_path")
+	if share.DBPath == "" && os.Getenv("tc_db_path") != "" {
+		share.DBPath = os.Getenv("tc_db_path")
 	}
-	if !testMode && os.Getenv("tc_test") != "" {
-		testMode = os.Getenv("tc_test") == "true"
+	if !share.TestMode && os.Getenv("tc_test") != "" {
+		share.TestMode = os.Getenv("tc_test") == "true"
 	}
-	if !enableApi && os.Getenv("tc_api") != "" {
-		enableApi = os.Getenv("tc_api") == "true"
+	if !share.EnableApi && os.Getenv("tc_api") != "" {
+		share.EnableApi = os.Getenv("tc_api") == "true"
 	}
-	if address == ":1323" && os.Getenv("tc_address") != "" {
-		address = os.Getenv("tc_address")
+	if !share.EnableFrontend && os.Getenv("tc_fe") != "" {
+		share.EnableFrontend = os.Getenv("tc_fe") == "true"
+	}
+
+	if !share.EnableApi && share.EnableFrontend {
+		log.Fatal("ERROR: 不允许关闭仅启用前端!!!")
+	}
+
+	if share.Address == ":1323" && os.Getenv("tc_address") != "" {
+		share.Address = os.Getenv("tc_address")
 	}
 
 	if !autoInstall && os.Getenv("tc_auto_install") != "" {
@@ -127,35 +118,35 @@ func main() {
 	// connect to db
 	dbMode := "mysql"
 	logLevel := logger.Error
-	if testMode {
+	if share.TestMode {
 		logLevel = logger.Info
 	}
 
 	dbExists := true
 
-	if dbPath != "" {
+	if share.DBPath != "" {
 		// sqlite
 		dbMode = "sqlite"
-		if _, err := os.Stat(dbPath); err != nil && os.IsNotExist(err) {
+		if _, err := os.Stat(share.DBPath); err != nil && os.IsNotExist(err) {
 			dbExists = false
 			setup = true
 		}
-		_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToSQLite(dbPath, logLevel, "tbsign")
+		_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToSQLite(share.DBPath, logLevel, "tbsign")
 		if err != nil {
 			log.Fatal("db:", err)
 		}
 
 		// setup
 		if setup {
-			_function.SetupSystem(dbMode, dbPath, "", "", "", "", logLevel, dbExists, _tc_mysql, _tc_sqlite, _tc_init_system, autoInstall, _adminName, _adminEmail, _adminPassword)
+			_function.SetupSystem(dbMode, share.DBPath, "", "", "", "", logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
 		}
 	} else {
 		// mysql
-		if dbUsername == "" || dbPassword == "" {
+		if share.DBUsername == "" || share.DBPassword == "" {
 			log.Fatal("global: Empty username or password")
 		}
 		// precheck table
-		_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToMySQL(dbUsername, dbPassword, dbEndpoint, "", logLevel, "db")
+		_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToMySQL(share.DBUsername, share.DBPassword, share.DBEndpoint, "", logLevel, "db")
 
 		if err != nil {
 			log.Fatal("db:", err)
@@ -165,18 +156,18 @@ func main() {
 			Count int64
 		}
 
-		_function.GormDB.R.Raw("SELECT (COUNT(*) > 0) AS count FROM information_schema.tables WHERE table_schema = ?;", dbName).Scan(&count)
+		_function.GormDB.R.Raw("SELECT (COUNT(*) > 0) AS count FROM information_schema.tables WHERE table_schema = ?;", share.DBName).Scan(&count)
 		dbExists = count.Count > 0
 		if !dbExists {
-			log.Println("db:", dbName, "is not exists")
+			log.Println("db:", share.DBName, "is not exists")
 			setup = true
 		}
 
 		// setup
 		if setup {
-			_function.SetupSystem(dbMode, "", dbUsername, dbPassword, dbEndpoint, dbName, logLevel, dbExists, _tc_mysql, _tc_sqlite, _tc_init_system, autoInstall, _adminName, _adminEmail, _adminPassword)
+			_function.SetupSystem(dbMode, "", share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
 		} else {
-			_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToMySQL(dbUsername, dbPassword, dbEndpoint, dbName, logLevel, "db")
+			_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToMySQL(share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, logLevel, "db")
 			if err != nil {
 				log.Fatal("db:", err)
 			}
@@ -187,8 +178,8 @@ func main() {
 	_function.InitClient()
 	_function.GetOptionsAndPluginList()
 
-	if enableApi {
-		go _api.Api(address, "dbmode", dbMode, "testmode", testMode)
+	if share.EnableApi {
+		go _api.Api(share.Address, "dbmode", dbMode, "testmode", share.TestMode)
 	}
 
 	// Interval
@@ -205,7 +196,7 @@ func main() {
 		case <-oneSecondInterval.C:
 			_function.UpdateNow()
 		case <-oneMinuteInterval.C:
-			if testMode {
+			if share.TestMode {
 				continue
 			}
 			_function.GetOptionsAndPluginList()
@@ -234,7 +225,7 @@ func main() {
 				}
 			}
 		case <-fourHoursInterval.C:
-			if testMode {
+			if share.TestMode {
 				continue
 			}
 			_function.GetOptionsAndPluginList()

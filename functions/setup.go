@@ -9,13 +9,18 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/BANKA2017/tbsign_go/assets"
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	"gorm.io/gorm/logger"
 )
 
-func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword string, dbEndpoint string, dbName string, logLevel logger.LogLevel, dbExists bool, _tc_mysql string, _tc_sqlite string, _tc_init_system string, autoInstall bool, name string, email string, password string) {
+func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword string, dbEndpoint string, dbName string, logLevel logger.LogLevel, dbExists bool, autoInstall bool, name string, email string, password string) {
 	reader := bufio.NewReader(os.Stdin)
 	var err error
+
+	_tc_mysql, _ := assets.EmbeddedSQL.ReadFile("sql/tc_mysql.sql")
+	_tc_sqlite, _ := assets.EmbeddedSQL.ReadFile("sql/tc_sqlite.sql")
+	_tc_init_system, _ := assets.EmbeddedSQL.ReadFile("sql/tc_init_system.sql")
 
 	fmt.Println("📌现在正在安装 TbSign➡️")
 	if dbExists {
@@ -66,7 +71,7 @@ func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword str
 
 	fmt.Println("⌛正在建立数据表和索引")
 	if dbMode == "mysql" {
-		for i, v := range strings.Split(_tc_mysql, ";") {
+		for i, v := range strings.Split(string(_tc_mysql), ";") {
 			if len(strings.TrimSpace(v)) == 0 {
 				continue
 			}
@@ -77,14 +82,14 @@ func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword str
 			}
 		}
 	} else {
-		err := GormDB.W.Exec(_tc_sqlite).Error
+		err := GormDB.W.Exec(string(_tc_sqlite)).Error
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 
 	fmt.Println("⌛正在导入数据...")
-	for i, v := range strings.Split(_tc_init_system, "\n") {
+	for i, v := range strings.Split(string(_tc_init_system), "\n") {
 		fmt.Println("⌛导入第" + strconv.Itoa(i+1) + "项...")
 		err := GormDB.W.Exec(v).Error
 		if err != nil {
