@@ -15,6 +15,8 @@ var wg sync.WaitGroup
 
 const AgainErrorId = "160002"
 
+var resignErrorID = []int64{340011, 2280007, 110001, 1989004, 255}
+
 // 重复签到错误代码
 // again_error_id_2 := "1101"
 // 特殊的重复签到错误代码！！！签到过快=已签到
@@ -41,7 +43,7 @@ func Dosign(table string, retry bool) (bool, error) {
 	}
 	if retry {
 		// 重签
-		_function.GormDB.R.Where("no = ? AND latest != ? AND status IN ?", 0, _function.Now.Local().Day(), []int64{340011, 2280007, 110001, 1989004, 255}).Limit(int(limit)).Find(&tiebaList)
+		_function.GormDB.R.Where("no = ? AND latest != ? AND status IN ?", 0, _function.Now.Local().Day(), resignErrorID).Limit(int(limit)).Find(&tiebaList)
 	} else {
 		_function.GormDB.R.Where("no = ? AND latest != ?", 0, _function.Now.Local().Day()).Limit(int(limit)).Find(&tiebaList)
 	}
@@ -154,9 +156,12 @@ func DoReSignAction() {
 
 	// all accounts are done?
 	var unDoneCount int64
-	_function.GormDB.R.Model(&model.TcUser{}).Where("latest != ? AND no = 0", _function.Now.Local().Day()).Count(&unDoneCount)
+	_function.GormDB.R.Model(&model.TcUser{}).Where("no = 0 AND latest != ?", _function.Now.Local().Day()).Count(&unDoneCount)
 
-	if retryMax == 0 || unDoneCount == 0 && int64(retryNum) <= retryMax && retryMax > 0 {
+	var failedCount int64
+	_function.GormDB.R.Model(&model.TcUser{}).Where("no = 0 AND status IN ?", resignErrorID).Count(&failedCount)
+
+	if unDoneCount == 0 && failedCount > 0 && (retryMax == 0 || int64(retryNum) <= retryMax && retryMax > 0) {
 		for retryMax == 0 || int64(retryNum) <= retryMax {
 			retryAgain := false
 			for _, table := range tableList {
