@@ -35,7 +35,8 @@ func Dosign(table string, retry bool) (bool, error) {
 	limit, _ := strconv.ParseInt(_function.GetOption("cron_limit"), 10, 64)
 	var tiebaList []model.TcTieba
 
-	if limit == 0 {
+	// retry has no limit
+	if retry || limit == 0 {
 		limit = -1
 	}
 	if retry {
@@ -58,6 +59,7 @@ func Dosign(table string, retry bool) (bool, error) {
 		sleep = 100
 	}
 
+	var forceWaitCount = 50
 	for _, v := range tiebaList {
 		// we will not auto update fid
 		if v.Fid == 0 {
@@ -96,6 +98,12 @@ func Dosign(table string, retry bool) (bool, error) {
 		}(v.Pid, v.Tieba, v.Fid, v.ID, _function.Now)
 
 		time.Sleep(time.Millisecond * time.Duration(sleep))
+
+		forceWaitCount--
+		if forceWaitCount <= 0 {
+			forceWaitCount = 50
+			wg.Wait()
+		}
 	}
 	wg.Wait()
 	log.Println("sign: done!")
@@ -144,7 +152,11 @@ func DoReSignAction() {
 
 	retryNum := cornSignAgainInterface["num"].(int)
 
-	if retryMax == 0 || cornSignAgainInterface["lastdo"] == today && int64(retryNum) <= retryMax && retryMax > -1 {
+	// all accounts are done?
+	var unDoneCount int64
+	_function.GormDB.R.Model(&model.TcUser{}).Where("latest != ? AND no = 0", _function.Now.Local().Day()).Count(&unDoneCount)
+
+	if retryMax == 0 || unDoneCount == 0 && int64(retryNum) <= retryMax && retryMax > 0 {
 		for retryMax == 0 || int64(retryNum) <= retryMax {
 			retryAgain := false
 			for _, table := range tableList {
