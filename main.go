@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"time"
+	_ "time/tzdata"
 
 	_api "github.com/BANKA2017/tbsign_go/api"
 	_function "github.com/BANKA2017/tbsign_go/functions"
