@@ -145,6 +145,10 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 需要设置 `CGO_ENABLED=1`， go-sqlite3 需要用到 CGO
 
+### build.sh
+
+简单写了个编译脚本，存放在 `build.sh`
+
 ## 已知问题
 
 - [x] 不支持限制单次签到贴吧总数，会一次性全部签完

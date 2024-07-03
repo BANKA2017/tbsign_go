@@ -36,6 +36,10 @@ func PreCheck(next echo.HandlerFunc) echo.HandlerFunc {
 			return next(c)
 		}
 
+		if share.EnableFrontend && strings.HasPrefix(path, "/api/") {
+			path = strings.TrimPrefix(path, "/api")
+		}
+
 		authorization := c.Request().Header.Get("Authorization")
 
 		lengthOfAuthorizationPrefix := len(authorizationPrefix)
