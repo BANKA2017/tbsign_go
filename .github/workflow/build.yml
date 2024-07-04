@@ -1,0 +1,30 @@
+name: Build
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NUXT_BASE_PATH: "/api"
+  CGO_ENABLED: "1"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+      
+      - name: Build
+        run: bash build.sh
+      - name: Upload package
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: 'tbsign_go'
+          path: tbsign_build/tbsign_go
+      - name: Clean
+        run: rm -r tbsign_build
