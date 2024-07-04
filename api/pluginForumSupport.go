@@ -108,7 +108,7 @@ func PluginForumSupportUpdateSettings(c echo.Context) error {
 		}
 	}
 
-	_function.GormDB.W.Delete(&model.TcVer4RankLog{}, delRankIDList)
+	_function.GormDB.W.Where("id IN ?", delRankIDList).Delete(&model.TcVer4RankLog{})
 
 	var resp = struct {
 		Add    []model.TcVer4RankLog `json:"add"`

@@ -15,7 +15,7 @@ func ScanTiebaByPid(pid int32) {
 	account := _function.GetCookie(pid)
 
 	var localTiebaList = &[]model.TcTieba{}
-	_function.GormDB.R.Model(&model.TcTieba{Pid: account.ID}).Find(&localTiebaList)
+	_function.GormDB.R.Model(&model.TcTieba{}).Where("pid = ?", account.ID).Find(&localTiebaList)
 
 	localTiebaFidList := []int{}
 
@@ -55,6 +55,7 @@ func ScanTiebaByPid(pid int32) {
 
 			if !slices.Contains(localTiebaFidList, tiebaInfo.ForumID) && !slices.Contains(wholeTiebaFidList, tmpTcTieba.Fid) {
 				tiebaList = append(tiebaList, tmpTcTieba)
+				localTiebaFidList = append(localTiebaFidList, tiebaInfo.ForumID)
 				wholeTiebaFidList = append(wholeTiebaFidList, tmpTcTieba.Fid)
 			} else if !slices.Contains(wholeTiebaFidList, tmpTcTieba.Fid) {
 				wholeTiebaFidList = append(wholeTiebaFidList, tmpTcTieba.Fid)
@@ -107,6 +108,7 @@ func ScanTiebaByPid(pid int32) {
 
 				if !slices.Contains(localTiebaFidList, int(numFID)) && !slices.Contains(wholeTiebaFidList, tmpTcTieba.Fid) {
 					tiebaList = append(tiebaList, tmpTcTieba)
+					localTiebaFidList = append(localTiebaFidList, int(numFID))
 					wholeTiebaFidList = append(wholeTiebaFidList, tmpTcTieba.Fid)
 				} else if !slices.Contains(wholeTiebaFidList, tmpTcTieba.Fid) {
 					wholeTiebaFidList = append(wholeTiebaFidList, tmpTcTieba.Fid)
