@@ -96,15 +96,15 @@ func DeleteAccount(c echo.Context) error {
 	}
 
 	// set role -> delete
-	_function.GormDB.W.Model(&model.TcUser{}).Delete("id = ?", uid)
-	_function.GormDB.W.Model(&model.TcTieba{}).Delete("uid = ?", uid)
-	_function.GormDB.W.Model(&model.TcBaiduid{}).Delete("uid = ?", uid)
-	_function.GormDB.W.Model(&model.TcUsersOption{}).Delete("uid = ?", uid)
+	_function.GormDB.W.Where("id = ?", uid).Delete(&model.TcUser{})
+	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcTieba{})
+	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcBaiduid{})
+	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcUsersOption{})
 
 	// plugins
-	_function.GormDB.W.Model(&model.TcVer4BanList{}).Delete("uid = ?", uid)
-	_function.GormDB.W.Model(&model.TcVer4RankLog{}).Delete("uid = ?", uid)
-	_function.GormDB.W.Model(&model.TcKdGrowth{}).Delete("uid = ?", uid)
+	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcVer4BanList{})
+	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcVer4RankLog{})
+	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcKdGrowth{})
 
 	delete(keyBucket, uid)
 

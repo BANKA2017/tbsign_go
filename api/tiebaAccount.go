@@ -95,13 +95,13 @@ func RemoveTiebaAccount(c echo.Context) error {
 
 	for _, v := range tiebaAccounts {
 		if v.ID == int32(numPid) {
-			_function.GormDB.W.Model(&model.TcBaiduid{}).Delete("id = ?", v.ID)
-			_function.GormDB.W.Model(&model.TcTieba{}).Delete("pid = ?", v.ID)
+			_function.GormDB.W.Where("id = ?", v.ID).Delete(&model.TcBaiduid{})
+			_function.GormDB.W.Where("pid = ?", v.ID).Delete(&model.TcTieba{})
 
 			// plugins
-			_function.GormDB.W.Model(&model.TcVer4BanList{}).Delete("pid = ?", v.ID)
-			_function.GormDB.W.Model(&model.TcVer4RankLog{}).Delete("pid = ?", v.ID)
-			_function.GormDB.W.Model(&model.TcKdGrowth{}).Delete("pid = ?", v.ID)
+			_function.GormDB.W.Where("pid = ?", v.ID).Delete(&model.TcVer4BanList{})
+			_function.GormDB.W.Where("pid = ?", v.ID).Delete(&model.TcVer4RankLog{})
+			_function.GormDB.W.Where("pid = ?", v.ID).Delete(&model.TcKdGrowth{})
 
 			return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]int32{
 				"pid": v.ID,

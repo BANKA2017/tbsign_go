@@ -224,15 +224,15 @@ func AdminModifyAccountInfo(c echo.Context) error {
 	// soft delete?
 	if newRole == "delete" {
 		// account
-		_function.GormDB.W.Model(&model.TcUser{}).Delete("id = ?", accountInfo.ID)
-		_function.GormDB.W.Model(&model.TcTieba{}).Delete("uid = ?", accountInfo.ID)
-		_function.GormDB.W.Model(&model.TcBaiduid{}).Delete("uid = ?", accountInfo.ID)
-		_function.GormDB.W.Model(&model.TcUsersOption{}).Delete("uid = ?", accountInfo.ID)
+		_function.GormDB.W.Where("id = ?", accountInfo.ID).Delete(&model.TcUser{})
+		_function.GormDB.W.Where("uid = ?", accountInfo.ID).Delete(&model.TcTieba{})
+		_function.GormDB.W.Where("uid = ?", accountInfo.ID).Delete(&model.TcBaiduid{})
+		_function.GormDB.W.Where("uid = ?", accountInfo.ID).Delete(&model.TcUsersOption{})
 
 		// plugins
-		_function.GormDB.W.Model(&model.TcVer4BanList{}).Delete("uid = ?", accountInfo.ID)
-		_function.GormDB.W.Model(&model.TcVer4RankLog{}).Delete("uid = ?", accountInfo.ID)
-		_function.GormDB.W.Model(&model.TcKdGrowth{}).Delete("uid = ?", accountInfo.ID)
+		_function.GormDB.W.Where("uid = ?", accountInfo.ID).Delete(&model.TcVer4BanList{})
+		_function.GormDB.W.Where("uid = ?", accountInfo.ID).Delete(&model.TcVer4RankLog{})
+		_function.GormDB.W.Where("uid = ?", accountInfo.ID).Delete(&model.TcKdGrowth{})
 		delete(keyBucket, strconv.Itoa(int(accountInfo.ID)))
 	} else {
 		_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", accountInfo.ID).Updates(&newAccountInfo)
@@ -248,18 +248,41 @@ func AdminModifyAccountInfo(c echo.Context) error {
 }
 
 func AdminDeleteTiebaAccountList(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
 	targetUID := c.QueryParams().Get("uid")
+
+	if targetUID == "" {
+		return c.JSON(http.StatusOK, apiTemplate(404, "用户不存在", false, "tbsign"))
+	} else if uid == targetUID {
+		return c.JSON(http.StatusOK, apiTemplate(403, "无法修改自己的帐号", false, "tbsign"))
+	}
+
+	numTargetUID, err := strconv.ParseInt(targetUID, 10, 64)
+	if err != nil || numTargetUID <= 0 {
+		return c.JSON(http.StatusOK, apiTemplate(404, "用户不存在", false, "tbsign"))
+	}
+
+	// exists?
+	var accountInfo model.TcUser
+	_function.GormDB.R.Model([]model.TcUser{}).Where("id = ?", targetUID).Find(&accountInfo)
+	if accountInfo.ID == 0 {
+		return c.JSON(http.StatusOK, apiTemplate(404, "用户不存在", false, "tbsign"))
+	}
+	if accountInfo.Role == "admin" && uid != "1" {
+		return c.JSON(http.StatusOK, apiTemplate(403, "只有根管理员允许改变管理员状态", false, "tbsign"))
+	}
 
 	var PIDCount int64
 	_function.GormDB.R.Model(&model.TcBaiduid{}).Where("uid = ?", targetUID).Count(&PIDCount)
 	if PIDCount > 0 {
-		_function.GormDB.W.Model(&model.TcBaiduid{}).Delete("uid = ?", targetUID)
-		_function.GormDB.W.Model(&model.TcTieba{}).Delete("uid = ?", targetUID)
+		_function.GormDB.W.Where("uid = ?", targetUID).Delete(&model.TcBaiduid{})
+		_function.GormDB.W.Where("uid = ?", targetUID).Delete(&model.TcTieba{})
 
 		// plugins
-		_function.GormDB.W.Model(&model.TcVer4BanList{}).Delete("uid = ?", targetUID)
-		_function.GormDB.W.Model(&model.TcVer4RankLog{}).Delete("uid = ?", targetUID)
-		_function.GormDB.W.Model(&model.TcKdGrowth{}).Delete("uid = ?", targetUID)
+		_function.GormDB.W.Where("uid = ?", targetUID).Delete(&model.TcVer4BanList{})
+		_function.GormDB.W.Where("uid = ?", targetUID).Delete(&model.TcVer4RankLog{})
+		_function.GormDB.W.Where("uid = ?", targetUID).Delete(&model.TcKdGrowth{})
 		return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
 	} else {
 		return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))

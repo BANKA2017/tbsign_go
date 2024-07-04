@@ -104,7 +104,7 @@ func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword str
 		if err != nil {
 			log.Fatal("❌无效用户名", err)
 		}
-		name = strings.TrimSuffix(strings.TrimSuffix(name, "\r\n"), "\n")
+		name = strings.TrimSpace(name)
 		if name == "" || strings.Contains(name, "@") {
 			log.Fatal("❌无效用户名")
 		}
@@ -113,16 +113,16 @@ func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword str
 		if err != nil {
 			log.Fatal("❌无效邮箱", err)
 		}
-		email = strings.TrimSuffix(strings.TrimSuffix(email, "\r\n"), "\n")
+		email = strings.TrimSpace(email)
 		if !VerifyEmail(email) {
 			log.Fatal("❌无效邮箱")
 		}
-		fmt.Print("管理员密码 (注意空格): ")
+		fmt.Print("管理员密码 (自动清理空格): ")
 		password, err := reader.ReadString('\n')
 		if err != nil {
 			log.Fatal("❌无效密码", err)
 		}
-		password = strings.TrimSuffix(strings.TrimSuffix(password, "\r\n"), "\n")
+		password = strings.TrimSpace(password)
 		if password == "" {
 			log.Fatal("❌无效密码")
 		}

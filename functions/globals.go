@@ -53,7 +53,7 @@ func SetOption(keyName string, value string) error {
 
 func DeleteOption(keyName string) error {
 	delete(Options, keyName)
-	return GormDB.W.Model(&model.TcOption{}).Delete("name = ?", keyName).Error
+	return GormDB.W.Where("name = ?", keyName).Delete(&model.TcOption{}).Error
 }
 
 func GetUserOption(keyName string, uid string) string {
@@ -68,7 +68,7 @@ func SetUserOption(keyName string, value string, uid string) error {
 }
 
 func DeleteUserOption(keyName string, uid string) error {
-	return GormDB.W.Model(&model.TcUsersOption{}).Delete("uid = ? AND name = ?", uid, keyName).Error
+	return GormDB.W.Where("uid = ? AND name = ?", uid, keyName).Delete(&model.TcUsersOption{}).Error
 }
 
 func GetCookie(pid int32) _type.TypeCookie {
