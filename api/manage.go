@@ -22,7 +22,7 @@ type SiteAccountsResponse struct {
 	T     string `json:"t"`
 }
 
-var settingsFilter = []string{"ann", "system_url", "system_name", "system_keywords", "system_description", "stop_reg", "enable_reg", "yr_reg", "cktime", "sign_mode", "sign_hour", "cron_limit", "sign_sleep", "retry_max", "mail_name", "mail_yourname", "mail_host", "mail_port", "mail_secure", "mail_auth", "mail_smtpname", "mail_smtppw", "ver4_ban_limit", "ver4_ban_break_check"}
+var settingsFilter = []string{"ann", "system_url", "system_name", "system_keywords", "system_description", "stop_reg", "enable_reg", "yr_reg", "cktime", "sign_mode", "sign_hour", "cron_limit", "sign_sleep", "retry_max", "mail_name", "mail_yourname", "mail_host", "mail_port", "mail_secure", "mail_auth", "mail_smtpname", "mail_smtppw", "ver4_ban_limit", "ver4_ban_break_check", "go_forum_sync_policy"}
 
 func GetAdminSettings(c echo.Context) error {
 	var adminSettings []model.TcOption
@@ -52,12 +52,13 @@ func UpdateAdminSettings(c echo.Context) error {
 
 	var errStr []string
 	settings := make(map[string]string)
-	for _, v := range adminSettings {
+	for _, vName := range settingsFilter {
 		for k1, v1 := range c.Request().Form {
-			if v.Name == k1 && len(v1) > 0 {
-				if v.Value != v1[0] {
+			if vName == k1 && len(v1) > 0 {
+				vValue := _function.GetOption(vName)
+				if vValue != v1[0] {
 					// verify
-					switch v.Name {
+					switch vName {
 					case "sign_mode":
 						signMode := strings.Split(v1[0], ",")
 						check := true
@@ -68,7 +69,7 @@ func UpdateAdminSettings(c echo.Context) error {
 							}
 						}
 						if !check {
-							errStr = append(errStr, v.Name+": Invalid value `"+v1[0]+"`")
+							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
 							continue
 						}
 
@@ -78,50 +79,62 @@ func UpdateAdminSettings(c echo.Context) error {
 							log.Println("sign_mode: encode php serialize failed", err)
 							continue
 						}
-						if string(signModeEncoded) != v.Value {
-							settings[v.Name] = v1[0]
-							_function.SetOption(v.Name, string(signModeEncoded))
+						if string(signModeEncoded) != vValue {
+							settings[vName] = v1[0]
+							_function.SetOption(vName, string(signModeEncoded))
 						}
 
 					case "enable_reg", "ver4_ban_break_check", "mail_auth":
 						if v1[0] == "0" || v1[0] == "1" {
-							settings[v.Name] = v1[0]
-							_function.SetOption(v.Name, v1[0])
+							settings[vName] = v1[0]
+							_function.SetOption(vName, v1[0])
 						} else {
-							errStr = append(errStr, v.Name+": Invalid value `"+v1[0]+"`")
+							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
 						}
 					case "mail_secure":
 						if v1[0] == "none" || v1[0] == "ssl" || v1[0] == "tls" {
-							settings[v.Name] = v1[0]
-							_function.SetOption(v.Name, v1[0])
+							settings[vName] = v1[0]
+							_function.SetOption(vName, v1[0])
 						} else {
-							errStr = append(errStr, v.Name+": Invalid value `"+v1[0]+"`")
+							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
 						}
 					case "cron_limit", "retry_max", "sign_sleep", "ver4_ban_limit", "mail_port", "cktime":
 						numValue, err := strconv.ParseInt(v1[0], 10, 64)
 						if err == nil && numValue >= 0 {
-							settings[v.Name] = v1[0]
-							_function.SetOption(v.Name, v1[0])
+							settings[vName] = v1[0]
+							_function.SetOption(vName, v1[0])
 						} else {
-							errStr = append(errStr, v.Name+": Invalid value `"+v1[0]+"`")
-							log.Println(v.Name, numValue, err)
+							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
+							log.Println(vName, numValue, err)
 						}
 					case "sign_hour":
 						numValue, err := strconv.ParseInt(v1[0], 10, 64)
 						if err != nil {
-							errStr = append(errStr, v.Name+": Invalid value `"+v1[0]+"`")
-							log.Println(v.Name, err)
+							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
+							log.Println(vName, err)
 							continue
 						} else if numValue < -1 {
 							numValue = -1
 						} else if numValue > 23 {
 							numValue = 23
 						}
-						settings[v.Name] = strconv.Itoa(int(numValue))
-						_function.SetOption(v.Name, settings[v.Name])
+						settings[vName] = strconv.Itoa(int(numValue))
+						_function.SetOption(vName, settings[vName])
+					case "go_forum_sync_policy":
+						if v1[0] == "add_delete" || v1[0] == "add_only" || v1[0] == "" {
+							if v1[0] == "" {
+								settings[vName] = "add_delete"
+							} else {
+								settings[vName] = v1[0]
+							}
+							err := _function.SetOption(vName, settings[vName])
+							log.Println(err)
+						} else {
+							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
+						}
 					default:
-						settings[v.Name] = v1[0]
-						_function.SetOption(v.Name, v1[0])
+						settings[vName] = v1[0]
+						_function.SetOption(vName, v1[0])
 					}
 				}
 				break

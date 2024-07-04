@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-var Options []model.TcOption
+var Options = make(map[string]string)
 var CookieList = make(map[int32]_type.TypeCookie)
 var FidList = make(map[string]int64)
 var PluginListDB []model.TcPlugin
@@ -39,25 +39,21 @@ func UpdateNow() {
 }
 
 func GetOption(keyName string) string {
-	for _, v := range Options {
-		if v.Name == keyName {
-			return v.Value
-		}
-	}
-	return ""
+	return Options[keyName]
 }
 
 func SetOption(keyName string, value string) error {
 	err := GormDB.W.Model(&model.TcOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcOption{Name: keyName, Value: value}).Error
+
 	if err == nil {
-		for i := range Options {
-			if Options[i].Name == keyName {
-				Options[i].Value = value
-				break
-			}
-		}
+		Options[keyName] = value
 	}
 	return err
+}
+
+func DeleteOption(keyName string) error {
+	delete(Options, keyName)
+	return GormDB.W.Model(&model.TcOption{}).Delete("name = ?", keyName).Error
 }
 
 func GetUserOption(keyName string, uid string) string {
@@ -69,6 +65,10 @@ func GetUserOption(keyName string, uid string) string {
 func SetUserOption(keyName string, value string, uid string) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	return GormDB.W.Model(&model.TcUsersOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcUsersOption{UID: int32(numUID), Name: keyName, Value: value}).Error
+}
+
+func DeleteUserOption(keyName string, uid string) error {
+	return GormDB.W.Model(&model.TcUsersOption{}).Delete("uid = ? AND name = ?", uid, keyName).Error
 }
 
 func GetCookie(pid int32) _type.TypeCookie {
@@ -113,7 +113,12 @@ func GetFid(name string) int64 {
 
 func GetOptionsAndPluginList() {
 	// get options
-	GormDB.R.Find(&Options)
+	var tmpOptions []model.TcOption
+
+	GormDB.R.Find(&tmpOptions)
+	for _, v := range tmpOptions {
+		Options[v.Name] = v.Value
+	}
 
 	// get plugin list
 	GormDB.R.Where("name in ?", PluginNameList).Find(&PluginListDB)

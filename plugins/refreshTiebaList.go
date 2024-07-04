@@ -51,15 +51,17 @@ func ScanTiebaByPid(pid int32) {
 				Tieba: tiebaInfo.ForumName,
 			}
 
+			wholeTiebaFidList = append(wholeTiebaFidList, tmpTcTieba.Fid)
 			if !slices.Contains(localTiebaFidList, tiebaInfo.ForumID) && !slices.Contains(wholeTiebaFidList, tmpTcTieba.Fid) {
 				tiebaList = append(tiebaList, &tmpTcTieba)
 				wholeTiebaList = append(wholeTiebaList, tmpTcTieba)
-				wholeTiebaFidList = append(wholeTiebaFidList, tmpTcTieba.Fid)
 			}
 		}
 		if len(tiebaList) > 0 {
-			err := _function.GormDB.W.Create(tiebaList)
-			log.Println("scanTiebaByPid:", err)
+			err := _function.GormDB.W.Create(tiebaList).Error
+			if err != nil {
+				log.Println("scanTiebaByPid:", err)
+			}
 		}
 
 		pn++
@@ -96,9 +98,10 @@ func ScanTiebaByPid(pid int32) {
 					UID:   account.UID,
 					Tieba: tiebaInfo.Name,
 				}
+
+				wholeTiebaFidList = append(wholeTiebaFidList, tmpTcTieba.Fid)
 				if !slices.Contains(localTiebaFidList, int(numFID)) && !slices.Contains(wholeTiebaFidList, tmpTcTieba.Fid) {
 					tiebaList = append(tiebaList, &tmpTcTieba)
-					wholeTiebaFidList = append(wholeTiebaFidList, tmpTcTieba.Fid)
 					wholeTiebaList = append(wholeTiebaList, tmpTcTieba)
 				}
 			}
@@ -116,7 +119,7 @@ func ScanTiebaByPid(pid int32) {
 		}
 	}
 
-	if len(wholeTiebaList) != len(localTiebaFidList) {
+	if _function.GetOption("go_forum_sync_policy") != "add_only" && len(wholeTiebaList) != len(localTiebaFidList) {
 		delList := []int32{}
 		for _, v := range *localTiebaList {
 			if !slices.Contains(wholeTiebaFidList, v.Fid) && v.Fid != 0 {
