@@ -7,6 +7,7 @@ import (
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
+	_type "github.com/BANKA2017/tbsign_go/types"
 )
 
 var RefreshTiebaListPluginName = "ver4_ref"
@@ -86,11 +87,26 @@ func ScanTiebaByPid(pid int32) {
 				log.Println("scanTiebaByPid:", err)
 				break
 			}
-			if response.ErrorCode != "0" || len(response.ForumList.NonGconforum) <= 0 {
+
+			if response.ErrorCode != "0" {
 				break
 			}
+			// merge list
+			var mergedList []_type.ForumInfo
+			if response.ForumList.NonGconforum != nil && len(*response.ForumList.NonGconforum) > 0 {
+				mergedList = append(mergedList, *response.ForumList.NonGconforum...)
+			}
+
+			if response.ForumList.Gconforum != nil && len(*response.ForumList.Gconforum) > 0 {
+				mergedList = append(mergedList, *response.ForumList.Gconforum...)
+			}
+
+			if len(mergedList) == 0 {
+				break
+			}
+
 			var tiebaList = []*model.TcTieba{}
-			for _, tiebaInfo := range response.ForumList.NonGconforum {
+			for _, tiebaInfo := range mergedList {
 				//log.Println(tiebaInfo)
 				//合并或被封禁的贴吧会怎样?
 

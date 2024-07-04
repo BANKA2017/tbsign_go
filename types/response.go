@@ -44,19 +44,22 @@ type UserInfo struct {
 	LastLevel        string         `json:"last_level,omitempty"`
 }
 
+type ForumInfo struct {
+	ID           string `json:"id,omitempty"`
+	Name         string `json:"name,omitempty"`
+	FavoType     string `json:"favo_type,omitempty"`
+	LevelID      string `json:"level_id,omitempty"`
+	LevelName    string `json:"level_name,omitempty"`
+	CurScore     string `json:"cur_score,omitempty"`
+	LevelupScore string `json:"levelup_score,omitempty"`
+	Avatar       string `json:"avatar,omitempty"`
+	Slogan       string `json:"slogan,omitempty"`
+}
+
 type ForumListResponse struct {
 	ForumList struct {
-		NonGconforum []struct {
-			ID           string `json:"id,omitempty"`
-			Name         string `json:"name,omitempty"`
-			FavoType     string `json:"favo_type,omitempty"`
-			LevelID      string `json:"level_id,omitempty"`
-			LevelName    string `json:"level_name,omitempty"`
-			CurScore     string `json:"cur_score,omitempty"`
-			LevelupScore string `json:"levelup_score,omitempty"`
-			Avatar       string `json:"avatar,omitempty"`
-			Slogan       string `json:"slogan,omitempty"`
-		} `json:"non-gconforum,omitempty"`
+		NonGconforum *[]ForumInfo `json:"non-gconforum,omitempty"`
+		Gconforum    *[]ForumInfo `json:"gconforum,omitempty"`
 	} `json:"forum_list,omitempty"`
 	HasMore string `json:"has_more,omitempty"`
 	// ServerTime string `json:"server_time,omitempty"`
