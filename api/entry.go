@@ -64,12 +64,12 @@ func Api(address string, variables ...any) {
 	api.GET("/account/:pid/status", CheckTiebaAccount)
 
 	// tieba list
+	api.POST("/list/sync", RefreshTiebaList)
 	api.GET("/list", GetTiebaList)
 	api.PATCH("/list", AddTieba)
 	api.DELETE("/list", CleanTiebaList)
-	api.POST("/list/refresh", RefreshTiebaList)
 	api.DELETE("/list/:pid/:fid", RemoveTieba)
-	api.PUT("/list/:pid/:fid/ignore", IgnoreTieba)
+	api.PATCH("/list/:pid/:fid/ignore", IgnoreTieba)
 	api.DELETE("/list/:pid/:fid/ignore", IgnoreTieba)
 
 	// manage
