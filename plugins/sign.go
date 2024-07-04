@@ -156,10 +156,10 @@ func DoReSignAction() {
 
 	// all accounts are done?
 	var unDoneCount int64
-	_function.GormDB.R.Model(&model.TcUser{}).Where("no = 0 AND latest != ?", _function.Now.Local().Day()).Count(&unDoneCount)
+	_function.GormDB.R.Model(&model.TcTieba{}).Where("no = 0 AND latest != ?", _function.Now.Local().Day()).Count(&unDoneCount)
 
 	var failedCount int64
-	_function.GormDB.R.Model(&model.TcUser{}).Where("no = 0 AND status IN ?", resignErrorID).Count(&failedCount)
+	_function.GormDB.R.Model(&model.TcTieba{}).Where("no = 0 AND status IN ?", resignErrorID).Count(&failedCount)
 
 	if unDoneCount == 0 && failedCount > 0 && (retryMax == 0 || int64(retryNum) <= retryMax && retryMax > 0) {
 		for retryMax == 0 || int64(retryNum) <= retryMax {

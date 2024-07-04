@@ -26,7 +26,7 @@ jobs:
           yarn run generate
           rm -r ../assets/dist
           cp -R .output/public/ ../assets/dist
-      - name: Build
+      - name: Backend
         run: |
           go install src.techknowlogick.com/xgo@latest
           mkdir build
