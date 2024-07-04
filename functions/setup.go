@@ -100,7 +100,7 @@ func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword str
 	fmt.Println("🔒注册管理员帐号...")
 	if !autoInstall {
 		fmt.Print("管理员用户名: ")
-		name, err := reader.ReadString('\n')
+		name, err = reader.ReadString('\n')
 		if err != nil {
 			log.Fatal("❌无效用户名", err)
 		}
@@ -109,7 +109,7 @@ func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword str
 			log.Fatal("❌无效用户名")
 		}
 		fmt.Print("管理员邮箱: ")
-		email, err := reader.ReadString('\n')
+		email, err = reader.ReadString('\n')
 		if err != nil {
 			log.Fatal("❌无效邮箱", err)
 		}
@@ -118,7 +118,7 @@ func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword str
 			log.Fatal("❌无效邮箱")
 		}
 		fmt.Print("管理员密码 (自动清理空格): ")
-		password, err := reader.ReadString('\n')
+		password, err = reader.ReadString('\n')
 		if err != nil {
 			log.Fatal("❌无效密码", err)
 		}
