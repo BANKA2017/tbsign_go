@@ -162,14 +162,11 @@ func Logout(c echo.Context) error {
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
 }
 
-func UpdateEmail(c echo.Context) error {
+func UpdateAccountInfo(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
+	username := c.FormValue("username")
 	email := c.FormValue("email")
-
-	if !_function.VerifyEmail(email) {
-		return c.JSON(http.StatusOK, apiTemplate(404, "邮箱不合法", false, "tbsign"))
-	}
 
 	var accountInfo []model.TcUser
 	_function.GormDB.R.Where("id = ?", uid).Limit(1).Find(&accountInfo)
@@ -178,20 +175,54 @@ func UpdateEmail(c echo.Context) error {
 		return c.JSON(http.StatusOK, apiTemplate(403, "帐号不存在", echoEmptyObject, "tbsign"))
 	}
 
-	// compare email
-	if email == accountInfo[0].Email {
-		return c.JSON(http.StatusOK, apiTemplate(403, "修改前后邮箱不变", echoEmptyObject, "tbsign"))
+	username = strings.TrimSpace(username)
+	email = strings.TrimSpace(email)
+
+	if email != "" {
+		if !_function.VerifyEmail(email) {
+			return c.JSON(http.StatusOK, apiTemplate(404, "邮箱不合法", false, "tbsign"))
+		}
+
+		// compare email
+		if email != accountInfo[0].Email {
+			var emailExistsCount int64
+			_function.GormDB.R.Model(&model.TcUser{}).Where("email = ?", email).Count(&emailExistsCount)
+
+			if emailExistsCount > 0 {
+				return c.JSON(http.StatusOK, apiTemplate(403, "邮箱已存在", echoEmptyObject, "tbsign"))
+			} else {
+				_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", uid).Update("email", email)
+			}
+		}
+	} else {
+		email = accountInfo[0].Email
 	}
 
-	_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", uid).Update("email", email)
+	if username != "" {
+		// compare username
+		if username != accountInfo[0].Name {
+			var usernameExistsCount int64
+			_function.GormDB.R.Model(&model.TcUser{}).Where("name = ?", username).Count(&usernameExistsCount)
+
+			if usernameExistsCount > 0 {
+				return c.JSON(http.StatusOK, apiTemplate(403, "用户名已存在", echoEmptyObject, "tbsign"))
+			} else {
+				_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", uid).Update("name", username)
+			}
+		}
+	} else {
+		username = accountInfo[0].Name
+	}
 
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 
 	var resp = struct {
 		UID   int32  `json:"uid"`
+		Name  string `json:"username"`
 		Email string `json:"email"`
 	}{
 		UID:   int32(numUID),
+		Name:  username,
 		Email: email,
 	}
 

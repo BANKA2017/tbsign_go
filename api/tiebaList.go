@@ -71,11 +71,7 @@ func RemoveTieba(c echo.Context) error {
 		return c.JSON(http.StatusOK, apiTemplate(403, "无效 fid", echoEmptyObject, "tbsign"))
 	}
 
-	_function.GormDB.W.Delete(&model.TcTieba{
-		UID: int32(numUID),
-		Pid: int32(numPid),
-		Fid: int32(numFid),
-	})
+	_function.GormDB.W.Where("uid = ? AND pid = ? AND fid = ?", numUID, numPid, numFid).Delete(&model.TcTieba{})
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", echoEmptyObject, "tbsign"))
 }
