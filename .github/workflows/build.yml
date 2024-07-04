@@ -18,15 +18,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@master
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          check-latest: true
       - run: go install src.techknowlogick.com/xgo@latest
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: yarn
       - name: Frontend
         - run: |
           git clone https://github.com/BANKA2017/tbsign_go_fe
