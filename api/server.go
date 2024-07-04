@@ -36,7 +36,7 @@ func GetServerStatus(c echo.Context) error {
 		"variables": c.Get("variables"),
 		"build": map[string]string{
 			"date":        share.BuiltAt,
-			"version":     share.BuildVersion,
+			"runtime":     share.BuildRuntime,
 			"commit_hash": share.BuildGitCommitHash,
 		},
 		"cron_sign_again": _function.GetOption("cron_sign_again"),

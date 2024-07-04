@@ -1,5 +1,5 @@
 package share
 
 var BuiltAt = "Now"
-var BuildVersion = "Dev"
+var BuildRuntime = "Dev"
 var BuildGitCommitHash = "N/A"
