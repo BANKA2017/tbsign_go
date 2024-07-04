@@ -19,15 +19,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@master
       - name: Frontend
-        - run: |
+        run: |
           git clone https://github.com/BANKA2017/tbsign_go_fe
           cd tbsign_go_fe
           yarn install
           yarn run generate
-          rm -r assets/dist
+          rm -r ../assets/dist
           cp -R .output/public/ ../assets/dist
       - name: Build
-        - run: |
+        run: |
           go install src.techknowlogick.com/xgo@latest
           mkdir build
           cd build
