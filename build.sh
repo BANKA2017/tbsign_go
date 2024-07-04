@@ -1,9 +1,9 @@
 #!/bin/bash
+flag=$(pwd)
+export NUXT_BASE_PATH="/api"
 
 mkdir tbsign_build
 cd tbsign_build
-flag=$(pwd)
-export NUXT_BASE_PATH="/api"
 git clone https://github.com/BANKA2017/tbsign_go_fe
 git clone https://github.com/BANKA2017/tbsign_go
 
@@ -12,7 +12,7 @@ cd tbsign_go_fe
 yarn install
 yarn run generate
 unset NUXT_BASE_PATH
-cd $flag
+cd $flag/tbsign_build
 
 # be
 cd tbsign_go
