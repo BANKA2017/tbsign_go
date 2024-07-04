@@ -44,7 +44,7 @@ type UserInfo struct {
 	LastLevel        string         `json:"last_level,omitempty"`
 }
 
-type ForumListResponse struct {
+type WebForumListResponse struct {
 	Data struct {
 		LikeForum struct {
 			List []struct {
@@ -60,12 +60,12 @@ type ForumListResponse struct {
 				TotalPage int `json:"total_page,omitempty"`
 			} `json:"page,omitempty"`
 		} `json:"like_forum,omitempty"`
-		Tokens struct {
-			BottomBanner          string `json:"bottom_banner,omitempty"`
-			BottomLayer           string `json:"bottom_layer,omitempty"`
-			IndexFooterClientDown string `json:"index_footer_client_down,omitempty"`
-			IndexMessageIcon      string `json:"index_message_icon,omitempty"`
-		} `json:"tokens,omitempty"`
+		// Tokens struct {
+		// 	BottomBanner          string `json:"bottom_banner,omitempty"`
+		// 	BottomLayer           string `json:"bottom_layer,omitempty"`
+		// 	IndexFooterClientDown string `json:"index_footer_client_down,omitempty"`
+		// 	IndexMessageIcon      string `json:"index_message_icon,omitempty"`
+		// } `json:"tokens,omitempty"`
 		// UbsAbtestConfig []struct {
 		// 	Sid string `json:"sid,omitempty"`
 		// } `json:"ubs_abtest_config,omitempty"`
@@ -75,11 +75,11 @@ type ForumListResponse struct {
 			IsLogin int `json:"is_login,omitempty"`
 		} `json:"user_info,omitempty"`
 	} `json:"data,omitempty"`
-	Errmsg     string `json:"errmsg,omitempty"`
-	Errno      int    `json:"errno,omitempty"`
-	Logid      string `json:"logid,omitempty"`
-	ServerTime int    `json:"server_time,omitempty"`
-	Time       string `json:"time,omitempty"`
+	Errmsg string `json:"errmsg,omitempty"`
+	Errno  int    `json:"errno,omitempty"`
+	// Logid      string `json:"logid,omitempty"`
+	// ServerTime int    `json:"server_time,omitempty"`
+	// Time       string `json:"time,omitempty"`
 }
 
 type ForumNameShareResponse struct {

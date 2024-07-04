@@ -185,7 +185,7 @@ func PostSignClient(cookie _type.TypeCookie, kw string, fid int32) (*_type.Clien
 	return &signDecode, err
 }
 
-func GetForumList(cookie _type.TypeCookie, page int64) (*_type.ForumListResponse, error) {
+func GetForumList(cookie _type.TypeCookie, page int64) (*_type.WebForumListResponse, error) {
 	headersMap := map[string]string{
 		"Cookie": "BDUSS=" + cookie.Bduss + ";STOKEN=" + cookie.Stoken,
 	}
@@ -195,7 +195,7 @@ func GetForumList(cookie _type.TypeCookie, page int64) (*_type.ForumListResponse
 		return nil, err
 	}
 
-	var forumListDecode _type.ForumListResponse
+	var forumListDecode _type.WebForumListResponse
 	err = JsonDecode(forumListResponse, &forumListDecode)
 	return &forumListDecode, err
 }

@@ -63,12 +63,22 @@ func ScanTiebaByPid(pid int32) {
 		if pn > int64(response.Data.LikeForum.Page.TotalPage) {
 			break
 		}
+
+		// 30 * 200 -> 6000 >> 3000
+		// avoid loop
+		if pn > 20 {
+			break
+		}
 	}
 
 	if len(wholeTiebaList) != len(localTiebaFidList) {
-		delList := []int32{}
+		wholeTiebaFidList := []int32{}
 		for _, v := range wholeTiebaList {
-			if !slices.Contains(localTiebaFidList, int(v.Fid)) {
+			wholeTiebaFidList = append(wholeTiebaFidList, v.Fid)
+		}
+		delList := []int32{}
+		for _, v := range *localTiebaList {
+			if !slices.Contains(wholeTiebaFidList, v.Fid) && v.Fid != 0 {
 				delList = append(delList, v.ID)
 			}
 		}
