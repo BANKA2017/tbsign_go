@@ -18,13 +18,41 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@master
-      
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          check-latest: true
+      - run: go install src.techknowlogick.com/xgo@latest
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+      - name: Frontend
+        - run: |
+          git clone https://github.com/BANKA2017/tbsign_go_fe
+          cd tbsign_go_fe
+          yarn install
+          yarn run generate
+          rm -r assets/dist
+          cp -R .output/public/ ../assets/dist
       - name: Build
-        run: bash build.sh
+        - run: |
+          mkdir build
+          cd build
+          commit_hash=$(git rev-parse HEAD)
+          short_commit_hash=${commit_hash:0:7}
+          build_prefix="tbsign_go.$(date +'%+4Y%m%d').$short_commit_hash"
+          builtAt="$(date +'%+4Y-%m-%d %H:%M:%S %z')"
+          goVersion=$(go version | sed 's/go version //')
+          gitCommit=$(git rev-parse HEAD)
+          ldflags="\
+          -X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$builtAt' \
+          -X 'github.com/BANKA2017/tbsign_go/share.BuildVersion=$goVersion' \
+          -X 'github.com/BANKA2017/tbsign_go/share.BuildGitHash=$gitCommit' \
+          "
+          $HOME/go/bin/xgo -out "$build_prefix" -ldflags "$ldflags" --targets=linux/amd64,linux/arm64,windows/amd64,windows/arm64,darwin/amd64,darwin/arm64 ../
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: 'tbsign_go.zip'
-          path: tbsign_go
-      - name: Clean
-        run: rm -r tbsign_build
+          name: 'tbsign_go.all'
+          path: build/*
