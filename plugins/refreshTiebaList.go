@@ -51,11 +51,11 @@ func ScanTiebaByPid(pid int32) {
 				Tieba: tiebaInfo.ForumName,
 			}
 
-			wholeTiebaFidList = append(wholeTiebaFidList, tmpTcTieba.Fid)
 			if !slices.Contains(localTiebaFidList, tiebaInfo.ForumID) && !slices.Contains(wholeTiebaFidList, tmpTcTieba.Fid) {
 				tiebaList = append(tiebaList, &tmpTcTieba)
 				wholeTiebaList = append(wholeTiebaList, tmpTcTieba)
 			}
+			wholeTiebaFidList = append(wholeTiebaFidList, tmpTcTieba.Fid)
 		}
 		if len(tiebaList) > 0 {
 			err := _function.GormDB.W.Create(tiebaList).Error
@@ -99,11 +99,11 @@ func ScanTiebaByPid(pid int32) {
 					Tieba: tiebaInfo.Name,
 				}
 
-				wholeTiebaFidList = append(wholeTiebaFidList, tmpTcTieba.Fid)
 				if !slices.Contains(localTiebaFidList, int(numFID)) && !slices.Contains(wholeTiebaFidList, tmpTcTieba.Fid) {
 					tiebaList = append(tiebaList, &tmpTcTieba)
 					wholeTiebaList = append(wholeTiebaList, tmpTcTieba)
 				}
+				wholeTiebaFidList = append(wholeTiebaFidList, tmpTcTieba.Fid)
 			}
 			if len(tiebaList) > 0 {
 				err := _function.GormDB.W.Create(tiebaList)
