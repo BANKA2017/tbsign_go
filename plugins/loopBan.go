@@ -51,7 +51,7 @@ func PostClientBan(cookie _type.TypeCookie, fid int32, portrait string, day int3
 		"word":        "-",
 		"z":           "6",
 	}
-	_function.AddSign(&form)
+	_function.AddSign(&form,"4")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {

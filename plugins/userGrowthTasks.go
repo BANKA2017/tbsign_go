@@ -116,7 +116,7 @@ func PostGrowthTaskByClient(cookie _type.TypeCookie, task string) (*UserGrowthTa
 		"cuid":     "-",
 		"tbs":      cookie.Tbs,
 	}
-	_function.AddSign(&form)
+	_function.AddSign(&form, "4")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {

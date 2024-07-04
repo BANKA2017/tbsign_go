@@ -46,7 +46,7 @@ var EmptyHeaders = map[string]string{}
 
 const BrowserUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
 
-const ClientVersion = "12.57.4.2"
+const ClientVersion = "12.58.1.0"
 const ClientUserAgent = "tieba/" + ClientVersion
 
 func Fetch(_url string, _method string, _body []byte, _headers map[string]string) ([]byte, error) {
@@ -107,9 +107,12 @@ func MultipartBodyBuilder(data []byte) ([]byte, string, error) {
 	return body.Bytes(), writer.FormDataContentType(), nil
 }
 
-func AddSign(form *map[string]string) {
-	(*form)["_client_version"] = "12.22.1.0"
-	(*form)["_client_type"] = "4"
+func AddSign(form *map[string]string, client_type string) {
+	if client_type == "" {
+		client_type = "4"
+	}
+	(*form)["_client_version"] = ClientVersion
+	(*form)["_client_type"] = client_type
 
 	var formKeys []string
 	for k := range *form {
@@ -162,7 +165,7 @@ func PostSignClient(cookie _type.TypeCookie, kw string, fid int32) (*_type.Clien
 	form["fid"] = strconv.Itoa(int(fid))
 	form["kw"] = kw
 	form["tbs"] = cookie.Tbs
-	AddSign(&form)
+	AddSign(&form, "4")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
@@ -174,7 +177,7 @@ func PostSignClient(cookie _type.TypeCookie, kw string, fid int32) (*_type.Clien
 	}
 
 	//log.Println(_body.Encode() + "&sign=" + form["sign"])
-	signResponse, err := Fetch("http://c.tieba.baidu.com/c/c/forum/sign", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), headersMap)
+	signResponse, err := Fetch("https://tiebac.baidu.com/c/c/forum/sign", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), headersMap)
 
 	if err != nil {
 		return nil, err
@@ -185,7 +188,7 @@ func PostSignClient(cookie _type.TypeCookie, kw string, fid int32) (*_type.Clien
 	return &signDecode, err
 }
 
-func GetForumList(cookie _type.TypeCookie, page int64) (*_type.WebForumListResponse, error) {
+func GetWebForumList(cookie _type.TypeCookie, page int64) (*_type.WebForumListResponse, error) {
 	headersMap := map[string]string{
 		"Cookie": "BDUSS=" + cookie.Bduss + ";STOKEN=" + cookie.Stoken,
 	}
@@ -196,6 +199,37 @@ func GetForumList(cookie _type.TypeCookie, page int64) (*_type.WebForumListRespo
 	}
 
 	var forumListDecode _type.WebForumListResponse
+	err = JsonDecode(forumListResponse, &forumListDecode)
+	return &forumListDecode, err
+}
+
+func GetForumList(cookie _type.TypeCookie, uid string, page int64) (*_type.ForumListResponse, error) {
+	var form = make(map[string]string)
+	form["BDUSS"] = cookie.Bduss
+	form["stoken"] = cookie.Stoken
+	form["friend_uid"] = uid
+	form["page_no"] = strconv.Itoa(int(page))
+	form["page_size"] = "200"
+	form["tbs"] = cookie.Tbs
+
+	AddSign(&form, "2")
+	_body := url.Values{}
+	for k, v := range form {
+		if k != "sign" {
+			_body.Set(k, v)
+		}
+	}
+
+	headersMap := map[string]string{
+		"Cookie": "BDUSS=" + cookie.Bduss + ";STOKEN=" + cookie.Stoken,
+	}
+	forumListResponse, err := Fetch("https://tiebac.baidu.com/c/f/forum/like", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), headersMap)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var forumListDecode _type.ForumListResponse
 	err = JsonDecode(forumListResponse, &forumListDecode)
 	return &forumListDecode, err
 }
@@ -219,7 +253,7 @@ func GetForumNameShare(name string) (*_type.ForumNameShareResponse, error) {
 func GetBaiduUserInfo(cookie _type.TypeCookie) (*_type.BaiduUserInfoResponse, error) {
 	var form = make(map[string]string)
 	form["bdusstoken"] = cookie.Bduss + "|null" //why '|null' ?
-	AddSign(&form)
+	AddSign(&form, "4")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
@@ -304,7 +338,7 @@ func PostSync(cookie _type.TypeCookie) (any, error) {
 		"BDUSS": cookie.Bduss,
 		"cuid":  "-", //TODO cuid
 	}
-	AddSign(&form)
+	AddSign(&form, "4")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {

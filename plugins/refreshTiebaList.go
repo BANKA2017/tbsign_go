@@ -26,10 +26,11 @@ func ScanTiebaByPid(pid int32) {
 	var pn int64 = 1
 
 	var wholeTiebaList = []model.TcTieba{}
+	wholeTiebaFidList := []int32{}
 
 	for {
 		//log.Println(pid, pn)
-		response, err := _function.GetForumList(account, pn)
+		response, err := _function.GetWebForumList(account, pn)
 		//log.Println(rc, err)
 		if err != nil {
 			log.Println("scanTiebaByPid:", err)
@@ -49,9 +50,11 @@ func ScanTiebaByPid(pid int32) {
 				UID:   account.UID,
 				Tieba: tiebaInfo.ForumName,
 			}
-			wholeTiebaList = append(wholeTiebaList, tmpTcTieba)
-			if !slices.Contains(localTiebaFidList, tiebaInfo.ForumID) {
+
+			if !slices.Contains(localTiebaFidList, tiebaInfo.ForumID) && !slices.Contains(wholeTiebaFidList, tmpTcTieba.Fid) {
 				tiebaList = append(tiebaList, &tmpTcTieba)
+				wholeTiebaList = append(wholeTiebaList, tmpTcTieba)
+				wholeTiebaFidList = append(wholeTiebaFidList, tmpTcTieba.Fid)
 			}
 		}
 		if len(tiebaList) > 0 {
@@ -60,22 +63,60 @@ func ScanTiebaByPid(pid int32) {
 		}
 
 		pn++
-		if pn > int64(response.Data.LikeForum.Page.TotalPage) {
-			break
-		}
-
-		// 30 * 200 -> 6000 >> 3000
+		// 30 * 200 -> 6000
 		// avoid loop
-		if pn > 20 {
+		if pn > int64(response.Data.LikeForum.Page.TotalPage) || pn > 20 {
 			break
 		}
 	}
 
-	if len(wholeTiebaList) != len(localTiebaFidList) {
-		wholeTiebaFidList := []int32{}
-		for _, v := range wholeTiebaList {
-			wholeTiebaFidList = append(wholeTiebaFidList, v.Fid)
+	accountInfo, err := _function.GetBaiduUserInfo(account)
+	if err == nil {
+		pn = 1
+		for {
+			response, err := _function.GetForumList(account, accountInfo.User.ID, pn)
+			//log.Println(rc, err)
+			if err != nil {
+				log.Println("scanTiebaByPid:", err)
+				break
+			}
+			if response.ErrorCode != "0" || len(response.ForumList.NonGconforum) <= 0 {
+				break
+			}
+			var tiebaList = []*model.TcTieba{}
+			for _, tiebaInfo := range response.ForumList.NonGconforum {
+				//log.Println(tiebaInfo)
+				//合并或被封禁的贴吧会怎样?
+
+				numFID, _ := strconv.ParseInt(tiebaInfo.ID, 10, 64)
+
+				tmpTcTieba := model.TcTieba{
+					Pid:   pid,
+					Fid:   int32(numFID),
+					UID:   account.UID,
+					Tieba: tiebaInfo.Name,
+				}
+				if !slices.Contains(localTiebaFidList, int(numFID)) && !slices.Contains(wholeTiebaFidList, tmpTcTieba.Fid) {
+					tiebaList = append(tiebaList, &tmpTcTieba)
+					wholeTiebaFidList = append(wholeTiebaFidList, tmpTcTieba.Fid)
+					wholeTiebaList = append(wholeTiebaList, tmpTcTieba)
+				}
+			}
+			if len(tiebaList) > 0 {
+				err := _function.GormDB.W.Create(tiebaList)
+				log.Println("scanTiebaByPid:", err)
+			}
+
+			pn++
+			// 30 * 200 -> 6000
+			// avoid loop
+			if response.HasMore == "0" || pn > 20 {
+				break
+			}
 		}
+	}
+
+	if len(wholeTiebaList) != len(localTiebaFidList) {
 		delList := []int32{}
 		for _, v := range *localTiebaList {
 			if !slices.Contains(wholeTiebaFidList, v.Fid) && v.Fid != 0 {
