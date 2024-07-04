@@ -29,7 +29,7 @@ var PreCheckWhiteListWithoutFE = []string{
 	"/robots.txt",
 	"/passport/login",
 	"/passport/signup",
-	"/passport/reset_password",
+	"/passport/reset/password",
 	"/tools/userinfo/tieba_uid/:tiebauid",
 	"/tools/userinfo/panel/:query_type/:user_value",
 	"/tools/tieba/fname_to_fid/:fname",
@@ -38,7 +38,7 @@ var PreCheckWhiteListWithoutFE = []string{
 var PreCheckWhiteListWithFE = []string{
 	"/api/passport/login",
 	"/api/passport/signup",
-	"/api/passport/reset_password",
+	"/api/passport/reset/password",
 	"/api/tools/userinfo/tieba_uid/:tiebauid",
 	"/api/tools/userinfo/panel/:query_type/:user_value",
 	"/api/tools/tieba/fname_to_fid/:fname",
