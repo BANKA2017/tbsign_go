@@ -40,7 +40,7 @@ jobs:
           ldflags="\
           -X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$builtAt' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildVersion=$goVersion' \
-          -X 'github.com/BANKA2017/tbsign_go/share.BuildGitHash=$gitCommit' \
+          -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$gitCommit' \
           "
           $HOME/go/bin/xgo -out "$build_prefix" -ldflags "$ldflags" --targets=linux/amd64,linux/arm64,windows/amd64,windows/arm64,darwin/amd64,darwin/arm64 ../
       - name: Upload package

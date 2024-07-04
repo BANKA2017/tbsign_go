@@ -7,6 +7,7 @@ import (
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
+	"github.com/BANKA2017/tbsign_go/share"
 	"github.com/labstack/echo/v4"
 )
 
@@ -32,7 +33,12 @@ func GetServerStatus(c echo.Context) error {
 		"goroutine": runtime.NumGoroutine(),
 		"goversion": fmt.Sprintf("%s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH),
 		//"system":          fmt.Sprintf("cpu:%d, mem: [Alloc %d / Sys %d] MiB", runtime.NumCPU(), memstats.Alloc/1024/1024, memstats.Sys/1024/1024),
-		"variables":       c.Get("variables"),
+		"variables": c.Get("variables"),
+		"build": map[string]string{
+			"date":        share.BuiltAt,
+			"version":     share.BuildVersion,
+			"commit_hash": share.BuildGitCommitHash,
+		},
 		"cron_sign_again": _function.GetOption("cron_sign_again"),
 		"compat":          _function.GetOption("core_version"),
 		"pure_go":         _function.GetOption("go_ver") == "1",
