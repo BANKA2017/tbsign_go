@@ -92,7 +92,9 @@ func PluginForumSupportUpdateSettings(c echo.Context) error {
 		}
 	}
 
-	_function.GormDB.W.Create(&addRankList)
+	if len(addRankList) > 0 {
+		_function.GormDB.W.Create(&addRankList)
+	}
 
 	// del
 	for _, v := range rankList {

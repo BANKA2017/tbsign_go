@@ -1,6 +1,7 @@
 package _api
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"regexp"
@@ -12,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/leeqvip/gophp"
 	"golang.org/x/exp/slices"
+	"gorm.io/gorm"
 )
 
 type SiteAccountsResponse struct {
@@ -250,7 +252,7 @@ func AdminModifyAccountInfo(c echo.Context) error {
 func AdminDeleteTiebaAccountList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	targetUID := c.QueryParams().Get("uid")
+	targetUID := c.Param("uid")
 
 	if targetUID == "" {
 		return c.JSON(http.StatusOK, apiTemplate(404, "用户不存在", false, "tbsign"))
@@ -265,8 +267,8 @@ func AdminDeleteTiebaAccountList(c echo.Context) error {
 
 	// exists?
 	var accountInfo model.TcUser
-	_function.GormDB.R.Model([]model.TcUser{}).Where("id = ?", targetUID).Find(&accountInfo)
-	if accountInfo.ID == 0 {
+	err = _function.GormDB.R.Model([]model.TcUser{}).Where("id = ?", targetUID).First(&accountInfo).Error
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
 		return c.JSON(http.StatusOK, apiTemplate(404, "用户不存在", false, "tbsign"))
 	}
 	if accountInfo.Role == "admin" && uid != "1" {
