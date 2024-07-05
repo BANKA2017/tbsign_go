@@ -27,6 +27,7 @@
 | admin_name     |                  | 管理员帐号，仅当 `auto_install` 为 `true` 时会用到   |
 | admin_email    |                  | 管理员邮箱，仅当 `auto_install` 为 `true` 时会用到   |
 | admin_password |                  | 管理员密码，仅当 `auto_install` 为 `true` 时会用到   |
+| no_proxy       | `false`          | 忽略环境变量中的代理配置                             |
 
 示例
 

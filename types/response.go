@@ -180,3 +180,42 @@ type TiebaPanelUserInfoResponse struct {
 		FollowedCount             any    `json:"followed_count,omitempty"`
 	} `json:"data,omitempty"`
 }
+
+type LoginQRCode struct {
+	Imgurl string `json:"imgurl,omitempty"`
+	Errno  int    `json:"errno,omitempty"`
+	Sign   string `json:"sign,omitempty"`
+	//Prompt string `json:"prompt,omitempty"`
+}
+
+type UnicastResponse struct {
+	Errno     int    `json:"errno,omitempty"`
+	ChannelID string `json:"channel_id,omitempty"`
+	ChannelV  string `json:"channel_v,omitempty"`
+}
+
+type UnicastResponseChannelV struct {
+	Status int    `json:"status,omitempty"`
+	V      string `json:"v,omitempty"`
+	U      any    `json:"u,omitempty"`
+}
+
+type WrapUnicastResponse struct {
+	ChannelV *UnicastResponseChannelV `json:"channel_v,omitempty"`
+	UnicastResponse
+}
+
+type LoginResponse struct {
+	Code    string `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+	Data    struct {
+		Session struct {
+			Bduss      string `json:"bduss,omitempty"`
+			StokenList string `json:"stokenList,omitempty"`
+		} `json:"session,omitempty"`
+		User struct {
+			Username    string `json:"username,omitempty"`
+			DisplayName string `json:"displayName,omitempty"`
+		} `json:"user,omitempty"`
+	} `json:"data,omitempty"`
+}

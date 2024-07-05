@@ -11,9 +11,99 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-/**
-* QR login...Maybe not...
- */
+func GetLoginQRCode(c echo.Context) error {
+	qrcode, err := _function.GetLoginQRCode()
+	if err != nil {
+		return c.JSON(http.StatusOK, apiTemplate(500, "获取二维码失败", echoEmptyObject, "tbsign"))
+	}
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", qrcode, "tbsign"))
+}
+
+func GetBDUSS(c echo.Context) error {
+	uid := c.Get("uid").(string)
+	sign := c.FormValue("sign")
+
+	res, err := _function.GetUnicastResponse(sign)
+
+	if err != nil {
+		return c.JSON(http.StatusOK, apiTemplate(500, "获取状态失败", echoEmptyObject, "tbsign"))
+	}
+
+	// tmpBDUSS
+	if res.ChannelV.V == "" {
+		return c.JSON(http.StatusOK, apiTemplate(400, "未确认", echoEmptyObject, "tbsign"))
+	}
+
+	res2, err := _function.GetLoginResponse(res.ChannelV.V)
+
+	if err != nil {
+		return c.JSON(http.StatusOK, apiTemplate(500, "登录失败", echoEmptyObject, "tbsign"))
+	}
+
+	stokenStr := strings.ReplaceAll(res2.Data.Session.StokenList, "&quot;", "\"")
+	var stokenArray []string
+	err = _function.JsonDecode([]byte(stokenStr), &stokenArray)
+	if err != nil || res2.Data.Session.Bduss == "" {
+		return c.JSON(http.StatusOK, apiTemplate(500, "登录失败", echoEmptyObject, "tbsign"))
+	}
+	bduss := res2.Data.Session.Bduss
+
+	stokenKV := make(map[string]string)
+	for _, v := range stokenArray {
+		tmpSplit := strings.Split(v, "#")
+		stokenKV[tmpSplit[0]] = tmpSplit[1]
+	}
+
+	if stoken, ok := stokenKV["tb"]; !ok || stoken == "" {
+		return c.JSON(http.StatusOK, apiTemplate(500, "登录失败", echoEmptyObject, "tbsign"))
+	}
+	stoken := stokenKV["tb"]
+
+	// get tieba account info
+	baiduAccountInfo, err := _function.GetBaiduUserInfo(_type.TypeCookie{Bduss: bduss})
+	if err != nil || baiduAccountInfo.User.Portrait == "" {
+		return c.JSON(http.StatusOK, apiTemplate(404, "无法验证登录状态 BDUSS", echoEmptyObject, "tbsign"))
+	}
+
+	// pre-check
+	var tiebaAccounts []model.TcBaiduid
+	_function.GormDB.R.Where("uid = ? AND portrait = ?", uid, baiduAccountInfo.User.Portrait).Limit(1).Find(&tiebaAccounts)
+
+	if len(tiebaAccounts) > 0 {
+		if tiebaAccounts[0].Bduss != bduss || tiebaAccounts[0].Stoken != stoken {
+			newData := model.TcBaiduid{
+				Bduss:    bduss,
+				Stoken:   stoken,
+				Name:     baiduAccountInfo.User.Name,
+				Portrait: baiduAccountInfo.User.Portrait,
+			}
+			_function.GormDB.W.Model(model.TcBaiduid{}).Where("id = ?", tiebaAccounts[0].ID).Updates(&newData)
+			newData.ID = tiebaAccounts[0].ID
+			newData.UID = tiebaAccounts[0].UID
+			newData.Bduss = ""
+			newData.Stoken = ""
+			return c.JSON(http.StatusOK, apiTemplate(200, "已更新 BDUSS", newData, "tbsign"))
+		} else if tiebaAccounts[0].Bduss == bduss && tiebaAccounts[0].Stoken == stoken {
+			tiebaAccounts[0].Bduss = ""
+			tiebaAccounts[0].Stoken = ""
+			return c.JSON(http.StatusOK, apiTemplate(200, "贴吧账号已存在", tiebaAccounts[0], "tbsign"))
+		}
+	}
+
+	numUID, _ := strconv.ParseInt(uid, 10, 64)
+
+	newAccount := model.TcBaiduid{
+		UID:      int32(numUID),
+		Bduss:    bduss,
+		Stoken:   stoken,
+		Name:     baiduAccountInfo.User.Name,
+		Portrait: baiduAccountInfo.User.Portrait,
+	}
+	_function.GormDB.W.Create(&newAccount)
+	newAccount.Bduss = ""
+	newAccount.Stoken = ""
+	return c.JSON(http.StatusOK, apiTemplate(201, "OK", newAccount, "tbsign"))
+}
 
 func AddTiebaAccount(c echo.Context) error {
 	uid := c.Get("uid").(string)
@@ -77,7 +167,6 @@ func AddTiebaAccount(c echo.Context) error {
 		newAccount.Stoken = ""
 	}
 	return c.JSON(http.StatusOK, apiTemplate(201, "OK", newAccount, "tbsign"))
-
 }
 
 func RemoveTiebaAccount(c echo.Context) error {

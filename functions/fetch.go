@@ -356,3 +356,68 @@ func PostSync(cookie _type.TypeCookie) (any, error) {
 	err = JsonDecode(response, &resp)
 	return &resp, err
 }
+
+func GetLoginQRCode() (*_type.LoginQRCode, error) {
+	response, err := Fetch("https://passport.baidu.com/v2/api/getqrcode?lp=pc", "GET", nil, EmptyHeaders)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var resp _type.LoginQRCode
+	err = JsonDecode(response, &resp)
+	return &resp, err
+}
+
+func GetUnicastResponse(sign string) (*_type.WrapUnicastResponse, error) {
+	callbackName := fmt.Sprintf("tangram_guid_%d", Now.UnixMilli())
+
+	res, err := Fetch(fmt.Sprintf("https://passport.baidu.com/channel/unicast?channel_id=%s&tpl=mn&_sdkFrom=1&callback=%s&apiver=v3", sign, callbackName), "GET", nil, EmptyHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	resStr := res[len(callbackName)+1 : len(res)-2]
+
+	var parsed _type.UnicastResponse
+	err = JsonDecode(resStr, &parsed)
+	if err != nil {
+		return nil, err
+	}
+	if parsed.ChannelV != "" {
+		var ChannelV _type.UnicastResponseChannelV
+		err = JsonDecode([]byte(parsed.ChannelV), &ChannelV)
+		if err != nil {
+			return nil, err
+		}
+		return &_type.WrapUnicastResponse{
+			ChannelV: &ChannelV,
+			UnicastResponse: _type.UnicastResponse{
+				ChannelID: parsed.ChannelID,
+				Errno:     parsed.Errno,
+			},
+		}, nil
+	} else {
+		return &_type.WrapUnicastResponse{
+			UnicastResponse: _type.UnicastResponse{
+				Errno: parsed.Errno,
+			},
+		}, nil
+	}
+}
+
+func GetLoginResponse(tmpBDUSS string) (*_type.LoginResponse, error) {
+	res, err := Fetch(fmt.Sprintf("https://passport.baidu.com/v3/login/main/qrbdusslogin?bduss=%s", tmpBDUSS), "GET", nil, EmptyHeaders)
+	if len(res) <= 2 || err != nil {
+		return nil, err
+	}
+
+	resStr := strings.ReplaceAll(strings.ReplaceAll(string(res), "'", "\""), "\\&", "&")
+
+	var parsed _type.LoginResponse
+	err = JsonDecode([]byte(resStr), &parsed)
+	if err != nil {
+		return nil, err
+	}
+	return &parsed, err
+}

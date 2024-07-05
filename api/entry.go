@@ -62,6 +62,8 @@ func Api(address string, variables ...any) {
 	api.PATCH("/account", AddTiebaAccount)
 	api.DELETE("/account/:pid", RemoveTiebaAccount)
 	api.GET("/account/:pid/status", CheckTiebaAccount)
+	api.GET("/account/qrcode", GetLoginQRCode)
+	api.POST("/account/qrlogin", GetBDUSS)
 
 	// tieba list
 	api.POST("/list/sync", RefreshTiebaList)
