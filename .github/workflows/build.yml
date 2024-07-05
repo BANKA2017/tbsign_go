@@ -22,6 +22,8 @@ jobs:
         run: |
           git clone https://github.com/BANKA2017/tbsign_go_fe
           cd tbsign_go_fe
+          commit_hash=$(git rev-parse HEAD)
+          export NUXT_COMMIT_HASH=$commit_hash
           yarn install
           yarn run generate
           rm -r ../assets/dist
