@@ -166,8 +166,9 @@ func RefreshTiebaListAction() {
 		lastdo, _ := strconv.ParseInt(_function.GetOption("ver4_ref_lastdo"), 10, 64)
 		if _function.Now.Unix() > lastdo+90 {
 			var accounts = &[]model.TcBaiduid{}
-			//TODO account limit per query
-			_function.GormDB.R.Model(&model.TcBaiduid{}).Find(accounts)
+			refID := _function.GetOption("ver4_ref_id")
+			// TODO fix hard limit
+			_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id > ?", refID).Limit(50).Find(accounts)
 			for _, account := range *accounts {
 				ScanTiebaByPid(account.ID)
 				_function.SetOption("ver4_ref_id", strconv.Itoa(int(account.ID)))

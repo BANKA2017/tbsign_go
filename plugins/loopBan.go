@@ -51,7 +51,7 @@ func PostClientBan(cookie _type.TypeCookie, fid int32, portrait string, day int3
 		"word":        "-",
 		"z":           "6",
 	}
-	_function.AddSign(&form,"4")
+	_function.AddSign(&form, "4")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
@@ -131,7 +131,9 @@ func LoopBanAction() {
 	otime := _function.Now.Unix() - 86400
 	var localBanAccountList = &[]model.TcVer4BanList{}
 	subQuery := _function.GormDB.R.Select("uid").Where("name = 'ver4_ban_open' AND value = '1'").Table("tc_users_options")
-	_function.GormDB.R.Model(&model.TcVer4BanList{}).Where("id > ? AND date < ? AND stime < ? AND etime > ? AND uid IN (?)", id, otime, _function.Now.Unix(), _function.Now.Unix(), subQuery).Order("id ASC").Find(&localBanAccountList)
+
+	// TODO fix hard limit
+	_function.GormDB.R.Model(&model.TcVer4BanList{}).Where("id > ? AND date < ? AND stime < ? AND etime > ? AND uid IN (?)", id, otime, _function.Now.Unix(), _function.Now.Unix(), subQuery).Order("id ASC").Limit(50).Find(&localBanAccountList)
 
 	var reasonList = &[]model.TcVer4BanUserset{}
 	_function.GormDB.R.Model(&model.TcVer4BanUserset{}).Find(&reasonList)

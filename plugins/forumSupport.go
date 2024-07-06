@@ -607,7 +607,8 @@ func DoForumSupportAction() {
 	// get list
 	todayBeginning := _function.TodayBeginning() //GMT+8
 	ver4RankLog := &[]model.TcVer4RankLog{}
-	_function.GormDB.R.Model(&model.TcVer4RankLog{}).Where("date < ? AND id > ?", todayBeginning, id).Find(&ver4RankLog)
+	// TODO fix hard limit
+	_function.GormDB.R.Model(&model.TcVer4RankLog{}).Where("date < ? AND id > ?", todayBeginning, id).Limit(50).Find(&ver4RankLog)
 	for _, forumSupportItem := range *ver4RankLog {
 		if _, ok := accountStatusList[forumSupportItem.UID]; !ok {
 			accountStatusList[forumSupportItem.UID] = _function.GetUserOption("ver4_rank_check", strconv.Itoa(int(forumSupportItem.UID)))

@@ -189,7 +189,8 @@ func DoGrowthTasksAction() {
 	// get list
 	todayBeginning := _function.TodayBeginning() //GMT+8
 	kdGrowthTasksUserList := &[]model.TcKdGrowth{}
-	_function.GormDB.R.Model(&model.TcKdGrowth{}).Where("date < ? AND id > ?", todayBeginning, id).Find(&kdGrowthTasksUserList)
+	// TODO fix hard limit
+	_function.GormDB.R.Model(&model.TcKdGrowth{}).Where("date < ? AND id > ?", todayBeginning, id).Limit(50).Find(&kdGrowthTasksUserList)
 	for _, taskUserItem := range *kdGrowthTasksUserList {
 		if _, ok := accountStatusList[taskUserItem.UID]; !ok {
 			accountStatusList[taskUserItem.UID] = _function.GetUserOption("kd_growth_sign_only", strconv.Itoa(int(taskUserItem.UID)))
@@ -354,7 +355,6 @@ func DoGrowthTasksAction() {
 		}
 
 		_function.SetOption("kd_growth_offset", strconv.Itoa(int(taskUserItem.ID)))
-
 	}
 	_function.SetOption("kd_growth_offset", "0")
 }
