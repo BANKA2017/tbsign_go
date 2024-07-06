@@ -18,9 +18,30 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@master
-      - name: Frontend
+      - name: Init
         run: |
           git clone https://github.com/BANKA2017/tbsign_go_fe
+          go install src.techknowlogick.com/xgo@latest
+          go install github.com/mattn/go-sqlite3
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: tbsign_go-${{ matrix.arch }}-docker-images-
+          restore-keys: |
+            tbsign_go-${{ matrix.arch }}-docker-
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
+          cache-dependency-path: tbsign_go_fe/yarn.lock
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+          check-latest: true
+          cache-dependency-path: 'go.sum'
+      - name: Frontend
+        run: |
           cd tbsign_go_fe
           commit_hash=$(git rev-parse HEAD)
           export NUXT_COMMIT_HASH=$commit_hash
@@ -30,7 +51,6 @@ jobs:
           cp -R .output/public/ ../assets/dist
       - name: Backend
         run: |
-          go install src.techknowlogick.com/xgo@latest
           mkdir build
           cd build
           commit_hash=$(git rev-parse HEAD)
