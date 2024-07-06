@@ -165,7 +165,7 @@ func PostSignClient(cookie _type.TypeCookie, kw string, fid int32) (*_type.Clien
 	form["fid"] = strconv.Itoa(int(fid))
 	form["kw"] = kw
 	form["tbs"] = cookie.Tbs
-	AddSign(&form, "4")
+	AddSign(&form, "2")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
