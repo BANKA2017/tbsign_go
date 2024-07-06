@@ -23,13 +23,21 @@ jobs:
           git clone https://github.com/BANKA2017/tbsign_go_fe
           go install src.techknowlogick.com/xgo@latest
           go install github.com/mattn/go-sqlite3
-      - name: Cache Docker layers
+      - name: Restore xgo Image Cache if it exists
+        id: cache-docker-xgo
         uses: actions/cache@v3
         with:
-          path: /var/lib/docker/image/overlay2/
-          key: tbsign_go-${{ matrix.arch }}-docker-images-
-          restore-keys: |
-            tbsign_go-${{ matrix.arch }}-docker-
+          path: ci/cache/docker/xgo
+          key: cache-docker-xgo-1.22.5
+
+      - name: Update xgo Image Cache if cache miss
+        if: steps.cache-docker-xgo.outputs.cache-hit != 'true'
+        run: docker pull techknowlogick/xgo:go-1.22.5 && mkdir -p ci/cache/docker/xgo && docker image save techknowlogick/xgo:go-1.22.5 --output ./ci/cache/docker/xgo/xgo-1.22.5.tar
+
+      - name: Use xgo Image Cache if cache hit
+        if: steps.cache-docker-xgo.outputs.cache-hit == 'true'
+        run: docker image load --input ./ci/cache/docker/xgo/xgo-1.22.5.tar
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
