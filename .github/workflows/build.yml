@@ -50,7 +50,7 @@ jobs:
           cd build
           commit_hash=$(git rev-parse HEAD)
           short_commit_hash=${commit_hash:0:7}
-          fe_commit_hash=$(printenv NUXT_COMMIT_HASH)
+          #fe_commit_hash=$(printenv NUXT_COMMIT_HASH)
           short_fe_commit_hash=${fe_commit_hash:0:7}
           build_prefix="tbsign_go.$(date +'%+4Y%m%d').$short_commit_hash.$short_fe_commit_hash"
           echo "prefix: $build_prefix"
