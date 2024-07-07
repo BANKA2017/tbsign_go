@@ -85,6 +85,6 @@ jobs:
           files: build/*
           prerelease: true
           fail_on_unmatched_files: true
-          tag_name: rolling-release
+          tag_name: ${{ build_prefix }}
           generate_release_notes: true
 
