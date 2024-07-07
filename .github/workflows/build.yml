@@ -19,6 +19,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@master
 
+      - name: Init
+        run: |
+          git clone https://github.com/BANKA2017/tbsign_go_fe
+          go install src.techknowlogick.com/xgo@latest
+          docker pull techknowlogick/xgo:latest
       - uses: actions/setup-go@v5
         with:
           go-version: 'stable'
@@ -29,11 +34,6 @@ jobs:
           node-version: 20
           cache: 'yarn'
           cache-dependency-path: tbsign_go_fe/yarn.lock
-      - name: Init
-        run: |
-          git clone https://github.com/BANKA2017/tbsign_go_fe
-          go install src.techknowlogick.com/xgo@latest
-          docker pull techknowlogick/xgo:latest
 
       - name: Frontend
         run: |
