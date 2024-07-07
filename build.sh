@@ -9,16 +9,30 @@ git clone https://github.com/BANKA2017/tbsign_go
 
 # fe
 cd tbsign_go_fe
+fe_commit_hash=$(git rev-parse HEAD)
+export NUXT_COMMIT_HASH=$fe_commit_hash
 yarn install
 yarn run generate
 unset NUXT_BASE_PATH
+unset NUXT_COMMIT_HASH
 cd $flag/tbsign_build
 
 # be
 cd tbsign_go
 rm -r assets/dist
 cp -R ../tbsign_go_fe/.output/public/ assets/dist
-go build
+commit_hash=$(git rev-parse HEAD)
+builtAt="$(date +'%+4Y-%m-%d %H:%M:%S %z')"
+goRuntime=$(go version | sed 's/go version go[0-9]*\.[0-9]*\.[0-9]* //')
+ldflags="\
+-X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$builtAt' \
+-X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$goRuntime' \
+-X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
+-X 'github.com/BANKA2017/tbsign_go/share.BuildEmbedFrontendGitCommitHash=$fe_commit_hash' \
+"
+go build -ldflags "$ldflags"
 mv tbsign_go $flag
 cd $flag
+
+## clean
 # rm -r tbsign_build

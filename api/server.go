@@ -11,6 +11,12 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+type PluginListContent struct {
+	Name   string `json:"name"`
+	Ver    string `json:"ver"`
+	Status bool   `json:"status"`
+}
+
 func GetServerStatus(c echo.Context) error {
 	//system
 	//var memstats runtime.MemStats
@@ -35,9 +41,10 @@ func GetServerStatus(c echo.Context) error {
 		//"system":          fmt.Sprintf("cpu:%d, mem: [Alloc %d / Sys %d] MiB", runtime.NumCPU(), memstats.Alloc/1024/1024, memstats.Sys/1024/1024),
 		"variables": c.Get("variables"),
 		"build": map[string]string{
-			"date":        share.BuiltAt,
-			"runtime":     share.BuildRuntime,
-			"commit_hash": share.BuildGitCommitHash,
+			"date":                          share.BuiltAt,
+			"runtime":                       share.BuildRuntime,
+			"commit_hash":                   share.BuildGitCommitHash,
+			"embedded_frontend_commit_hash": share.BuildEmbeddedFrontendGitCommitHash,
 		},
 		"cron_sign_again": _function.GetOption("cron_sign_again"),
 		"compat":          _function.GetOption("core_version"),
@@ -49,7 +56,17 @@ func GetServerStatus(c echo.Context) error {
 }
 
 func GetPluginsList(c echo.Context) error {
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", _function.PluginList, "tbsign"))
+	var resPluginList = make(map[string]PluginListContent)
+
+	for k, v := range _function.PluginList {
+		resPluginList[k] = PluginListContent{
+			Name:   v.Name,
+			Ver:    v.Ver,
+			Status: v.Status,
+		}
+	}
+
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resPluginList, "tbsign"))
 }
 
 func GetLoginPageConfig(c echo.Context) error {

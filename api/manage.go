@@ -125,7 +125,7 @@ func UpdateAdminSettings(c echo.Context) error {
 					case "go_forum_sync_policy":
 						if v1[0] == "add_delete" || v1[0] == "add_only" || v1[0] == "" {
 							if v1[0] == "" {
-								settings[vName] = "add_delete"
+								settings[vName] = "add_only"
 							} else {
 								settings[vName] = v1[0]
 							}

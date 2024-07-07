@@ -144,7 +144,7 @@ func ScanTiebaByPid(pid int32) {
 		}
 	}
 
-	if _function.GetOption("go_forum_sync_policy") != "add_only" && len(wholeTiebaFidList) != len(localTiebaFidList) {
+	if (_function.GetOption("go_forum_sync_policy") == "add_delete" || _function.GetOption("go_forum_sync_policy") == "delete_only") && len(wholeTiebaFidList) != len(localTiebaFidList) {
 		delList := []int32{}
 		for _, v := range *localTiebaList {
 			if !slices.Contains(wholeTiebaFidList, v.Fid) && v.Fid != 0 {

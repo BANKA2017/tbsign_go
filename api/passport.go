@@ -289,22 +289,25 @@ func GetAccountInfo(c echo.Context) error {
 	}
 
 	var resp = struct {
-		UID      int32             `json:"uid"`
-		Name     string            `json:"name"`
-		Email    string            `json:"email"`
-		Role     string            `json:"role"`
-		Settings map[string]string `json:"settings"`
+		UID            int32             `json:"uid"`
+		Name           string            `json:"name"`
+		Email          string            `json:"email"`
+		Role           string            `json:"role"`
+		Settings       map[string]string `json:"settings"`
+		SystemSettings map[string]string `json:"system_settings"`
 	}{
-		UID:      accountInfo[0].ID,
-		Name:     accountInfo[0].Name,
-		Email:    accountInfo[0].Email,
-		Role:     accountInfo[0].Role,
-		Settings: make(map[string]string),
+		UID:            accountInfo[0].ID,
+		Name:           accountInfo[0].Name,
+		Email:          accountInfo[0].Email,
+		Role:           accountInfo[0].Role,
+		Settings:       make(map[string]string),
+		SystemSettings: make(map[string]string),
 	}
 
 	for _, v := range accountSettings {
 		resp.Settings[v.Name] = v.Value
 	}
+	resp.SystemSettings["forum_sync_policy"] = _function.GetOption("go_forum_sync_policy")
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resp, "tbsign"))
 }
