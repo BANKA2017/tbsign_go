@@ -150,6 +150,14 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 简单写了个编译脚本，存放在 `build.sh`
 
+### 版本号
+
+格式为 `tbsign_go.<YYYYMMDD>.<BACKEND_COMMIT_HASH[0:7]>.<FRONTEND_COMMIT_HASH[0:7]>.<OS>-<ARCH>` ，如果是用于 Windows 系统的二进制还会有 `.exe` 拓展名
+
+官方提供的二进制包含 linux/amd64, linux/arm64, windows/amd64, darwin/amd64, darwin/arm64 五个版本，使用 [xgo](https://github.com/techknowlogick/xgo) 进行交叉编译，编译触发方式为手动触发
+
+其它系统请自行编译运行
+
 ## 已知问题
 
 - [x] 不支持限制单次签到贴吧总数，会一次性全部签完

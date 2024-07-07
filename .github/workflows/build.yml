@@ -66,14 +66,27 @@ jobs:
 
       - name: Rename
         run: |
-          mv "build/${build_prefix}-windows-4.0-amd64.exe" "build/${build_prefix}-windows-amd64.exe"
-          # mv "build/${build_prefix}-linux-arm64" "build/${build_prefix}-"
-          # mv "build/${build_prefix}-linux-amd64" "build/${build_prefix}-"
-          mv "build/${build_prefix}-darwin-10.12-arm64" "build/${build_prefix}-darwin-arm64"
-          mv "build/${build_prefix}-darwin-10.12-amd64" "build/${build_prefix}-darwin-amd64"
+          mv "build/${build_prefix}-windows-4.0-amd64.exe" "build/${build_prefix}.windows-amd64.exe"
+          mv "build/${build_prefix}-linux-arm64" "build/${build_prefix}.linux-arm64"
+          mv "build/${build_prefix}-linux-amd64" "build/${build_prefix}.linux-amd64"
+          mv "build/${build_prefix}-darwin-10.12-arm64" "build/${build_prefix}.darwin-arm64"
+          mv "build/${build_prefix}-darwin-10.12-amd64" "build/${build_prefix}.darwin-amd64"
 
-      - name: Upload package
-        uses: actions/upload-artifact@v4
+      # - name: Upload package
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: 'tbsign_go.all'
+      #     path: build/*
+      - name: Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: 'tbsign_go.all'
-          path: build/*
+          body: 这是一个测试版本，但也能用
+          files: |
+            "build/${build_prefix}.windows-amd64.exe"
+            "build/${build_prefix}.linux-arm64"
+            "build/${build_prefix}.linux-amd64"
+            "build/${build_prefix}.darwin-arm64"
+            "build/${build_prefix}.darwin-amd64"
+          prerelease: true
+          fail_on_unmatched_files: true
+
