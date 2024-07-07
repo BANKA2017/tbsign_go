@@ -50,8 +50,11 @@ jobs:
           cd build
           commit_hash=$(git rev-parse HEAD)
           short_commit_hash=${commit_hash:0:7}
+          fe_commit_hash=$(printenv NUXT_COMMIT_HASH)
           short_fe_commit_hash=${fe_commit_hash:0:7}
           build_prefix="tbsign_go.$(date +'%+4Y%m%d').$short_commit_hash.$short_fe_commit_hash"
+          echo "prefix: $build_prefix"
+          export build_prefix=$build_prefix
           builtAt="$(date +'%+4Y-%m-%d %H:%M:%S %z')"
           goRuntime=$(go version | sed 's/go version go[0-9]*\.[0-9]*\.[0-9]* //')
           ldflags="\
@@ -64,6 +67,7 @@ jobs:
 
       - name: Rename
         run: |
+          build_prefix=$(printenv build_prefix)
           mv "build/$build_prefix-windows-4.0-amd64.exe" "build/$build_prefix-windows-amd64.exe"
           # mv "build/$build_prefix-linux-arm64" "build/$build_prefix-"
           # mv "build/$build_prefix-linux-amd64" "build/$build_prefix-"
