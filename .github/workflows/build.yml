@@ -80,12 +80,7 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            "build/${build_prefix}.windows-amd64.exe"
-            "build/${build_prefix}.linux-arm64"
-            "build/${build_prefix}.linux-amd64"
-            "build/${build_prefix}.darwin-arm64"
-            "build/${build_prefix}.darwin-amd64"
+          files: build/*
           prerelease: true
           fail_on_unmatched_files: true
           tag_name: rolling-release
