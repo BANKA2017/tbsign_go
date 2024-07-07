@@ -66,13 +66,22 @@ jobs:
           "
           $HOME/go/bin/xgo -out "$build_prefix" -ldflags "$ldflags" --targets=linux/amd64,linux/arm64,windows/amd64,darwin/amd64,darwin/arm64 ../
 
-      - name: Rename
+      - name: Rename & SHA-256
         run: |
           mv "build/${build_prefix}-windows-4.0-amd64.exe" "build/${build_prefix}.windows-amd64.exe"
+          echo "$(sha256sum build/${build_prefix}.windows-amd64.exe | awk '{print $1}')" >> "build/${build_prefix}.windows-amd64.exe.sha256"
+
           mv "build/${build_prefix}-linux-arm64" "build/${build_prefix}.linux-arm64"
+          echo "$(sha256sum build/${build_prefix}.linux-arm64 | awk '{print $1}')" >> "build/${build_prefix}.linux-arm64.sha256"
+
           mv "build/${build_prefix}-linux-amd64" "build/${build_prefix}.linux-amd64"
+          echo "$(sha256sum build/${build_prefix}.linux-amd64 | awk '{print $1}')" >> "build/${build_prefix}.linux-amd64.sha256"
+
           mv "build/${build_prefix}-darwin-10.12-arm64" "build/${build_prefix}.darwin-arm64"
+          echo "$(sha256sum build/${build_prefix}.darwin-arm64 | awk '{print $1}')" >> "build/${build_prefix}.darwin-arm64.sha256"
+
           mv "build/${build_prefix}-darwin-10.12-amd64" "build/${build_prefix}.darwin-amd64"
+          echo "$(sha256sum build/${build_prefix}.darwin-amd64 | awk '{print $1}')" >> "build/${build_prefix}.darwin-amd64.sha256"
 
       # - name: Upload package
       #   uses: actions/upload-artifact@v4
