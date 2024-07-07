@@ -62,7 +62,7 @@ jobs:
           "
           $HOME/go/bin/xgo -out "$build_prefix" -ldflags "$ldflags" --targets=linux/amd64,linux/arm64,windows/amd64,darwin/amd64,darwin/arm64 ../
 
-      - Rename
+      - name: Rename
         run: |
           mv "build/$build_prefix-windows-4.0-amd64.exe" "build/$build_prefix-windows-amd64.exe"
           # mv "build/$build_prefix-linux-arm64" "build/$build_prefix-"
