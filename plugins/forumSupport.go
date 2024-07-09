@@ -585,7 +585,7 @@ func PostForumSupport(cookie _type.TypeCookie, fid int32, nid string) (*TypeForu
 		"Cookie": "BDUSS=" + cookie.Bduss,
 	}
 
-	supportResponse, err := _function.Fetch("http://tieba.baidu.com/celebrity/submit/support", "POST", []byte(_body.Encode()), headersMap)
+	supportResponse, err := _function.TBFetch("http://tieba.baidu.com/celebrity/submit/support", "POST", []byte(_body.Encode()), headersMap)
 
 	if err != nil {
 		return nil, err

@@ -58,7 +58,7 @@ func PostClientBan(cookie _type.TypeCookie, fid int32, portrait string, day int3
 			_body.Set(k, v)
 		}
 	}
-	banResponse, err := _function.Fetch("http://c.tieba.baidu.com/c/c/bawu/commitprison", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), _function.EmptyHeaders)
+	banResponse, err := _function.TBFetch("http://c.tieba.baidu.com/c/c/bawu/commitprison", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), _function.EmptyHeaders)
 
 	if err != nil {
 		return nil, err
@@ -86,7 +86,7 @@ func GetManagerInfo(fid uint64) (*tbpb.GetBawuInfoResIdl_DataRes, error) {
 		return nil, err
 	}
 
-	resp, err := _function.Fetch("http://tiebac.baidu.com/c/f/forum/getBawuInfo?cmd=301007", "POST", body, map[string]string{
+	resp, err := _function.TBFetch("http://tiebac.baidu.com/c/f/forum/getBawuInfo?cmd=301007", "POST", body, map[string]string{
 		"Content-Type":   contentType,
 		"x_bd_data_type": "protobuf",
 	})

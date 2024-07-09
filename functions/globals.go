@@ -135,3 +135,11 @@ func TodayBeginning() int64 {
 	}
 	return Now.Unix() - Now.Unix()%86400 + 86400 - 8*3600
 }
+
+func VariableWrapper[T any](anyValue T) T {
+	return anyValue
+}
+
+func VariablePtrWrapper[T any](anyValue T) *T {
+	return &anyValue
+}

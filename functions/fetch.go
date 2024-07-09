@@ -29,15 +29,15 @@ var IgnoreProxy bool
 
 var Client *http.Client
 
-func InitClient() {
+func InitClient(timeout int) *http.Client {
 	transport := http.DefaultTransport
 
 	if IgnoreProxy {
 		transport.(*http.Transport).Proxy = nil
 	}
 
-	Client = &http.Client{
-		Timeout:   time.Second * 10,
+	return &http.Client{
+		Timeout:   time.Second * time.Duration(timeout),
 		Transport: transport,
 	}
 }
@@ -49,7 +49,14 @@ const BrowserUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 const ClientVersion = "12.58.1.0"
 const ClientUserAgent = "tieba/" + ClientVersion
 
-func Fetch(_url string, _method string, _body []byte, _headers map[string]string) ([]byte, error) {
+func TBFetch(_url string, _method string, _body []byte, _headers map[string]string) ([]byte, error) {
+	if Client == nil {
+		Client = InitClient(10)
+	}
+	return Fetch(_url, _method, _body, _headers, Client)
+}
+
+func Fetch(_url string, _method string, _body []byte, _headers map[string]string, client *http.Client) ([]byte, error) {
 	var body io.Reader
 
 	if strings.ToUpper(_method) == "POST" {
@@ -63,13 +70,15 @@ func Fetch(_url string, _method string, _body []byte, _headers map[string]string
 		return nil, err
 	}
 	req.Header.Set("User-Agent", ClientUserAgent)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if slices.Contains([]string{"POST", "PUT", "PATCH"}, strings.ToUpper(_method)) {
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	}
 
 	for k, v := range _headers {
 		req.Header.Set(k, v)
 	}
 
-	resp, err := Client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		log.Println("fetch:", err)
 		return nil, err
@@ -80,7 +89,7 @@ func Fetch(_url string, _method string, _body []byte, _headers map[string]string
 		log.Println("fetch:", err)
 		return nil, err
 	}
-	//log.Println(string())
+	//log.Println(string(response[:]))
 
 	return response[:], err
 }
@@ -137,7 +146,7 @@ func GetTbs(bduss string) string {
 	headersMap := map[string]string{
 		"Cookie": "BDUSS=" + bduss,
 	}
-	tbsResponse, err := Fetch("http://tieba.baidu.com/dc/common/tbs", "GET", nil, headersMap)
+	tbsResponse, err := TBFetch("http://tieba.baidu.com/dc/common/tbs", "GET", nil, headersMap)
 
 	if err != nil {
 		return ""
@@ -177,7 +186,7 @@ func PostSignClient(cookie _type.TypeCookie, kw string, fid int32) (*_type.Clien
 	}
 
 	//log.Println(_body.Encode() + "&sign=" + form["sign"])
-	signResponse, err := Fetch("https://tiebac.baidu.com/c/c/forum/sign", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), headersMap)
+	signResponse, err := TBFetch("https://tiebac.baidu.com/c/c/forum/sign", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), headersMap)
 
 	if err != nil {
 		return nil, err
@@ -192,7 +201,7 @@ func GetWebForumList(cookie _type.TypeCookie, page int64) (*_type.WebForumListRe
 	headersMap := map[string]string{
 		"Cookie": "BDUSS=" + cookie.Bduss + ";STOKEN=" + cookie.Stoken,
 	}
-	forumListResponse, err := Fetch(fmt.Sprintf("https://tieba.baidu.com/mg/o/getForumHome?st=0&pn=%d&rn=200", page), "GET", nil, headersMap)
+	forumListResponse, err := TBFetch(fmt.Sprintf("https://tieba.baidu.com/mg/o/getForumHome?st=0&pn=%d&rn=200", page), "GET", nil, headersMap)
 
 	if err != nil {
 		return nil, err
@@ -223,7 +232,7 @@ func GetForumList(cookie _type.TypeCookie, uid string, page int64) (*_type.Forum
 	headersMap := map[string]string{
 		"Cookie": "BDUSS=" + cookie.Bduss + ";STOKEN=" + cookie.Stoken,
 	}
-	forumListResponse, err := Fetch("https://tiebac.baidu.com/c/f/forum/like", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), headersMap)
+	forumListResponse, err := TBFetch("https://tiebac.baidu.com/c/f/forum/like", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), headersMap)
 
 	if err != nil {
 		return nil, err
@@ -239,7 +248,7 @@ func GetForumNameShare(name string) (*_type.ForumNameShareResponse, error) {
 	queryStr.Set("ie", "utf-8")
 	queryStr.Set("fname", name)
 
-	forumNameShare, err := Fetch("http://tieba.baidu.com/f/commit/share/fnameShareApi?"+queryStr.Encode(), "GET", nil, EmptyHeaders)
+	forumNameShare, err := TBFetch("http://tieba.baidu.com/f/commit/share/fnameShareApi?"+queryStr.Encode(), "GET", nil, EmptyHeaders)
 
 	if err != nil {
 		return nil, err
@@ -265,7 +274,7 @@ func GetBaiduUserInfo(cookie _type.TypeCookie) (*_type.BaiduUserInfoResponse, er
 	}
 
 	//log.Println(_body.Encode() + "&sign=" + form["sign"])
-	accountInfo, err := Fetch("http://c.tieba.baidu.com/c/s/login", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), headersMap)
+	accountInfo, err := TBFetch("http://c.tieba.baidu.com/c/s/login", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), headersMap)
 
 	if err != nil {
 		return nil, err
@@ -293,7 +302,7 @@ func GetUserInfoByTiebaUID(tbuid string) (*tbpb.GetUserByTiebaUidResIdl_DataRes,
 		return nil, err
 	}
 
-	resp, err := Fetch("http://tiebac.baidu.com/c/u/user/getUserByTiebaUid?cmd=309702", "POST", body, map[string]string{
+	resp, err := TBFetch("http://tiebac.baidu.com/c/u/user/getUserByTiebaUid?cmd=309702", "POST", body, map[string]string{
 		"Content-Type":   contentType,
 		"x_bd_data_type": "protobuf",
 	})
@@ -320,7 +329,7 @@ func GetUserInfoByUsernameOrPortrait(requestType string, value string) (*_type.T
 	} else {
 		return nil, errors.New("invalid type or portrait/username")
 	}
-	resp, err := Fetch("https://tieba.baidu.com/home/get/panel?"+query, "GET", nil, map[string]string{
+	resp, err := TBFetch("https://tieba.baidu.com/home/get/panel?"+query, "GET", nil, map[string]string{
 		"User-Agent": BrowserUserAgent,
 	})
 	if err != nil {
@@ -346,7 +355,7 @@ func PostSync(cookie _type.TypeCookie) (any, error) {
 		}
 	}
 
-	response, err := Fetch("https://tiebac.baidu.com/c/s/sync", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), EmptyHeaders)
+	response, err := TBFetch("https://tiebac.baidu.com/c/s/sync", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), EmptyHeaders)
 
 	if err != nil {
 		return nil, err
@@ -358,7 +367,7 @@ func PostSync(cookie _type.TypeCookie) (any, error) {
 }
 
 func GetLoginQRCode() (*_type.LoginQRCode, error) {
-	response, err := Fetch("https://passport.baidu.com/v2/api/getqrcode?lp=pc", "GET", nil, EmptyHeaders)
+	response, err := TBFetch("https://passport.baidu.com/v2/api/getqrcode?lp=pc", "GET", nil, EmptyHeaders)
 
 	if err != nil {
 		return nil, err
@@ -372,7 +381,7 @@ func GetLoginQRCode() (*_type.LoginQRCode, error) {
 func GetUnicastResponse(sign string) (*_type.WrapUnicastResponse, error) {
 	callbackName := fmt.Sprintf("tangram_guid_%d", Now.UnixMilli())
 
-	res, err := Fetch(fmt.Sprintf("https://passport.baidu.com/channel/unicast?channel_id=%s&tpl=mn&_sdkFrom=1&callback=%s&apiver=v3", sign, callbackName), "GET", nil, EmptyHeaders)
+	res, err := TBFetch(fmt.Sprintf("https://passport.baidu.com/channel/unicast?channel_id=%s&tpl=mn&_sdkFrom=1&callback=%s&apiver=v3", sign, callbackName), "GET", nil, EmptyHeaders)
 	if err != nil {
 		return nil, err
 	}
@@ -407,7 +416,7 @@ func GetUnicastResponse(sign string) (*_type.WrapUnicastResponse, error) {
 }
 
 func GetLoginResponse(tmpBDUSS string) (*_type.LoginResponse, error) {
-	res, err := Fetch(fmt.Sprintf("https://passport.baidu.com/v3/login/main/qrbdusslogin?bduss=%s", tmpBDUSS), "GET", nil, EmptyHeaders)
+	res, err := TBFetch(fmt.Sprintf("https://passport.baidu.com/v3/login/main/qrbdusslogin?bduss=%s", tmpBDUSS), "GET", nil, EmptyHeaders)
 	if len(res) <= 2 || err != nil {
 		return nil, err
 	}

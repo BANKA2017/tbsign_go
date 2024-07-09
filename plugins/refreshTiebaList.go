@@ -39,7 +39,7 @@ func ScanTiebaByPid(pid int32) {
 		if response.Errmsg != "成功" || len(response.Data.LikeForum.List) <= 0 {
 			break
 		}
-		var tiebaList = []*model.TcTieba{}
+		var tiebaList = []*_type.TcTieba{}
 		for _, tiebaInfo := range response.Data.LikeForum.List {
 			if tiebaInfo.ForumID == 0 {
 				continue
@@ -47,11 +47,13 @@ func ScanTiebaByPid(pid int32) {
 			//log.Println(tiebaInfo)
 			//合并或被封禁的贴吧会怎样?
 
-			tmpTcTieba := &model.TcTieba{
-				Pid:   pid,
-				Fid:   int32(tiebaInfo.ForumID),
-				UID:   account.UID,
-				Tieba: tiebaInfo.ForumName,
+			tmpTcTieba := &_type.TcTieba{
+				TcTieba: model.TcTieba{
+					Pid: pid,
+					Fid: int32(tiebaInfo.ForumID),
+					UID: account.UID,
+				},
+				Tieba: &tiebaInfo.ForumName,
 			}
 
 			if !slices.Contains(localTiebaFidList, tiebaInfo.ForumID) && !slices.Contains(wholeTiebaFidList, tmpTcTieba.Fid) {
@@ -105,7 +107,7 @@ func ScanTiebaByPid(pid int32) {
 				break
 			}
 
-			var tiebaList = []*model.TcTieba{}
+			var tiebaList = []*_type.TcTieba{}
 			for _, tiebaInfo := range mergedList {
 				//log.Println(tiebaInfo)
 				//合并或被封禁的贴吧会怎样?
@@ -115,11 +117,13 @@ func ScanTiebaByPid(pid int32) {
 					continue
 				}
 
-				tmpTcTieba := &model.TcTieba{
-					Pid:   pid,
-					Fid:   int32(numFID),
-					UID:   account.UID,
-					Tieba: tiebaInfo.Name,
+				tmpTcTieba := &_type.TcTieba{
+					TcTieba: model.TcTieba{
+						Pid: pid,
+						Fid: int32(numFID),
+						UID: account.UID,
+					},
+					Tieba: &tiebaInfo.Name,
 				}
 
 				if !slices.Contains(localTiebaFidList, int(numFID)) && !slices.Contains(wholeTiebaFidList, tmpTcTieba.Fid) {

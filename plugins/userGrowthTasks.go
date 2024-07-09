@@ -97,7 +97,7 @@ func PostGrowthTaskByWeb(cookie _type.TypeCookie, task string) (*UserGrowthTasks
 		"Cookie": "BDUSS=" + cookie.Bduss,
 	}
 
-	response, err := _function.Fetch("https://tieba.baidu.com/mo/q/usergrowth/commitUGTaskInfo", "POST", []byte(_body.Encode()), headersMap)
+	response, err := _function.TBFetch("https://tieba.baidu.com/mo/q/usergrowth/commitUGTaskInfo", "POST", []byte(_body.Encode()), headersMap)
 
 	if err != nil {
 		return nil, err
@@ -124,7 +124,7 @@ func PostGrowthTaskByClient(cookie _type.TypeCookie, task string) (*UserGrowthTa
 		}
 	}
 
-	response, err := _function.Fetch("https://tiebac.baidu.com/c/c/user/commitUGTaskInfo", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), _function.EmptyHeaders)
+	response, err := _function.TBFetch("https://tiebac.baidu.com/c/c/user/commitUGTaskInfo", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), _function.EmptyHeaders)
 
 	if err != nil {
 		return nil, err
@@ -146,7 +146,7 @@ func PostCollectStamp(cookie _type.TypeCookie, task_id int) (*UserGrowthTaskColl
 		"tbs":      {cookie.Tbs},
 		"cuid":     {"-"},
 	}
-	response, err := _function.Fetch("https://tieba.baidu.com/mo/q/icon/collectStamp", "POST", []byte(_body.Encode()), headersMap)
+	response, err := _function.TBFetch("https://tieba.baidu.com/mo/q/icon/collectStamp", "POST", []byte(_body.Encode()), headersMap)
 
 	if err != nil {
 		return nil, err
@@ -162,7 +162,7 @@ func GetUserGrowthTasksList(cookie _type.TypeCookie) (*UserGrowthTasksListRespon
 		"Cookie": "BDUSS=" + cookie.Bduss,
 	}
 
-	response, err := _function.Fetch("https://tieba.baidu.com/mo/q/usergrowth/showUserGrowth", "GET", nil, headersMap)
+	response, err := _function.TBFetch("https://tieba.baidu.com/mo/q/usergrowth/showUserGrowth", "GET", nil, headersMap)
 
 	if err != nil {
 		return nil, err

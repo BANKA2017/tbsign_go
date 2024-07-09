@@ -175,7 +175,6 @@ func main() {
 	}
 
 	// init
-	_function.InitClient()
 	_function.GetOptionsAndPluginList()
 
 	if share.EnableApi {

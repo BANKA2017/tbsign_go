@@ -7,6 +7,7 @@ import (
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
+	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/labstack/echo/v4"
 )
 
@@ -39,15 +40,18 @@ func AddTieba(c echo.Context) error {
 		return c.JSON(http.StatusOK, apiTemplate(200, "贴吧已存在", tiebaItems[0], "tbsign"))
 	}
 
-	newTieba := model.TcTieba{
-		UID:       int32(numUID),
-		Pid:       int32(numPid),
-		Fid:       int32(fid),
-		Tieba:     fname,
-		No:        false,
-		Status:    0,
-		Latest:    0,
-		LastError: "NULL",
+	// TOO STUPID!
+	newTieba := _type.TcTieba{
+		TcTieba: model.TcTieba{
+			UID:    int32(numUID),
+			Pid:    int32(numPid),
+			Fid:    int32(fid),
+			No:     false,
+			Latest: 0,
+		},
+		Tieba:     &fname,
+		Status:    _function.VariablePtrWrapper(int32(0)),
+		LastError: _function.VariablePtrWrapper(""),
 	}
 
 	_function.GormDB.W.Create(&newTieba)

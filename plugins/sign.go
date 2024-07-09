@@ -8,6 +8,7 @@ import (
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
+	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/leeqvip/gophp"
 )
 
@@ -78,18 +79,23 @@ func Dosign(table string, retry bool) (bool, error) {
 			}
 			response, err := _function.PostSignClient(ck, kw, fid)
 
-			if err == nil && response.ErrorCode != "" {
+			if err == nil && response.ErrorCode != "" || response.ErrorCode == AgainErrorId {
 				var errorCode int64 = 0
 				errorMsg := "NULL"
 				if !(response.ErrorCode == "0" || response.ErrorCode == AgainErrorId) {
 					errorCode, _ = strconv.ParseInt(response.ErrorCode, 10, 64)
 					errorMsg = response.ErrorMsg
+				} else if response.ErrorCode == AgainErrorId {
+					errorMsg = ""
 				}
+
 				//TODO better sql update
-				_function.GormDB.W.Model(model.TcTieba{}).Where("id = ?", id).Updates(&model.TcTieba{
-					Latest:    int32(now.Local().Day()),
-					Status:    int32(errorCode),
-					LastError: errorMsg,
+				_function.GormDB.W.Model(model.TcTieba{}).Where("id = ?", id).Updates(&_type.TcTieba{
+					Status:    _function.VariablePtrWrapper(int32(errorCode)),
+					LastError: &errorMsg,
+					TcTieba: model.TcTieba{
+						Latest: int32(now.Local().Day()),
+					},
 				})
 			} else if err != nil {
 				log.Println(err)
