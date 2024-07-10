@@ -154,7 +154,7 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 格式为 `tbsign_go.<YYYYMMDD>.<BACKEND_COMMIT_HASH[0:7]>.<FRONTEND_COMMIT_HASH[0:7]>.<OS>-<ARCH>` ，如果是用于 Windows 系统的二进制还会有 `.exe` 拓展名
 
-官方提供的二进制包含 linux/amd64, linux/arm64, windows/amd64, darwin/amd64, darwin/arm64 五个版本，使用 [xgo](https://github.com/techknowlogick/xgo) 进行交叉编译，编译触发方式为手动触发
+官方提供的二进制包含 linux/amd64, linux/arm64, windows/amd64, darwin/amd64, darwin/arm64 五个版本，使用 [xgo](https://github.com/techknowlogick/xgo) 进行交叉编译，手动触发编译的 Actions 任务
 
 其它系统请自行编译运行
 
@@ -197,8 +197,8 @@ air -- --db_path=tbsign.db --test=true --api=true
 - [ ] 优化 PHP 原版的相关功能
 - [x] 不再考虑 ~~通过读取 `config.php` 取得数据库连接信息~~
 - [x] 自动清理解除绑定的帐号的插件设置
-- [ ] ?打包/Docker/或者别的
-- [ ] ?自动化部署
+- [x] ?打包/Docker/或者别的
+- [x] ?自动化部署
 - [ ] ?支持更多 Gorm 也支持的数据库
 - [ ] ?邮箱以外的推送方式
 - [ ] 完善权限控制
