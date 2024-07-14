@@ -53,7 +53,9 @@ func ScanTiebaByPid(pid int32) {
 					Fid: int32(tiebaInfo.ForumID),
 					UID: account.UID,
 				},
-				Tieba: &tiebaInfo.ForumName,
+				Tieba:     &tiebaInfo.ForumName,
+				Status:    _function.VariablePtrWrapper(int32(0)),
+				LastError: _function.VariablePtrWrapper(""),
 			}
 
 			if !slices.Contains(localTiebaFidList, tiebaInfo.ForumID) && !slices.Contains(wholeTiebaFidList, tmpTcTieba.Fid) {
@@ -123,7 +125,9 @@ func ScanTiebaByPid(pid int32) {
 						Fid: int32(numFID),
 						UID: account.UID,
 					},
-					Tieba: &tiebaInfo.Name,
+					Tieba:     &tiebaInfo.Name,
+					Status:    _function.VariablePtrWrapper(int32(0)),
+					LastError: _function.VariablePtrWrapper(""),
 				}
 
 				if !slices.Contains(localTiebaFidList, int(numFID)) && !slices.Contains(wholeTiebaFidList, tmpTcTieba.Fid) {
