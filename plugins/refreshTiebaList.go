@@ -53,7 +53,7 @@ func ScanTiebaByPid(pid int32) {
 					Fid: int32(tiebaInfo.ForumID),
 					UID: account.UID,
 				},
-				Tieba:     &tiebaInfo.ForumName,
+				Tieba:     _function.VariablePtrWrapper(tiebaInfo.ForumName),
 				Status:    _function.VariablePtrWrapper(int32(0)),
 				LastError: _function.VariablePtrWrapper(""),
 			}
@@ -125,7 +125,7 @@ func ScanTiebaByPid(pid int32) {
 						Fid: int32(numFID),
 						UID: account.UID,
 					},
-					Tieba:     &tiebaInfo.Name,
+					Tieba:     _function.VariablePtrWrapper(tiebaInfo.Name),
 					Status:    _function.VariablePtrWrapper(int32(0)),
 					LastError: _function.VariablePtrWrapper(""),
 				}
@@ -138,6 +138,7 @@ func ScanTiebaByPid(pid int32) {
 					wholeTiebaFidList = append(wholeTiebaFidList, tmpTcTieba.Fid)
 				}
 			}
+
 			if len(tiebaList) > 0 {
 				err := _function.GormDB.W.Create(tiebaList)
 				log.Println("scanTiebaByPid:", err)
@@ -169,21 +170,28 @@ func RefreshTiebaListAction() {
 
 	//activeAfter := 18 //GMT+8 18:00
 
-	day, _ := strconv.ParseInt(_function.GetOption("ver4_ref_day"), 10, 64)
-	if day != int64(_function.Now.Local().Day()) {
-		lastdo, _ := strconv.ParseInt(_function.GetOption("ver4_ref_lastdo"), 10, 64)
-		if _function.Now.Unix() > lastdo+90 {
-			var accounts = &[]model.TcBaiduid{}
-			refID := _function.GetOption("ver4_ref_id")
-			// TODO fix hard limit
-			_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id > ?", refID).Limit(50).Find(accounts)
+	// day, _ := strconv.ParseInt(_function.GetOption("ver4_ref_day"), 10, 64)
+
+	// if day != int64(_function.Now.Local().Day()) {
+	lastdo, _ := strconv.ParseInt(_function.GetOption("ver4_ref_lastdo"), 10, 64)
+	refID := _function.GetOption("ver4_ref_id")
+
+	// 4 hours
+	if refID != "0" || _function.Now.Unix() > lastdo+60*60*4 {
+		var accounts = &[]model.TcBaiduid{}
+		// TODO fix hard limit
+		_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id > ?", refID).Limit(50).Find(accounts)
+
+		if len(*accounts) == 0 {
+			_function.SetOption("ver4_ref_id", "0")
+			_function.SetOption("ver4_ref_day", strconv.Itoa(_function.Now.Local().Day()))
+		} else {
 			for _, account := range *accounts {
 				ScanTiebaByPid(account.ID)
 				_function.SetOption("ver4_ref_id", strconv.Itoa(int(account.ID)))
 				_function.SetOption("ver4_ref_lastdo", strconv.Itoa(int(_function.Now.Unix())))
 			}
-			_function.SetOption("ver4_ref_id", "0")
-			_function.SetOption("ver4_ref_day", strconv.Itoa(_function.Now.Local().Day()))
 		}
 	}
+	// }
 }

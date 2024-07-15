@@ -215,6 +215,10 @@ func main() {
 				go _plugin.DoGrowthTasksAction()
 			}
 
+			if p, ok := _function.PluginList["ver4_ref"]; ok && p.Status {
+				go _plugin.RefreshTiebaListAction()
+			}
+
 			// clean pwd list
 			if len(_function.ResetPwdList) > 0 {
 				for uid, value := range _function.ResetPwdList {
@@ -224,13 +228,7 @@ func main() {
 				}
 			}
 		case <-fourHoursInterval.C:
-			if share.TestMode {
-				continue
-			}
 			_function.GetOptionsAndPluginList()
-			if p, ok := _function.PluginList["ver4_ref"]; ok && p.Status {
-				go _plugin.RefreshTiebaListAction()
-			}
 
 			// clean cookie/fid cache
 			_function.CookieList = make(map[int32]_type.TypeCookie)

@@ -49,7 +49,7 @@ func AddTieba(c echo.Context) error {
 			No:     false,
 			Latest: 0,
 		},
-		Tieba:     &fname,
+		Tieba:     _function.VariablePtrWrapper(fname),
 		Status:    _function.VariablePtrWrapper(int32(0)),
 		LastError: _function.VariablePtrWrapper(""),
 	}
