@@ -79,7 +79,7 @@ func Dosign(table string, retry bool) (bool, error) {
 			}
 			response, err := _function.PostSignClient(ck, kw, fid)
 
-			if err == nil && response.ErrorCode != "" || response.ErrorCode == AgainErrorId {
+			if err == nil && response.ErrorCode != "" {
 				var errorCode int64 = 0
 				errorMsg := "NULL"
 				if !(response.ErrorCode == "0" || response.ErrorCode == AgainErrorId) {
