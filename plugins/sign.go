@@ -79,7 +79,10 @@ func Dosign(table string, retry bool) (bool, error) {
 			}
 			response, err := _function.PostSignClient(ck, kw, fid)
 
-			if err == nil && response.ErrorCode != "" {
+			if err != nil {
+				log.Println(err)
+				hasFailed = true
+			} else if response.ErrorCode != "" {
 				var errorCode int64 = 0
 				errorMsg := "NULL"
 				if !(response.ErrorCode == "0" || response.ErrorCode == AgainErrorId) {
@@ -92,14 +95,11 @@ func Dosign(table string, retry bool) (bool, error) {
 				//TODO better sql update
 				_function.GormDB.W.Model(model.TcTieba{}).Where("id = ?", id).Updates(&_type.TcTieba{
 					Status:    _function.VariablePtrWrapper(int32(errorCode)),
-					LastError: &errorMsg,
+					LastError: _function.VariablePtrWrapper(errorMsg),
 					TcTieba: model.TcTieba{
 						Latest: int32(now.Local().Day()),
 					},
 				})
-			} else if err != nil {
-				log.Println(err)
-				hasFailed = true
 			}
 
 			log.Println("sign:", pid, kw, fid, id, now.Local().Day(), time.Now().UnixMilli()-now.UnixMilli())
