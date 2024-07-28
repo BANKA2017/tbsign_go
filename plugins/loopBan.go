@@ -1,6 +1,8 @@
 package _plugin
 
 import (
+	"bytes"
+	"encoding/binary"
 	"log"
 	"net/url"
 	"strconv"
@@ -80,7 +82,14 @@ func GetManagerInfo(fid uint64) (*tbpb.GetBawuInfoResIdl_DataRes, error) {
 		return nil, err
 	}
 
-	body, contentType, err := _function.MultipartBodyBuilder(pbBytes)
+	pbBytesLen := make([]byte, 8)
+	binary.BigEndian.PutUint64(pbBytesLen, uint64(len(pbBytes)))
+
+	body, contentType, err := _function.MultipartBodyBuilder(map[string]any{}, _function.MultipartBodyBinaryFileType{
+		Fieldname: "data",
+		Filename:  "file",
+		Binary:    bytes.Join([][]byte{[]byte("\n"), _function.RemoveLeadingZeros(pbBytesLen), pbBytes}, []byte{}),
+	})
 
 	if err != nil {
 		return nil, err

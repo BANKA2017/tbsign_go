@@ -62,7 +62,7 @@ func Upgrade(version string) {
 	if !IsOfficialSupport() {
 		fmt.Println("❌ 不支持的版本(", runtime.GOOS, "/", runtime.GOARCH, ")，请下载源码后参考 build.sh 编译运行")
 	} else if share.BuiltAt == "Now" {
-		fmt.Println("❌ 不支持的版本 (开发板)，请参考 build.sh 编译运行")
+		fmt.Println("❌ 不支持的版本 (开发版)，请参考 build.sh 编译运行")
 	}
 
 	//get releases "https://api.github.com/repos/banka2017/tbsign_go/releases?per_page=5"

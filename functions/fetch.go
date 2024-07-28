@@ -8,7 +8,6 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
-	"net/textproto"
 	"strings"
 	"time"
 
@@ -94,22 +93,29 @@ func Fetch(_url string, _method string, _body []byte, _headers map[string]string
 	return response[:], err
 }
 
-func MultipartBodyBuilder(data []byte) ([]byte, string, error) {
-	pbBytesLen := make([]byte, 8)
-	binary.BigEndian.PutUint64(pbBytesLen, uint64(len(data)))
+type MultipartBodyBinaryFileType struct {
+	Fieldname string
+	Filename  string
+	Binary    []byte
+}
 
+func MultipartBodyBuilder(_body map[string]any, files ...MultipartBodyBinaryFileType) ([]byte, string, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	multipartHeader := textproto.MIMEHeader{}
-	multipartHeader.Set("Content-Disposition", "form-data; name=\"data\"; filename=\"file\"")
-	part, err := writer.CreatePart(multipartHeader)
-	if err != nil {
-		return nil, "", err
+	for k, v := range _body {
+		part, _ := writer.CreateFormField(k)
+		part.Write([]byte(v.(string)))
 	}
-	part.Write([]byte("\n"))
-	part.Write(RemoveLeadingZeros(pbBytesLen))
-	part.Write(data)
-	err = writer.Close()
+
+	for _, _file := range files {
+		part, err := writer.CreateFormFile(_file.Fieldname, _file.Filename)
+		if err != nil {
+			return nil, "", err
+		}
+		part.Write(_file.Binary)
+	}
+
+	err := writer.Close()
 	if err != nil {
 		return nil, "", err
 	}
@@ -243,6 +249,35 @@ func GetForumList(cookie _type.TypeCookie, uid string, page int64) (*_type.Forum
 	return &forumListDecode, err
 }
 
+func GetOneKeySignList(cookie _type.TypeCookie) (any, error) {
+	var form = make(map[string]string)
+	form["BDUSS"] = cookie.Bduss
+	form["stoken"] = cookie.Stoken
+	form["tbs"] = cookie.Tbs
+
+	AddSign(&form, "2")
+	_body := url.Values{}
+	for k, v := range form {
+		if k != "sign" {
+			_body.Set(k, v)
+		}
+	}
+
+	headersMap := map[string]string{
+		"Cookie": "BDUSS=" + cookie.Bduss + ";STOKEN=" + cookie.Stoken,
+	}
+	forumListResponse, err := TBFetch("https://tieba.baidu.com/c/f/forum/getforumlist", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), headersMap)
+
+	if err != nil {
+		return nil, err
+	}
+
+	//var forumListDecode _type.ForumListResponse
+	//err = JsonDecode(forumListResponse, &forumListDecode)
+	return string(forumListResponse), err
+
+}
+
 func GetForumNameShare(name string) (*_type.ForumNameShareResponse, error) {
 	queryStr := url.Values{}
 	queryStr.Set("ie", "utf-8")
@@ -296,7 +331,14 @@ func GetUserInfoByTiebaUID(tbuid string) (*tbpb.GetUserByTiebaUidResIdl_DataRes,
 		return nil, err
 	}
 
-	body, contentType, err := MultipartBodyBuilder(pbBytes)
+	pbBytesLen := make([]byte, 8)
+	binary.BigEndian.PutUint64(pbBytesLen, uint64(len(pbBytes)))
+
+	body, contentType, err := MultipartBodyBuilder(map[string]any{}, MultipartBodyBinaryFileType{
+		Fieldname: "data",
+		Filename:  "file",
+		Binary:    bytes.Join([][]byte{[]byte("\n"), RemoveLeadingZeros(pbBytesLen), pbBytes}, []byte{}),
+	})
 
 	if err != nil {
 		return nil, err
