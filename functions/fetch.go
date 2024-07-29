@@ -472,3 +472,21 @@ func GetLoginResponse(tmpBDUSS string) (*_type.LoginResponse, error) {
 	}
 	return &parsed, err
 }
+
+func GetManagerTasks(cookie _type.TypeCookie, fid int64) (*_type.ManagerTasksResponse, error) {
+	headersMap := map[string]string{
+		"Cookie": "BDUSS=" + cookie.Bduss + ";STOKEN=" + cookie.Stoken,
+	}
+
+	res, err := TBFetch(fmt.Sprintf("https://tieba.baidu.com/mo/q/bawu/taskInfo?fid=%d&tbs=%s", fid, cookie.Tbs), "GET", nil, headersMap)
+	if err != nil {
+		return nil, err
+	}
+
+	var parsed _type.ManagerTasksResponse
+	err = JsonDecode(res, &parsed)
+	if err != nil {
+		return nil, err
+	}
+	return &parsed, err
+}

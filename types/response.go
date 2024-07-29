@@ -219,3 +219,17 @@ type LoginResponse struct {
 		} `json:"user,omitempty"`
 	} `json:"data,omitempty"`
 }
+
+type ManagerTasksResponse struct {
+	No    int    `json:"no,omitempty"`
+	Error string `json:"error,omitempty"`
+	Data  struct {
+		BawuTask struct {
+			EndTime  int `json:"end_time,omitempty"`
+			TaskList []struct {
+				TaskName   string `json:"task_name,omitempty"`
+				TaskStatus string `json:"task_status,omitempty"`
+			} `json:"task_list,omitempty"`
+		} `json:"bawu_task,omitempty"`
+	} `json:"data,omitempty"`
+}
