@@ -217,13 +217,15 @@ func UpdateAccountInfo(c echo.Context) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 
 	var resp = struct {
-		UID   int32  `json:"uid"`
-		Name  string `json:"username"`
-		Email string `json:"email"`
+		UID    int32  `json:"uid"`
+		Name   string `json:"username"`
+		Email  string `json:"email"`
+		Avatar string `json:"avatar"`
 	}{
-		UID:   int32(numUID),
-		Name:  username,
-		Email: email,
+		UID:    int32(numUID),
+		Name:   username,
+		Email:  email,
+		Avatar: _function.GetGravatarLink(email),
 	}
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resp, "tbsign"))
@@ -292,6 +294,7 @@ func GetAccountInfo(c echo.Context) error {
 		UID            int32             `json:"uid"`
 		Name           string            `json:"name"`
 		Email          string            `json:"email"`
+		Avatar         string            `json:"avatar"`
 		Role           string            `json:"role"`
 		Settings       map[string]string `json:"settings"`
 		SystemSettings map[string]string `json:"system_settings"`
@@ -299,6 +302,7 @@ func GetAccountInfo(c echo.Context) error {
 		UID:            accountInfo[0].ID,
 		Name:           accountInfo[0].Name,
 		Email:          accountInfo[0].Email,
+		Avatar:         _function.GetGravatarLink(accountInfo[0].Email),
 		Role:           accountInfo[0].Role,
 		Settings:       make(map[string]string),
 		SystemSettings: make(map[string]string),

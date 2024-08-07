@@ -143,3 +143,7 @@ func VariableWrapper[T any](anyValue T) T {
 func VariablePtrWrapper[T any](anyValue T) *T {
 	return &anyValue
 }
+
+func GetGravatarLink(email string) string {
+	return "https://www.gravatar.com/avatar/" + Sha256(email)
+}
