@@ -3,7 +3,9 @@ package _api
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"runtime"
+	"strings"
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
@@ -53,6 +55,22 @@ func GetServerStatus(c echo.Context) error {
 		"pid_count":       PIDCount,
 		"forum_count":     ForumCount,
 	}, "tbsign"))
+}
+
+func UpgradeSystem(c echo.Context) error {
+	version := c.FormValue("version")
+	err := _function.Upgrade(strings.TrimSpace(version))
+
+	if err != nil {
+		return c.JSON(http.StatusOK, apiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
+	}
+
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{}, "tbsign"))
+}
+
+func ShutdownSystem(c echo.Context) error {
+	os.Exit(1)
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{}, "tbsign"))
 }
 
 func GetPluginsList(c echo.Context) error {

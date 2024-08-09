@@ -9,7 +9,9 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"strings"
 
 	"github.com/BANKA2017/tbsign_go/share"
 	"golang.org/x/exp/slices"
@@ -55,14 +57,19 @@ func IsOfficialSupport() bool {
 //TODO upgrade
 
 // version = "20240707.c7990c7.6a6db54"
-func Upgrade(version string) {
+func Upgrade(version string) error {
 	_os := runtime.GOOS
 	_arch := runtime.GOARCH
 
 	if !IsOfficialSupport() {
-		fmt.Println("❌ 不支持的版本(", runtime.GOOS, "/", runtime.GOARCH, ")，请下载源码后参考 build.sh 编译运行")
+		return fmt.Errorf("❌ 不支持的版本(%s/%s)，请下载源码后参考 build.sh 编译运行", runtime.GOOS, runtime.GOARCH)
 	} else if share.BuiltAt == "Now" {
-		fmt.Println("❌ 不支持的版本 (开发版)，请参考 build.sh 编译运行")
+		return fmt.Errorf("❌ 不支持的版本 (开发版)，请参考 build.sh 编译运行")
+	}
+
+	// pre check version
+	if !regexp.MustCompile(`^\d{8}\.[0-9a-f]{7}\.[0-9a-f]{7}$`).MatchString(version) {
+		return fmt.Errorf("❌ 版本号格式不正确")
 	}
 
 	//get releases "https://api.github.com/repos/banka2017/tbsign_go/releases?per_page=5"
@@ -72,13 +79,13 @@ func Upgrade(version string) {
 
 	execPath, err := os.Executable()
 	if err != nil {
-		panic(err)
+		return err
 	}
-	fmt.Println("更新将会替换掉当前运行文件:", execPath)
+	log.Println("更新将会替换掉当前运行文件:", execPath)
 	execDir := filepath.Dir(execPath)
 
 	// Path to the new version temporary file
-	tmpFile := filepath.Join(execDir, "tbsign.tmp")
+	tmpFile := filepath.Join(execDir, "__tmp__tbsign.tmp")
 
 	client := InitClient(0)
 
@@ -87,53 +94,55 @@ func Upgrade(version string) {
 		"User-Agent": BrowserUserAgent,
 	}, client)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	out, err := os.Create(tmpFile)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer out.Close()
 
 	file, err := os.Open(tmpFile)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer file.Close()
 
 	_, err = io.Copy(out, bytes.NewReader(binary))
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	// diff sha256
 	hasher := sha256.New()
 	if _, err := io.Copy(hasher, file); err != nil {
-		panic(err)
+		return err
 	}
 	hashBytes := hasher.Sum(nil)
 	hashString := hex.EncodeToString(hashBytes)
 	s, _ := file.Stat()
-	log.Println(hashString, s.Size())
 
 	sha256Str, err := Fetch(sha256Path, "GET", nil, map[string]string{
 		"User-Agent": BrowserUserAgent,
 	}, client)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	if bytes.Equal(hashBytes, sha256Str) {
+
+	log.Println(s.Size(), strings.TrimSpace(hashString), strings.TrimSpace(string(sha256Str)))
+
+	if strings.TrimSpace(hashString) == strings.TrimSpace(string(sha256Str)) {
 		os.Chmod(tmpFile, 0755)
 		err = os.Rename(tmpFile, execPath)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		fmt.Println("更新完成！")
 	} else {
 		os.Remove(tmpFile)
-		fmt.Println("更新失败！sha256 不正确")
+		return fmt.Errorf("更新失败！sha256 记录不正确")
 	}
-	os.Exit(0)
+	return nil
 }

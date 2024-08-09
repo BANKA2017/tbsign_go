@@ -82,8 +82,11 @@ func Api(address string, variables ...any) {
 	api.DELETE("/admin/account/token/:uid", AdminDeleteAccountToken)
 	api.DELETE("/admin/account/list/:uid", AdminDeleteTiebaAccountList)
 	api.POST("/admin/plugin/:plugin_name/switch", PluginSwitch)
-	api.GET("/admin/server/status", GetServerStatus)
 	api.POST("/admin/service/push/mail/test", SendTestMail)
+	/// server
+	api.GET("/admin/server/status", GetServerStatus)
+	api.POST("/admin/server/upgrade", UpgradeSystem)
+	api.POST("/admin/server/shutdown", ShutdownSystem)
 
 	// plugins
 	// ForumSupport
