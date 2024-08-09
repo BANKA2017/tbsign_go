@@ -13,13 +13,23 @@ import (
 func PluginGrowthTasksGetSettings(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
+	// sign only
 	signOnly := _function.GetUserOption("kd_growth_sign_only", uid)
 	if signOnly == "" {
 		signOnly = "0"
 		_function.SetUserOption("kd_growth_sign_only", signOnly, uid)
 	}
+
+	// no icon tasks
+	noIconTasks := _function.GetUserOption("kd_growth_break_icon_tasks", uid)
+	if noIconTasks == "" {
+		noIconTasks = "0"
+		_function.SetUserOption("kd_growth_break_icon_tasks", noIconTasks, uid)
+	}
+
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
-		"sign_only": signOnly,
+		"sign_only":        signOnly,
+		"break_icon_tasks": noIconTasks,
 	}, "tbsign"))
 }
 
@@ -27,12 +37,10 @@ func PluginGrowthTasksSetSettings(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	signOnly := c.FormValue("sign_only") == "0"
-	newValue := "0"
-	if !signOnly {
-		newValue = "1"
-	}
+	noIconTasks := c.FormValue("break_icon_tasks") != "0"
 
-	_function.SetUserOption("kd_growth_sign_only", newValue, uid)
+	_function.SetUserOption("kd_growth_sign_only", signOnly, uid)
+	_function.SetUserOption("kd_growth_break_icon_tasks", noIconTasks, uid)
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
 		"success": true,

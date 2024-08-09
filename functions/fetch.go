@@ -383,7 +383,8 @@ func GetUserInfoByUsernameOrPortrait(requestType string, value string) (*_type.T
 	return &res, err
 }
 
-// DO NOT ASK ME WHY THE RESPONSE IS `ANY`!!!
+// !!! Calling this api will change the IP location !!!
+// / DO NOT ASK ME WHY THE RESPONSE IS `ANY`!!!
 func PostSync(cookie _type.TypeCookie) (any, error) {
 	form := map[string]string{
 		"BDUSS": cookie.Bduss,

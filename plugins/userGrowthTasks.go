@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
@@ -230,7 +231,7 @@ func DoGrowthTasksAction() {
 						if slices.Contains(activeTasks, taskTypeList.TaskType) {
 							tasksList = append(tasksList, taskTypeList.TaskList...)
 						}
-						if taskTypeList.TaskType == "icon_task" {
+						if taskTypeList.TaskType == "icon_task" && slices.Contains([]string{"0", ""}, _function.GetUserOption("kd_growth_break_icon_tasks", strconv.Itoa(int(taskUserItem.UID)))) {
 							for _, iconTaskItem := range taskTypeList.TaskList {
 								if iconTaskItem.SortStatus == 0 {
 									postCollectStampRES, err := PostCollectStamp(cookie, iconTaskItem.ID)
@@ -347,9 +348,20 @@ func DoGrowthTasksAction() {
 			}
 
 			log.Println("user_tasks:", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, string(jsonResult))
+
+			// previous logs
+			previousLogs := []string{}
+			for i, s := range strings.Split(taskUserItem.Log, "<br/>") {
+				if i <= 28 {
+					previousLogs = append(previousLogs, s)
+				} else {
+					break
+				}
+			}
+
 			_function.GormDB.W.Model(&model.TcKdGrowth{}).Where("id = ?", taskUserItem.ID).Updates(model.TcKdGrowth{
 				Status: string(jsonResult),
-				Log:    _function.AppendStrings("<br/>", _function.Now.Local().Format("2006-01-02"), ": ", tmpLog, taskUserItem.Log),
+				Log:    _function.AppendStrings(_function.Now.Local().Format("2006-01-02"), ": ", tmpLog, taskUserItem.Log, "<br/>", strings.Join(previousLogs, "<br/>")),
 				Date:   int32(_function.Now.Unix()),
 			})
 		}

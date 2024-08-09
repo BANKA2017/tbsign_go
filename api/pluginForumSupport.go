@@ -139,11 +139,7 @@ func PluginForumSupportSwitch(c echo.Context) error {
 	uid := c.Get("uid").(string)
 	status := _function.GetUserOption("ver4_rank_check", uid) != "0"
 
-	newValue := "1"
-	if status {
-		newValue = "0"
-	}
-	err := _function.SetUserOption("ver4_rank_check", newValue, uid)
+	err := _function.SetUserOption("ver4_rank_check", !status, uid)
 
 	if err != nil {
 		log.Println(err)

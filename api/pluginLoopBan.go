@@ -44,11 +44,7 @@ func PluginLoopBanSwitch(c echo.Context) error {
 	uid := c.Get("uid").(string)
 	status := _function.GetUserOption("ver4_ban_open", uid) != "0"
 
-	newValue := "1"
-	if status {
-		newValue = "0"
-	}
-	err := _function.SetUserOption("ver4_ban_open", newValue, uid)
+	err := _function.SetUserOption("ver4_ban_open", !status, uid)
 
 	if err != nil {
 		log.Println(err)

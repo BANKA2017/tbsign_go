@@ -42,11 +42,25 @@ func GetOption(keyName string) string {
 	return Options[keyName]
 }
 
-func SetOption(keyName string, value string) error {
-	err := GormDB.W.Model(&model.TcOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcOption{Name: keyName, Value: value}).Error
+func SetOption[T ~string | ~bool | ~int](keyName string, value T) error {
+	newValue := ""
+	switch any(value).(type) {
+	case string:
+		newValue = any(value).(string)
+	case bool:
+		if any(value).(bool) {
+			newValue = "1"
+		} else {
+			newValue = "0"
+		}
+	case int:
+		newValue = strconv.Itoa(any(value).(int))
+	}
+
+	err := GormDB.W.Model(&model.TcOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcOption{Name: keyName, Value: newValue}).Error
 
 	if err == nil {
-		Options[keyName] = value
+		Options[keyName] = newValue
 	}
 	return err
 }
@@ -62,9 +76,23 @@ func GetUserOption(keyName string, uid string) string {
 	return tmpUserOption.Value
 }
 
-func SetUserOption(keyName string, value string, uid string) error {
+func SetUserOption[T ~string | ~bool | ~int](keyName string, value T, uid string) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
-	return GormDB.W.Model(&model.TcUsersOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcUsersOption{UID: int32(numUID), Name: keyName, Value: value}).Error
+	newValue := ""
+	switch any(value).(type) {
+	case string:
+		newValue = any(value).(string)
+	case bool:
+		if any(value).(bool) {
+			newValue = "1"
+		} else {
+			newValue = "0"
+		}
+	case int:
+		newValue = strconv.Itoa(any(value).(int))
+	}
+
+	return GormDB.W.Model(&model.TcUsersOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcUsersOption{UID: int32(numUID), Name: keyName, Value: newValue}).Error
 }
 
 func DeleteUserOption(keyName string, uid string) error {
