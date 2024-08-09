@@ -30,7 +30,7 @@ func PreCheck(next echo.HandlerFunc) echo.HandlerFunc {
 		c.Set("start_date", _function.Now.UnixNano())
 		method := c.Request().Method
 		path := c.Path()
-		log.Println(method, path, c.QueryString())
+		log.Println(method, path, c.Request().URL.Path, c.QueryString())
 
 		if PreCheckWhiteListExists(path) {
 			return next(c)
