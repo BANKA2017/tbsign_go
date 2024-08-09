@@ -24,7 +24,7 @@ type SiteAccountsResponse struct {
 	T     string `json:"t"`
 }
 
-var settingsFilter = []string{"ann", "system_url", "system_name", "system_keywords", "system_description", "stop_reg", "enable_reg", "yr_reg", "cktime", "sign_mode", "sign_hour", "cron_limit", "sign_sleep", "retry_max", "mail_name", "mail_yourname", "mail_host", "mail_port", "mail_secure", "mail_auth", "mail_smtpname", "mail_smtppw", "ver4_ban_limit", "ver4_ban_break_check", "go_forum_sync_policy"}
+var settingsFilter = []string{"ann", "system_url", "stop_reg", "enable_reg", "yr_reg", "cktime", "sign_mode", "sign_hour", "cron_limit", "sign_sleep", "retry_max", "mail_name", "mail_yourname", "mail_host", "mail_port", "mail_secure", "mail_auth", "mail_smtpname", "mail_smtppw", "ver4_ban_limit", "ver4_ban_break_check", "go_forum_sync_policy"} // "system_name", "system_keywords", "system_description"
 
 func GetAdminSettings(c echo.Context) error {
 	var adminSettings []model.TcOption
