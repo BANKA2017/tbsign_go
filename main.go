@@ -5,14 +5,15 @@ import (
 	"flag"
 	"log"
 	"os"
+	"slices"
 	"time"
 	_ "time/tzdata"
 
 	_api "github.com/BANKA2017/tbsign_go/api"
+	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/BANKA2017/tbsign_go/share"
-	_type "github.com/BANKA2017/tbsign_go/types"
 	"gorm.io/gorm/logger"
 )
 
@@ -116,7 +117,7 @@ func main() {
 	}
 
 	// connect to db
-	dbMode := "mysql"
+	share.DBMode = "mysql"
 	logLevel := logger.Error
 	if share.TestMode {
 		logLevel = logger.Info
@@ -126,7 +127,7 @@ func main() {
 
 	if share.DBPath != "" {
 		// sqlite
-		dbMode = "sqlite"
+		share.DBMode = "sqlite"
 		if _, err := os.Stat(share.DBPath); err != nil && os.IsNotExist(err) {
 			dbExists = false
 			setup = true
@@ -138,7 +139,7 @@ func main() {
 
 		// setup
 		if setup {
-			_function.SetupSystem(dbMode, share.DBPath, "", "", "", "", logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
+			_function.SetupSystem(share.DBMode, share.DBPath, "", "", "", "", logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
 		}
 	} else {
 		// mysql
@@ -165,7 +166,7 @@ func main() {
 
 		// setup
 		if setup {
-			_function.SetupSystem(dbMode, "", share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
+			_function.SetupSystem(share.DBMode, "", share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
 		} else {
 			_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToMySQL(share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, logLevel, "db")
 			if err != nil {
@@ -178,7 +179,7 @@ func main() {
 	_function.GetOptionsAndPluginList()
 
 	if share.EnableApi {
-		go _api.Api(share.Address, "dbmode", dbMode, "testmode", share.TestMode)
+		go _api.Api(share.Address)
 	}
 
 	// Interval
@@ -203,36 +204,45 @@ func main() {
 			_plugin.DoReSignAction()
 
 			// plugins
-			if p, ok := _function.PluginList["ver4_rank"]; ok && p.Status {
-				go _plugin.DoForumSupportAction()
-			}
 
-			if p, ok := _function.PluginList["ver4_ban"]; ok && p.Status {
-				go _plugin.LoopBanAction()
-			}
-
-			if p, ok := _function.PluginList["kd_growth"]; ok && p.Status {
-				go _plugin.DoGrowthTasksAction()
-			}
-
-			if p, ok := _function.PluginList["ver4_ref"]; ok && p.Status {
-				go _plugin.RefreshTiebaListAction()
-			}
-
-			// clean pwd list
-			if len(_function.ResetPwdList) > 0 {
-				for uid, value := range _function.ResetPwdList {
-					if value.Expire < _function.Now.Unix() {
-						delete(_function.ResetPwdList, uid)
+			_function.PluginList.Range(func(key, value any) bool {
+				// TODO better IoC
+				if slices.Contains(_function.PluginNameList, key.(string)) && value.(model.TcPlugin).Status {
+					switch key.(string) {
+					case "ver4_rank":
+						go _plugin.DoForumSupportAction()
+					case "ver4_ban":
+						go _plugin.LoopBanAction()
+					case "kd_growth":
+						go _plugin.DoGrowthTasksAction()
+					case "ver4_ref":
+						go _plugin.RefreshTiebaListAction()
 					}
 				}
-			}
+
+				return true
+			})
+
+			// clean pwd list
+			_function.ResetPwdList.Range(func(uid, value any) bool {
+				if value.(*_function.ResetPwdStruct).Expire < _function.Now.Unix() {
+					_function.ResetPwdList.Delete(uid)
+				}
+				return true
+			})
+
 		case <-fourHoursInterval.C:
 			_function.GetOptionsAndPluginList()
 
 			// clean cookie/fid cache
-			_function.CookieList = make(map[int32]_type.TypeCookie)
-			_function.FidList = make(map[string]int64)
+			_function.CookieList.Range(func(key, value any) bool {
+				_function.CookieList.Delete(key)
+				return true
+			})
+			_function.FidList.Range(func(key, value any) bool {
+				_function.FidList.Delete(key)
+				return true
+			})
 		}
 	}
 }

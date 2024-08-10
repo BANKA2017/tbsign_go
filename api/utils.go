@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
@@ -94,12 +95,12 @@ func verifyAuthorization(authorization string) (string, string) {
 			return "0", "guest"
 		}
 
-		if key, ok := keyBucket[tmpUID]; ok {
+		if key, ok := keyBucket.Load(tmpUID); ok {
 			token, err := jwt.ParseWithClaims(authorization, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
 				if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
 					return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 				}
-				return &key.PublicKey, nil
+				return &key.(*ecdsa.PrivateKey).PublicKey, nil
 			}, jwt.WithIssuedAt(), jwt.WithIssuer("TbSign->"), jwt.WithExpirationRequired())
 			if err != nil || !token.Valid {
 				return "0", "guest"
@@ -130,15 +131,15 @@ func sessionTokenBuilder(uid int32, password string) string {
 	return base64.RawURLEncoding.EncodeToString([]byte(strconv.Itoa(int(uid)) + ":" + hex.EncodeToString(_function.GenHMAC256([]byte(password), []byte(strconv.Itoa(int(uid))+password)))))
 }
 
-var keyBucket = make(map[string]*ecdsa.PrivateKey) // uid -> key
+var keyBucket sync.Map //= make(map[string]*ecdsa.PrivateKey) // uid -> key
 
 func bearerTokenBuilder(uid string, forceUpdate bool) string {
 	var privateKey *ecdsa.PrivateKey
-	if key, ok := keyBucket[uid]; ok && !forceUpdate {
-		privateKey = key
+	if key, ok := keyBucket.Load(uid); ok && !forceUpdate {
+		privateKey = key.(*ecdsa.PrivateKey)
 	} else {
 		privateKey, _ = ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-		keyBucket[uid] = privateKey
+		keyBucket.Store(uid, privateKey)
 	}
 
 	// expire

@@ -235,7 +235,7 @@ func AdminModifyAccountInfo(c echo.Context) error {
 		_function.GormDB.W.Where("uid = ?", accountInfo.ID).Delete(&model.TcVer4BanList{})
 		_function.GormDB.W.Where("uid = ?", accountInfo.ID).Delete(&model.TcVer4RankLog{})
 		_function.GormDB.W.Where("uid = ?", accountInfo.ID).Delete(&model.TcKdGrowth{})
-		delete(keyBucket, strconv.Itoa(int(accountInfo.ID)))
+		keyBucket.Delete(strconv.Itoa(int(accountInfo.ID)))
 	} else {
 		_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", accountInfo.ID).Updates(&newAccountInfo)
 	}
@@ -299,8 +299,7 @@ func AdminDeleteAccountToken(c echo.Context) error {
 		return c.JSON(http.StatusOK, apiTemplate(403, "无法踢自己下线", false, "tbsign"))
 	}
 
-	if _, ok := keyBucket[targetUID]; ok {
-		delete(keyBucket, targetUID)
+	if _, ok := keyBucket.LoadAndDelete(targetUID); ok {
 		return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
 	} else {
 		return c.JSON(http.StatusOK, apiTemplate(404, "用户不在线上", false, "tbsign"))
@@ -358,8 +357,8 @@ func PluginSwitch(c echo.Context) error {
 	pluginName := c.Param("plugin_name")
 
 	_function.GetOptionsAndPluginList()
-
-	if _, ok := _function.PluginList[pluginName]; !ok {
+	_pluginValue, ok := _function.PluginList.Load(pluginName)
+	if !ok {
 		return c.JSON(http.StatusOK, apiTemplate(404, "插件不存在", map[string]any{
 			"name":   pluginName,
 			"exists": false,
@@ -367,15 +366,17 @@ func PluginSwitch(c echo.Context) error {
 		}, "tbsign"))
 	}
 
-	pluginValue := _function.PluginList[pluginName]
-	pluginValue.Status = !pluginValue.Status
-	_function.GormDB.W.Model(&model.TcPlugin{}).Where("name = ?", pluginName).Update("status", pluginValue.Status)
-	_function.PluginList[pluginName] = pluginValue
+	pluginValue := _pluginValue.(model.TcPlugin)
+	newPluginStatus := !pluginValue.Status
+
+	pluginValue.Status = newPluginStatus
+	_function.GormDB.W.Model(&model.TcPlugin{}).Where("name = ?", pluginName).Update("status", newPluginStatus)
+	_function.PluginList.Store(pluginName, pluginValue)
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
 		"name":   pluginName,
 		"exists": true,
-		"status": pluginValue.Status,
+		"status": newPluginStatus,
 	}, "tbsign"))
 }
 

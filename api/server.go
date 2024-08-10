@@ -37,6 +37,12 @@ func GetServerStatus(c echo.Context) error {
 	var ForumCount int64
 	_function.GormDB.R.Model(&model.TcTieba{}).Count(&ForumCount)
 
+	onlineCount := 0
+	keyBucket.Range(func(key, value any) bool {
+		onlineCount++
+		return true
+	})
+
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
 		"goroutine": runtime.NumGoroutine(),
 		"goversion": fmt.Sprintf("%s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH),
@@ -51,7 +57,7 @@ func GetServerStatus(c echo.Context) error {
 		"cron_sign_again": _function.GetOption("cron_sign_again"),
 		"compat":          _function.GetOption("core_version"),
 		"pure_go":         _function.GetOption("go_ver") == "1",
-		"uid_count":       fmt.Sprintf("%d [online:%d]", UIDCount, len(keyBucket)),
+		"uid_count":       fmt.Sprintf("%d [online:%d]", UIDCount, onlineCount),
 		"pid_count":       PIDCount,
 		"forum_count":     ForumCount,
 	}, "tbsign"))
@@ -76,13 +82,14 @@ func ShutdownSystem(c echo.Context) error {
 func GetPluginsList(c echo.Context) error {
 	var resPluginList = make(map[string]PluginListContent)
 
-	for k, v := range _function.PluginList {
-		resPluginList[k] = PluginListContent{
-			Name:   v.Name,
-			Ver:    v.Ver,
-			Status: v.Status,
+	_function.PluginList.Range(func(key, value any) bool {
+		resPluginList[key.(string)] = PluginListContent{
+			Name:   value.(model.TcPlugin).Name,
+			Ver:    value.(model.TcPlugin).Ver,
+			Status: value.(model.TcPlugin).Status,
 		}
-	}
+		return true
+	})
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resPluginList, "tbsign"))
 }

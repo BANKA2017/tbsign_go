@@ -3,6 +3,7 @@ package _function
 import (
 	"log"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
@@ -10,13 +11,13 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-var Options = make(map[string]string)
-var CookieList = make(map[int32]_type.TypeCookie)
-var FidList = make(map[string]int64)
+var Options sync.Map    //  make(map[string]string)
+var CookieList sync.Map //= make(map[int32]_type.TypeCookie)
+var FidList sync.Map    //= make(map[string]int64)
 var PluginListDB []model.TcPlugin
 
 var PluginNameList = []string{"kd_growth", "ver4_ban", "ver4_rank", "ver4_ref"}
-var PluginList = make(map[string]model.TcPlugin)
+var PluginList sync.Map //= make(map[string]model.TcPlugin)
 
 type ResetPwdStruct struct {
 	Expire int64
@@ -27,7 +28,7 @@ type ResetPwdStruct struct {
 const ResetPwdMaxTimes = 5
 const ResetPwdExpire = 60 * 30
 
-var ResetPwdList = make(map[int32]*ResetPwdStruct)
+var ResetPwdList sync.Map //= make(map[int32]*ResetPwdStruct)
 
 // Tieba works in GMT+8
 var LocalTime, _ = time.LoadLocation("Asia/Shanghai")
@@ -39,7 +40,12 @@ func UpdateNow() {
 }
 
 func GetOption(keyName string) string {
-	return Options[keyName]
+	v, ok := Options.Load(keyName)
+	if ok {
+		return v.(string)
+	} else {
+		return ""
+	}
 }
 
 func SetOption[T ~string | ~bool | ~int](keyName string, value T) error {
@@ -60,13 +66,13 @@ func SetOption[T ~string | ~bool | ~int](keyName string, value T) error {
 	err := GormDB.W.Model(&model.TcOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcOption{Name: keyName, Value: newValue}).Error
 
 	if err == nil {
-		Options[keyName] = newValue
+		Options.Store(keyName, newValue)
 	}
 	return err
 }
 
 func DeleteOption(keyName string) error {
-	delete(Options, keyName)
+	Options.Delete(keyName)
 	return GormDB.W.Where("name = ?", keyName).Delete(&model.TcOption{}).Error
 }
 
@@ -100,28 +106,30 @@ func DeleteUserOption(keyName string, uid string) error {
 }
 
 func GetCookie(pid int32) _type.TypeCookie {
-	cookie, ok := CookieList[pid]
+	cookie, ok := CookieList.Load(pid)
 	if !ok {
+		var _cookie _type.TypeCookie
 		var cookieDB model.TcBaiduid
 		GormDB.R.Model(&model.TcBaiduid{}).Where("id = ?", pid).First(&cookieDB)
-		cookie.Tbs = GetTbs(cookieDB.Bduss)
-		if cookie.Tbs == "" {
-			return cookie
+		_cookie.Tbs = GetTbs(cookieDB.Bduss)
+		if _cookie.Tbs == "" {
+			return _cookie
 		}
-		cookie.Bduss = cookieDB.Bduss
-		cookie.Stoken = cookieDB.Stoken
-		cookie.ID = cookieDB.ID
-		cookie.Name = cookieDB.Name
-		cookie.Portrait = cookieDB.Portrait
-		cookie.UID = cookieDB.UID
-		CookieList[pid] = cookie
+		_cookie.Bduss = cookieDB.Bduss
+		_cookie.Stoken = cookieDB.Stoken
+		_cookie.ID = cookieDB.ID
+		_cookie.Name = cookieDB.Name
+		_cookie.Portrait = cookieDB.Portrait
+		_cookie.UID = cookieDB.UID
+		CookieList.Store(pid, cookie)
+		cookie = _cookie
 	}
 
-	return cookie
+	return cookie.(_type.TypeCookie)
 }
 
 func GetFid(name string) int64 {
-	fid, ok := FidList[name]
+	fid, ok := FidList.Load(name)
 	if !ok {
 		// find in db
 		var tiebaInfo model.TcTieba
@@ -134,9 +142,9 @@ func GetFid(name string) int64 {
 			}
 			fid = int64(forumNameInfo.Data.Fid)
 		}
-		FidList[name] = fid
+		FidList.Store(name, fid)
 	}
-	return fid
+	return fid.(int64)
 }
 
 func GetOptionsAndPluginList() {
@@ -145,14 +153,14 @@ func GetOptionsAndPluginList() {
 
 	GormDB.R.Find(&tmpOptions)
 	for _, v := range tmpOptions {
-		Options[v.Name] = v.Value
+		Options.Store(v.Name, v.Value)
 	}
 
 	// get plugin list
 	GormDB.R.Where("name in ?", PluginNameList).Find(&PluginListDB)
 
 	for _, pluginStatus := range PluginListDB {
-		PluginList[pluginStatus.Name] = pluginStatus
+		PluginList.Store(pluginStatus.Name, pluginStatus)
 	}
 }
 

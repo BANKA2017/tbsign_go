@@ -1,6 +1,7 @@
 package _plugin
 
 import (
+	"fmt"
 	"log"
 	"net/url"
 	"strconv"
@@ -361,7 +362,7 @@ func DoGrowthTasksAction() {
 
 			_function.GormDB.W.Model(&model.TcKdGrowth{}).Where("id = ?", taskUserItem.ID).Updates(model.TcKdGrowth{
 				Status: string(jsonResult),
-				Log:    _function.AppendStrings(_function.Now.Local().Format("2006-01-02"), ": ", tmpLog, taskUserItem.Log, "<br/>", strings.Join(previousLogs, "<br/>")),
+				Log:    fmt.Sprintf("%s: %s<br/>%s", _function.Now.Local().Format("2006-01-02"), tmpLog, strings.Join(previousLogs, "<br/>")),
 				Date:   int32(_function.Now.Unix()),
 			})
 		}

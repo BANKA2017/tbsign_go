@@ -106,7 +106,7 @@ func DeleteAccount(c echo.Context) error {
 	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcVer4RankLog{})
 	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcKdGrowth{})
 
-	delete(keyBucket, uid)
+	keyBucket.Delete(uid)
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "帐号已删除，感谢您的使用", map[string]any{
 		"uid":  int64(accountInfo.ID),
@@ -157,7 +157,7 @@ func Login(c echo.Context) error {
 
 func Logout(c echo.Context) error {
 	uid := c.Get("uid").(string)
-	delete(keyBucket, uid)
+	keyBucket.Delete(uid)
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
 }
@@ -383,10 +383,12 @@ func ResetPassword(c echo.Context) error {
 	}
 
 	if verifyCode != "" {
-		if _, ok := _function.ResetPwdList[accountInfo.ID]; !ok {
+		_v, ok := _function.ResetPwdList.Load(accountInfo.ID)
+
+		if !ok {
 			return c.JSON(http.StatusOK, apiTemplate(404, "无效验证码", false, "tbsign"))
 		}
-		if _function.ResetPwdList[accountInfo.ID].Value != verifyCode {
+		if _v.(*_function.ResetPwdStruct).Value != verifyCode {
 			return c.JSON(http.StatusOK, apiTemplate(404, "无效验证码", false, "tbsign"))
 		} else {
 			if newPwd == "" {
@@ -400,19 +402,22 @@ func ResetPassword(c echo.Context) error {
 
 				_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", accountInfo.ID).Update("pw", string(hash))
 
-				delete(_function.ResetPwdList, accountInfo.ID)
+				_function.ResetPwdList.Delete(accountInfo.ID)
 				return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
 			}
 		}
 	} else if verifyCode == "" && newPwd != "" {
 		return c.JSON(http.StatusOK, apiTemplate(404, "无效验证码", false, "tbsign"))
 	} else {
-		if _, ok := _function.ResetPwdList[accountInfo.ID]; !ok {
-			_function.ResetPwdList[accountInfo.ID] = &_function.ResetPwdStruct{
+		_v, ok := _function.ResetPwdList.Load(accountInfo.ID)
+		v := _v.(*_function.ResetPwdStruct)
+
+		if !ok {
+			v = _function.VariablePtrWrapper(_function.ResetPwdStruct{
 				Expire: _function.Now.Unix() + _function.ResetPwdExpire,
-			}
+			})
 		} else {
-			if _function.ResetPwdList[accountInfo.ID].Time >= _function.ResetPwdMaxTimes {
+			if v.Time >= _function.ResetPwdMaxTimes {
 				return c.JSON(http.StatusOK, apiTemplate(403, "已超过最大验证次数，请稍后再试", false, "tbsign"))
 			}
 		}
@@ -424,8 +429,10 @@ func ResetPassword(c echo.Context) error {
 
 		code = code[0:6]
 
-		_function.ResetPwdList[accountInfo.ID].Value = code
-		_function.ResetPwdList[accountInfo.ID].Time += 1
+		v.Value = code
+		v.Time += 1
+
+		_function.ResetPwdList.Store(accountInfo.ID, v)
 
 		mailObject := _function.EmailTemplateResetPassword(accountInfo.Email, code)
 		err := _function.SendEmail(accountInfo.Email, mailObject.Object, mailObject.Body)

@@ -36,7 +36,7 @@ func PluginGrowthTasksGetSettings(c echo.Context) error {
 func PluginGrowthTasksSetSettings(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	signOnly := c.FormValue("sign_only") == "0"
+	signOnly := c.FormValue("sign_only") != "0"
 	noIconTasks := c.FormValue("break_icon_tasks") != "0"
 
 	_function.SetUserOption("kd_growth_sign_only", signOnly, uid)
