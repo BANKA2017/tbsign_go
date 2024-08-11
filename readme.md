@@ -97,9 +97,9 @@ air -- --db_path=tbsign.db --test=true --api=true
   - 自动安装
     - 启动程序，添加 `flags` 或 环境变量 (示例: `./tbsign_go --db=tbsign --username tcdb --pwd tcdb_password --api=true --address=:8080 --auto_install=true --admin_name=a --admin_email=a@a.a --admin_password=a`)
 
-      - 担心 log 泄露邮箱和密码的此时可以设随机值，等到安装完成后再登录上去修改邮箱和密码；用户名无法更改
+      - 担心 log 泄露信息的此时可以设随机值，等到安装完成后再登录修改
       - 除非数据库被删除，否则 用户名/邮箱/密码 仅在首次开启时会用到
-    - \*(选做) 登录后台修改邮箱密码，开启自带插件
+    - \*(选做) 登录后台修改信息，开启自带插件
 
 \* 注：`setup` 和 `auto_install` 不可同时为 `true`
 
@@ -144,7 +144,9 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 ### CGO
 
-需要设置 `CGO_ENABLED=1`， go-sqlite3 需要用到 CGO
+需要设置 `CGO_ENABLED=1`， [go-sqlite3](https://github.com/mattn/go-sqlite3) 需要用到 CGO
+
+> go-sqlite3 is cgo package. If you want to build your app using go-sqlite3, you need gcc. However, after you have built and installed go-sqlite3 with `go install github.com/mattn/go-sqlite3` (which requires gcc), you can build your app without relying on gcc in future.
 
 ### build.sh
 
