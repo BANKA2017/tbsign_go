@@ -107,7 +107,7 @@ func DeleteUserOption(keyName string, uid string) error {
 
 func GetCookie(pid int32) _type.TypeCookie {
 	cookie, ok := CookieList.Load(pid)
-	if !ok {
+	if !ok || cookie == nil {
 		var _cookie _type.TypeCookie
 		var cookieDB model.TcBaiduid
 		GormDB.R.Model(&model.TcBaiduid{}).Where("id = ?", pid).First(&cookieDB)
@@ -121,7 +121,7 @@ func GetCookie(pid int32) _type.TypeCookie {
 		_cookie.Name = cookieDB.Name
 		_cookie.Portrait = cookieDB.Portrait
 		_cookie.UID = cookieDB.UID
-		CookieList.Store(pid, cookie)
+		CookieList.Store(pid, _cookie)
 		return _cookie
 	}
 
@@ -130,7 +130,7 @@ func GetCookie(pid int32) _type.TypeCookie {
 
 func GetFid(name string) int64 {
 	fid, ok := FidList.Load(name)
-	if !ok {
+	if !ok || fid == nil {
 		// find in db
 		var tiebaInfo model.TcTieba
 		GormDB.R.Model(&model.TcTieba{}).Where("tieba = ? AND fid IS NOT NULL AND fid != ''", name).First(&tiebaInfo)

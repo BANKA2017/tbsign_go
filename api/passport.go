@@ -385,12 +385,10 @@ func ResetPassword(c echo.Context) error {
 	if verifyCode != "" {
 		_v, ok := _function.ResetPwdList.Load(accountInfo.ID)
 
-		if !ok {
+		if !ok || _v == nil {
 			return c.JSON(http.StatusOK, apiTemplate(404, "无效验证码", false, "tbsign"))
 		}
-		if _v.(*_function.ResetPwdStruct).Value != verifyCode {
-			return c.JSON(http.StatusOK, apiTemplate(404, "无效验证码", false, "tbsign"))
-		} else {
+		if __v, ok := _v.(*_function.ResetPwdStruct); ok && __v.Value == verifyCode {
 			if newPwd == "" {
 				return c.JSON(http.StatusOK, apiTemplate(404, "密码不能为空", false, "tbsign"))
 			} else {
@@ -405,6 +403,8 @@ func ResetPassword(c echo.Context) error {
 				_function.ResetPwdList.Delete(accountInfo.ID)
 				return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
 			}
+		} else {
+			return c.JSON(http.StatusOK, apiTemplate(404, "无效验证码", false, "tbsign"))
 		}
 	} else if verifyCode == "" && newPwd != "" {
 		return c.JSON(http.StatusOK, apiTemplate(404, "无效验证码", false, "tbsign"))
@@ -412,7 +412,7 @@ func ResetPassword(c echo.Context) error {
 		_v, ok := _function.ResetPwdList.Load(accountInfo.ID)
 		v := new(_function.ResetPwdStruct)
 
-		if !ok {
+		if !ok || _v == nil {
 			v = _function.VariablePtrWrapper(_function.ResetPwdStruct{
 				Expire: _function.Now.Unix() + _function.ResetPwdExpire,
 			})

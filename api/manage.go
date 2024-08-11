@@ -358,7 +358,7 @@ func PluginSwitch(c echo.Context) error {
 
 	_function.GetOptionsAndPluginList()
 	_pluginValue, ok := _function.PluginList.Load(pluginName)
-	if !ok {
+	if !ok || _pluginValue == nil {
 		return c.JSON(http.StatusOK, apiTemplate(404, "插件不存在", map[string]any{
 			"name":   pluginName,
 			"exists": false,

@@ -1,5 +1,7 @@
 package share
 
+import "time"
+
 var DBUsername string
 var DBPassword string
 var DBEndpoint string
@@ -13,3 +15,5 @@ var EnableApi bool
 var EnableFrontend bool
 
 var Address string
+
+var StartTime = time.Now()

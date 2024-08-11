@@ -44,8 +44,9 @@ func GetServerStatus(c echo.Context) error {
 	})
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
-		"goroutine": runtime.NumGoroutine(),
-		"goversion": fmt.Sprintf("%s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH),
+		"goroutine":  runtime.NumGoroutine(),
+		"goversion":  fmt.Sprintf("%s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH),
+		"start_time": share.StartTime.UnixMilli(),
 		//"system":          fmt.Sprintf("cpu:%d, mem: [Alloc %d / Sys %d] MiB", runtime.NumCPU(), memstats.Alloc/1024/1024, memstats.Sys/1024/1024),
 		"variables": c.Get("variables"),
 		"build": map[string]string{
