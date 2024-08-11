@@ -134,7 +134,7 @@ func sessionTokenBuilder(uid int32, password string) string {
 var keyBucket sync.Map //= make(map[string]*ecdsa.PrivateKey) // uid -> key
 
 func bearerTokenBuilder(uid string, forceUpdate bool) string {
-	var privateKey *ecdsa.PrivateKey
+	privateKey := new(ecdsa.PrivateKey)
 	if key, ok := keyBucket.Load(uid); ok && !forceUpdate {
 		privateKey = key.(*ecdsa.PrivateKey)
 	} else {

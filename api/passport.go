@@ -410,15 +410,16 @@ func ResetPassword(c echo.Context) error {
 		return c.JSON(http.StatusOK, apiTemplate(404, "无效验证码", false, "tbsign"))
 	} else {
 		_v, ok := _function.ResetPwdList.Load(accountInfo.ID)
-		v := _v.(*_function.ResetPwdStruct)
+		v := new(_function.ResetPwdStruct)
 
 		if !ok {
 			v = _function.VariablePtrWrapper(_function.ResetPwdStruct{
 				Expire: _function.Now.Unix() + _function.ResetPwdExpire,
 			})
 		} else {
+			v = _v.(*_function.ResetPwdStruct)
 			if v.Time >= _function.ResetPwdMaxTimes {
-				return c.JSON(http.StatusOK, apiTemplate(403, "已超过最大验证次数，请稍后再试", false, "tbsign"))
+				return c.JSON(http.StatusOK, apiTemplate(429, "已超过最大验证次数，请稍后再试", false, "tbsign"))
 			}
 		}
 		// init a callback code

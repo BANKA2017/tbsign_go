@@ -134,15 +134,16 @@ func GetFid(name string) int64 {
 		// find in db
 		var tiebaInfo model.TcTieba
 		GormDB.R.Model(&model.TcTieba{}).Where("tieba = ? AND fid IS NOT NULL AND fid != ''", name).First(&tiebaInfo)
-		fid = int64(tiebaInfo.Fid)
-		if fid == 0 {
+		_fid := int64(tiebaInfo.Fid)
+		if _fid == 0 {
 			forumNameInfo, err := GetForumNameShare(name)
 			if err != nil {
 				log.Println("fid:", err)
 			}
-			fid = int64(forumNameInfo.Data.Fid)
+			_fid = int64(forumNameInfo.Data.Fid)
 		}
-		FidList.Store(name, fid)
+		FidList.Store(name, _fid)
+		return _fid
 	}
 	return fid.(int64)
 }
