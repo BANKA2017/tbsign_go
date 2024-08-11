@@ -122,7 +122,7 @@ func GetCookie(pid int32) _type.TypeCookie {
 		_cookie.Portrait = cookieDB.Portrait
 		_cookie.UID = cookieDB.UID
 		CookieList.Store(pid, cookie)
-		cookie = _cookie
+		return _cookie
 	}
 
 	return cookie.(_type.TypeCookie)
