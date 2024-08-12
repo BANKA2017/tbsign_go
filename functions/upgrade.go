@@ -87,7 +87,7 @@ func Upgrade(version string) error {
 	// Path to the new version temporary file
 	tmpFile := filepath.Join(execDir, "__tmp__tbsign.tmp")
 
-	client := InitClient(0)
+	client := InitClient(300)
 
 	// get binary
 	binary, err := Fetch(binPath, "GET", nil, map[string]string{
