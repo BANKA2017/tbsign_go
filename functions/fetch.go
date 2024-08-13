@@ -416,9 +416,9 @@ func GetLoginQRCode() (*_type.LoginQRCode, error) {
 		return nil, err
 	}
 
-	var resp _type.LoginQRCode
+	resp := new(_type.LoginQRCode)
 	err = JsonDecode(response, &resp)
-	return &resp, err
+	return resp, err
 }
 
 func GetUnicastResponse(sign string) (*_type.WrapUnicastResponse, error) {

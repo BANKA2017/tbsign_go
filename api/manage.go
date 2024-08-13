@@ -22,6 +22,9 @@ type SiteAccountsResponse struct {
 	Email string `json:"email"`
 	Role  string `json:"role"`
 	T     string `json:"t"`
+
+	BaiduAccountCount int `json:"baidu_account_count"`
+	ForumCount        int `json:"forum_count"`
 }
 
 var settingsFilter = []string{"ann", "system_url", "stop_reg", "enable_reg", "yr_reg", "cktime", "sign_mode", "sign_hour", "cron_limit", "sign_sleep", "retry_max", "mail_name", "mail_yourname", "mail_host", "mail_port", "mail_secure", "mail_auth", "mail_smtpname", "mail_smtppw", "ver4_ban_limit", "ver4_ban_break_check", "go_forum_sync_policy"} // "system_name", "system_keywords", "system_description"
@@ -309,6 +312,7 @@ func AdminDeleteAccountToken(c echo.Context) error {
 func GetAccountsList(c echo.Context) error {
 	page := c.QueryParams().Get("page")
 	count := c.QueryParams().Get("count")
+	query := strings.TrimSpace(c.QueryParams().Get("q"))
 
 	if page == "" {
 		page = "1"
@@ -317,7 +321,11 @@ func GetAccountsList(c echo.Context) error {
 		count = "10"
 	}
 
-	var respAccountInfo []SiteAccountsResponse
+	var respAccountInfo struct {
+		List  []SiteAccountsResponse `json:"list"`
+		Page  int64                  `json:"page"`
+		Total int64                  `json:"total"`
+	}
 	numPage, err := strconv.ParseInt(page, 10, 64)
 	if err != nil || numPage <= 0 {
 		log.Println(err, page)
@@ -332,24 +340,20 @@ func GetAccountsList(c echo.Context) error {
 	var accountInfoCount int64
 	_function.GormDB.R.Model(&model.TcUser{}).Count(&accountInfoCount)
 
-	var accountInfo []model.TcUser
-	_function.GormDB.R.Offset(int((numPage - 1) * numCount)).Limit(int(numCount)).Find(&accountInfo)
-
-	for _, v := range accountInfo {
-		respAccountInfo = append(respAccountInfo, SiteAccountsResponse{
-			ID:    v.ID,
-			Name:  v.Name,
-			Email: v.Email,
-			Role:  v.Role,
-			T:     v.T,
-		})
+	var accountInfo []SiteAccountsResponse
+	// TODO better query
+	/// TODO any injection attacks?
+	if query != "" {
+		_function.GormDB.R.Raw(`SELECT sa.*, COALESCE(b_count, 0) AS baidu_account_count, COALESCE(c_count, 0) AS forum_count FROM (SELECT * FROM tc_users WHERE name LIKE ? OR email LIKE ? ORDER BY id LIMIT ? OFFSET ?) sa LEFT JOIN ( SELECT uid, COUNT(*) AS b_count FROM tc_baiduid GROUP BY uid ) b_counts ON sa.id = b_counts.uid LEFT JOIN ( SELECT uid, COUNT(*) AS c_count FROM tc_tieba GROUP BY uid ) c_counts ON sa.id = c_counts.uid ORDER BY sa.id;`, _function.AppendStrings("%", query, "%"), _function.AppendStrings("%", query, "%"), numCount, (numPage-1)*numCount).Scan(&accountInfo)
+	} else {
+		_function.GormDB.R.Raw(`SELECT sa.*, COALESCE(b_count, 0) AS baidu_account_count, COALESCE(c_count, 0) AS forum_count FROM (SELECT * FROM tc_users ORDER BY id LIMIT ? OFFSET ?) sa LEFT JOIN ( SELECT uid, COUNT(*) AS b_count FROM tc_baiduid GROUP BY uid ) b_counts ON sa.id = b_counts.uid LEFT JOIN ( SELECT uid, COUNT(*) AS c_count FROM tc_tieba GROUP BY uid ) c_counts ON sa.id = c_counts.uid ORDER BY sa.id;`, numCount, (numPage-1)*numCount).Scan(&accountInfo)
 	}
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
-		"list":  respAccountInfo,
-		"page":  numPage,
-		"total": accountInfoCount,
-	}, "tbsign"))
+	respAccountInfo.List = accountInfo
+	respAccountInfo.Page = numPage
+	respAccountInfo.Total = accountInfoCount
+
+	return c.JSON(http.StatusOK, apiTemplate(200, "OK", respAccountInfo, "tbsign"))
 }
 
 func PluginSwitch(c echo.Context) error {
