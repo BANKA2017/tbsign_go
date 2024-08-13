@@ -14,10 +14,6 @@ import (
 var Options sync.Map    //  make(map[string]string)
 var CookieList sync.Map //= make(map[int32]_type.TypeCookie)
 var FidList sync.Map    //= make(map[string]int64)
-var PluginListDB []model.TcPlugin
-
-var PluginNameList = []string{"kd_growth", "ver4_ban", "ver4_rank", "ver4_ref"}
-var PluginList sync.Map //= make(map[string]model.TcPlugin)
 
 type ResetPwdStruct struct {
 	Expire int64
@@ -148,20 +144,13 @@ func GetFid(name string) int64 {
 	return fid.(int64)
 }
 
-func GetOptionsAndPluginList() {
+func InitOptions() {
 	// get options
 	var tmpOptions []model.TcOption
 
 	GormDB.R.Find(&tmpOptions)
 	for _, v := range tmpOptions {
 		Options.Store(v.Name, v.Value)
-	}
-
-	// get plugin list
-	GormDB.R.Where("name in ?", PluginNameList).Find(&PluginListDB)
-
-	for _, pluginStatus := range PluginListDB {
-		PluginList.Store(pluginStatus.Name, pluginStatus)
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
+	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/BANKA2017/tbsign_go/share"
 	"github.com/labstack/echo/v4"
 )
@@ -83,14 +84,14 @@ func ShutdownSystem(c echo.Context) error {
 func GetPluginsList(c echo.Context) error {
 	var resPluginList = make(map[string]PluginListContent)
 
-	_function.PluginList.Range(func(key, value any) bool {
-		resPluginList[key.(string)] = PluginListContent{
-			Name:   value.(model.TcPlugin).Name,
-			Ver:    value.(model.TcPlugin).Ver,
-			Status: value.(model.TcPlugin).Status,
+	for name, info := range _plugin.PluginList {
+		value := info.GetInfo()
+		resPluginList[name] = PluginListContent{
+			Name:   value.Name,
+			Ver:    value.Ver,
+			Status: value.Status,
 		}
-		return true
-	})
+	}
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resPluginList, "tbsign"))
 }

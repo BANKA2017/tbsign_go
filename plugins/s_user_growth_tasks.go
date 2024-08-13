@@ -13,7 +13,16 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-var UserGrowthTasksPluginName = "kd_growth"
+type UserGrowthTasksPluginType struct {
+	PluginInfo
+}
+
+var UserGrowthTasksPlugin = _function.VariablePtrWrapper(UserGrowthTasksPluginType{
+	PluginInfo{
+		Name: "kd_growth",
+	},
+})
+
 var UserGrowthTasksBreakList = []string{"open_push_switch"}
 
 type UserGrowthTasksWebResponse struct {
@@ -105,9 +114,9 @@ func PostGrowthTaskByWeb(cookie _type.TypeCookie, task string) (*UserGrowthTasks
 		return nil, err
 	}
 
-	var resp UserGrowthTasksWebResponse
+	resp := new(UserGrowthTasksWebResponse)
 	err = _function.JsonDecode(response, &resp)
-	return &resp, err
+	return resp, err
 }
 
 // share_thread page_sign
@@ -132,9 +141,9 @@ func PostGrowthTaskByClient(cookie _type.TypeCookie, task string) (*UserGrowthTa
 		return nil, err
 	}
 
-	var resp UserGrowthTasksClientResponse
+	resp := new(UserGrowthTasksClientResponse)
 	err = _function.JsonDecode(response, &resp)
-	return &resp, err
+	return resp, err
 }
 
 func PostCollectStamp(cookie _type.TypeCookie, task_id int) (*UserGrowthTaskCollectStampResponse, error) {
@@ -154,9 +163,9 @@ func PostCollectStamp(cookie _type.TypeCookie, task_id int) (*UserGrowthTaskColl
 		return nil, err
 	}
 
-	var resp UserGrowthTaskCollectStampResponse
+	resp := new(UserGrowthTaskCollectStampResponse)
 	err = _function.JsonDecode(response, &resp)
-	return &resp, err
+	return resp, err
 }
 
 func GetUserGrowthTasksList(cookie _type.TypeCookie) (*UserGrowthTasksListResponse, error) {
@@ -170,15 +179,15 @@ func GetUserGrowthTasksList(cookie _type.TypeCookie) (*UserGrowthTasksListRespon
 		return nil, err
 	}
 
-	var resp UserGrowthTasksListResponse
+	resp := new(UserGrowthTasksListResponse)
 	err = _function.JsonDecode(response, &resp)
-	return &resp, err
+	return resp, err
 }
 
 var activeTasks = []string{"daily_task", "live_task"}
 
 // TODO redo growth tasks(?)
-func DoGrowthTasksAction() {
+func (pluginInfo UserGrowthTasksPluginType) Action() {
 	id, err := strconv.ParseInt(_function.GetOption("kd_growth_offset"), 10, 64)
 	if err != nil {
 		id = 0

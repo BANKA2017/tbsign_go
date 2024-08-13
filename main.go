@@ -5,12 +5,10 @@ import (
 	"flag"
 	"log"
 	"os"
-	"slices"
 	"time"
 	_ "time/tzdata"
 
 	_api "github.com/BANKA2017/tbsign_go/api"
-	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/BANKA2017/tbsign_go/share"
@@ -176,7 +174,8 @@ func main() {
 	}
 
 	// init
-	_function.GetOptionsAndPluginList()
+	_function.InitOptions()
+	_plugin.InitPluginList()
 
 	if share.EnableApi {
 		go _api.Api(share.Address)
@@ -199,29 +198,15 @@ func main() {
 			if share.TestMode {
 				continue
 			}
-			_function.GetOptionsAndPluginList()
 			_plugin.DoSignAction()
 			_plugin.DoReSignAction()
 
 			// plugins
-
-			_function.PluginList.Range(func(key, value any) bool {
-				// TODO better IoC
-				if slices.Contains(_function.PluginNameList, key.(string)) && value.(model.TcPlugin).Status {
-					switch key.(string) {
-					case "ver4_rank":
-						go _plugin.DoForumSupportAction()
-					case "ver4_ban":
-						go _plugin.LoopBanAction()
-					case "kd_growth":
-						go _plugin.DoGrowthTasksAction()
-					case "ver4_ref":
-						go _plugin.RefreshTiebaListAction()
-					}
+			for _, info := range _plugin.PluginList {
+				if info.GetInfo().Status {
+					go info.Action()
 				}
-
-				return true
-			})
+			}
 
 			// clean pwd list
 			_function.ResetPwdList.Range(func(uid, value any) bool {
@@ -232,7 +217,8 @@ func main() {
 			})
 
 		case <-fourHoursInterval.C:
-			_function.GetOptionsAndPluginList()
+			_function.InitOptions()
+			_plugin.InitPluginList()
 
 			// clean cookie/fid cache
 			_function.CookieList.Range(func(key, value any) bool {

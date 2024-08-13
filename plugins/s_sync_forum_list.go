@@ -10,7 +10,17 @@ import (
 	_type "github.com/BANKA2017/tbsign_go/types"
 )
 
-var RefreshTiebaListPluginName = "ver4_ref"
+type RefreshTiebaListPluginType struct {
+	PluginInfo
+}
+
+var RefreshTiebaListPlugin = _function.VariablePtrWrapper(RefreshTiebaListPluginType{
+	PluginInfo{
+		Name: "ver4_ref",
+	},
+})
+
+var RefreshTiebaListPluginName = ""
 
 func ScanTiebaByPid(pid int32) {
 	account := _function.GetCookie(pid)
@@ -166,7 +176,7 @@ func ScanTiebaByPid(pid int32) {
 	}
 }
 
-func RefreshTiebaListAction() {
+func (pluginInfo RefreshTiebaListPluginType) Action() {
 
 	//activeAfter := 18 //GMT+8 18:00
 

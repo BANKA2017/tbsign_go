@@ -31,7 +31,15 @@ type IsManagerPreCheckResponse struct {
 	Role      string `json:"role"`
 }
 
-var LoopBanPluginName = "ver4_ban"
+type LoopBanPluginType struct {
+	PluginInfo
+}
+
+var LoopBanPlugin = LoopBanPluginType{
+	PluginInfo{
+		Name: "ver4_ban",
+	},
+}
 
 var banDays = []int32{1, 3, 10}
 
@@ -132,7 +140,7 @@ func GetManagerStatus(portrait string, fid int64) (*IsManagerPreCheckResponse, e
 	return &IsManagerPreCheckResponse{}, nil
 }
 
-func LoopBanAction() {
+func (pluginInfo LoopBanPluginType) Action() {
 	id, err := strconv.ParseInt(_function.GetOption("ver4_ban_id"), 10, 64)
 	if err != nil {
 		id = 0

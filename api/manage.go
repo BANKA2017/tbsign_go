@@ -10,6 +10,7 @@ import (
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
+	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/labstack/echo/v4"
 	"github.com/leeqvip/gophp"
 	"golang.org/x/exp/slices"
@@ -360,9 +361,8 @@ func PluginSwitch(c echo.Context) error {
 	c.Request().ParseForm()
 	pluginName := c.Param("plugin_name")
 
-	_function.GetOptionsAndPluginList()
-	_pluginValue, ok := _function.PluginList.Load(pluginName)
-	if !ok || _pluginValue == nil {
+	_pluginInfo, ok := _plugin.PluginList[pluginName]
+	if !ok {
 		return c.JSON(http.StatusOK, apiTemplate(404, "插件不存在", map[string]any{
 			"name":   pluginName,
 			"exists": false,
@@ -370,12 +370,7 @@ func PluginSwitch(c echo.Context) error {
 		}, "tbsign"))
 	}
 
-	pluginValue := _pluginValue.(model.TcPlugin)
-	newPluginStatus := !pluginValue.Status
-
-	pluginValue.Status = newPluginStatus
-	_function.GormDB.W.Model(&model.TcPlugin{}).Where("name = ?", pluginName).Update("status", newPluginStatus)
-	_function.PluginList.Store(pluginName, pluginValue)
+	newPluginStatus := _pluginInfo.Switch()
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
 		"name":   pluginName,

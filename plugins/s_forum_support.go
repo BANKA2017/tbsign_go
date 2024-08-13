@@ -573,7 +573,15 @@ var ForumSupportList = []TypeForumSupportList{
 	},
 }
 
-var ForumSupportPluginName = "ver4_rank"
+type ForumSupportPluginInfoType struct {
+	PluginInfo
+}
+
+var ForumSupportPluginInfo = _function.VariablePtrWrapper(ForumSupportPluginInfoType{
+	PluginInfo{
+		Name: "ver4_rank",
+	},
+})
 
 func PostForumSupport(cookie _type.TypeCookie, fid int32, nid string) (*TypeForumSupportResponse, error) {
 	_body := url.Values{}
@@ -596,7 +604,7 @@ func PostForumSupport(cookie _type.TypeCookie, fid int32, nid string) (*TypeForu
 	return &supportDecode, err
 }
 
-func DoForumSupportAction() {
+func (pluginInfo ForumSupportPluginInfoType) Action() {
 	id, err := strconv.ParseInt(_function.GetOption("ver4_rank_id"), 10, 64)
 	if err != nil {
 		id = 0
