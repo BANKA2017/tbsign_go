@@ -143,7 +143,7 @@ func PluginForumSupportSwitch(c echo.Context) error {
 
 	if err != nil {
 		log.Println(err)
-		return c.JSON(http.StatusOK, apiTemplate(500, "无法启用名人堂助攻功能", status, "tbsign"))
+		return c.JSON(http.StatusOK, apiTemplate(500, "无法修改名人堂助攻插件状态", status, "tbsign"))
 	}
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", !status, "tbsign"))
 }

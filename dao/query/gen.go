@@ -27,6 +27,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		TcUsersOption:    newTcUsersOption(db, opts...),
 		TcVer4BanList:    newTcVer4BanList(db, opts...),
 		TcVer4BanUserset: newTcVer4BanUserset(db, opts...),
+		TcVer4LotteryLog: newTcVer4LotteryLog(db, opts...),
 		TcVer4RankLog:    newTcVer4RankLog(db, opts...),
 	}
 }
@@ -43,6 +44,7 @@ type Query struct {
 	TcUsersOption    tcUsersOption
 	TcVer4BanList    tcVer4BanList
 	TcVer4BanUserset tcVer4BanUserset
+	TcVer4LotteryLog tcVer4LotteryLog
 	TcVer4RankLog    tcVer4RankLog
 }
 
@@ -60,6 +62,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		TcUsersOption:    q.TcUsersOption.clone(db),
 		TcVer4BanList:    q.TcVer4BanList.clone(db),
 		TcVer4BanUserset: q.TcVer4BanUserset.clone(db),
+		TcVer4LotteryLog: q.TcVer4LotteryLog.clone(db),
 		TcVer4RankLog:    q.TcVer4RankLog.clone(db),
 	}
 }
@@ -84,6 +87,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		TcUsersOption:    q.TcUsersOption.replaceDB(db),
 		TcVer4BanList:    q.TcVer4BanList.replaceDB(db),
 		TcVer4BanUserset: q.TcVer4BanUserset.replaceDB(db),
+		TcVer4LotteryLog: q.TcVer4LotteryLog.replaceDB(db),
 		TcVer4RankLog:    q.TcVer4RankLog.replaceDB(db),
 	}
 }
@@ -98,6 +102,7 @@ type queryCtx struct {
 	TcUsersOption    *tcUsersOptionDo
 	TcVer4BanList    *tcVer4BanListDo
 	TcVer4BanUserset *tcVer4BanUsersetDo
+	TcVer4LotteryLog *tcVer4LotteryLogDo
 	TcVer4RankLog    *tcVer4RankLogDo
 }
 
@@ -112,6 +117,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		TcUsersOption:    q.TcUsersOption.WithContext(ctx),
 		TcVer4BanList:    q.TcVer4BanList.WithContext(ctx),
 		TcVer4BanUserset: q.TcVer4BanUserset.WithContext(ctx),
+		TcVer4LotteryLog: q.TcVer4LotteryLog.WithContext(ctx),
 		TcVer4RankLog:    q.TcVer4RankLog.WithContext(ctx),
 	}
 }

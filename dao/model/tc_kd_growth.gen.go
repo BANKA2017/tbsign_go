@@ -13,7 +13,7 @@ type TcKdGrowth struct {
 	Pid    int64  `gorm:"column:pid;not null" json:"pid"`
 	Status string `gorm:"column:status" json:"status"`
 	Log    string `gorm:"column:log" json:"log"`
-	Date   int32  `gorm:"column:date;not null" json:"date"`
+	Date   int32  `gorm:"column:date;not null;default:0" json:"date"`
 }
 
 // TableName TcKdGrowth's table name

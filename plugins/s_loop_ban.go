@@ -10,6 +10,7 @@ import (
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	tbpb "github.com/BANKA2017/tbsign_go/proto"
+	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/proto"
@@ -35,11 +36,17 @@ type LoopBanPluginType struct {
 	PluginInfo
 }
 
-var LoopBanPlugin = LoopBanPluginType{
+var LoopBanPlugin = _function.VariablePtrWrapper(LoopBanPluginType{
 	PluginInfo{
-		Name: "ver4_ban",
+		Name:    "ver4_ban",
+		Version: "1.4",
+		Options: map[string]string{
+			"ver4_ban_break_check": "0",
+			"ver4_ban_id":          "0",
+			"ver4_ban_limit":       "5",
+		},
 	},
-}
+})
 
 var banDays = []int32{1, 3, 10}
 
@@ -140,14 +147,14 @@ func GetManagerStatus(portrait string, fid int64) (*IsManagerPreCheckResponse, e
 	return &IsManagerPreCheckResponse{}, nil
 }
 
-func (pluginInfo LoopBanPluginType) Action() {
+func (pluginInfo *LoopBanPluginType) Action() {
 	id, err := strconv.ParseInt(_function.GetOption("ver4_ban_id"), 10, 64)
 	if err != nil {
 		id = 0
 	}
 	otime := _function.Now.Unix() - 86400
-	var localBanAccountList = &[]model.TcVer4BanList{}
-	subQuery := _function.GormDB.R.Select("uid").Where("name = 'ver4_ban_open' AND value = '1'").Table("tc_users_options")
+	var localBanAccountList = new([]model.TcVer4BanList)
+	subQuery := _function.GormDB.R.Model(&model.TcUsersOption{}).Select("uid").Where("name = 'ver4_ban_open' AND value = '1'")
 
 	// TODO fix hard limit
 	_function.GormDB.R.Model(&model.TcVer4BanList{}).Where("id > ? AND date < ? AND stime < ? AND etime > ? AND uid IN (?)", id, otime, _function.Now.Unix(), _function.Now.Unix(), subQuery).Order("id ASC").Limit(50).Find(&localBanAccountList)
@@ -195,4 +202,40 @@ func (pluginInfo LoopBanPluginType) Action() {
 
 	// clean
 
+}
+
+func (pluginInfo *LoopBanPluginType) Install() error {
+	for k, v := range LoopBanPlugin.Options {
+		_function.SetOption(k, v)
+	}
+	_function.UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
+
+	_function.GormDB.W.Migrator().DropTable(&model.TcVer4BanUserset{}, &model.TcVer4BanList{})
+
+	// index ?
+	if share.DBMode == "mysql" {
+		_function.GormDB.W.Set("gorm:table_options", "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci").Migrator().CreateTable(&model.TcVer4BanUserset{})
+		_function.GormDB.W.Set("gorm:table_options", "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci").Migrator().CreateTable(&model.TcVer4BanList{})
+		_function.GormDB.W.Exec("ALTER TABLE `tc_ver4_ban_list` ADD KEY `uid` (`uid`), ADD KEY `id_uid` (`id`,`uid`), ADD KEY `pid` (`pid`), ADD KEY `id_date_stime_etime_uid` (`id`,`date`,`stime`,`etime`,`uid`) USING BTREE;")
+		_function.GormDB.W.Exec("ALTER TABLE `tc_ver4_ban_userset` ADD UNIQUE KEY `uid` (`uid`);")
+	} else {
+		_function.GormDB.W.Set("gorm:table_options", "WITHOUT ROWID").Migrator().CreateTable(&model.TcVer4BanUserset{})
+		_function.GormDB.W.Migrator().CreateTable(&model.TcVer4BanList{})
+
+		_function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_ver4_ban_list_uid" ON "tc_ver4_ban_list" ("uid");`)
+		_function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_ver4_ban_list_id_uid" ON "tc_ver4_ban_list" ("id","uid");`)
+		_function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_ver4_ban_list_pid" ON "tc_ver4_ban_list" ("pid");`)
+		_function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_ver4_ban_list_id_date_stime_etime_uid" ON "tc_ver4_ban_list" ("id","date","stime","etime","uid");`)
+	}
+	return nil
+}
+
+func (pluginInfo *LoopBanPluginType) Delete() error {
+	return nil
+}
+func (pluginInfo *LoopBanPluginType) Upgrade() error {
+	return nil
+}
+func (pluginInfo *LoopBanPluginType) Ext() ([]any, error) {
+	return []any{}, nil
 }

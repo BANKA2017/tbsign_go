@@ -9,6 +9,7 @@ import (
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
+	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"golang.org/x/exp/slices"
 )
@@ -19,7 +20,11 @@ type UserGrowthTasksPluginType struct {
 
 var UserGrowthTasksPlugin = _function.VariablePtrWrapper(UserGrowthTasksPluginType{
 	PluginInfo{
-		Name: "kd_growth",
+		Name:    "kd_growth",
+		Version: "0.1",
+		Options: map[string]string{
+			"kd_growth_offset": "0",
+		},
 	},
 })
 
@@ -40,6 +45,15 @@ type UserGrowthTasksClientResponse struct {
 	Info       []any  `json:"info,omitempty"`
 }
 
+type LevelInfo struct {
+	Level          int    `json:"level,omitempty"`
+	Name           string `json:"name,omitempty"`
+	GrowthValue    int    `json:"growth_value,omitempty"`
+	NextLevelValue int    `json:"next_level_value,omitempty"`
+	Status         int    `json:"status,omitempty"`
+	IsCurrent      int    `json:"is_current,omitempty"`
+}
+
 type UserGrowthTasksListResponse struct {
 	No    int    `json:"no,omitempty"`
 	Error string `json:"error,omitempty"`
@@ -50,6 +64,7 @@ type UserGrowthTasksListResponse struct {
 			Portrait   string `json:"portrait,omitempty"`
 			IsTiebaVip bool   `json:"is_tieba_vip,omitempty"`
 		} `json:"user,omitempty"`
+		/// LevelInfo []LevelInfo `json:"level_info,omitempty"`
 		TabList []struct {
 			TabName      string `json:"tab_name,omitempty"`
 			Name         string `json:"name,omitempty"`
@@ -187,7 +202,7 @@ func GetUserGrowthTasksList(cookie _type.TypeCookie) (*UserGrowthTasksListRespon
 var activeTasks = []string{"daily_task", "live_task"}
 
 // TODO redo growth tasks(?)
-func (pluginInfo UserGrowthTasksPluginType) Action() {
+func (pluginInfo *UserGrowthTasksPluginType) Action() {
 	id, err := strconv.ParseInt(_function.GetOption("kd_growth_offset"), 10, 64)
 	if err != nil {
 		id = 0
@@ -198,7 +213,7 @@ func (pluginInfo UserGrowthTasksPluginType) Action() {
 	var accountCookiesList = make(map[int64]_type.TypeCookie)
 
 	// get list
-	todayBeginning := _function.TodayBeginning() //GMT+8
+	todayBeginning := _function.LocaleTimeDiff(0) //GMT+8
 	kdGrowthTasksUserList := &[]model.TcKdGrowth{}
 	// TODO fix hard limit
 	_function.GormDB.R.Model(&model.TcKdGrowth{}).Where("date < ? AND id > ?", todayBeginning, id).Limit(50).Find(&kdGrowthTasksUserList)
@@ -228,6 +243,9 @@ func (pluginInfo UserGrowthTasksPluginType) Action() {
 		var tasksList []UserGrowthTask
 		var result []UserGrowthTaskToSave
 		doCollectStampTasks := false
+
+		/// levelInfo := LevelInfo{}
+
 		if accountStatusList[taskUserItem.UID] == "1" {
 			tasksResponse, err := GetUserGrowthTasksList(cookie)
 			if err != nil {
@@ -235,6 +253,15 @@ func (pluginInfo UserGrowthTasksPluginType) Action() {
 				log.Println("user_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "Unable to fetch tasks list")
 				//continue
 			}
+
+			/// // find level info
+			/// for _, levelInfoItem := range tasksResponse.Data.LevelInfo {
+			/// 	if levelInfoItem.IsCurrent == 1 {
+			/// 		levelInfo = levelInfoItem
+			/// 		break
+			/// 	}
+			/// }
+
 			for _, taskTypeListList := range tasksResponse.Data.TabList {
 				if taskTypeListList.TabName == "basic" {
 					for _, taskTypeList := range taskTypeListList.TaskTypeList {
@@ -379,4 +406,37 @@ func (pluginInfo UserGrowthTasksPluginType) Action() {
 		_function.SetOption("kd_growth_offset", strconv.Itoa(int(taskUserItem.ID)))
 	}
 	_function.SetOption("kd_growth_offset", "0")
+}
+
+func (pluginInfo *UserGrowthTasksPluginType) Install() error {
+	for k, v := range UserGrowthTasksPlugin.Options {
+		_function.SetOption(k, v)
+	}
+	_function.UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
+
+	_function.GormDB.W.Migrator().DropTable(&model.TcKdGrowth{})
+
+	// index ?
+	if share.DBMode == "mysql" {
+		_function.GormDB.W.Set("gorm:table_options", "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci").Migrator().CreateTable(&model.TcKdGrowth{})
+		_function.GormDB.W.Exec("ALTER TABLE `tc_kd_growth` ADD UNIQUE KEY `id_uid_pid` (`id`,`uid`,`pid`), ADD KEY `uid` (`uid`), ADD KEY `pid` (`pid`), ADD KEY `date_id` (`date`,`id`) USING BTREE;")
+	} else {
+		_function.GormDB.W.Migrator().CreateTable(&model.TcKdGrowth{})
+
+		_function.GormDB.W.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS "idx_tc_kd_growth_id_uid_pid" ON "tc_kd_growth" ("id","uid","pid");`)
+		_function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_kd_growth_date_id" ON "tc_kd_growth" ("date","id");`)
+		_function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_kd_growth_pid" ON "tc_kd_growth" ("pid");`)
+		_function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_kd_growth_uid" ON "tc_kd_growth" ("uid");`)
+	}
+	return nil
+}
+
+func (pluginInfo *UserGrowthTasksPluginType) Delete() error {
+	return nil
+}
+func (pluginInfo *UserGrowthTasksPluginType) Upgrade() error {
+	return nil
+}
+func (pluginInfo *UserGrowthTasksPluginType) Ext() ([]any, error) {
+	return []any{}, nil
 }

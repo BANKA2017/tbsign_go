@@ -4,7 +4,7 @@
 
 只是一个签到程序，可以配合[百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/)使用，也可以独立运作
 
-## ⚠ 警告
+## ⚠ 注意
 
 - 随缘维护，不保证不会封号，请**不要**用于主力账号！！！
 - 不接受任何路线图以外的 PR，路线图内的 PR 不一定会接受
@@ -139,6 +139,25 @@ air -- --db_path=tbsign.db --test=true --api=true
 - [x] [名人堂](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_rank)
 - [x] [循环封禁](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_ban)
 - [x] ?用户成长任务(beta)
+- [x] ?[知道商城抽奖](https://github.com/96dl/Tieba-Cloud-Sign-Plugins/blob/master/ver4_lottery/ver4_lottery_desc.php)
+
+### 插件开发
+
+⚠ 插件无法做到即插即用，使用前仍然需要编译
+目前插件开发比较复杂，主要需要处理三个地方，等到可以进一步简化时会出更详细的资料
+
+- 插件目录 `/plugins` 放下核心文件，这些前缀只是为了便于管理，golang 中同一层的非隐藏文件命名对编译无影响，但不规范的命名的 PR 一定会被打回，这段内容未来会添加到 pull request 模板中
+  - 标准插件
+    - 文件命名应当使用前缀 `s_`(standard)，插件本身的命名建议使用 `<namespace>_<plugin_name>` 来避免重复，但 `namespace` 为非强制项，实际命名请尽量贴近插件功能
+    - 后续步骤请参考几个自带的标准插件以及 `/plugins/hooks.go` 的变量 `PluginList`；钩子相关请查看 `/plugins/hooks.go`
+  - 升级插件
+    - 文件命名应当使用前缀 `u_`(upgrade)，用于不兼容更新，但目前还不存在需要用到的场景，所以暂时无需理会
+  - 核心插件
+    - 文件命名应当使用前缀 `c_`(core)
+- 接口目录 `/api` 处理接口问题
+- 前端对应插件的页面，请查看 <https://github.com/BANKA2017/tbsign_go_fe> 了解更多
+
+插件不再与核心强绑定，使用传统 semver 版本号，但新插件使用的一些新版核心函数可能或导致无法在旧版核心中使用
 
 ## 编译
 
@@ -191,11 +210,12 @@ air -- --db_path=tbsign.db --test=true --api=true
 \* 带 `?` 开头的表示有考虑，但可能永远不做
 
 - [ ] 解决已知问题
-- [ ] 兼容官方已收录插件中关于贴吧的部分
+- [ ] 兼容部分原版插件
   - [x] [自动刷新贴吧列表](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_ref)
   - [x] [名人堂](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_rank)
   - [x] [循环封禁](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_ban)
   - [ ] ?[删贴机](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_review)（可能会拖很久甚至不会做）
+  - [x] ?[知道商城抽奖](https://github.com/96dl/Tieba-Cloud-Sign-Plugins/blob/master/ver4_lottery/ver4_lottery_desc.php)
 - [ ] 优化 PHP 原版的相关功能
 - [x] 不再考虑 ~~通过读取 `config.php` 取得数据库连接信息~~
 - [x] 自动清理解除绑定的帐号的插件设置

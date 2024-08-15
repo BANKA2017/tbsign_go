@@ -370,7 +370,19 @@ func PluginSwitch(c echo.Context) error {
 		}, "tbsign"))
 	}
 
-	newPluginStatus := _pluginInfo.Switch()
+	// auto install
+	if _pluginInfo.(_plugin.PluginHooks).GetInfo().Ver == "-1" {
+		err := _pluginInfo.Install()
+		if err != nil {
+			return c.JSON(http.StatusOK, apiTemplate(500, "插件安装失败", map[string]any{
+				"name":   pluginName,
+				"exists": false,
+				"status": false,
+			}, "tbsign"))
+		}
+	}
+
+	newPluginStatus := _pluginInfo.(_plugin.PluginHooks).Switch()
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
 		"name":   pluginName,

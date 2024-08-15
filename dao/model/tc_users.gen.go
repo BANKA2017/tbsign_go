@@ -12,8 +12,8 @@ type TcUser struct {
 	Name  string `gorm:"column:name;not null" json:"name"`
 	Pw    string `gorm:"column:pw;not null" json:"pw"`
 	Email string `gorm:"column:email;not null" json:"email"`
-	Role  string `gorm:"column:role;not null;default:user" json:"role"`
-	T     string `gorm:"column:t;not null;default:tieba" json:"t"`
+	Role  string `gorm:"column:role;not null;default:'user'" json:"role"`
+	T     string `gorm:"column:t;not null;default:'tieba'" json:"t"`
 }
 
 // TableName TcUser's table name

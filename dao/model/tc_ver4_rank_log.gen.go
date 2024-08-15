@@ -16,7 +16,7 @@ type TcVer4RankLog struct {
 	Name  string `gorm:"column:name;not null" json:"name"`
 	Tieba string `gorm:"column:tieba;not null" json:"tieba"`
 	Log   string `gorm:"column:log" json:"log"`
-	Date  int32  `gorm:"column:date;not null" json:"date"`
+	Date  int32  `gorm:"column:date;not null;default:0" json:"date"`
 }
 
 // TableName TcVer4RankLog's table name

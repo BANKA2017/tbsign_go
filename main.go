@@ -3,6 +3,7 @@ package main
 import (
 	_ "embed"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -26,6 +27,17 @@ var _adminPassword string
 var err error
 
 func main() {
+	fmt.Println("TbSign➡️\n")
+	fmt.Println("build_at:", share.BuiltAt)
+	fmt.Println("build_runtime:", share.BuildRuntime)
+	fmt.Println("commit_hash:", share.BuildGitCommitHash)
+	fmt.Println("frontend_hash:", share.BuildEmbeddedFrontendGitCommitHash)
+	if share.BuiltAt != "Now" && share.BuildGitCommitHash != "N/A" && share.BuildEmbeddedFrontendGitCommitHash != "N/A" {
+		fmt.Println("version:", fmt.Sprintf("%s.%s.%s\n", share.BuiltAt, share.BuildGitCommitHash[0:7], share.BuildEmbeddedFrontendGitCommitHash[0:7]))
+	} else {
+		fmt.Println("version: dev\n")
+	}
+
 	// sqlite
 	flag.StringVar(&share.DBPath, "db_path", "", "Database path")
 
@@ -137,7 +149,7 @@ func main() {
 
 		// setup
 		if setup {
-			_function.SetupSystem(share.DBMode, share.DBPath, "", "", "", "", logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
+			_plugin.SetupSystem(share.DBMode, share.DBPath, "", "", "", "", logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
 		}
 	} else {
 		// mysql
@@ -164,7 +176,7 @@ func main() {
 
 		// setup
 		if setup {
-			_function.SetupSystem(share.DBMode, "", share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
+			_plugin.SetupSystem(share.DBMode, "", share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
 		} else {
 			_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToMySQL(share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, logLevel, "db")
 			if err != nil {
@@ -203,7 +215,7 @@ func main() {
 
 			// plugins
 			for _, info := range _plugin.PluginList {
-				if info.GetInfo().Status {
+				if info.(_plugin.PluginHooks).GetInfo().Status {
 					go info.Action()
 				}
 			}

@@ -8,41 +8,46 @@ import (
 )
 
 type PluginInfo struct {
-	Name  string
-	Hooks PluginHooks
-	Info  model.TcPlugin
-	mu    *sync.RWMutex
-	//APIGroups *echo.Group
+	Name    string
+	Version string
+	Options map[string]string
+	Info    model.TcPlugin
+	sync.RWMutex
+	// APIGroups *echo.Group
 }
 
 type PluginHooks interface {
-	UpdateInfo() error
+	SetInfo(model.TcPlugin) error
 	GetInfo() model.TcPlugin
 	Switch() bool
 	GetSwitch() bool
+}
 
+type PluginActionHooks interface {
 	Install() error
 	Action() //error
 	Delete() error
-	Update() error
+	Upgrade() error
+	// for future
+	Ext() ([]any, error)
 }
 
 func (pluginInfo *PluginInfo) GetInfo() model.TcPlugin {
 	return pluginInfo.Info
 }
 
-func (pluginInfo *PluginInfo) UpdateInfo(info model.TcPlugin) error {
-	//pluginInfo.mu.Lock()
+func (pluginInfo *PluginInfo) SetInfo(info model.TcPlugin) error {
+	pluginInfo.RWMutex.Lock()
 	pluginInfo.Info = info
-	//pluginInfo.mu.Unlock()
+	pluginInfo.RWMutex.Unlock()
 	return nil
 }
 
 func (pluginInfo *PluginInfo) Switch() bool {
-	//pluginInfo.mu.Lock()
+	pluginInfo.RWMutex.Lock()
 	pluginInfo.Info.Status = !pluginInfo.Info.Status
 	_function.GormDB.W.Model(&model.TcPlugin{}).Where("name = ?", pluginInfo.Name).Update("status", pluginInfo.Info.Status)
-	//pluginInfo.mu.Unlock()
+	pluginInfo.RWMutex.Unlock()
 	return pluginInfo.Info.Status
 }
 
@@ -50,22 +55,12 @@ func (pluginInfo *PluginInfo) GetSwitch() bool {
 	return pluginInfo.Info.Status
 }
 
-func (pluginInfo *PluginInfo) Install() error {
-	return nil
-}
-func (pluginInfo *PluginInfo) Action() {}
-func (pluginInfo *PluginInfo) Delete() error {
-	return nil
-}
-func (pluginInfo *PluginInfo) Update() error {
-	return nil
-}
-
-var PluginList = map[string]*PluginInfo{
-	"ver4_rank": _function.VariablePtrWrapper(ForumSupportPluginInfo.PluginInfo),
-	"ver4_ban":  _function.VariablePtrWrapper(LoopBanPlugin.PluginInfo),
-	"ver4_ref":  _function.VariablePtrWrapper(RefreshTiebaListPlugin.PluginInfo),
-	"kd_growth": _function.VariablePtrWrapper(RefreshTiebaListPlugin.PluginInfo),
+var PluginList = map[string]PluginActionHooks{
+	"ver4_rank":    ForumSupportPluginInfo,
+	"ver4_ban":     LoopBanPlugin,
+	"ver4_ref":     RefreshTiebaListPlugin,
+	"kd_growth":    UserGrowthTasksPlugin,
+	"ver4_lottery": LotteryPluginPlugin,
 }
 
 func InitPluginList() {
@@ -73,16 +68,27 @@ func InitPluginList() {
 	// get plugin list
 
 	pluginNameList := []string{}
+	pluginNameSet := sync.Map{}
 	for name := range PluginList {
 		pluginNameList = append(pluginNameList, name)
+		pluginNameSet.Store(name, nil)
 	}
 
 	_function.GormDB.R.Where("name in ?", pluginNameList).Find(pluginListDB)
 
 	for _, pluginStatus := range *pluginListDB {
-		if PluginList[pluginStatus.Name].mu == nil {
-			PluginList[pluginStatus.Name].mu = new(sync.RWMutex)
-		}
-		PluginList[pluginStatus.Name].UpdateInfo(pluginStatus)
+		pluginNameSet.Delete(pluginStatus.Name)
+		PluginList[pluginStatus.Name].(PluginHooks).SetInfo(pluginStatus)
 	}
+
+	pluginNameSet.Range(func(key any, value any) bool {
+		pluginNameSet.Delete(key)
+		PluginList[key.(string)].(PluginHooks).SetInfo(model.TcPlugin{
+			Name:    key.(string),
+			Status:  false,
+			Ver:     "-1",
+			Options: "",
+		})
+		return true
+	})
 }

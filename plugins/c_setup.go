@@ -1,4 +1,4 @@
-package _function
+package _plugin
 
 import (
 	"bufio"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/BANKA2017/tbsign_go/assets"
 	"github.com/BANKA2017/tbsign_go/dao/model"
+	_function "github.com/BANKA2017/tbsign_go/functions"
 	"gorm.io/gorm/logger"
 )
 
@@ -43,30 +44,30 @@ func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword str
 	if dbMode == "mysql" {
 		if !dbExists {
 			fmt.Println("⌛正在建立数据库:", dbName)
-			err = GormDB.W.Exec("CREATE DATABASE IF NOT EXISTS " + dbName + ";").Error
+			err = _function.GormDB.W.Exec("CREATE DATABASE IF NOT EXISTS " + dbName + ";").Error
 			if err != nil {
 				log.Fatal(err)
 			} else {
 				fmt.Println("已建立数据库:", dbName)
 			}
 		}
-		GormDB.R, GormDB.W, err = ConnectToMySQL(dbUsername, dbPassword, dbEndpoint, dbName, logLevel, "db")
+		_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToMySQL(dbUsername, dbPassword, dbEndpoint, dbName, logLevel, "db")
 		if err != nil {
 			log.Fatal("db:", err)
 		}
 	}
 
 	fmt.Println("⌛正在清理旧表")
-	GormDB.W.Migrator().DropTable(&model.TcBaiduid{},
-		&model.TcKdGrowth{},
+	_function.GormDB.W.Migrator().DropTable(&model.TcBaiduid{},
+		// &model.TcKdGrowth{},
 		&model.TcOption{},
 		&model.TcPlugin{},
 		&model.TcTieba{},
 		&model.TcUsersOption{},
 		&model.TcUser{},
-		&model.TcVer4BanList{},
-		&model.TcVer4BanUserset{},
-		&model.TcVer4RankLog{},
+		// &model.TcVer4BanList{},
+		// &model.TcVer4BanUserset{},
+		// &model.TcVer4RankLog{},
 	)
 
 	fmt.Println("⌛正在建立数据表和索引")
@@ -76,13 +77,13 @@ func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword str
 				continue
 			}
 			fmt.Println("⌛导入第" + strconv.Itoa(i+1) + "项...")
-			err := GormDB.W.Exec(v).Error
+			err := _function.GormDB.W.Exec(v).Error
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
 	} else {
-		err := GormDB.W.Exec(string(_tc_sqlite)).Error
+		err := _function.GormDB.W.Exec(string(_tc_sqlite)).Error
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -91,7 +92,16 @@ func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword str
 	fmt.Println("⌛正在导入数据...")
 	for i, v := range strings.Split(string(_tc_init_system), "\n") {
 		fmt.Println("⌛导入第" + strconv.Itoa(i+1) + "项...")
-		err := GormDB.W.Exec(v).Error
+		err := _function.GormDB.W.Exec(v).Error
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	fmt.Println("⌛正在安装插件...")
+	for name, plugin := range PluginList {
+		fmt.Printf("⌛%s...\n", name)
+		err := plugin.Install()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -114,7 +124,7 @@ func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword str
 			log.Fatal("❌无效邮箱", err)
 		}
 		email = strings.TrimSpace(email)
-		if !VerifyEmail(email) {
+		if !_function.VerifyEmail(email) {
 			log.Fatal("❌无效邮箱")
 		}
 		fmt.Print("管理员密码 (自动清理空格): ")
@@ -132,13 +142,13 @@ func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword str
 		fmt.Println("管理员密码:", password)
 	}
 
-	passwordHash, err := CreatePasswordHash(password)
+	passwordHash, err := _function.CreatePasswordHash(password)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Println("⌛正在注册管理员帐号...")
-	GormDB.W.Create(&model.TcUser{
+	_function.GormDB.W.Create(&model.TcUser{
 		ID:    1,
 		Name:  name,
 		Email: email,
@@ -147,7 +157,7 @@ func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword str
 		T:     "tieba",
 	})
 	if dbMode == "sqlite" {
-		err := GormDB.W.Exec("VACUUM;").Error
+		err := _function.GormDB.W.Exec("VACUUM;").Error
 		if err != nil {
 			log.Fatal(err)
 		}

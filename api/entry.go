@@ -125,6 +125,11 @@ func Api(address string, args ...any) {
 	api.POST("/plugins/growth_tasks/list/empty", PluginGrowthTasksDelAllAccounts)
 	api.GET("/plugins/growth_tasks/status/:pid", PluginGrowthTasksGetTasksStatus)
 
+	// Lottery
+	api.GET("/plugins/knows_lottery/switch", PluginKnowsLotteryGetSwitch)
+	api.POST("/plugins/knows_lottery/switch", PluginKnowsLotterySwitch)
+	api.GET("/plugins/knows_lottery/log", PluginKnowsLotteryGetLogs)
+
 	// tools
 	api.GET("/tools/userinfo/tieba_uid/:tiebauid", GetUserByTiebaUID)
 	api.GET("/tools/userinfo/panel/:query_type/:user_value", GetUserByUsernameOrPortrait)

@@ -16,11 +16,14 @@ type RefreshTiebaListPluginType struct {
 
 var RefreshTiebaListPlugin = _function.VariablePtrWrapper(RefreshTiebaListPluginType{
 	PluginInfo{
-		Name: "ver4_ref",
+		Name:    "ver4_ref",
+		Version: "1.0",
+		Options: map[string]string{
+			"ver4_ref_day": "1",
+			"ver4_ref_id":  "0",
+		},
 	},
 })
-
-var RefreshTiebaListPluginName = ""
 
 func ScanTiebaByPid(pid int32) {
 	account := _function.GetCookie(pid)
@@ -176,7 +179,7 @@ func ScanTiebaByPid(pid int32) {
 	}
 }
 
-func (pluginInfo RefreshTiebaListPluginType) Action() {
+func (pluginInfo *RefreshTiebaListPluginType) Action() {
 
 	//activeAfter := 18 //GMT+8 18:00
 
@@ -204,4 +207,22 @@ func (pluginInfo RefreshTiebaListPluginType) Action() {
 		}
 	}
 	// }
+}
+
+func (pluginInfo *RefreshTiebaListPluginType) Install() error {
+	for k, v := range RefreshTiebaListPlugin.Options {
+		_function.SetOption(k, v)
+	}
+	_function.UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
+	return nil
+}
+
+func (pluginInfo *RefreshTiebaListPluginType) Delete() error {
+	return nil
+}
+func (pluginInfo *RefreshTiebaListPluginType) Upgrade() error {
+	return nil
+}
+func (pluginInfo *RefreshTiebaListPluginType) Ext() ([]any, error) {
+	return []any{}, nil
 }

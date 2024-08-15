@@ -88,6 +88,7 @@ func Fetch(_url string, _method string, _body []byte, _headers map[string]string
 		log.Println("fetch:", err)
 		return nil, err
 	}
+	//log.Println(_url)
 	//log.Println(string(response[:]))
 
 	return response[:], err

@@ -8,6 +8,7 @@ import (
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
+	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
 )
 
@@ -579,7 +580,12 @@ type ForumSupportPluginInfoType struct {
 
 var ForumSupportPluginInfo = _function.VariablePtrWrapper(ForumSupportPluginInfoType{
 	PluginInfo{
-		Name: "ver4_rank",
+		Name:    "ver4_rank",
+		Version: "1.2",
+		Options: map[string]string{
+			"ver4_rank_daily": "1",
+			"ver4_rank_id":    "0",
+		},
 	},
 })
 
@@ -604,7 +610,7 @@ func PostForumSupport(cookie _type.TypeCookie, fid int32, nid string) (*TypeForu
 	return &supportDecode, err
 }
 
-func (pluginInfo ForumSupportPluginInfoType) Action() {
+func (pluginInfo *ForumSupportPluginInfoType) Action() {
 	id, err := strconv.ParseInt(_function.GetOption("ver4_rank_id"), 10, 64)
 	if err != nil {
 		id = 0
@@ -613,7 +619,7 @@ func (pluginInfo ForumSupportPluginInfoType) Action() {
 	var accountStatusList = make(map[int32]string)
 
 	// get list
-	todayBeginning := _function.TodayBeginning() //GMT+8
+	todayBeginning := _function.LocaleTimeDiff(0) //GMT+8
 	ver4RankLog := &[]model.TcVer4RankLog{}
 	// TODO fix hard limit
 	_function.GormDB.R.Model(&model.TcVer4RankLog{}).Where("date < ? AND id > ?", todayBeginning, id).Limit(50).Find(&ver4RankLog)
@@ -652,4 +658,63 @@ func (pluginInfo ForumSupportPluginInfoType) Action() {
 		}
 	}
 	_function.SetOption("ver4_rank_id", "0")
+}
+
+func (pluginInfo *ForumSupportPluginInfoType) Install() error {
+	var err error
+
+	for k, v := range ForumSupportPluginInfo.Options {
+		_function.SetOption(k, v)
+	}
+	err = _function.UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
+	if err != nil {
+		return err
+	}
+
+	err = _function.GormDB.W.Migrator().DropTable(&model.TcVer4RankLog{})
+	if err != nil {
+		return err
+	}
+
+	// index ?
+	if share.DBMode == "mysql" {
+		err = _function.GormDB.W.Set("gorm:table_options", "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci").Migrator().CreateTable(&model.TcVer4RankLog{})
+		if err != nil {
+			return err
+		}
+		err = _function.GormDB.W.Exec("ALTER TABLE `tc_ver4_rank_log` ADD KEY `pid` (`pid`), ADD KEY `uid_pid` (`uid`,`pid`), ADD KEY `id_date` (`id`,`date`) USING BTREE;").Error
+		if err != nil {
+			return err
+		}
+	} else {
+		err = _function.GormDB.W.Migrator().CreateTable(&model.TcVer4RankLog{})
+		if err != nil {
+			return err
+		}
+
+		err = _function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_ver4_rank_log_id_date" ON "tc_ver4_rank_log" ("id", "date");`).Error
+		if err != nil {
+			return err
+		}
+		err = _function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_ver4_rank_log_uid_pid" ON "tc_ver4_rank_log" ("uid","pid");`).Error
+		if err != nil {
+			return err
+		}
+		err = _function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_ver4_rank_log_pid" ON "tc_ver4_rank_log" ("pid");`).Error
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (pluginInfo *ForumSupportPluginInfoType) Delete() error {
+	return nil
+}
+func (pluginInfo *ForumSupportPluginInfoType) Upgrade() error {
+	return nil
+}
+
+func (pluginInfo *ForumSupportPluginInfoType) Ext() ([]any, error) {
+	return []any{}, nil
 }

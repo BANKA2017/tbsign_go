@@ -59,6 +59,11 @@ func SetOption[T ~string | ~bool | ~int](keyName string, value T) error {
 		newValue = strconv.Itoa(any(value).(int))
 	}
 
+	v, ok := Options.Load(keyName)
+	if ok && v == newValue {
+		return nil
+	}
+
 	err := GormDB.W.Model(&model.TcOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcOption{Name: keyName, Value: newValue}).Error
 
 	if err == nil {
@@ -68,8 +73,11 @@ func SetOption[T ~string | ~bool | ~int](keyName string, value T) error {
 }
 
 func DeleteOption(keyName string) error {
-	Options.Delete(keyName)
-	return GormDB.W.Where("name = ?", keyName).Delete(&model.TcOption{}).Error
+	err := GormDB.W.Where("name = ?", keyName).Delete(&model.TcOption{}).Error
+	if err == nil {
+		Options.Delete(keyName)
+	}
+	return err
 }
 
 func GetUserOption(keyName string, uid string) string {
@@ -101,22 +109,42 @@ func DeleteUserOption(keyName string, uid string) error {
 	return GormDB.W.Where("uid = ? AND name = ?", uid, keyName).Delete(&model.TcUsersOption{}).Error
 }
 
-func GetCookie(pid int32) _type.TypeCookie {
+func UpdatePluginInfo(name string, version string, status bool, options string) error {
+	err := GormDB.W.Model(&model.TcPlugin{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcPlugin{
+		Name:    name,
+		Ver:     version,
+		Status:  status,
+		Options: options,
+	}).Error
+
+	return err
+}
+
+func GetCookie(pid int32, bduss_only ...bool) _type.TypeCookie {
 	cookie, ok := CookieList.Load(pid)
 	if !ok || cookie == nil {
 		var _cookie _type.TypeCookie
 		var cookieDB model.TcBaiduid
 		GormDB.R.Model(&model.TcBaiduid{}).Where("id = ?", pid).First(&cookieDB)
-		_cookie.Tbs = GetTbs(cookieDB.Bduss)
-		if _cookie.Tbs == "" {
-			return _cookie
-		}
-		_cookie.Bduss = cookieDB.Bduss
-		_cookie.Stoken = cookieDB.Stoken
+
 		_cookie.ID = cookieDB.ID
 		_cookie.Name = cookieDB.Name
 		_cookie.Portrait = cookieDB.Portrait
 		_cookie.UID = cookieDB.UID
+
+		if len(bduss_only) > 0 && bduss_only[0] {
+			_cookie.Bduss = cookieDB.Bduss
+			_cookie.Stoken = cookieDB.Stoken
+			return _cookie
+		}
+
+		_cookie.Tbs = GetTbs(cookieDB.Bduss)
+		if _cookie.Tbs == "" {
+			return _cookie
+		}
+
+		_cookie.Stoken = cookieDB.Stoken
+		_cookie.Bduss = cookieDB.Bduss
 		CookieList.Store(pid, _cookie)
 		return _cookie
 	}
@@ -155,11 +183,14 @@ func InitOptions() {
 }
 
 // for GMT+8
-func TodayBeginning() int64 {
-	if Now.Local().Hour() >= 8 {
-		return Now.Unix() - Now.Unix()%86400 - 8*3600
+func LocaleTimeDiff(hour int64) int64 {
+	targetTime := time.Date(Now.Year(), Now.Month(), Now.Day(), int(hour), 0, 0, 0, LocalTime)
+
+	if targetTime.After(Now) {
+		targetTime = targetTime.Add(-24 * time.Hour)
 	}
-	return Now.Unix() - Now.Unix()%86400 + 86400 - 8*3600
+
+	return targetTime.Unix()
 }
 
 func VariableWrapper[T any](anyValue T) T {

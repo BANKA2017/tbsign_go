@@ -18,7 +18,7 @@ type TcVer4BanList struct {
 	Stime    int32  `gorm:"column:stime;not null" json:"stime"`
 	Etime    int32  `gorm:"column:etime;not null" json:"etime"`
 	Log      string `gorm:"column:log" json:"log"`
-	Date     int32  `gorm:"column:date;not null" json:"date"`
+	Date     int32  `gorm:"column:date;not null;default:0" json:"date"`
 }
 
 // TableName TcVer4BanList's table name
