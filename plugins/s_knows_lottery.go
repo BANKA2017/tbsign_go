@@ -30,7 +30,7 @@ var LotteryPluginPlugin = _function.VariablePtrWrapper(LotteryPluginPluginType{
 
 type GetLotteryResponse struct {
 	Errno int `json:"errno,omitempty"`
-	Data  struct {
+	Data  *struct {
 		PrizeList []struct {
 			GoodsName string `json:"goodsName,omitempty"`
 		} `json:"prizeList,omitempty"`
@@ -63,6 +63,9 @@ func GetLottery(cookie _type.TypeCookie, token string) (*GetLotteryResponse, err
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO delete after investigation is completed
+	log.Println(string(response))
 
 	resp := new(GetLotteryResponse)
 	err = _function.JsonDecode(response, resp)
@@ -102,12 +105,11 @@ func (pluginInfo *LotteryPluginPluginType) Action() {
 			}
 
 			resp, err := GetLottery(cookie, token)
-			if err != nil && resp == nil {
+			if err != nil && (resp == nil || resp.Data == nil || len(resp.Data.PrizeList) == 0 || resp.Data.PrizeList[0].GoodsName == "") {
 				dataToInsert.Result = "无法解析物品信息"
 				log.Println(err, resp)
 			} else if resp.Errno != 0 {
 				dataToInsert.Result = resp.Errmsg
-				log.Println(err, resp)
 			} else {
 				dataToInsert.Prize = resp.Data.PrizeList[0].GoodsName
 			}

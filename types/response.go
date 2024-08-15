@@ -6,17 +6,17 @@ type TbsResponse struct {
 }
 
 type ClientSignResponse struct {
-	UserInfo   UserInfo `json:"user_info,omitempty"`
-	ContriInfo []any    `json:"contri_info,omitempty"`
-	ServerTime string   `json:"server_time,omitempty"`
-	Time       int      `json:"time,omitempty"`
-	Ctime      int      `json:"ctime,omitempty"`
-	Logid      int      `json:"logid,omitempty"`
-	ErrorCode  string   `json:"error_code,omitempty"`
-
-	ErrorMsg string `json:"error_msg,omitempty"`
-	Info     []any  `json:"info,omitempty"`
+	UserInfo UserInfo `json:"user_info,omitempty"`
+	// ContriInfo []any    `json:"contri_info,omitempty"`
+	// ServerTime string   `json:"server_time,omitempty"`
+	// Time       int      `json:"time,omitempty"`
+	// Ctime      int      `json:"ctime,omitempty"`
+	// Logid      int      `json:"logid,omitempty"`
+	ErrorCode string `json:"error_code,omitempty"`
+	ErrorMsg  string `json:"error_msg,omitempty"`
+	// Info     []any  `json:"info,omitempty"`
 }
+
 type AllLevelInfo struct {
 	ID    string `json:"id,omitempty"`
 	Name  string `json:"name,omitempty"`
