@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
@@ -152,7 +153,7 @@ func (pluginInfo *LoopBanPluginType) Action() {
 	if err != nil {
 		id = 0
 	}
-	otime := _function.Now.Unix() - 86400
+	otime := _function.Now.Add(time.Hour * -24).Unix()
 	var localBanAccountList = new([]model.TcVer4BanList)
 	subQuery := _function.GormDB.R.Model(&model.TcUsersOption{}).Select("uid").Where("name = 'ver4_ban_open' AND value = '1'")
 

@@ -75,7 +75,6 @@ func GetLottery(cookie _type.TypeCookie, token string) (*GetLotteryResponse, err
 func (pluginInfo *LotteryPluginPluginType) Action() {
 	id := _function.GetOption("ver4_lottery_pid")
 
-	// TODO find the real stime
 	// 10 am gmt+8
 	stime := _function.LocaleTimeDiff(10)
 
