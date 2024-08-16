@@ -10,6 +10,7 @@ import (
 type PluginInfo struct {
 	Name    string
 	Version string
+	Active  bool
 	Options map[string]string
 	Info    model.TcPlugin
 	sync.RWMutex
@@ -21,6 +22,8 @@ type PluginHooks interface {
 	GetInfo() model.TcPlugin
 	Switch() bool
 	GetSwitch() bool
+	CheckActive() bool
+	SetActive(bool) bool
 }
 
 type PluginActionHooks interface {
@@ -53,6 +56,19 @@ func (pluginInfo *PluginInfo) Switch() bool {
 
 func (pluginInfo *PluginInfo) GetSwitch() bool {
 	return pluginInfo.Info.Status
+}
+
+func (pluginInfo *PluginInfo) CheckActive() bool {
+	if pluginInfo.Active {
+		return false
+	}
+	pluginInfo.Active = true
+	return true
+}
+
+func (pluginInfo *PluginInfo) SetActive(v bool) bool {
+	pluginInfo.Active = v
+	return v
 }
 
 var PluginList = map[string]PluginActionHooks{

@@ -180,6 +180,10 @@ func ScanTiebaByPid(pid int32) {
 }
 
 func (pluginInfo *RefreshTiebaListPluginType) Action() {
+	if !pluginInfo.PluginInfo.CheckActive() {
+		return
+	}
+	defer pluginInfo.PluginInfo.SetActive(false)
 
 	//activeAfter := 18 //GMT+8 18:00
 

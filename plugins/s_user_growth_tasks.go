@@ -203,6 +203,11 @@ var activeTasks = []string{"daily_task", "live_task"}
 
 // TODO redo growth tasks(?)
 func (pluginInfo *UserGrowthTasksPluginType) Action() {
+	if !pluginInfo.PluginInfo.CheckActive() {
+		return
+	}
+	defer pluginInfo.PluginInfo.SetActive(false)
+
 	id, err := strconv.ParseInt(_function.GetOption("kd_growth_offset"), 10, 64)
 	if err != nil {
 		id = 0

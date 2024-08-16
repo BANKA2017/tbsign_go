@@ -611,6 +611,11 @@ func PostForumSupport(cookie _type.TypeCookie, fid int32, nid string) (*TypeForu
 }
 
 func (pluginInfo *ForumSupportPluginInfoType) Action() {
+	if !pluginInfo.PluginInfo.CheckActive() {
+		return
+	}
+	defer pluginInfo.PluginInfo.SetActive(false)
+
 	id, err := strconv.ParseInt(_function.GetOption("ver4_rank_id"), 10, 64)
 	if err != nil {
 		id = 0

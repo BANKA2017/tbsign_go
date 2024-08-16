@@ -149,6 +149,11 @@ func GetManagerStatus(portrait string, fid int64) (*IsManagerPreCheckResponse, e
 }
 
 func (pluginInfo *LoopBanPluginType) Action() {
+	if !pluginInfo.PluginInfo.CheckActive() {
+		return
+	}
+	defer pluginInfo.PluginInfo.SetActive(false)
+
 	id, err := strconv.ParseInt(_function.GetOption("ver4_ban_id"), 10, 64)
 	if err != nil {
 		id = 0

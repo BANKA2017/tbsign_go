@@ -73,6 +73,11 @@ func GetLottery(cookie _type.TypeCookie, token string) (*GetLotteryResponse, err
 }
 
 func (pluginInfo *LotteryPluginPluginType) Action() {
+	if !pluginInfo.PluginInfo.CheckActive() {
+		return
+	}
+	defer pluginInfo.PluginInfo.SetActive(false)
+
 	id := _function.GetOption("ver4_lottery_pid")
 
 	// 10 am gmt+8
@@ -88,7 +93,14 @@ func (pluginInfo *LotteryPluginPluginType) Action() {
 	_function.GormDB.R.Model(&model.TcBaiduid{}).Select("id").Where("id > ? AND id NOT IN (?) AND uid IN (?)", id, queryLotteryLogs, queryUserOptions).Order("id").Limit(50).Find(accounts)
 
 	if len(*accounts) > 0 {
-		for _, account := range *accounts {
+		for i, account := range *accounts {
+			if i > 0 {
+				// wait 2s?
+				/// TODO try 1s?
+				w := time.NewTicker(time.Second * 2)
+				<-w.C
+				w.Stop()
+			}
 			cookie := _function.GetCookie(account.ID, true)
 			dataToInsert := model.TcVer4LotteryLog{
 				UID:   cookie.UID,
