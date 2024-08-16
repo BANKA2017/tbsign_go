@@ -283,34 +283,34 @@ func GetAccountInfo(c echo.Context) error {
 	var accountInfo []model.TcUser
 	_function.GormDB.R.Where("id = ?", uid).Find(&accountInfo)
 
-	var accountSettings []model.TcUsersOption
-	_function.GormDB.R.Where("uid = ?", uid).Find(&accountSettings)
+	// var accountSettings []model.TcUsersOption
+	// _function.GormDB.R.Where("uid = ?", uid).Find(&accountSettings)
 
 	if len(accountInfo) == 0 {
 		return c.JSON(http.StatusOK, apiTemplate(403, "帐号不存在", echoEmptyObject, "tbsign"))
 	}
 
 	var resp = struct {
-		UID            int32             `json:"uid"`
-		Name           string            `json:"name"`
-		Email          string            `json:"email"`
-		Avatar         string            `json:"avatar"`
-		Role           string            `json:"role"`
-		Settings       map[string]string `json:"settings"`
+		UID    int32  `json:"uid"`
+		Name   string `json:"name"`
+		Email  string `json:"email"`
+		Avatar string `json:"avatar"`
+		Role   string `json:"role"`
+		//Settings       map[string]string `json:"settings"`
 		SystemSettings map[string]string `json:"system_settings"`
 	}{
-		UID:            accountInfo[0].ID,
-		Name:           accountInfo[0].Name,
-		Email:          accountInfo[0].Email,
-		Avatar:         _function.GetGravatarLink(accountInfo[0].Email),
-		Role:           accountInfo[0].Role,
-		Settings:       make(map[string]string),
+		UID:    accountInfo[0].ID,
+		Name:   accountInfo[0].Name,
+		Email:  accountInfo[0].Email,
+		Avatar: _function.GetGravatarLink(accountInfo[0].Email),
+		Role:   accountInfo[0].Role,
+		//Settings:       make(map[string]string),
 		SystemSettings: make(map[string]string),
 	}
 
-	for _, v := range accountSettings {
-		resp.Settings[v.Name] = v.Value
-	}
+	//for _, v := range accountSettings {
+	//	resp.Settings[v.Name] = v.Value
+	//}
 	resp.SystemSettings["forum_sync_policy"] = _function.GetOption("go_forum_sync_policy")
 
 	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resp, "tbsign"))
