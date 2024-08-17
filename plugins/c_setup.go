@@ -21,7 +21,6 @@ func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword str
 
 	_tc_mysql, _ := assets.EmbeddedSQL.ReadFile("sql/tc_mysql.sql")
 	_tc_sqlite, _ := assets.EmbeddedSQL.ReadFile("sql/tc_sqlite.sql")
-	_tc_init_system, _ := assets.EmbeddedSQL.ReadFile("sql/tc_init_system.sql")
 
 	fmt.Println("📌现在正在安装 TbSign➡️")
 	if dbExists {
@@ -89,10 +88,10 @@ func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword str
 		}
 	}
 
-	fmt.Println("⌛正在导入数据...")
-	for i, v := range strings.Split(string(_tc_init_system), "\n") {
-		fmt.Println("⌛导入第" + strconv.Itoa(i+1) + "项...")
-		err := _function.GormDB.W.Exec(v).Error
+	fmt.Println("⌛正在导入默认设置...")
+	for key, value := range assets.DefaultOptions {
+		fmt.Printf("%s: %s\n", key, value)
+		err := _function.SetOption(key, value)
 		if err != nil {
 			log.Fatal(err)
 		}

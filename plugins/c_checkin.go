@@ -46,7 +46,13 @@ func Dosign(table string, retry bool) (bool, error) {
 		// 重签
 		_function.GormDB.R.Where("no = ? AND latest == ? AND status IN ?", 0, _function.Now.Local().Day(), resignErrorID).Limit(int(limit)).Find(&tiebaList)
 	} else {
-		_function.GormDB.R.Where("no = ? AND latest != ?", 0, _function.Now.Local().Day()).Limit(int(limit)).Find(&tiebaList)
+		_function.GormDB.R.Table(
+			"(?) as forums",
+			_function.GormDB.R.Table(
+				"(?) as filtered_forums",
+				_function.GormDB.R.Model(&model.TcTieba{}).Where("no = ? AND latest != ?", 0, _function.Now.Local().Day()).Select("*"),
+			).Select("*", "ROW_NUMBER() OVER (PARTITION BY pid ORDER BY id) AS rn"),
+		).Select("id", "pid", "tieba", "fid").Where("no = ? AND latest != ? AND rn <= ?", 0, _function.Now.Local().Day(), limit).Limit(int(limit * 3)).Find(&tiebaList)
 	}
 
 	if len(tiebaList) <= 0 {

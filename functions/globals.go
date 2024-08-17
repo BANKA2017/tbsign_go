@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/BANKA2017/tbsign_go/assets"
 	"github.com/BANKA2017/tbsign_go/dao/model"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"gorm.io/gorm/clause"
@@ -173,12 +174,27 @@ func GetFid(name string) int64 {
 }
 
 func InitOptions() {
-	// get options
+	// get db options
 	var tmpOptions []model.TcOption
 
 	GormDB.R.Find(&tmpOptions)
+
+	// sync options
+	defaultOptionsCopy := make(map[string]string)
+	if len(tmpOptions) != len(assets.DefaultOptions) {
+		for k, v := range assets.DefaultOptions {
+			defaultOptionsCopy[k] = v
+		}
+	}
+
 	for _, v := range tmpOptions {
 		Options.Store(v.Name, v.Value)
+		delete(defaultOptionsCopy, v.Name)
+	}
+
+	// sync options
+	for k, v := range defaultOptionsCopy {
+		SetOption(k, v)
 	}
 }
 

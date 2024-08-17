@@ -5,6 +5,7 @@ import (
 	"log"
 	"regexp"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/BANKA2017/tbsign_go/dao/model"
@@ -64,13 +65,14 @@ func GetLottery(cookie _type.TypeCookie, token string) (*GetLotteryResponse, err
 		return nil, err
 	}
 
-	// TODO delete after investigation is completed
-	log.Println(string(response))
+	// log.Println(string(response))
 
 	resp := new(GetLotteryResponse)
 	err = _function.JsonDecode(response, resp)
 	return resp, err
 }
+
+var notCompleteActionPid sync.Map
 
 func (pluginInfo *LotteryPluginPluginType) Action() {
 	if !pluginInfo.PluginInfo.CheckActive() {
@@ -92,14 +94,15 @@ func (pluginInfo *LotteryPluginPluginType) Action() {
 	// TODO fix hard limit
 	_function.GormDB.R.Model(&model.TcBaiduid{}).Select("id").Where("id > ? AND id NOT IN (?) AND uid IN (?)", id, queryLotteryLogs, queryUserOptions).Order("id").Limit(50).Find(accounts)
 
+	w := time.NewTicker(time.Second)
+	defer w.Stop()
+
 	if len(*accounts) > 0 {
 		for i, account := range *accounts {
 			if i > 0 {
-				// wait 2s?
-				/// TODO try 1s?
-				w := time.NewTicker(time.Second * 2)
+				// wait 2s
+				w.Reset(time.Second)
 				<-w.C
-				w.Stop()
 			}
 			cookie := _function.GetCookie(account.ID, true)
 			dataToInsert := model.TcVer4LotteryLog{
@@ -115,14 +118,33 @@ func (pluginInfo *LotteryPluginPluginType) Action() {
 				log.Println(err)
 			}
 
+			_, hasNotCompleted := notCompleteActionPid.Load(account.ID)
+
 			resp, err := GetLottery(cookie, token)
-			if err != nil && (resp == nil || resp.Data == nil || len(resp.Data.PrizeList) == 0 || resp.Data.PrizeList[0].GoodsName == "") {
+			if err != nil && (resp == nil || resp.Data == nil) {
 				dataToInsert.Result = "无法解析物品信息"
+				if hasNotCompleted {
+					notCompleteActionPid.Delete(account.ID)
+				}
 				log.Println(err, resp)
+			} else if err != nil && resp.Errno == 0 && len(resp.Data.PrizeList) == 0 {
+				if hasNotCompleted {
+					dataToInsert.Result = "未完成抽奖"
+					notCompleteActionPid.Delete(account.ID)
+				} else {
+					log.Printf("knows_lottery: %d:%s[ %s ] 第一次未完成抽奖\n", account.ID, account.Name, account.Portrait)
+					notCompleteActionPid.Store(account.ID, nil)
+				}
 			} else if resp.Errno != 0 {
 				dataToInsert.Result = resp.Errmsg
+				if hasNotCompleted {
+					notCompleteActionPid.Delete(account.ID)
+				}
 			} else {
 				dataToInsert.Prize = resp.Data.PrizeList[0].GoodsName
+				if hasNotCompleted {
+					notCompleteActionPid.Delete(account.ID)
+				}
 			}
 
 			_function.GormDB.W.Create(&dataToInsert)
