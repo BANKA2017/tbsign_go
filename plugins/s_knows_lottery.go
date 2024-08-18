@@ -65,7 +65,7 @@ func GetLottery(cookie _type.TypeCookie, token string) (*GetLotteryResponse, err
 		return nil, err
 	}
 
-	// log.Println(string(response))
+	log.Println(string(response))
 
 	resp := new(GetLotteryResponse)
 	err = _function.JsonDecode(response, resp)
@@ -92,17 +92,20 @@ func (pluginInfo *LotteryPluginPluginType) Action() {
 	accounts := new([]model.TcBaiduid)
 
 	// TODO fix hard limit
-	_function.GormDB.R.Model(&model.TcBaiduid{}).Select("id").Where("id > ? AND id NOT IN (?) AND uid IN (?)", id, queryLotteryLogs, queryUserOptions).Order("id").Limit(50).Find(accounts)
+	waitSeconds := 2 // wait 2s// should not <=1
+	limit := 60
+	if waitSeconds <= 0 {
+		waitSeconds = 0
+	} else {
+		limit = limit / waitSeconds
+	}
 
-	w := time.NewTicker(time.Second)
-	defer w.Stop()
+	_function.GormDB.R.Model(&model.TcBaiduid{}).Select("id", "name", "portrait").Where("id > ? AND id NOT IN (?) AND uid IN (?)", id, queryLotteryLogs, queryUserOptions).Order("id").Limit(limit).Find(accounts)
 
 	if len(*accounts) > 0 {
 		for i, account := range *accounts {
 			if i > 0 {
-				// wait 2s
-				w.Reset(time.Second)
-				<-w.C
+				time.Sleep(time.Second * time.Duration(waitSeconds))
 			}
 			cookie := _function.GetCookie(account.ID, true)
 			dataToInsert := model.TcVer4LotteryLog{
