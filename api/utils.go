@@ -101,7 +101,7 @@ func verifyAuthorization(authorization string) (string, string) {
 					return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 				}
 				return &key.(*ecdsa.PrivateKey).PublicKey, nil
-			}, jwt.WithIssuedAt(), jwt.WithIssuer("TbSign->"), jwt.WithExpirationRequired())
+			}, jwt.WithIssuedAt(), jwt.WithIssuer("TbSign->"), jwt.WithExpirationRequired(), jwt.WithValidMethods([]string{"ES256"}))
 			if err != nil || !token.Valid {
 				return "0", "guest"
 			} else {
