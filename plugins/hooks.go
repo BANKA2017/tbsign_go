@@ -3,8 +3,8 @@ package _plugin
 import (
 	"sync"
 
-	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
+	"github.com/BANKA2017/tbsign_go/model"
 )
 
 type PluginInfo struct {

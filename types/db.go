@@ -1,6 +1,6 @@
 package _type
 
-import "github.com/BANKA2017/tbsign_go/dao/model"
+import "github.com/BANKA2017/tbsign_go/model"
 
 type TcTieba struct {
 	Tieba     *string `gorm:"column:tieba;not null" json:"tieba"`

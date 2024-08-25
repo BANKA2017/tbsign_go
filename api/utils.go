@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
+	"github.com/BANKA2017/tbsign_go/model"
 	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/golang-jwt/jwt/v5"

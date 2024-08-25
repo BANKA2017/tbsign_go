@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/BANKA2017/tbsign_go/assets"
-	"github.com/BANKA2017/tbsign_go/dao/model"
+	"github.com/BANKA2017/tbsign_go/model"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"gorm.io/gorm/clause"
 )

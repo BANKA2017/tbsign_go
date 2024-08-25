@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/BANKA2017/tbsign_go/assets"
-	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
+	"github.com/BANKA2017/tbsign_go/model"
 	"gorm.io/gorm/logger"
 )
 

@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
+	"github.com/BANKA2017/tbsign_go/model"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/leeqvip/gophp"
 )

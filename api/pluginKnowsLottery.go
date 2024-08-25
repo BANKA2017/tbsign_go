@@ -4,8 +4,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
+	"github.com/BANKA2017/tbsign_go/model"
 	"github.com/labstack/echo/v4"
 )
 

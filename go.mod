@@ -14,9 +14,7 @@ require (
 	google.golang.org/protobuf v1.34.2
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/sqlite v1.5.6
-	gorm.io/gen v0.3.23
 	gorm.io/gorm v1.25.10
-	gorm.io/plugin/dbresolver v1.4.7
 )
 
 require (
@@ -30,12 +28,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.22 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	golang.org/x/mod v0.18.0 // indirect
 	golang.org/x/net v0.26.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.21.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
-	golang.org/x/tools v0.22.0 // indirect
-	gorm.io/datatypes v1.2.0 // indirect
-	gorm.io/hints v1.1.2 // indirect
 )

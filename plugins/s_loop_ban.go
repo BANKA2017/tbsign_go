@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/BANKA2017/tbsign_go/dao/model"
 	_function "github.com/BANKA2017/tbsign_go/functions"
+	"github.com/BANKA2017/tbsign_go/model"
 	tbpb "github.com/BANKA2017/tbsign_go/proto"
 	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
