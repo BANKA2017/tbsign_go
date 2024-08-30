@@ -78,6 +78,7 @@ func Api(address string, args ...any) {
 	api.DELETE("/list/:pid/:fid", RemoveTieba)
 	api.PATCH("/list/:pid/:fid/ignore", IgnoreTieba)
 	api.DELETE("/list/:pid/:fid/ignore", IgnoreTieba)
+	api.POST("/list/:pid/:fid/reset", ResetTieba)
 
 	// manage
 	api.GET("/admin/settings", GetAdminSettings)
@@ -86,6 +87,7 @@ func Api(address string, args ...any) {
 	api.PATCH("/admin/account/modify/:uid", AdminModifyAccountInfo)
 	api.DELETE("/admin/account/token/:uid", AdminDeleteAccountToken)
 	api.DELETE("/admin/account/list/:uid", AdminDeleteTiebaAccountList)
+	api.POST("/admin/account/list/:uid/reset", AdminResetTiebaList)
 	api.POST("/admin/plugin/:plugin_name/switch", PluginSwitch)
 	api.POST("/admin/service/push/mail/test", SendTestMail)
 	/// server

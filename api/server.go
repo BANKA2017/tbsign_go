@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
@@ -34,9 +35,18 @@ func GetServerStatus(c echo.Context) error {
 	var PIDCount int64
 	_function.GormDB.R.Model(&model.TcBaiduid{}).Count(&PIDCount)
 
-	/// pid
-	var ForumCount int64
-	_function.GormDB.R.Model(&model.TcTieba{}).Count(&ForumCount)
+	/// forums
+	checkinStatus := new(struct {
+		Success int64 `json:"success"`
+		Failed  int64 `json:"failed"`
+		Waiting int64 `json:"waiting"`
+		Ignore  int64 `json:"ignore"`
+	})
+
+	today := strconv.Itoa(_function.Now.Local().Day())
+	_function.GormDB.R.Model(&model.TcTieba{}).Select("SUM(CASE WHEN NOT no AND status = 0 AND latest = "+today+" THEN 1 ELSE 0 END) AS success", "SUM(CASE WHEN NOT no AND status <> 0 AND latest = "+today+" THEN 1 ELSE 0 END) AS failed", "SUM(CASE WHEN NOT no AND latest <> "+today+" THEN 1 ELSE 0 END) AS waiting", "SUM(CASE WHEN no THEN 1 ELSE 0 END) AS ignore").Scan(checkinStatus)
+
+	ForumCount := checkinStatus.Success + checkinStatus.Failed + checkinStatus.Waiting + checkinStatus.Ignore
 
 	onlineCount := 0
 	keyBucket.Range(func(key, value any) bool {
@@ -62,6 +72,7 @@ func GetServerStatus(c echo.Context) error {
 		"uid_count":       fmt.Sprintf("%d [online:%d]", UIDCount, onlineCount),
 		"pid_count":       PIDCount,
 		"forum_count":     ForumCount,
+		"checkin_status":  checkinStatus,
 	}, "tbsign"))
 }
 

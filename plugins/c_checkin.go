@@ -44,6 +44,9 @@ func Dosign(table string, retry bool) (bool, error) {
 	}
 	if retry {
 		// 重签
+		// TODO special re-checkin
+		/// 1#用户未登录或登录失败，请更换账号或重试
+		/// 340006#贴吧目录出问题啦，请到贴吧签到吧反馈
 		_function.GormDB.R.Where("no = ? AND latest == ? AND status IN ?", 0, _function.Now.Local().Day(), resignErrorID).Limit(int(limit)).Find(&tiebaList)
 	} else {
 		_function.GormDB.R.Table(

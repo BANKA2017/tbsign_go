@@ -26,6 +26,12 @@ type SiteAccountsResponse struct {
 
 	BaiduAccountCount int `json:"baidu_account_count"`
 	ForumCount        int `json:"forum_count"`
+
+	// checkin status
+	CheckinSuccess int `json:"checkin_success"`
+	CheckinFailed  int `json:"checkin_failed"`
+	CheckinWaiting int `json:"checkin_waiting"`
+	CheckinIgnore  int `json:"checkin_ignore"`
 }
 
 var settingsFilter = []string{"ann", "system_url", "stop_reg", "enable_reg", "yr_reg", "cktime", "sign_mode", "sign_hour", "cron_limit", "sign_sleep", "retry_max", "mail_name", "mail_yourname", "mail_host", "mail_port", "mail_secure", "mail_auth", "mail_smtpname", "mail_smtppw", "ver4_ban_limit", "ver4_ban_break_check", "go_forum_sync_policy"} // "system_name", "system_keywords", "system_description"
@@ -253,6 +259,50 @@ func AdminModifyAccountInfo(c echo.Context) error {
 	}, "tbsign"))
 }
 
+func AdminResetTiebaList(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	targetUID := c.Param("uid")
+	resetFailedOnly := strings.TrimSpace(c.FormValue("failed_only")) != "0"
+
+	if targetUID == "" {
+		return c.JSON(http.StatusOK, apiTemplate(404, "用户不存在", false, "tbsign"))
+	}
+
+	numTargetUID, err := strconv.ParseInt(targetUID, 10, 64)
+	if err != nil || numTargetUID <= 0 {
+		return c.JSON(http.StatusOK, apiTemplate(404, "用户不存在", false, "tbsign"))
+	}
+
+	// exists?
+	var accountInfo model.TcUser
+	err = _function.GormDB.R.Model([]model.TcUser{}).Where("id = ?", targetUID).First(&accountInfo).Error
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
+		return c.JSON(http.StatusOK, apiTemplate(404, "用户不存在", false, "tbsign"))
+	}
+	if accountInfo.Role == "admin" && uid != "1" && uid != targetUID {
+		return c.JSON(http.StatusOK, apiTemplate(403, "只有根管理员允许改变其他管理员状态", false, "tbsign"))
+	}
+
+	var PIDCount int64
+	_function.GormDB.R.Model(&model.TcBaiduid{}).Where("uid = ?", targetUID).Count(&PIDCount)
+	if PIDCount > 0 {
+		var err error
+		if resetFailedOnly {
+			err = _function.GormDB.W.Model(&model.TcTieba{}).Where("uid = ? AND status != 0", targetUID).Update("latest", 0).Error
+		} else {
+			err = _function.GormDB.W.Model(&model.TcTieba{}).Where("uid = ?", targetUID).Update("latest", 0).Error
+		}
+		if err != nil {
+			log.Println(err)
+		}
+
+		return c.JSON(http.StatusOK, apiTemplate(200, "OK", err == nil, "tbsign"))
+	} else {
+		return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
+	}
+}
+
 func AdminDeleteTiebaAccountList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
@@ -341,16 +391,54 @@ func GetAccountsList(c echo.Context) error {
 	var accountInfoCount int64
 	_function.GormDB.R.Model(&model.TcUser{}).Count(&accountInfoCount)
 
-	var accountInfo []SiteAccountsResponse
 	// TODO better query
 	/// TODO any injection attacks?
+	accountInfo := new([]SiteAccountsResponse)
+
+	pidCountQuery := _function.GormDB.R.Table("(?) as pid_counts",
+		_function.GormDB.R.Model(&model.TcBaiduid{}).
+			Select("uid, COUNT(*) AS pid_count").
+			Group("uid"),
+	)
+
+	today := strconv.Itoa(_function.Now.Local().Day())
+	forumCountQuery := _function.GormDB.R.Model(&model.TcTieba{}).
+		Select(`uid, COUNT(*) AS forum_count, SUM(CASE WHEN NOT no AND status = 0 AND latest = ? THEN 1 ELSE 0 END) AS success, SUM(CASE WHEN NOT no AND status <> 0 AND latest = ? THEN 1 ELSE 0 END) AS failed, SUM(CASE WHEN NOT no AND latest <> ? THEN 1 ELSE 0 END) AS waiting, SUM(CASE WHEN no THEN 1 ELSE 0 END) AS ignore`, today, today, today).
+		Group("uid")
+
 	if query != "" {
-		_function.GormDB.R.Raw(`SELECT sa.*, COALESCE(b_count, 0) AS baidu_account_count, COALESCE(c_count, 0) AS forum_count FROM (SELECT * FROM tc_users WHERE name LIKE ? OR email LIKE ? ORDER BY id LIMIT ? OFFSET ?) sa LEFT JOIN ( SELECT uid, COUNT(*) AS b_count FROM tc_baiduid GROUP BY uid ) b_counts ON sa.id = b_counts.uid LEFT JOIN ( SELECT uid, COUNT(*) AS c_count FROM tc_tieba GROUP BY uid ) c_counts ON sa.id = c_counts.uid ORDER BY sa.id;`, _function.AppendStrings("%", query, "%"), _function.AppendStrings("%", query, "%"), numCount, (numPage-1)*numCount).Scan(&accountInfo)
+		accountsQuery := _function.GormDB.R.Model(&model.TcUser{}).
+			Select("*").
+			Where("name LIKE ? OR email LIKE ?", _function.AppendStrings("%", query, "%"), _function.AppendStrings("%", query, "%")).
+			Order("id").
+			Limit(int(numCount)).
+			Offset(int((numPage - 1) * numCount))
+
+		_function.GormDB.R.Table("(?) as accounts", accountsQuery).
+			Select(`accounts.*,  COALESCE(pid_count, 0) AS baidu_account_count,  COALESCE(forum_count, 0) AS forum_count, COALESCE(success, 0) AS checkin_success, COALESCE(failed, 0) AS checkin_failed, COALESCE(waiting, 0) AS checkin_waiting, COALESCE(ignore, 0) AS checkin_ignore`).
+			Joins("LEFT JOIN (?) pid_counts ON accounts.id = pid_counts.uid", pidCountQuery).
+			Joins("LEFT JOIN (?) forum_counts ON accounts.id = forum_counts.uid", forumCountQuery).
+			Order("accounts.id").
+			Scan(&accountInfo)
+
 	} else {
-		_function.GormDB.R.Raw(`SELECT sa.*, COALESCE(b_count, 0) AS baidu_account_count, COALESCE(c_count, 0) AS forum_count FROM (SELECT * FROM tc_users ORDER BY id LIMIT ? OFFSET ?) sa LEFT JOIN ( SELECT uid, COUNT(*) AS b_count FROM tc_baiduid GROUP BY uid ) b_counts ON sa.id = b_counts.uid LEFT JOIN ( SELECT uid, COUNT(*) AS c_count FROM tc_tieba GROUP BY uid ) c_counts ON sa.id = c_counts.uid ORDER BY sa.id;`, numCount, (numPage-1)*numCount).Scan(&accountInfo)
+		accountsQuery := _function.GormDB.R.Model(&model.TcUser{}).
+			Order("id").
+			Limit(int(numCount)).
+			Offset(int((numPage - 1) * numCount))
+
+		_function.GormDB.R.Table("(?) as accounts", accountsQuery).
+			Select(`accounts.*, COALESCE(pid_count, 0) AS baidu_account_count, COALESCE(forum_count, 0) AS forum_count,COALESCE(success, 0) AS checkin_success,COALESCE(failed, 0) AS checkin_failed,COALESCE(waiting, 0) AS checkin_waiting,COALESCE(ignore, 0) AS checkin_ignore`).
+			Joins("LEFT JOIN (?) pid_counts ON accounts.id = pid_counts.uid", pidCountQuery).
+			Joins("LEFT JOIN (?) forum_counts ON accounts.id = forum_counts.uid", forumCountQuery).
+			Order("accounts.id").
+			Scan(&accountInfo)
 	}
 
-	respAccountInfo.List = accountInfo
+	if accountInfo != nil {
+		respAccountInfo.List = *accountInfo
+	}
+
 	respAccountInfo.Page = numPage
 	respAccountInfo.Total = accountInfoCount
 

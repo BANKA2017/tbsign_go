@@ -231,6 +231,10 @@ air -- --db_path=tbsign.db --test=true --api=true
 - [ ] 个人数据导出 (接口 `/passport/export` 已写好，但没想好如何处理好安全问题，当前所有接口都会自动删除 `bduss` 和 `stoken` 的值，但导出会不可避免地需要处理这个问题)
 - [ ] ……更多的想起来再加
 
+## 更多
+
+更多的想法和已知 bug 请查看实时更新的 [#1 💔一些已知的问题（不定期更新）](https://github.com/BANKA2017/tbsign_go/issues/1)
+
 ## 感谢
 
 - [百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/)
