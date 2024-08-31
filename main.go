@@ -210,8 +210,8 @@ func main() {
 			if share.TestMode {
 				continue
 			}
-			_plugin.DoSignAction()
-			_plugin.DoReSignAction()
+			_plugin.DoCheckinAction()
+			_plugin.DoReCheckinAction()
 
 			// plugins
 			for _, info := range _plugin.PluginList {
@@ -224,6 +224,15 @@ func main() {
 			_function.ResetPwdList.Range(func(uid, value any) bool {
 				if value.(*_function.ResetPwdStruct).Expire < _function.Now.Unix() {
 					_function.ResetPwdList.Delete(uid)
+				}
+				return true
+			})
+
+			// clean re-checkin db
+			today := _function.Now.Local().Day()
+			_plugin.SPCheckinDB.Range(func(id, data any) bool {
+				if data.(_plugin.SPCheckinDBItem).Latest != int32(today) {
+					_plugin.SPCheckinDB.Delete(id)
 				}
 				return true
 			})

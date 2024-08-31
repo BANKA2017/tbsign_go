@@ -16,7 +16,22 @@ var wg sync.WaitGroup
 
 const AgainErrorId = "160002"
 
-var resignErrorID = []int64{340011, 2280007, 110001, 1989004, 255}
+var recheckinErrorID = []int64{340011, 2280007, 110001, 1989004, 255}
+
+var spCheckinQuota = 2 //?
+
+// 1#用户未登录或登录失败，请更换账号或重试
+// 340006#贴吧目录出问题啦，请到贴吧签到吧反馈
+var spRecheckinErrorID = []int64{1, 340006}
+
+type SPCheckinDBItem struct {
+	ID        int32
+	Quota     int
+	Latest    int32
+	Timestamp int64
+}
+
+var SPCheckinDB sync.Map
 
 // 重复签到错误代码
 // again_error_id_2 := "1101"
@@ -25,7 +40,7 @@ var resignErrorID = []int64{340011, 2280007, 110001, 1989004, 255}
 
 var cornSignAgainInterface map[string]any
 var tableList = []string{"tieba"}
-var today string
+var checkinToday string
 
 func Dosign(table string, retry bool) (bool, error) {
 	//signMode := _function.GetOption("sign_mode")// client mode only
@@ -44,10 +59,37 @@ func Dosign(table string, retry bool) (bool, error) {
 	}
 	if retry {
 		// 重签
-		// TODO special re-checkin
-		/// 1#用户未登录或登录失败，请更换账号或重试
-		/// 340006#贴吧目录出问题啦，请到贴吧签到吧反馈
-		_function.GormDB.R.Where("no = ? AND latest == ? AND status IN ?", 0, _function.Now.Local().Day(), resignErrorID).Limit(int(limit)).Find(&tiebaList)
+
+		today := _function.Now.Local().Day()
+		_function.GormDB.R.Where("no = ? AND latest = ? AND status IN ?", 0, today, recheckinErrorID).Limit(int(limit)).Find(&tiebaList)
+
+		// special re-checkin
+		spReCheckinList := new([]model.TcTieba)
+		err := _function.GormDB.R.Where("no = ? AND latest = ? AND status IN ?", 0, today, spRecheckinErrorID).Limit(int(limit)).Find(spReCheckinList).Error
+		if err == nil {
+			for _, spReCheckinListItem := range *spReCheckinList {
+				_data, ok := SPCheckinDB.Load(spReCheckinListItem.ID)
+				var data SPCheckinDBItem
+				if !ok {
+					data = SPCheckinDBItem{
+						ID:        spReCheckinListItem.ID,
+						Quota:     spCheckinQuota,
+						Latest:    spReCheckinListItem.Latest,
+						Timestamp: time.Now().Unix(),
+					}
+				} else {
+					data, _ = _data.(SPCheckinDBItem)
+				}
+
+				if data.Latest == int32(today) && data.Quota > 0 {
+					data.Quota--
+					data.Timestamp = time.Now().Unix() // what?
+					tiebaList = append(tiebaList, spReCheckinListItem)
+					SPCheckinDB.Store(spReCheckinListItem.ID, data)
+				}
+			}
+		}
+
 	} else {
 		_function.GormDB.R.Table(
 			"(?) as forums",
@@ -127,8 +169,8 @@ func Dosign(table string, retry bool) (bool, error) {
 	return hasFailed, nil
 }
 
-func DoSignAction() {
-	today = _function.Now.Local().Format("2006-01-02")
+func DoCheckinAction() {
+	checkinToday = _function.Now.Local().Format("2006-01-02")
 	// a:2:{s:3:"num";i:0;s:6:"lastdo";s:10:"2000-01-01";}
 	cornSignAgain := _function.GetOption("cron_sign_again")
 	cornSignAgainParsed, err := gophp.Unserialize([]byte(cornSignAgain))
@@ -143,10 +185,10 @@ func DoSignAction() {
 		return
 	}
 
-	if today != cornSignAgainInterface["lastdo"].(string) {
+	if checkinToday != cornSignAgainInterface["lastdo"].(string) {
 		// update lastdo
 		cornSignAgainInterface["num"] = 0
-		cornSignAgainInterface["lastdo"] = today
+		cornSignAgainInterface["lastdo"] = checkinToday
 		cornSignAgainEncoded, err := gophp.Serialize(cornSignAgainInterface)
 		if err != nil {
 			log.Println("sign: encode php serialize failed", err)
@@ -164,7 +206,7 @@ func DoSignAction() {
 
 }
 
-func DoReSignAction() {
+func DoReCheckinAction() {
 	retryMax, _ := strconv.ParseInt(_function.GetOption("retry_max"), 10, 64)
 
 	retryNum := cornSignAgainInterface["num"].(int)
@@ -174,7 +216,7 @@ func DoReSignAction() {
 	_function.GormDB.R.Model(&model.TcTieba{}).Where("no = 0 AND latest != ?", _function.Now.Local().Day()).Count(&unDoneCount)
 
 	var failedCount int64
-	_function.GormDB.R.Model(&model.TcTieba{}).Where("no = 0 AND status IN ?", resignErrorID).Count(&failedCount)
+	_function.GormDB.R.Model(&model.TcTieba{}).Where("no = 0 AND status IN ?", recheckinErrorID).Count(&failedCount)
 
 	if unDoneCount == 0 && failedCount > 0 && (retryMax == 0 || int64(retryNum) < retryMax && retryMax > 0) {
 		for retryMax == 0 || int64(retryNum) <= retryMax {
