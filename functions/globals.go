@@ -139,11 +139,11 @@ func GetCookie(pid int32, bduss_only ...bool) _type.TypeCookie {
 			return _cookie
 		}
 
-		_cookie.Tbs = GetTbs(cookieDB.Bduss)
-		if _cookie.Tbs == "" {
+		tbsResponse, err := GetTbs(cookieDB.Bduss)
+		if err != nil || tbsResponse.IsLogin == 0 {
 			return _cookie
 		}
-
+		_cookie.Tbs = tbsResponse.Tbs
 		_cookie.Stoken = cookieDB.Stoken
 		_cookie.Bduss = cookieDB.Bduss
 		CookieList.Store(pid, _cookie)

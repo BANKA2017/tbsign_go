@@ -16,22 +16,9 @@ var wg sync.WaitGroup
 
 const AgainErrorId = "160002"
 
-var recheckinErrorID = []int64{340011, 2280007, 110001, 1989004, 255}
-
-var spCheckinQuota = 2 //?
-
 // 1#用户未登录或登录失败，请更换账号或重试
 // 340006#贴吧目录出问题啦，请到贴吧签到吧反馈
-var spRecheckinErrorID = []int64{1, 340006}
-
-type SPCheckinDBItem struct {
-	ID        int32
-	Quota     int
-	Latest    int32
-	Timestamp int64
-}
-
-var SPCheckinDB sync.Map
+var recheckinErrorID = []int64{340011, 2280007, 110001, 1989004, 255, 1, 340006}
 
 // 重复签到错误代码
 // again_error_id_2 := "1101"
@@ -57,47 +44,19 @@ func Dosign(table string, retry bool) (bool, error) {
 	if retry || limit == 0 {
 		limit = -1
 	}
+
+	today := _function.Now.Local().Day()
 	if retry {
 		// 重签
-
-		today := _function.Now.Local().Day()
 		_function.GormDB.R.Where("no = ? AND latest = ? AND status IN ?", 0, today, recheckinErrorID).Limit(int(limit)).Find(&tiebaList)
-
-		// special re-checkin
-		spReCheckinList := new([]model.TcTieba)
-		err := _function.GormDB.R.Where("no = ? AND latest = ? AND status IN ?", 0, today, spRecheckinErrorID).Limit(int(limit)).Find(spReCheckinList).Error
-		if err == nil {
-			for _, spReCheckinListItem := range *spReCheckinList {
-				_data, ok := SPCheckinDB.Load(spReCheckinListItem.ID)
-				var data SPCheckinDBItem
-				if !ok {
-					data = SPCheckinDBItem{
-						ID:        spReCheckinListItem.ID,
-						Quota:     spCheckinQuota,
-						Latest:    spReCheckinListItem.Latest,
-						Timestamp: time.Now().Unix(),
-					}
-				} else {
-					data, _ = _data.(SPCheckinDBItem)
-				}
-
-				if data.Latest == int32(today) && data.Quota > 0 {
-					data.Quota--
-					data.Timestamp = time.Now().Unix() // what?
-					tiebaList = append(tiebaList, spReCheckinListItem)
-					SPCheckinDB.Store(spReCheckinListItem.ID, data)
-				}
-			}
-		}
-
 	} else {
 		_function.GormDB.R.Table(
 			"(?) as forums",
 			_function.GormDB.R.Table(
 				"(?) as filtered_forums",
-				_function.GormDB.R.Model(&model.TcTieba{}).Where("no = ? AND latest != ?", 0, _function.Now.Local().Day()).Select("*"),
+				_function.GormDB.R.Model(&model.TcTieba{}).Where("no = ? AND latest != ?", 0, today).Select("*"),
 			).Select("*", "ROW_NUMBER() OVER (PARTITION BY pid ORDER BY id) AS rn"),
-		).Select("id", "pid", "tieba", "fid").Where("no = ? AND latest != ? AND rn <= ?", 0, _function.Now.Local().Day(), limit).Limit(int(limit * 3)).Find(&tiebaList)
+		).Select("id", "pid", "tieba", "fid").Where("no = ? AND latest != ? AND rn <= ?", 0, today, limit).Limit(int(limit * 3)).Find(&tiebaList)
 	}
 
 	if len(tiebaList) <= 0 {

@@ -149,21 +149,21 @@ func AddSign(form *map[string]string, client_type string) {
 	(*form)["sign"] = strings.ToUpper(hex.EncodeToString(_md5[:]))
 }
 
-func GetTbs(bduss string) string {
+func GetTbs(bduss string) (*_type.TbsResponse, error) {
 	headersMap := map[string]string{
 		"Cookie": "BDUSS=" + bduss,
 	}
 	tbsResponse, err := TBFetch("http://tieba.baidu.com/dc/common/tbs", "GET", nil, headersMap)
 
 	if err != nil {
-		return ""
+		return nil, err
 	}
 
-	var tbsDecode _type.TbsResponse
+	tbsDecode := new(_type.TbsResponse)
 	if err = JsonDecode(tbsResponse, &tbsDecode); err != nil {
-		return ""
+		return nil, err
 	}
-	return tbsDecode.Tbs
+	return tbsDecode, err
 
 	/// userInfo, err := GetBaiduUserInfo(_type.TypeCookie{Bduss: bduss})
 	/// if err != nil {

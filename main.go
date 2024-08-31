@@ -227,16 +227,6 @@ func main() {
 				}
 				return true
 			})
-
-			// clean re-checkin db
-			today := _function.Now.Local().Day()
-			_plugin.SPCheckinDB.Range(func(id, data any) bool {
-				if data.(_plugin.SPCheckinDBItem).Latest != int32(today) {
-					_plugin.SPCheckinDB.Delete(id)
-				}
-				return true
-			})
-
 		case <-fourHoursInterval.C:
 			_function.InitOptions()
 			_plugin.InitPluginList()
