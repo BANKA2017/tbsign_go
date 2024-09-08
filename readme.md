@@ -1,4 +1,4 @@
-# TbSign➡️ (Dev)
+# TbSign➡️
 
 ---
 
@@ -105,7 +105,7 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 ### 兼容性
 
-- [⚠️] 通过 *迁移法* 启动的程序能够与 [百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/) 共存，但无法使用 *用户成长任务* 插件，因为这是一个未公开的插件
+- [⚠️] 通过 *迁移法* 启动的程序能够与 [百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/) 共存，但 *用户成长任务* 和 *文库任务* 插件没有对应的 PHP 版本
 - [❌] 通过 *全新安装* 启动的程序无法兼容 [百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/)，因为缺少相关数据表和设置选项
 
 ## 前端
@@ -133,30 +133,32 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 ## 插件
 
-部分功能来自原版官方插件
+外链为对应 PHP 版插件
 
 - [x] [自动刷新贴吧列表](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_ref)
 - [x] [名人堂](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_rank)
 - [x] [循环封禁](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_ban)
-- [x] ?用户成长任务(beta)
-- [x] ?[知道商城抽奖](https://github.com/96dl/Tieba-Cloud-Sign-Plugins/blob/master/ver4_lottery/ver4_lottery_desc.php)
+- [x] 用户成长任务
+- [x] [知道商城抽奖](https://github.com/96dl/Tieba-Cloud-Sign-Plugins/blob/master/ver4_lottery/ver4_lottery_desc.php)
+- [ ] 文库任务(WIP)
 
 ### 插件开发
 
-⚠ 插件无法做到即插即用，使用前仍然需要编译
+⚠ 插件还无法做到开箱即用，使用前需要通过源码编译
 
 目前插件开发比较复杂，主要需要处理三个地方，等到可以进一步简化时会出更详细的资料
 
 - 插件目录 `/plugins` 放下核心文件，这些前缀只是为了便于管理，golang 中同一层的非隐藏文件命名对编译无影响，但不规范的命名的 PR 一定会被打回，这段内容未来会添加到 pull request 模板中
   - 标准插件
-    - 文件命名应当使用前缀 `s_`(standard)，插件本身的命名建议使用 `<namespace>_<plugin_name>` 来避免重复，但 `namespace` 为非强制项，实际命名请尽量贴近插件功能
+    - 文件命名应当使用前缀 `s_`(standard)，插件本身的命名建议使用 `<namespace>_<plugin_name>` 来避免冲突，但 `namespace` 为非强制项，实际命名请尽量贴近插件功能
       - 命名建议使用 **英语单词/常用缩写**，或者与 **完整拼音** 的组合。请不要用拼音首字母缩写
-    - 后续步骤请参考几个自带的标准插件以及在 `/plugins/hooks.go` 的变量 `PluginList` 注册钩子
+    - 导出 API 接口的方式请参考现有的插件
+      - 导出路由的路径为 `[/api]/plugins/<PluginInfo.Name>/<PluginInfo.Endpoints.Path>`，有没有 `/api` 前缀取决于是否启用自带前端
+    - 其他步骤请参考几个自带的标准插件
   - 升级插件
-    - 文件命名应当使用前缀 `u_`(upgrade)，用于不兼容更新，但目前还不存在需要用到的场景，所以暂时无需理会（甚至根本没有写逻辑）
+    - 文件命名应当使用前缀 `u_`(upgrade)，用于不兼容更新，但目前还不存在需要用到的场景，所以暂时无需理会（甚至根本没有写调用逻辑）
   - 核心插件
     - 文件命名应当使用前缀 `c_`(core)
-- 接口目录 `/api` 处理接口问题
 - 前端
   - 对应插件的页面
   - 部分页面信息的汉字解释
@@ -214,11 +216,11 @@ air -- --db_path=tbsign.db --test=true --api=true
 \* 带 `?` 开头的表示有考虑，但可能永远不做
 
 - [ ] 解决已知问题
-- [ ] 兼容部分原版插件
+- [x] 兼容部分原版插件
   - [x] [自动刷新贴吧列表](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_ref)
   - [x] [名人堂](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_rank)
   - [x] [循环封禁](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_ban)
-  - [ ] ?[删贴机](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_review)（可能会拖很久甚至不会做）
+  - [x] ~~[删贴机](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_review)（可能会拖很久甚至不会做）~~ 不再考虑跟进删贴机，有需要的请选择其他贴吧管理软件
   - [x] ?[知道商城抽奖](https://github.com/96dl/Tieba-Cloud-Sign-Plugins/blob/master/ver4_lottery/ver4_lottery_desc.php)
 - [ ] 优化 PHP 原版的相关功能
 - [x] 不再考虑 ~~通过读取 `config.php` 取得数据库连接信息~~

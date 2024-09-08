@@ -54,7 +54,7 @@ func GetServerStatus(c echo.Context) error {
 		return true
 	})
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
 		"goroutine":  runtime.NumGoroutine(),
 		"goversion":  fmt.Sprintf("%s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH),
 		"start_time": share.StartTime.UnixMilli(),
@@ -81,15 +81,15 @@ func UpgradeSystem(c echo.Context) error {
 	err := _function.Upgrade(strings.TrimSpace(version))
 
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
 	}
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{}, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{}, "tbsign"))
 }
 
 func ShutdownSystem(c echo.Context) error {
 	os.Exit(1)
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{}, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{}, "tbsign"))
 }
 
 func GetPluginsList(c echo.Context) error {
@@ -104,7 +104,7 @@ func GetPluginsList(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resPluginList, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resPluginList, "tbsign"))
 }
 
 func GetLoginPageConfig(c echo.Context) error {
@@ -151,5 +151,5 @@ func GetLoginPageConfig(c echo.Context) error {
 		SystemURL:                 _function.GetOption("system_url"),
 	}
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resp, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
 }

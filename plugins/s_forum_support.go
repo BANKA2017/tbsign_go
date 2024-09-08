@@ -3,6 +3,7 @@ package _plugin
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 	"strconv"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/BANKA2017/tbsign_go/model"
 	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
+	"github.com/labstack/echo/v4"
 )
 
 type TypeForumSupportList struct {
@@ -578,6 +580,10 @@ type ForumSupportPluginInfoType struct {
 	PluginInfo
 }
 
+func init() {
+	RegisterPlugin(ForumSupportPluginInfo.Name, ForumSupportPluginInfo)
+}
+
 var ForumSupportPluginInfo = _function.VariablePtrWrapper(ForumSupportPluginInfoType{
 	PluginInfo{
 		Name:    "ver4_rank",
@@ -585,6 +591,13 @@ var ForumSupportPluginInfo = _function.VariablePtrWrapper(ForumSupportPluginInfo
 		Options: map[string]string{
 			"ver4_rank_daily": "1",
 			"ver4_rank_id":    "0",
+		},
+		Endpoints: []PluginEndpintStruct{
+			{Method: "GET", Path: "switch", Function: PluginForumSupportGetSwitch},
+			{Method: "POST", Path: "switch", Function: PluginForumSupportSwitch},
+			{Method: "GET", Path: "list", Function: PluginForumSupportGetCharactersList},
+			{Method: "GET", Path: "settings", Function: PluginForumSupportGetSettings},
+			{Method: "PUT", Path: "settings", Function: PluginForumSupportUpdateSettings},
 		},
 	},
 })
@@ -722,4 +735,141 @@ func (pluginInfo *ForumSupportPluginInfoType) Upgrade() error {
 
 func (pluginInfo *ForumSupportPluginInfoType) Ext() ([]any, error) {
 	return []any{}, nil
+}
+
+// endpoints
+func PluginForumSupportGetCharactersList(c echo.Context) error {
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", ForumSupportList, "tbsign"))
+}
+func PluginForumSupportGetSettings(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	var rankList []model.TcVer4RankLog
+	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&rankList)
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", rankList, "tbsign"))
+}
+
+func PluginForumSupportUpdateSettings(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	numUID, _ := strconv.ParseInt(uid, 10, 64)
+
+	pid := c.FormValue("pid")
+	numPid, err := strconv.ParseInt(pid, 10, 64)
+
+	if err != nil || numPid <= 0 {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "非法 pid", _function.EchoEmptyObject, "tbsign"))
+	}
+
+	var rankList []model.TcVer4RankLog
+	_function.GormDB.R.Where("uid = ? AND pid = ?", uid, pid).Order("id ASC").Find(&rankList)
+
+	c.Request().ParseForm()
+
+	nid := c.Request().Form["nid[]"]
+
+	var addRankList []model.TcVer4RankLog
+	var delRankList []model.TcVer4RankLog
+	var delRankIDList []int32
+	var failedList []int64
+
+	// add
+	for _, v := range nid {
+		exist := false
+		for _, v1 := range rankList {
+			if v1.Nid == v {
+				exist = true
+			}
+		}
+		if !exist {
+			numNid, err := strconv.ParseInt(v, 10, 64)
+			if err != nil {
+				failedList = append(failedList, numNid)
+				continue
+			}
+
+			// fid nid
+			var forum TypeForumSupportList
+			for _, _forum := range ForumSupportList {
+				if _forum.Nid == numNid {
+					forum = _forum
+					break
+				}
+			}
+
+			if forum.Nid <= 0 {
+				failedList = append(failedList, numNid)
+				continue
+			}
+
+			numFid, _ := strconv.ParseInt(forum.Fid, 10, 64)
+
+			addRankList = append(addRankList, model.TcVer4RankLog{
+				UID:   int32(numUID),
+				Pid:   int32(numPid),
+				Fid:   int32(numFid),
+				Nid:   v,
+				Name:  forum.Name,
+				Tieba: forum.Tieba,
+				Log:   "",
+				Date:  0,
+			})
+		}
+	}
+
+	if len(addRankList) > 0 {
+		_function.GormDB.W.Create(&addRankList)
+	}
+
+	// del
+	for _, v := range rankList {
+		exist := false
+		for _, v1 := range nid {
+			if v.Nid == v1 {
+				exist = true
+			}
+		}
+		if !exist {
+			delRankList = append(delRankList, v)
+			delRankIDList = append(delRankIDList, v.ID)
+		}
+	}
+
+	_function.GormDB.W.Where("id IN ?", delRankIDList).Delete(&model.TcVer4RankLog{})
+
+	var resp = struct {
+		Add    []model.TcVer4RankLog `json:"add"`
+		Del    []model.TcVer4RankLog `json:"del"`
+		Failed []int64               `json:"failed"`
+	}{
+		Add:    addRankList,
+		Del:    delRankList,
+		Failed: failedList,
+	}
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
+}
+
+func PluginForumSupportGetSwitch(c echo.Context) error {
+	uid := c.Get("uid").(string)
+	status := _function.GetUserOption("ver4_rank_check", uid)
+	if status == "" {
+		status = "0"
+		_function.SetUserOption("ver4_rank_check", status, uid)
+	}
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", status != "0", "tbsign"))
+}
+
+func PluginForumSupportSwitch(c echo.Context) error {
+	uid := c.Get("uid").(string)
+	status := _function.GetUserOption("ver4_rank_check", uid) != "0"
+
+	err := _function.SetUserOption("ver4_rank_check", !status, uid)
+
+	if err != nil {
+		log.Println(err)
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法修改名人堂助攻插件状态", status, "tbsign"))
+	}
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", !status, "tbsign"))
 }

@@ -53,7 +53,7 @@ func GetAdminSettings(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", settings, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", settings, "tbsign"))
 }
 
 func UpdateAdminSettings(c echo.Context) error {
@@ -158,7 +158,7 @@ func UpdateAdminSettings(c echo.Context) error {
 		errStr = append(errStr, "OK")
 	}
 
-	return c.JSON(http.StatusOK, apiTemplate(200, strings.Join(errStr, "\n"), settings, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, strings.Join(errStr, "\n"), settings, "tbsign"))
 }
 
 func AdminModifyAccountInfo(c echo.Context) error {
@@ -166,24 +166,24 @@ func AdminModifyAccountInfo(c echo.Context) error {
 	targetUID := c.Param("uid")
 
 	if targetUID == "" {
-		return c.JSON(http.StatusOK, apiTemplate(404, "用户不存在", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyObject, "tbsign"))
 	} else if uid == targetUID {
-		return c.JSON(http.StatusOK, apiTemplate(403, "无法修改自己的帐号", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无法修改自己的帐号", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	numTargetUID, err := strconv.ParseInt(targetUID, 10, 64)
 	if err != nil || numTargetUID <= 0 {
-		return c.JSON(http.StatusOK, apiTemplate(404, "用户不存在", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// exists?
 	var accountInfo model.TcUser
 	_function.GormDB.R.Model([]model.TcUser{}).Where("id = ?", targetUID).Find(&accountInfo)
 	if accountInfo.ID == 0 {
-		return c.JSON(http.StatusOK, apiTemplate(404, "用户不存在", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 	if accountInfo.Role == "admin" && uid != "1" {
-		return c.JSON(http.StatusOK, apiTemplate(403, "只有根管理员允许改变管理员状态", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "只有根管理员允许改变管理员状态", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	var newAccountInfo = accountInfo
@@ -195,12 +195,12 @@ func AdminModifyAccountInfo(c echo.Context) error {
 	// email
 	if newEmail != "" && accountInfo.Email != newEmail {
 		if !_function.VerifyEmail(newEmail) {
-			return c.JSON(http.StatusOK, apiTemplate(403, "无效邮箱", echoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效邮箱", _function.EchoEmptyObject, "tbsign"))
 		} else {
 			var emailExistsCount int64
 			_function.GormDB.R.Model(&model.TcUser{}).Where("email = ?", newEmail).Count(&emailExistsCount)
 			if emailExistsCount > 0 {
-				return c.JSON(http.StatusOK, apiTemplate(403, "邮箱已存在", echoEmptyObject, "tbsign"))
+				return c.JSON(http.StatusOK, _function.ApiTemplate(403, "邮箱已存在", _function.EchoEmptyObject, "tbsign"))
 			} else {
 				newAccountInfo.Email = newEmail
 			}
@@ -214,7 +214,7 @@ func AdminModifyAccountInfo(c echo.Context) error {
 		var nameExistsCount int64
 		_function.GormDB.R.Model(&model.TcUser{}).Where("name = ?", newName).Count(&nameExistsCount)
 		if nameExistsCount > 0 {
-			return c.JSON(http.StatusOK, apiTemplate(403, "用户名已存在", echoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "用户名已存在", _function.EchoEmptyObject, "tbsign"))
 		} else {
 			newAccountInfo.Name = newName
 		}
@@ -225,7 +225,7 @@ func AdminModifyAccountInfo(c echo.Context) error {
 	// role
 	if newRole != "" && accountInfo.Role != newRole {
 		if !slices.Contains(RoleList, newRole) {
-			return c.JSON(http.StatusOK, apiTemplate(403, "新用户组 "+newRole+" 不存在", echoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "新用户组 "+newRole+" 不存在", _function.EchoEmptyObject, "tbsign"))
 		} else {
 			newAccountInfo.Role = newRole
 		}
@@ -250,7 +250,7 @@ func AdminModifyAccountInfo(c echo.Context) error {
 		_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", accountInfo.ID).Updates(&newAccountInfo)
 	}
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", &SiteAccountsResponse{
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", &SiteAccountsResponse{
 		ID:    accountInfo.ID,
 		Name:  newName,
 		Email: newEmail,
@@ -266,22 +266,22 @@ func AdminResetTiebaList(c echo.Context) error {
 	resetFailedOnly := strings.TrimSpace(c.FormValue("failed_only")) != "0"
 
 	if targetUID == "" {
-		return c.JSON(http.StatusOK, apiTemplate(404, "用户不存在", false, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
 
 	numTargetUID, err := strconv.ParseInt(targetUID, 10, 64)
 	if err != nil || numTargetUID <= 0 {
-		return c.JSON(http.StatusOK, apiTemplate(404, "用户不存在", false, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
 
 	// exists?
 	var accountInfo model.TcUser
 	err = _function.GormDB.R.Model([]model.TcUser{}).Where("id = ?", targetUID).First(&accountInfo).Error
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
-		return c.JSON(http.StatusOK, apiTemplate(404, "用户不存在", false, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
 	if accountInfo.Role == "admin" && uid != "1" && uid != targetUID {
-		return c.JSON(http.StatusOK, apiTemplate(403, "只有根管理员允许改变其他管理员状态", false, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "只有根管理员允许改变其他管理员状态", false, "tbsign"))
 	}
 
 	var PIDCount int64
@@ -297,9 +297,9 @@ func AdminResetTiebaList(c echo.Context) error {
 			log.Println(err)
 		}
 
-		return c.JSON(http.StatusOK, apiTemplate(200, "OK", err == nil, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", err == nil, "tbsign"))
 	} else {
-		return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 	}
 }
 
@@ -309,24 +309,24 @@ func AdminDeleteTiebaAccountList(c echo.Context) error {
 	targetUID := c.Param("uid")
 
 	if targetUID == "" {
-		return c.JSON(http.StatusOK, apiTemplate(404, "用户不存在", false, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	} else if uid == targetUID {
-		return c.JSON(http.StatusOK, apiTemplate(403, "无法修改自己的帐号", false, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无法修改自己的帐号", false, "tbsign"))
 	}
 
 	numTargetUID, err := strconv.ParseInt(targetUID, 10, 64)
 	if err != nil || numTargetUID <= 0 {
-		return c.JSON(http.StatusOK, apiTemplate(404, "用户不存在", false, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
 
 	// exists?
 	var accountInfo model.TcUser
 	err = _function.GormDB.R.Model([]model.TcUser{}).Where("id = ?", targetUID).First(&accountInfo).Error
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
-		return c.JSON(http.StatusOK, apiTemplate(404, "用户不存在", false, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
 	if accountInfo.Role == "admin" && uid != "1" {
-		return c.JSON(http.StatusOK, apiTemplate(403, "只有根管理员允许改变管理员状态", false, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "只有根管理员允许改变管理员状态", false, "tbsign"))
 	}
 
 	var PIDCount int64
@@ -339,9 +339,9 @@ func AdminDeleteTiebaAccountList(c echo.Context) error {
 		_function.GormDB.W.Where("uid = ?", targetUID).Delete(&model.TcVer4BanList{})
 		_function.GormDB.W.Where("uid = ?", targetUID).Delete(&model.TcVer4RankLog{})
 		_function.GormDB.W.Where("uid = ?", targetUID).Delete(&model.TcKdGrowth{})
-		return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 	} else {
-		return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 	}
 }
 
@@ -350,13 +350,13 @@ func AdminDeleteAccountToken(c echo.Context) error {
 	targetUID := c.Param("uid")
 
 	if uid == targetUID {
-		return c.JSON(http.StatusOK, apiTemplate(403, "无法踢自己下线", false, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无法踢自己下线", false, "tbsign"))
 	}
 
 	if _, ok := keyBucket.LoadAndDelete(targetUID); ok {
-		return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 	} else {
-		return c.JSON(http.StatusOK, apiTemplate(404, "用户不在线上", false, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不在线上", false, "tbsign"))
 	}
 }
 
@@ -380,12 +380,12 @@ func GetAccountsList(c echo.Context) error {
 	numPage, err := strconv.ParseInt(page, 10, 64)
 	if err != nil || numPage <= 0 {
 		log.Println(err, page)
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid page", respAccountInfo, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "Invalid page", respAccountInfo, "tbsign"))
 	}
 	numCount, err := strconv.ParseInt(count, 10, 64)
 	if err != nil || numCount <= 0 {
 		log.Println(err, count)
-		return c.JSON(http.StatusOK, apiTemplate(403, "Invalid count", respAccountInfo, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "Invalid count", respAccountInfo, "tbsign"))
 	}
 
 	var accountInfoCount int64
@@ -442,7 +442,7 @@ func GetAccountsList(c echo.Context) error {
 	respAccountInfo.Page = numPage
 	respAccountInfo.Total = accountInfoCount
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", respAccountInfo, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", respAccountInfo, "tbsign"))
 }
 
 func PluginSwitch(c echo.Context) error {
@@ -451,7 +451,7 @@ func PluginSwitch(c echo.Context) error {
 
 	_pluginInfo, ok := _plugin.PluginList[pluginName]
 	if !ok {
-		return c.JSON(http.StatusOK, apiTemplate(404, "插件不存在", map[string]any{
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "插件不存在", map[string]any{
 			"name":   pluginName,
 			"exists": false,
 			"status": false,
@@ -462,7 +462,7 @@ func PluginSwitch(c echo.Context) error {
 	if _pluginInfo.(_plugin.PluginHooks).GetInfo().Ver == "-1" {
 		err := _pluginInfo.Install()
 		if err != nil {
-			return c.JSON(http.StatusOK, apiTemplate(500, "插件安装失败", map[string]any{
+			return c.JSON(http.StatusOK, _function.ApiTemplate(500, "插件安装失败", map[string]any{
 				"name":   pluginName,
 				"exists": false,
 				"status": false,
@@ -472,7 +472,7 @@ func PluginSwitch(c echo.Context) error {
 
 	newPluginStatus := _pluginInfo.(_plugin.PluginHooks).Switch()
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
 		"name":   pluginName,
 		"exists": true,
 		"status": newPluginStatus,
@@ -488,8 +488,8 @@ func SendTestMail(c echo.Context) error {
 	mailObject := _function.EmailTestTemplate()
 	err := _function.SendEmail(accountInfo.Email, mailObject.Object, mailObject.Body)
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(500, err.Error(), false, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, err.Error(), false, "tbsign"))
 	} else {
-		return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 	}
 }

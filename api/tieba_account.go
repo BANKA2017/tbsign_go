@@ -14,9 +14,9 @@ import (
 func GetLoginQRCode(c echo.Context) error {
 	qrcode, err := _function.GetLoginQRCode()
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(500, "获取二维码失败", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "获取二维码失败", _function.EchoEmptyObject, "tbsign"))
 	}
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", qrcode, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", qrcode, "tbsign"))
 }
 
 func GetBDUSS(c echo.Context) error {
@@ -26,25 +26,25 @@ func GetBDUSS(c echo.Context) error {
 	res, err := _function.GetUnicastResponse(sign)
 
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(500, "获取状态失败", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "获取状态失败", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// tmpBDUSS
 	if res.ChannelV.V == "" {
-		return c.JSON(http.StatusOK, apiTemplate(400, "未确认", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "未确认", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	res2, err := _function.GetLoginResponse(res.ChannelV.V)
 
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(500, "登录失败", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "登录失败", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	stokenStr := strings.ReplaceAll(res2.Data.Session.StokenList, "&quot;", "\"")
 	var stokenArray []string
 	err = _function.JsonDecode([]byte(stokenStr), &stokenArray)
 	if err != nil || res2.Data.Session.Bduss == "" {
-		return c.JSON(http.StatusOK, apiTemplate(500, "登录失败", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "登录失败", _function.EchoEmptyObject, "tbsign"))
 	}
 	bduss := res2.Data.Session.Bduss
 
@@ -55,14 +55,14 @@ func GetBDUSS(c echo.Context) error {
 	}
 
 	if stoken, ok := stokenKV["tb"]; !ok || stoken == "" {
-		return c.JSON(http.StatusOK, apiTemplate(500, "登录失败", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "登录失败", _function.EchoEmptyObject, "tbsign"))
 	}
 	stoken := stokenKV["tb"]
 
 	// get tieba account info
 	baiduAccountInfo, err := _function.GetBaiduUserInfo(_type.TypeCookie{Bduss: bduss})
 	if err != nil || baiduAccountInfo.User.Portrait == "" {
-		return c.JSON(http.StatusOK, apiTemplate(404, "无法验证登录状态 BDUSS", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无法验证登录状态 BDUSS", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// pre-check
@@ -82,11 +82,11 @@ func GetBDUSS(c echo.Context) error {
 			newData.UID = tiebaAccounts[0].UID
 			newData.Bduss = ""
 			newData.Stoken = ""
-			return c.JSON(http.StatusOK, apiTemplate(200, "已更新 BDUSS", newData, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "已更新 BDUSS", newData, "tbsign"))
 		} else if tiebaAccounts[0].Bduss == bduss && tiebaAccounts[0].Stoken == stoken {
 			tiebaAccounts[0].Bduss = ""
 			tiebaAccounts[0].Stoken = ""
-			return c.JSON(http.StatusOK, apiTemplate(200, "贴吧账号已存在", tiebaAccounts[0], "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "贴吧账号已存在", tiebaAccounts[0], "tbsign"))
 		}
 	}
 
@@ -102,7 +102,7 @@ func GetBDUSS(c echo.Context) error {
 	_function.GormDB.W.Create(&newAccount)
 	newAccount.Bduss = ""
 	newAccount.Stoken = ""
-	return c.JSON(http.StatusOK, apiTemplate(201, "OK", newAccount, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(201, "OK", newAccount, "tbsign"))
 }
 
 func AddTiebaAccount(c echo.Context) error {
@@ -114,13 +114,13 @@ func AddTiebaAccount(c echo.Context) error {
 	includeBDUSSAndStoken := c.QueryParams().Get("all") == "1"
 
 	if bduss == "" || stoken == "" {
-		return c.JSON(http.StatusOK, apiTemplate(401, "BDUSS 或 Stoken 无效", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(401, "BDUSS 或 Stoken 无效", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// get tieba account info
 	baiduAccountInfo, err := _function.GetBaiduUserInfo(_type.TypeCookie{Bduss: bduss})
 	if err != nil || baiduAccountInfo.User.Portrait == "" {
-		return c.JSON(http.StatusOK, apiTemplate(404, "无法验证登录状态 BDUSS", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无法验证登录状态 BDUSS", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// pre-check
@@ -142,13 +142,13 @@ func AddTiebaAccount(c echo.Context) error {
 				newData.Bduss = ""
 				newData.Stoken = ""
 			}
-			return c.JSON(http.StatusOK, apiTemplate(200, "已更新 BDUSS", newData, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "已更新 BDUSS", newData, "tbsign"))
 		} else if tiebaAccounts[0].Bduss == bduss && tiebaAccounts[0].Stoken == stoken {
 			if !includeBDUSSAndStoken {
 				tiebaAccounts[0].Bduss = ""
 				tiebaAccounts[0].Stoken = ""
 			}
-			return c.JSON(http.StatusOK, apiTemplate(200, "贴吧账号已存在", tiebaAccounts[0], "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "贴吧账号已存在", tiebaAccounts[0], "tbsign"))
 		}
 	}
 
@@ -166,7 +166,7 @@ func AddTiebaAccount(c echo.Context) error {
 		newAccount.Bduss = ""
 		newAccount.Stoken = ""
 	}
-	return c.JSON(http.StatusOK, apiTemplate(201, "OK", newAccount, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(201, "OK", newAccount, "tbsign"))
 }
 
 func RemoveTiebaAccount(c echo.Context) error {
@@ -175,7 +175,7 @@ func RemoveTiebaAccount(c echo.Context) error {
 	pid := c.Param("pid")
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(403, "无效 pid", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// fid pid
@@ -192,13 +192,13 @@ func RemoveTiebaAccount(c echo.Context) error {
 			_function.GormDB.W.Where("pid = ?", v.ID).Delete(&model.TcVer4RankLog{})
 			_function.GormDB.W.Where("pid = ?", v.ID).Delete(&model.TcKdGrowth{})
 
-			return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]int32{
+			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]int32{
 				"pid": v.ID,
 			}, "tbsign"))
 		}
 	}
 
-	return c.JSON(http.StatusOK, apiTemplate(404, "Pid 不存在", echoEmptyObject, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(404, "Pid 不存在", _function.EchoEmptyObject, "tbsign"))
 }
 
 func GetTiebaAccountList(c echo.Context) error {
@@ -215,7 +215,7 @@ func GetTiebaAccountList(c echo.Context) error {
 			tiebaAccounts[k].Stoken = ""
 		}
 	}
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", tiebaAccounts, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaAccounts, "tbsign"))
 }
 
 func GetTiebaAccountItem(c echo.Context) error {
@@ -227,7 +227,7 @@ func GetTiebaAccountItem(c echo.Context) error {
 
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(403, "无效 pid", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	var tiebaAccount model.TcBaiduid
@@ -237,7 +237,7 @@ func GetTiebaAccountItem(c echo.Context) error {
 		tiebaAccount.Bduss = ""
 		tiebaAccount.Stoken = ""
 	}
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", tiebaAccount, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaAccount, "tbsign"))
 }
 
 func CheckTiebaAccount(c echo.Context) error {
@@ -246,14 +246,14 @@ func CheckTiebaAccount(c echo.Context) error {
 	pid := c.Param("pid")
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(403, "无效 pid", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	var tiebaAccount model.TcBaiduid
 	_function.GormDB.R.Where("id = ? AND uid = ?", pid, uid).Order("id ASC").Find(&tiebaAccount)
 
 	if tiebaAccount.ID != 0 && tiebaAccount.ID != int32(numPid) {
-		return c.JSON(http.StatusOK, apiTemplate(403, "无效 pid", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// get tieba account info
@@ -262,9 +262,9 @@ func CheckTiebaAccount(c echo.Context) error {
 	//log.Println(tiebaAccount, baiduAccountInfo)
 
 	if err != nil || baiduAccountInfo.User.Portrait == "" {
-		return c.JSON(http.StatusOK, apiTemplate(200, "OK", false, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", false, "tbsign"))
 	} else {
-		return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 	}
 
 }

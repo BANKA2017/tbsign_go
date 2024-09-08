@@ -9,5 +9,5 @@ import (
 
 func GetNotifications(c echo.Context) error {
 	notifications := _function.GetOption("ann")
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", notifications, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", notifications, "tbsign"))
 }

@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/BANKA2017/tbsign_go/assets"
+	_function "github.com/BANKA2017/tbsign_go/functions"
+	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/BANKA2017/tbsign_go/share"
 	"github.com/labstack/echo/v4"
 )
@@ -42,11 +44,11 @@ func Api(address string, args ...any) {
 	})
 
 	if !share.EnableFrontend {
-		api.Any("/", echoReject)
-		api.Any("/*", echoReject)
-		api.Any("/favicon.ico", echoNoContent)
+		api.Any("/", _function.EchoReject)
+		api.Any("/*", _function.EchoReject)
+		api.Any("/favicon.ico", _function.EchoNoContent)
 		api.Any("/robots.txt", echoRobots)
-		api.OPTIONS("/*", echoNoContent)
+		api.OPTIONS("/*", _function.EchoNoContent)
 	}
 
 	api.GET("/passport", GetAccountInfo)
@@ -95,43 +97,6 @@ func Api(address string, args ...any) {
 	api.POST("/admin/server/upgrade", UpgradeSystem)
 	api.POST("/admin/server/shutdown", ShutdownSystem)
 
-	// plugins
-	// ForumSupport
-	api.GET("/plugins/forum_support/switch", PluginForumSupportGetSwitch)
-	api.POST("/plugins/forum_support/switch", PluginForumSupportSwitch)
-	api.GET("/plugins/forum_support/list", PluginForumSupportGetCharactersList)
-	api.GET("/plugins/forum_support/settings", PluginForumSupportGetSettings)
-	api.PUT("/plugins/forum_support/settings", PluginForumSupportUpdateSettings)
-
-	// RefreshTiebaList
-	api.GET("/plugins/refresh_tieba_list/list", PluginRefreshTiebaListGetAccountList)
-	api.POST("/plugins/refresh_tieba_list/refresh", PluginRefreshTiebaListRefreshTiebaList)
-
-	// LoopBan
-	api.GET("/plugins/loop_ban/switch", PluginLoopBanGetSwitch)
-	api.POST("/plugins/loop_ban/switch", PluginLoopBanSwitch)
-	api.GET("/plugins/loop_ban/reason", PluginLoopBanGetReason)
-	api.PUT("/plugins/loop_ban/reason", PluginLoopBanSetReason)
-	api.GET("/plugins/loop_ban/list", PluginLoopBanGetList)
-	api.PATCH("/plugins/loop_ban/list", PluginLoopBanAddAccounts)
-	api.DELETE("/plugins/loop_ban/list/:id", PluginLoopBanDelAccount)
-	api.POST("/plugins/loop_ban/list/empty", PluginLoopBanDelAllAccounts)
-	api.GET("/plugins/loop_ban/check/:pid/is_manager/:fname", PluginLoopBanPreCheckIsManager)
-
-	// GrowthTasks
-	api.GET("/plugins/growth_tasks/settings", PluginGrowthTasksGetSettings)
-	api.PUT("/plugins/growth_tasks/settings", PluginGrowthTasksSetSettings)
-	api.GET("/plugins/growth_tasks/list", PluginGrowthTasksGetList)
-	api.PATCH("/plugins/growth_tasks/list", PluginGrowthTasksAddAccount)
-	api.DELETE("/plugins/growth_tasks/list/:id", PluginGrowthTasksDelAccount)
-	api.POST("/plugins/growth_tasks/list/empty", PluginGrowthTasksDelAllAccounts)
-	api.GET("/plugins/growth_tasks/status/:pid", PluginGrowthTasksGetTasksStatus)
-
-	// Lottery
-	api.GET("/plugins/knows_lottery/switch", PluginKnowsLotteryGetSwitch)
-	api.POST("/plugins/knows_lottery/switch", PluginKnowsLotterySwitch)
-	api.GET("/plugins/knows_lottery/log", PluginKnowsLotteryGetLogs)
-
 	// tools
 	api.GET("/tools/userinfo/tieba_uid/:tiebauid", GetUserByTiebaUID)
 	api.GET("/tools/userinfo/panel/:query_type/:user_value", GetUserByUsernameOrPortrait)
@@ -144,6 +109,13 @@ func Api(address string, args ...any) {
 	api.GET("/plugins", GetPluginsList)
 	api.GET("/config/page/login", GetLoginPageConfig)
 
+	// plugins
+	plugin := api.Group("/plugins")
+	for _, v := range _plugin.PluginList {
+		for _, r := range v.(_plugin.PluginHooks).GetEndpoints() {
+			plugin.Match([]string{r.Method}, "/"+v.(_plugin.PluginHooks).GetInfo().Name+"/"+r.Path, r.Function)
+		}
+	}
 	// frontend
 	if share.EnableFrontend {
 		fe, _ := fs.Sub(assets.EmbeddedFrontent, "dist")

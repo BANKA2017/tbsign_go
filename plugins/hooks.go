@@ -5,14 +5,28 @@ import (
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
+	"github.com/labstack/echo/v4"
 )
 
+var PluginList = make(map[string]PluginActionHooks)
+
+func RegisterPlugin(name string, plugin PluginActionHooks) {
+	PluginList[name] = plugin
+}
+
+type PluginEndpintStruct struct {
+	Method   string
+	Path     string
+	Function func(echo.Context) error
+}
+
 type PluginInfo struct {
-	Name    string
-	Version string
-	Active  bool
-	Options map[string]string
-	Info    model.TcPlugin
+	Name      string
+	Version   string
+	Active    bool
+	Options   map[string]string
+	Info      model.TcPlugin
+	Endpoints []PluginEndpintStruct
 	sync.RWMutex
 	// APIGroups *echo.Group
 }
@@ -24,6 +38,7 @@ type PluginHooks interface {
 	GetSwitch() bool
 	CheckActive() bool
 	SetActive(bool) bool
+	GetEndpoints() []PluginEndpintStruct
 }
 
 type PluginActionHooks interface {
@@ -71,12 +86,8 @@ func (pluginInfo *PluginInfo) SetActive(v bool) bool {
 	return v
 }
 
-var PluginList = map[string]PluginActionHooks{
-	"ver4_rank":    ForumSupportPluginInfo,
-	"ver4_ban":     LoopBanPlugin,
-	"ver4_ref":     RefreshTiebaListPlugin,
-	"kd_growth":    UserGrowthTasksPlugin,
-	"ver4_lottery": LotteryPluginPlugin,
+func (pluginInfo *PluginInfo) GetEndpoints() []PluginEndpintStruct {
+	return pluginInfo.Endpoints
 }
 
 func InitPluginList() {

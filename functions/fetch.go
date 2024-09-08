@@ -173,7 +173,7 @@ func GetTbs(bduss string) (*_type.TbsResponse, error) {
 	/// }
 }
 
-func PostSignClient(cookie _type.TypeCookie, kw string, fid int32) (*_type.ClientSignResponse, error) {
+func PostCheckinClient(cookie _type.TypeCookie, kw string, fid int32) (*_type.ClientSignResponse, error) {
 	//log.Println(cookie, kw, fid)
 	var form = make(map[string]string)
 	form["BDUSS"] = cookie.Bduss

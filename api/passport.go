@@ -21,7 +21,7 @@ func Signup(c echo.Context) error {
 	// site status
 	isRegistrationEnable := _function.GetOption("enable_reg") == "1"
 	if !isRegistrationEnable {
-		return c.JSON(http.StatusOK, apiTemplate(403, "注册已关闭", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "注册已关闭", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// form
@@ -31,14 +31,14 @@ func Signup(c echo.Context) error {
 	inviteCode := c.FormValue("invite_code")
 
 	if name == "" || strings.Contains(name, "@") || !_function.VerifyEmail(email) || password == "" {
-		return c.JSON(http.StatusOK, apiTemplate(403, "无效 用户名/邮箱/密码", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 用户名/邮箱/密码", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// invite code
 	localInviteCode := _function.GetOption("yr_reg")
 	if localInviteCode != "" {
 		if localInviteCode != inviteCode {
-			return c.JSON(http.StatusOK, apiTemplate(403, "无效邀请码", echoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效邀请码", _function.EchoEmptyObject, "tbsign"))
 		}
 	}
 
@@ -48,12 +48,12 @@ func Signup(c echo.Context) error {
 	var emailOrNameExistsCount int64
 	_function.GormDB.R.Model(&model.TcUser{}).Where("email = ? OR name = ?", email, name).Count(&emailOrNameExistsCount)
 	if emailOrNameExistsCount > 0 {
-		return c.JSON(http.StatusOK, apiTemplate(403, "用户名或邮箱已注册", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "用户名或邮箱已注册", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	passwordHash, err := _function.CreatePasswordHash(password)
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(500, "无法建立帐号", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法建立帐号", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	_function.GormDB.W.Create(&model.TcUser{
@@ -66,7 +66,7 @@ func Signup(c echo.Context) error {
 
 	msg := "注册成功🎉"
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]string{
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]string{
 		"name": name,
 		"role": role,
 		"msg":  msg,
@@ -78,7 +78,7 @@ func DeleteAccount(c echo.Context) error {
 
 	password := c.FormValue("password")
 	if password == "" {
-		return c.JSON(http.StatusOK, apiTemplate(403, "无效密码", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效密码", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	var accountInfo model.TcUser
@@ -87,12 +87,12 @@ func DeleteAccount(c echo.Context) error {
 	// verify password
 	err := _function.VerifyPasswordHash(accountInfo.Pw, password)
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(403, "无效密码", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效密码", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// find root admin
 	if uid == "1" {
-		return c.JSON(http.StatusOK, apiTemplate(403, "您不能删除账号，因为您是根管理员", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "您不能删除账号，因为您是根管理员", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// set role -> delete
@@ -108,7 +108,7 @@ func DeleteAccount(c echo.Context) error {
 
 	keyBucket.Delete(uid)
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "帐号已删除，感谢您的使用", map[string]any{
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "帐号已删除，感谢您的使用", map[string]any{
 		"uid":  int64(accountInfo.ID),
 		"name": accountInfo.Name,
 		"role": accountInfo.Role,
@@ -120,7 +120,7 @@ func Login(c echo.Context) error {
 	password := strings.TrimSpace(c.FormValue("password"))
 
 	if account == "" || password == "" {
-		return c.JSON(http.StatusOK, apiTemplate(401, "帐号或密码错误", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(401, "帐号或密码错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// check
@@ -128,23 +128,23 @@ func Login(c echo.Context) error {
 	_function.GormDB.R.Where("name = ? OR email = ?", account, account).Limit(1).Find(&accountInfo)
 
 	if len(accountInfo) == 0 {
-		return c.JSON(http.StatusOK, apiTemplate(401, "帐号或密码错误", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(401, "帐号或密码错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	err := _function.VerifyPasswordHash(accountInfo[0].Pw, password)
 	if err != nil && _function.GetOption("go_ver") != "1" {
 		// Compatible with older versions -> md5(md5(md5($pwd)))
 		if _function.Md5(_function.Md5(_function.Md5(password))) != accountInfo[0].Pw {
-			return c.JSON(http.StatusOK, apiTemplate(401, "帐号或密码错误", echoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(401, "帐号或密码错误", _function.EchoEmptyObject, "tbsign"))
 		}
 	} else if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(401, "帐号或密码错误", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(401, "帐号或密码错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	if accountInfo[0].Role == "banned" {
-		return c.JSON(http.StatusOK, apiTemplate(403, "帐号已封禁", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "帐号已封禁", _function.EchoEmptyObject, "tbsign"))
 	} else if accountInfo[0].Role == "deleted" {
-		return c.JSON(http.StatusOK, apiTemplate(403, "帐号已删除", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "帐号已删除", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	var resp = tokenResponse{
@@ -152,14 +152,14 @@ func Login(c echo.Context) error {
 		Token: bearerTokenBuilder(strconv.Itoa(int(accountInfo[0].ID)), true),
 	}
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resp, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
 }
 
 func Logout(c echo.Context) error {
 	uid := c.Get("uid").(string)
 	keyBucket.Delete(uid)
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 }
 
 func UpdateAccountInfo(c echo.Context) error {
@@ -172,7 +172,7 @@ func UpdateAccountInfo(c echo.Context) error {
 	_function.GormDB.R.Where("id = ?", uid).Limit(1).Find(&accountInfo)
 
 	if len(accountInfo) == 0 {
-		return c.JSON(http.StatusOK, apiTemplate(403, "帐号不存在", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "帐号不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	username = strings.TrimSpace(username)
@@ -180,7 +180,7 @@ func UpdateAccountInfo(c echo.Context) error {
 
 	if email != "" {
 		if !_function.VerifyEmail(email) {
-			return c.JSON(http.StatusOK, apiTemplate(404, "邮箱不合法", false, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "邮箱不合法", false, "tbsign"))
 		}
 
 		// compare email
@@ -189,7 +189,7 @@ func UpdateAccountInfo(c echo.Context) error {
 			_function.GormDB.R.Model(&model.TcUser{}).Where("email = ?", email).Count(&emailExistsCount)
 
 			if emailExistsCount > 0 {
-				return c.JSON(http.StatusOK, apiTemplate(403, "邮箱已存在", echoEmptyObject, "tbsign"))
+				return c.JSON(http.StatusOK, _function.ApiTemplate(403, "邮箱已存在", _function.EchoEmptyObject, "tbsign"))
 			} else {
 				_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", uid).Update("email", email)
 			}
@@ -205,7 +205,7 @@ func UpdateAccountInfo(c echo.Context) error {
 			_function.GormDB.R.Model(&model.TcUser{}).Where("name = ?", username).Count(&usernameExistsCount)
 
 			if usernameExistsCount > 0 {
-				return c.JSON(http.StatusOK, apiTemplate(403, "用户名已存在", echoEmptyObject, "tbsign"))
+				return c.JSON(http.StatusOK, _function.ApiTemplate(403, "用户名已存在", _function.EchoEmptyObject, "tbsign"))
 			} else {
 				_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", uid).Update("name", username)
 			}
@@ -228,7 +228,7 @@ func UpdateAccountInfo(c echo.Context) error {
 		Avatar: _function.GetGravatarLink(email),
 	}
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resp, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
 }
 
 func UpdatePassword(c echo.Context) error {
@@ -238,14 +238,14 @@ func UpdatePassword(c echo.Context) error {
 	newPwd := c.FormValue("new_password")
 
 	if oldPwd == "" || newPwd == "" {
-		return c.JSON(http.StatusOK, apiTemplate(403, "新/旧密码都不可为空", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "新/旧密码都不可为空", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	var accountInfo []model.TcUser
 	_function.GormDB.R.Where("id = ?", uid).Limit(1).Find(&accountInfo)
 
 	if len(accountInfo) == 0 {
-		return c.JSON(http.StatusOK, apiTemplate(403, "帐号不存在", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "帐号不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// compare old password
@@ -253,16 +253,16 @@ func UpdatePassword(c echo.Context) error {
 	if err != nil && _function.GetOption("go_ver") != "1" {
 		// Compatible with older versions
 		if _function.Md5(_function.Md5(_function.Md5(oldPwd))) != accountInfo[0].Pw {
-			return c.JSON(http.StatusOK, apiTemplate(403, "旧密码错误", echoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "旧密码错误", _function.EchoEmptyObject, "tbsign"))
 		}
 	} else if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(401, "帐号或密码错误", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(401, "帐号或密码错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// create new password
 	hash, err := _function.CreatePasswordHash(newPwd)
 	if err != nil {
-		return c.JSON(http.StatusOK, apiTemplate(500, "无法更新密码...", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法更新密码...", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", uid).Update("pw", string(hash))
@@ -272,7 +272,7 @@ func UpdatePassword(c echo.Context) error {
 		Token: bearerTokenBuilder(uid, true),
 	}
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resp, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
 }
 
 func GetAccountInfo(c echo.Context) error {
@@ -287,7 +287,7 @@ func GetAccountInfo(c echo.Context) error {
 	// _function.GormDB.R.Where("uid = ?", uid).Find(&accountSettings)
 
 	if len(accountInfo) == 0 {
-		return c.JSON(http.StatusOK, apiTemplate(403, "帐号不存在", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "帐号不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	var resp = struct {
@@ -313,7 +313,7 @@ func GetAccountInfo(c echo.Context) error {
 	//}
 	resp.SystemSettings["forum_sync_policy"] = _function.GetOption("go_forum_sync_policy")
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", resp, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
 }
 
 func GetSettings(c echo.Context) error {
@@ -328,7 +328,7 @@ func GetSettings(c echo.Context) error {
 		settings[v.Name] = v.Value
 	}
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", settings, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", settings, "tbsign"))
 }
 
 func UpdateSettings(c echo.Context) error {
@@ -361,7 +361,7 @@ func UpdateSettings(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", settings, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", settings, "tbsign"))
 }
 
 func ResetPassword(c echo.Context) error {
@@ -370,7 +370,7 @@ func ResetPassword(c echo.Context) error {
 	newPwd := c.FormValue("password")
 
 	if !_function.VerifyEmail(email) {
-		return c.JSON(http.StatusOK, apiTemplate(404, "邮箱不合法", false, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "邮箱不合法", false, "tbsign"))
 	}
 
 	// find account
@@ -379,35 +379,35 @@ func ResetPassword(c echo.Context) error {
 	if accountInfo.ID == 0 {
 		// defense scan
 		// TODO Implement a delay of several seconds to prevent a side-channel attack.
-		return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 	}
 
 	if verifyCode != "" {
 		_v, ok := _function.ResetPwdList.Load(accountInfo.ID)
 
 		if !ok || _v == nil {
-			return c.JSON(http.StatusOK, apiTemplate(404, "无效验证码", false, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", false, "tbsign"))
 		}
 		if __v, ok := _v.(*_function.ResetPwdStruct); ok && __v.Value == verifyCode {
 			if newPwd == "" {
-				return c.JSON(http.StatusOK, apiTemplate(404, "密码不能为空", false, "tbsign"))
+				return c.JSON(http.StatusOK, _function.ApiTemplate(404, "密码不能为空", false, "tbsign"))
 			} else {
 				// create new password
 				hash, err := _function.CreatePasswordHash(newPwd)
 				if err != nil {
-					return c.JSON(http.StatusOK, apiTemplate(500, "无法更新密码...", false, "tbsign"))
+					return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法更新密码...", false, "tbsign"))
 				}
 
 				_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", accountInfo.ID).Update("pw", string(hash))
 
 				_function.ResetPwdList.Delete(accountInfo.ID)
-				return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
+				return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 			}
 		} else {
-			return c.JSON(http.StatusOK, apiTemplate(404, "无效验证码", false, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", false, "tbsign"))
 		}
 	} else if verifyCode == "" && newPwd != "" {
-		return c.JSON(http.StatusOK, apiTemplate(404, "无效验证码", false, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", false, "tbsign"))
 	} else {
 		_v, ok := _function.ResetPwdList.Load(accountInfo.ID)
 		v := new(_function.ResetPwdStruct)
@@ -419,7 +419,7 @@ func ResetPassword(c echo.Context) error {
 		} else {
 			v = _v.(*_function.ResetPwdStruct)
 			if v.Time >= _function.ResetPwdMaxTimes {
-				return c.JSON(http.StatusOK, apiTemplate(429, "已超过最大验证次数，请稍后再试", false, "tbsign"))
+				return c.JSON(http.StatusOK, _function.ApiTemplate(429, "已超过最大验证次数，请稍后再试", false, "tbsign"))
 			}
 		}
 		// init a callback code
@@ -439,9 +439,9 @@ func ResetPassword(c echo.Context) error {
 		err := _function.SendEmail(accountInfo.Email, mailObject.Object, mailObject.Body)
 		if err != nil {
 			log.Println(err)
-			return c.JSON(http.StatusOK, apiTemplate(500, "邮件发送失败", false, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(500, "邮件发送失败", false, "tbsign"))
 		} else {
-			return c.JSON(http.StatusOK, apiTemplate(200, "OK", true, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 		}
 	}
 }
@@ -456,10 +456,10 @@ func ExportAccountData(c echo.Context) error {
 	if len(tcUser) > 0 {
 		err := _function.VerifyPasswordHash(tcUser[0].Pw, password)
 		if err != nil {
-			return c.JSON(http.StatusOK, apiTemplate(403, "密码错误", echoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "密码错误", _function.EchoEmptyObject, "tbsign"))
 		}
 	} else {
-		return c.JSON(http.StatusOK, apiTemplate(403, "账号不存在 (请问是如何登录的)", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号不存在 (请问是如何登录的)", _function.EchoEmptyObject, "tbsign"))
 	}
 	oneTcUser := tcUser[0]
 	oneTcUser.Pw = ""
@@ -479,7 +479,7 @@ func ExportAccountData(c echo.Context) error {
 	_function.GormDB.W.Model(&model.TcVer4RankLog{}).Where("uid = ?", uid).Find(&tcVer4RankLog)
 	_function.GormDB.W.Model(&model.TcKdGrowth{}).Where("uid = ?", uid).Find(&tcKdGrowth)
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
 		"tc_user":          oneTcUser,
 		"tc_tieba":         tcTieba,
 		"tc_baiduid":       tcBaiduid,

@@ -2,16 +2,22 @@ package _plugin
 
 import (
 	"log"
+	"net/http"
 	"slices"
 	"strconv"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	_type "github.com/BANKA2017/tbsign_go/types"
+	"github.com/labstack/echo/v4"
 )
 
 type RefreshTiebaListPluginType struct {
 	PluginInfo
+}
+
+func init() {
+	RegisterPlugin(RefreshTiebaListPlugin.Name, RefreshTiebaListPlugin)
 }
 
 var RefreshTiebaListPlugin = _function.VariablePtrWrapper(RefreshTiebaListPluginType{
@@ -21,6 +27,10 @@ var RefreshTiebaListPlugin = _function.VariablePtrWrapper(RefreshTiebaListPlugin
 		Options: map[string]string{
 			"ver4_ref_day": "1",
 			"ver4_ref_id":  "0",
+		},
+		Endpoints: []PluginEndpintStruct{
+			{Method: "GET", Path: "list", Function: PluginRefreshTiebaListGetAccountList},
+			{Method: "POST", Path: "sync", Function: PluginRefreshTiebaListRefreshTiebaList},
 		},
 	},
 })
@@ -229,4 +239,67 @@ func (pluginInfo *RefreshTiebaListPluginType) Upgrade() error {
 }
 func (pluginInfo *RefreshTiebaListPluginType) Ext() ([]any, error) {
 	return []any{}, nil
+}
+
+// endpoint
+func PluginRefreshTiebaListGetAccountList(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	var tiebaAccounts []model.TcBaiduid
+	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
+
+	var tiebaList []model.TcTieba
+	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaList)
+
+	type accountListResponse struct {
+		PID      int32  `json:"pid"`
+		Name     string `json:"name"`
+		Portrait string `json:"portrait"`
+		Count    int32  `json:"count"`
+	}
+
+	var response []accountListResponse
+	for _, v := range tiebaAccounts {
+		var count int32
+		for _, v1 := range tiebaList {
+			if v1.Pid == v.ID {
+				count++
+			}
+		}
+		response = append(response, accountListResponse{
+			PID:      v.ID,
+			Name:     v.Name,
+			Portrait: v.Portrait,
+			Count:    count,
+		})
+	}
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", response, "tbsign"))
+
+}
+
+func PluginRefreshTiebaListRefreshTiebaList(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	pid := c.FormValue("pid")
+
+	numPid, err := strconv.ParseInt(pid, 10, 64)
+	if err != nil || numPid <= 0 {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
+	}
+
+	var tiebaAccounts []model.TcBaiduid
+	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
+
+	// get account list
+	for _, v := range tiebaAccounts {
+		if v.ID == int32(numPid) {
+			ScanTiebaByPid(v.ID)
+			var tiebaList []model.TcTieba
+			_function.GormDB.R.Where("uid = ? AND pid = ?", uid, pid).Order("id ASC").Find(&tiebaList)
+			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaList, "tbsign"))
+		}
+	}
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(404, "找不到 pid:"+pid, _function.EchoEmptyObject, "tbsign"))
 }

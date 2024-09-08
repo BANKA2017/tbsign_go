@@ -45,31 +45,31 @@ func PreCheck(next echo.HandlerFunc) echo.HandlerFunc {
 		lengthOfAuthorizationPrefix := len(authorizationPrefix)
 
 		if len(authorization) <= lengthOfAuthorizationPrefix || !strings.EqualFold(authorizationPrefix, authorization[0:lengthOfAuthorizationPrefix]) {
-			return c.JSON(http.StatusOK, apiTemplate(401, "无效 session", echoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(401, "无效 session", _function.EchoEmptyObject, "tbsign"))
 		}
 
 		uid, role := verifyAuthorization(authorization[lengthOfAuthorizationPrefix:])
 
 		// login
 		if uid == "0" {
-			return c.JSON(http.StatusOK, apiTemplate(401, "无效 session", echoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(401, "无效 session", _function.EchoEmptyObject, "tbsign"))
 		}
 
 		// deleted
 		if role == "deleted" {
-			return c.JSON(http.StatusOK, apiTemplate(403, "帐号已删除", echoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "帐号已删除", _function.EchoEmptyObject, "tbsign"))
 		}
 
 		// TODO banned
 		if role == "banned" {
 			if !(path == "/passport" || strings.HasPrefix(path, "/passport/") || path == "/notifications") {
-				return c.JSON(http.StatusOK, apiTemplate(403, "受限帐号", echoEmptyObject, "tbsign"))
+				return c.JSON(http.StatusOK, _function.ApiTemplate(403, "受限帐号", _function.EchoEmptyObject, "tbsign"))
 			}
 		}
 
 		// admin
 		if strings.HasPrefix(path, "/admin/") && role != "admin" {
-			return c.JSON(http.StatusOK, apiTemplate(403, "无效用户组", echoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效用户组", _function.EchoEmptyObject, "tbsign"))
 		}
 
 		c.Set("uid", uid)

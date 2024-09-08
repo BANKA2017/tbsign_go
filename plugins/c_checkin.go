@@ -34,7 +34,7 @@ func Dosign(table string, retry bool) (bool, error) {
 	hasFailed := false
 	signHour, _ := strconv.ParseInt(_function.GetOption("sign_hour"), 10, 64)
 	if int64(_function.Now.Hour()) <= signHour {
-		log.Println("sign:", strconv.FormatInt(signHour, 10)+"点时忽略签到")
+		log.Println("checkin:", strconv.FormatInt(signHour, 10)+"点时忽略签到")
 		return hasFailed, nil
 	}
 	limit, _ := strconv.ParseInt(_function.GetOption("cron_limit"), 10, 64)
@@ -60,7 +60,7 @@ func Dosign(table string, retry bool) (bool, error) {
 	}
 
 	if len(tiebaList) <= 0 {
-		//log.Println("sign: Empty list")
+		//log.Println("checkin: Empty list")
 		return hasFailed, nil
 	}
 
@@ -84,10 +84,10 @@ func Dosign(table string, retry bool) (bool, error) {
 			// success := false
 			ck := _function.GetCookie(pid)
 			if ck.Bduss == "" {
-				log.Println("sign: Failed, no such account", pid, kw, fid, id, now.Local().Day())
+				log.Println("checkin: Failed, no such account", pid, kw, fid, id, now.Local().Day())
 				return
 			}
-			response, err := _function.PostSignClient(ck, kw, fid)
+			response, err := _function.PostCheckinClient(ck, kw, fid)
 
 			if err != nil {
 				log.Println(err)
@@ -112,7 +112,7 @@ func Dosign(table string, retry bool) (bool, error) {
 				})
 			}
 
-			log.Println("sign:", pid, kw, fid, id, now.Local().Day(), time.Now().UnixMilli()-now.UnixMilli())
+			log.Println("checkin:", pid, kw, fid, id, now.Local().Day(), time.Now().UnixMilli()-now.UnixMilli())
 		}(v.Pid, v.Tieba, v.Fid, v.ID, _function.Now)
 
 		time.Sleep(time.Millisecond * time.Duration(sleep))
@@ -124,7 +124,7 @@ func Dosign(table string, retry bool) (bool, error) {
 		}
 	}
 	wg.Wait()
-	log.Println("sign: done!")
+	log.Println("checkin: done!")
 	return hasFailed, nil
 }
 
@@ -134,13 +134,13 @@ func DoCheckinAction() {
 	cornSignAgain := _function.GetOption("cron_sign_again")
 	cornSignAgainParsed, err := gophp.Unserialize([]byte(cornSignAgain))
 	if err != nil {
-		log.Println("sign:", err)
+		log.Println("checkin:", err)
 		return
 	}
 
 	var ok bool
 	if cornSignAgainInterface, ok = cornSignAgainParsed.(map[string]any); !ok {
-		log.Println("sign: parse config failed (lastdo)")
+		log.Println("checkin: parse config failed (lastdo)")
 		return
 	}
 
@@ -150,7 +150,7 @@ func DoCheckinAction() {
 		cornSignAgainInterface["lastdo"] = checkinToday
 		cornSignAgainEncoded, err := gophp.Serialize(cornSignAgainInterface)
 		if err != nil {
-			log.Println("sign: encode php serialize failed", err)
+			log.Println("checkin: encode php serialize failed", err)
 			return
 		}
 

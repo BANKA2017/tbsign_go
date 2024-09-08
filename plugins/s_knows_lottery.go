@@ -3,6 +3,7 @@ package _plugin
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"regexp"
 	"strconv"
 	"sync"
@@ -12,10 +13,15 @@ import (
 	"github.com/BANKA2017/tbsign_go/model"
 	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
+	"github.com/labstack/echo/v4"
 )
 
 type LotteryPluginPluginType struct {
 	PluginInfo
+}
+
+func init() {
+	RegisterPlugin(LotteryPluginPlugin.Name, LotteryPluginPlugin)
 }
 
 var LotteryPluginPlugin = _function.VariablePtrWrapper(LotteryPluginPluginType{
@@ -25,6 +31,11 @@ var LotteryPluginPlugin = _function.VariablePtrWrapper(LotteryPluginPluginType{
 		Options: map[string]string{
 			"ver4_lottery_pid": "0",
 			"ver4_lottery_day": "0",
+		},
+		Endpoints: []PluginEndpintStruct{
+			{Method: "GET", Path: "switch", Function: PluginKnowsLotteryGetSwitch},
+			{Method: "POST", Path: "switch", Function: PluginKnowsLotterySwitch},
+			{Method: "GET", Path: "log", Function: PluginKnowsLotteryGetLogs},
 		},
 	},
 })
@@ -199,4 +210,38 @@ func (pluginInfo *LotteryPluginPluginType) Upgrade() error {
 }
 func (pluginInfo *LotteryPluginPluginType) Ext() ([]any, error) {
 	return []any{}, nil
+}
+
+// endpoint
+
+func PluginKnowsLotteryGetLogs(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	log := new([]model.TcVer4LotteryLog)
+	_function.GormDB.R.Model(&model.TcVer4LotteryLog{}).Where("uid = ?", uid).Order("id DESC").Find(log)
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", log, "tbsign"))
+}
+
+func PluginKnowsLotteryGetSwitch(c echo.Context) error {
+	uid := c.Get("uid").(string)
+	status := _function.GetUserOption("ver4_lottery_check", uid)
+	if status == "" {
+		status = "0"
+		_function.SetUserOption("ver4_lottery_check", status, uid)
+	}
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", status != "0", "tbsign"))
+}
+
+func PluginKnowsLotterySwitch(c echo.Context) error {
+	uid := c.Get("uid").(string)
+	status := _function.GetUserOption("ver4_lottery_check", uid) != "0"
+
+	err := _function.SetUserOption("ver4_lottery_check", !status, uid)
+
+	if err != nil {
+		log.Println(err)
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法修改知道商城抽奖插件状态", status, "tbsign"))
+	}
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", !status, "tbsign"))
 }

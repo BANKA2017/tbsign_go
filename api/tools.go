@@ -15,10 +15,10 @@ func GetUserByTiebaUID(c echo.Context) error {
 
 	if err != nil {
 		log.Println(err)
-		return c.JSON(http.StatusOK, apiTemplate(500, "未知错误", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", response, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", response, "tbsign"))
 }
 
 func GetUserByUsernameOrPortrait(c echo.Context) error {
@@ -28,10 +28,10 @@ func GetUserByUsernameOrPortrait(c echo.Context) error {
 	response, err := _function.GetUserInfoByUsernameOrPortrait(queryType, userValue)
 	if err != nil {
 		log.Println(err)
-		return c.JSON(http.StatusOK, apiTemplate(500, "未知错误", echoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", response, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", response, "tbsign"))
 }
 
 func GetFidByFname(c echo.Context) error {
@@ -39,7 +39,7 @@ func GetFidByFname(c echo.Context) error {
 
 	fid := _function.GetFid(fname)
 
-	return c.JSON(http.StatusOK, apiTemplate(200, "OK", map[string]any{
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
 		"fname": fname,
 		"fid":   fid,
 	}, "tbsign"))

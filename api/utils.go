@@ -15,13 +15,10 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	"github.com/BANKA2017/tbsign_go/share"
-	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slices"
 )
-
-var echoEmptyObject = make(map[string]any, 0)
 
 var PreCheckWhiteListWithoutFE = []string{
 	"/",
@@ -54,23 +51,6 @@ func PreCheckWhiteListExists(path string) bool {
 	} else {
 		return slices.Contains(PreCheckWhiteListWithoutFE, path)
 	}
-}
-
-func apiTemplate[T any](code int, message string, data T, version string) _type.ApiTemplate {
-	return _type.ApiTemplate{
-		Code:    code,
-		Message: message,
-		Data:    data,
-		Version: version,
-	}
-}
-
-func echoReject(c echo.Context) error {
-	return c.JSON(http.StatusForbidden, apiTemplate(403, "非法请求", echoEmptyObject, "tbsign"))
-}
-
-func echoNoContent(c echo.Context) error {
-	return c.NoContent(http.StatusOK)
 }
 
 func echoRobots(c echo.Context) error {
