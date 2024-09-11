@@ -216,13 +216,10 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 				if _, ok := tasksIDList.Load(v.TaskID); !ok && !slices.Contains(wenkuPassTasks, v.TaskID) && v.TaskStatus >= 1 && v.TaskStatus <= 3 {
 					tasksIDList.Store(v.TaskID, nil)
 					tasksList = append(tasksList, v)
-					if accountStatusList[taskUserItem.UID] != "1" && v.TaskID == 1 {
-						break
-					}
 				}
 			}
 		}
-		if accountStatusList[taskUserItem.UID] == "1" {
+		if accountStatusList[taskUserItem.UID] != "1" {
 			tasksListResponse, err := GetWenkuTaskList(cookie, "tasklist")
 			if err != nil {
 				log.Println(err)
@@ -242,6 +239,10 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 		}
 
 		for _, _task := range tasksList {
+			if accountStatusList[taskUserItem.UID] == "1" && _task.TaskID != 1 {
+				continue
+			}
+
 			task := _task
 
 			if task.TaskStatus == 1 {
