@@ -215,7 +215,7 @@ func main() {
 
 			// plugins
 			for _, info := range _plugin.PluginList {
-				if info.(_plugin.PluginHooks).GetInfo().Status {
+				if info.(_plugin.PluginHooks).GetDBInfo().Status {
 					go info.Action()
 				}
 			}

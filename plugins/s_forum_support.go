@@ -14,6 +14,10 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+func init() {
+	RegisterPlugin(ForumSupportPluginInfo.Name, ForumSupportPluginInfo)
+}
+
 type TypeForumSupportList struct {
 	Fid   string `json:"fid"`
 	Nid   int64  `json:"nid"`
@@ -580,10 +584,6 @@ type ForumSupportPluginInfoType struct {
 	PluginInfo
 }
 
-func init() {
-	RegisterPlugin(ForumSupportPluginInfo.Name, ForumSupportPluginInfo)
-}
-
 var ForumSupportPluginInfo = _function.VariablePtrWrapper(ForumSupportPluginInfoType{
 	PluginInfo{
 		Name:    "ver4_rank",
@@ -681,15 +681,10 @@ func (pluginInfo *ForumSupportPluginInfoType) Action() {
 func (pluginInfo *ForumSupportPluginInfoType) Install() error {
 	var err error
 
-	for k, v := range ForumSupportPluginInfo.Options {
+	for k, v := range pluginInfo.Options {
 		_function.SetOption(k, v)
 	}
 	err = _function.UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
-	if err != nil {
-		return err
-	}
-
-	err = _function.GormDB.W.Migrator().DropTable(&model.TcVer4RankLog{})
 	if err != nil {
 		return err
 	}
@@ -727,6 +722,13 @@ func (pluginInfo *ForumSupportPluginInfoType) Install() error {
 }
 
 func (pluginInfo *ForumSupportPluginInfoType) Delete() error {
+	for k := range pluginInfo.Options {
+		_function.DeleteOption(k)
+	}
+	_function.DeletePluginInfo(pluginInfo.Name)
+
+	_function.GormDB.W.Migrator().DropTable(&model.TcVer4RankLog{})
+
 	return nil
 }
 func (pluginInfo *ForumSupportPluginInfoType) Upgrade() error {

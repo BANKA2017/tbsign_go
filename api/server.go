@@ -96,7 +96,7 @@ func GetPluginsList(c echo.Context) error {
 	var resPluginList = make(map[string]PluginListContent)
 
 	for name, info := range _plugin.PluginList {
-		value := info.(_plugin.PluginHooks).GetInfo()
+		value := info.(_plugin.PluginHooks).GetDBInfo()
 		resPluginList[name] = PluginListContent{
 			Name:   value.Name,
 			Ver:    value.Ver,

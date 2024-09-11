@@ -122,6 +122,10 @@ func UpdatePluginInfo(name string, version string, status bool, options string) 
 	return err
 }
 
+func DeletePluginInfo(name string) error {
+	return GormDB.W.Where("name = ?", name).Delete(&model.TcPlugin{}).Error
+}
+
 func GetCookie(pid int32, bduss_only ...bool) _type.TypeCookie {
 	cookie, ok := CookieList.Load(pid)
 	if !ok || cookie == nil {

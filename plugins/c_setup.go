@@ -100,7 +100,11 @@ func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword str
 	fmt.Println("⌛正在安装插件...")
 	for name, plugin := range PluginList {
 		fmt.Printf("⌛%s...\n", name)
-		err := plugin.Install()
+		err := plugin.Delete()
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = plugin.Install()
 		if err != nil {
 			log.Fatal(err)
 		}

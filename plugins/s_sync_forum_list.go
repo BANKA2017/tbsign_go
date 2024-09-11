@@ -12,12 +12,12 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type RefreshTiebaListPluginType struct {
-	PluginInfo
-}
-
 func init() {
 	RegisterPlugin(RefreshTiebaListPlugin.Name, RefreshTiebaListPlugin)
+}
+
+type RefreshTiebaListPluginType struct {
+	PluginInfo
 }
 
 var RefreshTiebaListPlugin = _function.VariablePtrWrapper(RefreshTiebaListPluginType{
@@ -224,7 +224,7 @@ func (pluginInfo *RefreshTiebaListPluginType) Action() {
 }
 
 func (pluginInfo *RefreshTiebaListPluginType) Install() error {
-	for k, v := range RefreshTiebaListPlugin.Options {
+	for k, v := range pluginInfo.Options {
 		_function.SetOption(k, v)
 	}
 	_function.UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
@@ -232,6 +232,11 @@ func (pluginInfo *RefreshTiebaListPluginType) Install() error {
 }
 
 func (pluginInfo *RefreshTiebaListPluginType) Delete() error {
+	for k := range pluginInfo.Options {
+		_function.DeleteOption(k)
+	}
+	_function.DeletePluginInfo(pluginInfo.Name)
+
 	return nil
 }
 func (pluginInfo *RefreshTiebaListPluginType) Upgrade() error {

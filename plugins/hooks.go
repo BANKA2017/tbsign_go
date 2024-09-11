@@ -17,7 +17,7 @@ func RegisterPlugin(name string, plugin PluginActionHooks) {
 type PluginEndpintStruct struct {
 	Method   string
 	Path     string
-	Function func(echo.Context) error
+	Function echo.HandlerFunc
 }
 
 type PluginInfo struct {
@@ -26,14 +26,15 @@ type PluginInfo struct {
 	Active    bool
 	Options   map[string]string
 	Info      model.TcPlugin
+	Test      bool
 	Endpoints []PluginEndpintStruct
 	sync.RWMutex
-	// APIGroups *echo.Group
 }
 
 type PluginHooks interface {
-	SetInfo(model.TcPlugin) error
-	GetInfo() model.TcPlugin
+	GetInfo() *PluginInfo
+	GetDBInfo() model.TcPlugin
+	SetDBInfo(model.TcPlugin) error
 	Switch() bool
 	GetSwitch() bool
 	CheckActive() bool
@@ -50,11 +51,15 @@ type PluginActionHooks interface {
 	Ext() ([]any, error)
 }
 
-func (pluginInfo *PluginInfo) GetInfo() model.TcPlugin {
+func (pluginInfo *PluginInfo) GetInfo() *PluginInfo {
+	return pluginInfo
+}
+
+func (pluginInfo *PluginInfo) GetDBInfo() model.TcPlugin {
 	return pluginInfo.Info
 }
 
-func (pluginInfo *PluginInfo) SetInfo(info model.TcPlugin) error {
+func (pluginInfo *PluginInfo) SetDBInfo(info model.TcPlugin) error {
 	pluginInfo.RWMutex.Lock()
 	pluginInfo.Info = info
 	pluginInfo.RWMutex.Unlock()
@@ -105,12 +110,12 @@ func InitPluginList() {
 
 	for _, pluginStatus := range *pluginListDB {
 		pluginNameSet.Delete(pluginStatus.Name)
-		PluginList[pluginStatus.Name].(PluginHooks).SetInfo(pluginStatus)
+		PluginList[pluginStatus.Name].(PluginHooks).SetDBInfo(pluginStatus)
 	}
 
 	pluginNameSet.Range(func(key any, value any) bool {
 		pluginNameSet.Delete(key)
-		PluginList[key.(string)].(PluginHooks).SetInfo(model.TcPlugin{
+		PluginList[key.(string)].(PluginHooks).SetDBInfo(model.TcPlugin{
 			Name:    key.(string),
 			Status:  false,
 			Ver:     "-1",

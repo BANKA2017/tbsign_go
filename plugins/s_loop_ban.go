@@ -22,6 +22,10 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+func init() {
+	RegisterPlugin(LoopBanPlugin.Name, LoopBanPlugin)
+}
+
 type BanAccountResponse struct {
 	Un         string `json:"un,omitempty"`
 	ServerTime string `json:"server_time,omitempty"`
@@ -40,10 +44,6 @@ type IsManagerPreCheckResponse struct {
 
 type LoopBanPluginType struct {
 	PluginInfo
-}
-
-func init() {
-	RegisterPlugin(LoopBanPlugin.Name, LoopBanPlugin)
 }
 
 var LoopBanPlugin = _function.VariablePtrWrapper(LoopBanPluginType{
@@ -231,12 +231,10 @@ func (pluginInfo *LoopBanPluginType) Action() {
 }
 
 func (pluginInfo *LoopBanPluginType) Install() error {
-	for k, v := range LoopBanPlugin.Options {
+	for k, v := range pluginInfo.Options {
 		_function.SetOption(k, v)
 	}
 	_function.UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
-
-	_function.GormDB.W.Migrator().DropTable(&model.TcVer4BanUserset{}, &model.TcVer4BanList{})
 
 	// index ?
 	if share.DBMode == "mysql" {
@@ -257,6 +255,12 @@ func (pluginInfo *LoopBanPluginType) Install() error {
 }
 
 func (pluginInfo *LoopBanPluginType) Delete() error {
+	for k := range pluginInfo.Options {
+		_function.DeleteOption(k)
+	}
+	_function.DeletePluginInfo(pluginInfo.Name)
+	_function.GormDB.W.Migrator().DropTable(&model.TcVer4BanUserset{}, &model.TcVer4BanList{})
+
 	return nil
 }
 func (pluginInfo *LoopBanPluginType) Upgrade() error {

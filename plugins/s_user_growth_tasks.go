@@ -16,12 +16,12 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-type UserGrowthTasksPluginType struct {
-	PluginInfo
-}
-
 func init() {
 	RegisterPlugin(UserGrowthTasksPlugin.Name, UserGrowthTasksPlugin)
+}
+
+type UserGrowthTasksPluginType struct {
+	PluginInfo
 }
 
 var UserGrowthTasksPlugin = _function.VariablePtrWrapper(UserGrowthTasksPluginType{
@@ -94,26 +94,26 @@ type UserGrowthTasksListResponse struct {
 }
 
 type UserGrowthTask struct {
-	ID                 int    `json:"id,omitempty"`
-	Name               string `json:"name,omitempty"`
-	ActType            string `json:"act_type,omitempty"`
-	URL                string `json:"url,omitempty"`
-	Detail             string `json:"detail,omitempty"`
-	Exp                int    `json:"exp,omitempty"`
-	Current            int    `json:"current,omitempty"`
-	Total              int    `json:"total,omitempty"`
-	Status             int    `json:"status,omitempty"`
-	SortStatus         int    `json:"sort_status,omitempty"`
-	CompleteTime       int    `json:"complete_time,omitempty"`
-	StartTime          int    `json:"start_time,omitempty"`
-	ExpireTime         int    `json:"expire_time,omitempty"`
-	MinLevel           int    `json:"min_level,omitempty"`
-	TaskDoneNum        int    `json:"task_done_num,omitempty"`
-	TaskThreadID       []any  `json:"task_thread_id,omitempty"`
-	TargetKw           string `json:"target_kw,omitempty"`
-	TargetScheme       string `json:"target_scheme,omitempty"`
-	TargetChatroomName string `json:"target_chatroom_name,omitempty"`
-	TargetChatroomID   int    `json:"target_chatroom_id,omitempty"`
+	ID      int    `json:"id,omitempty"`
+	Name    string `json:"name,omitempty"`
+	ActType string `json:"act_type,omitempty"`
+	URL     string `json:"url,omitempty"`
+	Detail  string `json:"detail,omitempty"`
+	Exp     int    `json:"exp,omitempty"`
+	Current int    `json:"current,omitempty"`
+	Total   int    `json:"total,omitempty"`
+	//Status             int    `json:"status,omitempty"`
+	SortStatus   int `json:"sort_status,omitempty"`
+	CompleteTime int `json:"complete_time,omitempty"`
+	StartTime    int `json:"start_time,omitempty"`
+	ExpireTime   int `json:"expire_time,omitempty"`
+	// MinLevel     int `json:"min_level,omitempty"`
+	// TaskDoneNum  int   `json:"task_done_num,omitempty"`
+	// TaskThreadID []any `json:"task_thread_id,omitempty"`
+	// TargetKw           string `json:"target_kw,omitempty"`
+	// TargetScheme       string `json:"target_scheme,omitempty"`
+	// TargetChatroomName string `json:"target_chatroom_name,omitempty"`
+	// TargetChatroomID   int    `json:"target_chatroom_id,omitempty"`
 }
 
 type UserGrowthTaskToSave struct {
@@ -329,7 +329,6 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 			tasksList = append(tasksList, UserGrowthTask{
 				Name:       "每日签到",
 				ActType:    "page_sign",
-				Status:     1,
 				SortStatus: 1,
 				ExpireTime: 0,
 			})
@@ -429,12 +428,10 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 }
 
 func (pluginInfo *UserGrowthTasksPluginType) Install() error {
-	for k, v := range UserGrowthTasksPlugin.Options {
+	for k, v := range pluginInfo.Options {
 		_function.SetOption(k, v)
 	}
 	_function.UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
-
-	_function.GormDB.W.Migrator().DropTable(&model.TcKdGrowth{})
 
 	// index ?
 	if share.DBMode == "mysql" {
@@ -452,6 +449,12 @@ func (pluginInfo *UserGrowthTasksPluginType) Install() error {
 }
 
 func (pluginInfo *UserGrowthTasksPluginType) Delete() error {
+	for k := range pluginInfo.Options {
+		_function.DeleteOption(k)
+	}
+	_function.DeletePluginInfo(pluginInfo.Name)
+	_function.GormDB.W.Migrator().DropTable(&model.TcKdGrowth{})
+
 	return nil
 }
 func (pluginInfo *UserGrowthTasksPluginType) Upgrade() error {

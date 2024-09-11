@@ -16,12 +16,12 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type LotteryPluginPluginType struct {
-	PluginInfo
-}
-
 func init() {
 	RegisterPlugin(LotteryPluginPlugin.Name, LotteryPluginPlugin)
+}
+
+type LotteryPluginPluginType struct {
+	PluginInfo
 }
 
 var LotteryPluginPlugin = _function.VariablePtrWrapper(LotteryPluginPluginType{
@@ -180,12 +180,10 @@ func (pluginInfo *LotteryPluginPluginType) Action() {
 }
 
 func (pluginInfo *LotteryPluginPluginType) Install() error {
-	for k, v := range LotteryPluginPlugin.Options {
+	for k, v := range pluginInfo.Options {
 		_function.SetOption(k, v)
 	}
 	_function.UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
-
-	_function.GormDB.W.Migrator().DropTable(&model.TcVer4LotteryLog{})
 
 	// index ?
 	if share.DBMode == "mysql" {
@@ -203,6 +201,12 @@ func (pluginInfo *LotteryPluginPluginType) Install() error {
 }
 
 func (pluginInfo *LotteryPluginPluginType) Delete() error {
+	for k := range pluginInfo.Options {
+		_function.DeleteOption(k)
+	}
+	_function.DeletePluginInfo(pluginInfo.Name)
+	_function.GormDB.W.Migrator().DropTable(&model.TcVer4LotteryLog{})
+
 	return nil
 }
 func (pluginInfo *LotteryPluginPluginType) Upgrade() error {

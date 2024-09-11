@@ -459,7 +459,9 @@ func PluginSwitch(c echo.Context) error {
 	}
 
 	// auto install
-	if _pluginInfo.(_plugin.PluginHooks).GetInfo().Ver == "-1" {
+	if _pluginInfo.(_plugin.PluginHooks).GetDBInfo().Ver == "-1" {
+		// TODO more flexible?
+		_pluginInfo.Delete()
 		err := _pluginInfo.Install()
 		if err != nil {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(500, "插件安装失败", map[string]any{
