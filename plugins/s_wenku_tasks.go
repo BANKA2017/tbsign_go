@@ -29,8 +29,9 @@ var WenkuTasksPlugin = _function.VariablePtrWrapper(WenkuTasksPluginType{
 		Name:    "kd_wenku_tasks",
 		Version: "0.1",
 		Options: map[string]string{
-			"kd_wenku_tasks_offset":     "0",
-			"kd_wenku_tasks_vip_matrix": "0",
+			"kd_wenku_tasks_offset":       "0",
+			"kd_wenku_tasks_checkin_only": "1",
+			"kd_wenku_tasks_vip_matrix":   "0",
 		},
 		Endpoints: []PluginEndpintStruct{
 			{Method: "GET", Path: "settings", Function: PluginWenkuTasksGetSettings},
@@ -397,10 +398,10 @@ func PluginWenkuTasksGetSettings(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	// checkin only
-	checkinOnly := _function.GetUserOption("kd_wenku_tasks_offset", uid)
+	checkinOnly := _function.GetUserOption("kd_wenku_tasks_checkin_only", uid)
 	if checkinOnly == "" {
 		checkinOnly = "0"
-		_function.SetUserOption("kd_wenku_tasks_offset", checkinOnly, uid)
+		_function.SetUserOption("kd_wenku_tasks_checkin_only", checkinOnly, uid)
 	}
 
 	// build a vip matrix (at least 7 accounts)
@@ -422,7 +423,7 @@ func PluginWenkuTasksSetSettings(c echo.Context) error {
 	checkinOnly := c.FormValue("checkin_only") != "0"
 	vipMatrix := c.FormValue("vip_matrix") != "0"
 
-	_function.SetUserOption("kd_wenku_tasks_offset", checkinOnly, uid)
+	_function.SetUserOption("kd_wenku_tasks_checkin_only", checkinOnly, uid)
 	_function.SetUserOption("kd_wenku_tasks_vip_matrix", vipMatrix, uid)
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
