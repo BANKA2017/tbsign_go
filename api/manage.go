@@ -492,7 +492,7 @@ func SendTestMessage(c echo.Context) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 
 	messageObject := _function.PushMessageTestTemplate()
-	err := _function.SendMessage(messageType, int32(numUID), messageObject.Subject, messageObject.Body)
+	err := _function.SendMessage(messageType, int32(numUID), messageObject.Title, messageObject.Body)
 	if err != nil {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, err.Error(), false, "tbsign"))
 	} else {

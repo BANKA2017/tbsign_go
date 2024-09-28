@@ -444,7 +444,7 @@ func ResetPassword(c echo.Context) error {
 			userMessageType = "email"
 		}
 
-		err := _function.SendMessage(userMessageType, accountInfo.ID, mailObject.Subject, mailObject.Body)
+		err := _function.SendMessage(userMessageType, accountInfo.ID, mailObject.Title, mailObject.Body)
 		if err != nil {
 			log.Println(err)
 			return c.JSON(http.StatusOK, _function.ApiTemplate(500, "消息发送失败", false, "tbsign"))

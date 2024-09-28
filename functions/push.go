@@ -3,6 +3,7 @@ package _function
 import (
 	"fmt"
 	"mime"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -57,7 +58,7 @@ type NtfyResponseStruct struct {
 	Message string `json:"message,omitempty"`
 }
 
-func SendNtfy(_to, _subject, _body string) error {
+func SendNtfy(_to, title, body string) error {
 	if _to == "" {
 		return fmt.Errorf("ntfy: topic is empty!")
 	}
@@ -67,8 +68,8 @@ func SendNtfy(_to, _subject, _body string) error {
 		ntfyAddr = "https://ntfy.sh"
 	}
 
-	res, err := Fetch(fmt.Sprintf("%s/%s", ntfyAddr, _to), "POST", []byte(_body), map[string]string{
-		"Title":        _subject,
+	res, err := Fetch(fmt.Sprintf("%s/%s", ntfyAddr, _to), "POST", []byte(body), map[string]string{
+		"Title":        title,
 		"Content-Type": "text/plain",
 		"Tags":         "tbsign",
 	}, DefaultCient)
@@ -96,7 +97,7 @@ type BarkResponseStruct struct {
 	Timestamp int64  `json:"timestamp,omitempty"`
 }
 
-func SendBark(_to, _subject, _body string) error {
+func SendBark(_to, title, body string) error {
 	if _to == "" {
 		return fmt.Errorf("bark: key is empty!")
 	}
@@ -106,7 +107,14 @@ func SendBark(_to, _subject, _body string) error {
 		barkAddr = "https://api.day.app"
 	}
 
-	res, err := Fetch(fmt.Sprintf("%s/%s/%s/%s", barkAddr, _to, _subject, _body), "GET", nil, map[string]string{}, DefaultCient)
+	_body := url.Values{}
+
+	_body.Set("title", title)
+	_body.Set("body", body)
+	_body.Set("device_key", _to)
+	_body.Set("group", "tbsign")
+
+	res, err := Fetch(fmt.Sprintf("%s/push", barkAddr), "POST", []byte(_body.Encode()), map[string]string{}, DefaultCient)
 	if err != nil {
 		return err
 	}
@@ -125,7 +133,7 @@ func SendBark(_to, _subject, _body string) error {
 }
 
 // TODO GPG?
-func SendEmail(_to, _subject, _body string) error {
+func SendEmail(_to, title, body string) error {
 	mail := GetOption("mail_name")
 	mail_name := GetOption("mail_yourname")
 	smtp_host := GetOption("mail_host")
@@ -154,23 +162,23 @@ func SendEmail(_to, _subject, _body string) error {
 		"From: \"TbSign Push Service\" <" + mail + ">\r\n" +
 		"MIME-Version: 1.0\r\n" +
 		"Content-Type: text/html; charset=UTF-8\r\n" +
-		"Subject: " + mime.QEncoding.Encode("UTF-8", _subject) + " \r\n" +
+		"Subject: " + mime.QEncoding.Encode("UTF-8", title) + " \r\n" +
 		"Date: " + Now.Format(time.RFC3339) + "\r\n" +
 		"Content-Transfer-Encoding: 8bit\r\n" +
 		"Message-ID: <" + Now.Format("20060102150405") + "." + strconv.Itoa(Now.Nanosecond()) + "." + mail + ">\r\n" +
 		"\r\n" +
-		_body + "<br /><br />" + Now.Format("2006-01-02") + "\r\n")
+		body + "<br /><br />" + Now.Format("2006-01-02") + "\r\n")
 	return smtp.SendMail(smtp_host+":"+smtp_port, client, mail, to, msg)
 }
 
 type PushMessageTemplateStruct struct {
-	Subject string
-	Body    string
+	Title string
+	Body  string
 }
 
 func PushMessageTemplateResetPassword(email, code string) PushMessageTemplateStruct {
 	return PushMessageTemplateStruct{
-		Subject: code + " 是你的验证码",
+		Title: code + " 是你的验证码",
 		Body: "亲爱的 " + email + "<br /><br />" +
 			"你正在 TbSign 进行找回密码，需要进行身份验证。 本次行为的验证码是:<br /><br />" +
 			code + "<br /><br />" +
@@ -180,7 +188,7 @@ func PushMessageTemplateResetPassword(email, code string) PushMessageTemplateStr
 }
 func PushMessageTestTemplate() PushMessageTemplateStruct {
 	return PushMessageTemplateStruct{
-		Subject: "TbSign 测试消息",
-		Body:    "TbSign 推送服务测试<br />这是一条测试消息，如果您能阅读到这里，说明消息已经发送成功",
+		Title: "TbSign 测试消息",
+		Body:  "TbSign 推送服务测试<br />这是一条测试消息，如果您能阅读到这里，说明消息已经发送成功",
 	}
 }
