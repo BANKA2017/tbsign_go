@@ -87,12 +87,10 @@ func Upgrade(version string) error {
 	// Path to the new version temporary file
 	tmpFile := filepath.Join(execDir, "__tmp__tbsign.tmp")
 
-	client := InitClient(300)
-
 	// get binary
 	binary, err := Fetch(binPath, "GET", nil, map[string]string{
 		"User-Agent": BrowserUserAgent,
-	}, client)
+	}, DefaultCient)
 	if err != nil {
 		return err
 	}
@@ -125,7 +123,7 @@ func Upgrade(version string) error {
 
 	sha256Str, err := Fetch(sha256Path, "GET", nil, map[string]string{
 		"User-Agent": BrowserUserAgent,
-	}, client)
+	}, DefaultCient)
 	if err != nil {
 		return err
 	}

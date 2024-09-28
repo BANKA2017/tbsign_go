@@ -8,11 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/BANKA2017/tbsign_go/model"
 	"github.com/emersion/go-smtp"
 
 	"github.com/emersion/go-sasl"
 	"github.com/google/uuid"
 )
+
+var MessageTypeList = []string{"email", "ntfy", "bark"}
 
 func VerifyEmail(email string) bool {
 	if email == "" {
@@ -28,6 +31,97 @@ func VerifyEmail(email string) bool {
 	}
 
 	return len(regexp.MustCompile(`(?m)^[\w\.\-]+@\w+(?:[\.\-]\w+)*$`).FindAllString(email, -1)) == 1
+}
+
+func SendMessage(_type string, uid int32, _subject, _body string) error {
+	switch _type {
+	case "ntfy":
+		ntfyTopic := GetUserOption("go_ntfy_topic", strconv.Itoa(int(uid)))
+		return SendNtfy(ntfyTopic, _subject, _body)
+	case "bark":
+		barkKey := GetUserOption("go_bark_key", strconv.Itoa(int(uid)))
+		return SendBark(barkKey, _subject, _body)
+	default:
+		accountInfo := new(model.TcUser)
+		GormDB.R.Where("id = ?", uid).Find(accountInfo)
+		return SendEmail(accountInfo.Email, _subject, _body)
+	}
+}
+
+type NtfyResponseStruct struct {
+	ID      string `json:"id,omitempty"`
+	Time    int64  `json:"time,omitempty"`
+	Expires int64  `json:"expires,omitempty"`
+	Event   string `json:"event,omitempty"`
+	Topic   string `json:"topic,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
+func SendNtfy(_to, _subject, _body string) error {
+	if _to == "" {
+		return fmt.Errorf("ntfy: topic is empty!")
+	}
+	// get custom address
+	ntfyAddr := GetOption("go_ntfy_addr")
+	if ntfyAddr == "" {
+		ntfyAddr = "https://ntfy.sh"
+	}
+
+	res, err := Fetch(fmt.Sprintf("%s/%s", ntfyAddr, _to), "POST", []byte(_body), map[string]string{
+		"Title":        _subject,
+		"Content-Type": "text/plain",
+		"Tags":         "tbsign",
+	}, DefaultCient)
+
+	if err != nil {
+		return err
+	}
+
+	resp := new(NtfyResponseStruct)
+	err = JsonDecode(res, resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.ID != "" {
+		return nil
+	} else {
+		return fmt.Errorf("ntfy: %s", string(res))
+	}
+}
+
+type BarkResponseStruct struct {
+	Code      int    `json:"code,omitempty"`
+	Message   string `json:"message,omitempty"`
+	Timestamp int64  `json:"timestamp,omitempty"`
+}
+
+func SendBark(_to, _subject, _body string) error {
+	if _to == "" {
+		return fmt.Errorf("bark: key is empty!")
+	}
+	// get custom address
+	barkAddr := GetOption("go_bark_addr")
+	if barkAddr == "" {
+		barkAddr = "https://api.day.app"
+	}
+
+	res, err := Fetch(fmt.Sprintf("%s/%s/%s/%s", barkAddr, _to, _subject, _body), "GET", nil, map[string]string{}, DefaultCient)
+	if err != nil {
+		return err
+	}
+
+	resp := new(BarkResponseStruct)
+	err = JsonDecode(res, resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code == 200 {
+		return nil
+	} else {
+		return fmt.Errorf("bark: %s", resp.Message)
+	}
 }
 
 // TODO GPG?
@@ -69,24 +163,24 @@ func SendEmail(_to, _subject, _body string) error {
 	return smtp.SendMail(smtp_host+":"+smtp_port, client, mail, to, msg)
 }
 
-type emailTemplateStruct struct {
-	Object string
-	Body   string
+type PushMessageTemplateStruct struct {
+	Subject string
+	Body    string
 }
 
-func EmailTemplateResetPassword(email, code string) emailTemplateStruct {
-	return emailTemplateStruct{
-		Object: code + " 是你的验证码",
+func PushMessageTemplateResetPassword(email, code string) PushMessageTemplateStruct {
+	return PushMessageTemplateStruct{
+		Subject: code + " 是你的验证码",
 		Body: "亲爱的 " + email + "<br /><br />" +
 			"你正在 TbSign 进行找回密码，需要进行身份验证。 本次行为的验证码是:<br /><br />" +
 			code + "<br /><br />" +
 			"请在页面输入验证码，进行重置。<br />" +
-			"该邮件" + strconv.Itoa(ResetPwdExpire/60) + "分钟内有效，为了你的帐号安全，请勿将验证码提供给他人。",
+			"该消息" + strconv.Itoa(ResetPwdExpire/60) + "分钟内有效，为了你的帐号安全，请勿将验证码提供给他人。",
 	}
 }
-func EmailTestTemplate() emailTemplateStruct {
-	return emailTemplateStruct{
-		Object: "TbSign 测试邮件",
-		Body:   "TbSign 推送服务测试<br />这是一封测试消息，如果您能阅读到这里，说明邮件已经发送成功",
+func PushMessageTestTemplate() PushMessageTemplateStruct {
+	return PushMessageTemplateStruct{
+		Subject: "TbSign 测试消息",
+		Body:    "TbSign 推送服务测试<br />这是一条测试消息，如果您能阅读到这里，说明消息已经发送成功",
 	}
 }

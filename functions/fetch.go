@@ -26,7 +26,13 @@ import (
 
 var IgnoreProxy bool
 
-var Client *http.Client
+var DefaultCient *http.Client
+var TBClient *http.Client
+
+func init() {
+	DefaultCient = InitClient(300)
+	TBClient = InitClient(10)
+}
 
 func InitClient(timeout int) *http.Client {
 	transport := http.DefaultTransport
@@ -43,16 +49,13 @@ func InitClient(timeout int) *http.Client {
 
 var EmptyHeaders = map[string]string{}
 
-const BrowserUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
+const BrowserUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
 
 const ClientVersion = "12.58.1.0"
 const ClientUserAgent = "tieba/" + ClientVersion
 
 func TBFetch(_url string, _method string, _body []byte, _headers map[string]string) ([]byte, error) {
-	if Client == nil {
-		Client = InitClient(10)
-	}
-	return Fetch(_url, _method, _body, _headers, Client)
+	return Fetch(_url, _method, _body, _headers, TBClient)
 }
 
 func Fetch(_url string, _method string, _body []byte, _headers map[string]string, client *http.Client) ([]byte, error) {

@@ -33,4 +33,6 @@ var DefaultOptions = map[string]string{
 	"yr_reg":               "",
 	"go_ver":               "1",
 	"go_forum_sync_policy": "add_only",
+	"go_ntfy_addr":         "https://ntfy.sh",
+	"go_bark_addr":         "https://api.day.app",
 }

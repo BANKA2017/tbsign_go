@@ -10,6 +10,7 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/exp/slices"
 )
 
 type tokenResponse struct {
@@ -435,11 +436,18 @@ func ResetPassword(c echo.Context) error {
 
 		_function.ResetPwdList.Store(accountInfo.ID, v)
 
-		mailObject := _function.EmailTemplateResetPassword(accountInfo.Email, code)
-		err := _function.SendEmail(accountInfo.Email, mailObject.Object, mailObject.Body)
+		mailObject := _function.PushMessageTemplateResetPassword(accountInfo.Email, code)
+
+		// user default message type
+		userMessageType := _function.GetUserOption("go_message_type", strconv.Itoa(int(accountInfo.ID)))
+		if !slices.Contains(_function.MessageTypeList, userMessageType) {
+			userMessageType = "email"
+		}
+
+		err := _function.SendMessage(userMessageType, accountInfo.ID, mailObject.Subject, mailObject.Body)
 		if err != nil {
 			log.Println(err)
-			return c.JSON(http.StatusOK, _function.ApiTemplate(500, "邮件发送失败", false, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(500, "消息发送失败", false, "tbsign"))
 		} else {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 		}

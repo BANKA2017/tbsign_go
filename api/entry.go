@@ -91,7 +91,7 @@ func Api(address string, args ...any) {
 	api.DELETE("/admin/account/list/:uid", AdminDeleteTiebaAccountList)
 	api.POST("/admin/account/list/:uid/reset", AdminResetTiebaList)
 	api.POST("/admin/plugin/:plugin_name/switch", PluginSwitch)
-	api.POST("/admin/service/push/mail/test", SendTestMail)
+	api.POST("/admin/service/push/mail/test", SendTestMessage)
 	/// server
 	api.GET("/admin/server/status", GetServerStatus)
 	api.POST("/admin/server/upgrade", UpgradeSystem)

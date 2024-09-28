@@ -481,14 +481,18 @@ func PluginSwitch(c echo.Context) error {
 	}, "tbsign"))
 }
 
-func SendTestMail(c echo.Context) error {
+func SendTestMessage(c echo.Context) error {
 	uid := c.Get("uid").(string)
-	var accountInfo model.TcUser
 
-	_function.GormDB.R.Where("id = ?", uid).Find(&accountInfo)
+	messageType := c.QueryParams().Get("type")
+	if !slices.Contains(_function.MessageTypeList, messageType) {
+		messageType = "email"
+	}
 
-	mailObject := _function.EmailTestTemplate()
-	err := _function.SendEmail(accountInfo.Email, mailObject.Object, mailObject.Body)
+	numUID, _ := strconv.ParseInt(uid, 10, 64)
+
+	messageObject := _function.PushMessageTestTemplate()
+	err := _function.SendMessage(messageType, int32(numUID), messageObject.Subject, messageObject.Body)
 	if err != nil {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, err.Error(), false, "tbsign"))
 	} else {
