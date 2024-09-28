@@ -2,6 +2,7 @@ package _function
 
 import (
 	"log"
+	"net/url"
 	"strconv"
 	"sync"
 	"time"
@@ -232,4 +233,9 @@ func GetSemver(cur, ver2 string) string {
 	} else {
 		return ver2
 	}
+}
+
+func VerifyURL(_url string) bool {
+	_, err := url.ParseRequestURI(_url)
+	return err == nil
 }

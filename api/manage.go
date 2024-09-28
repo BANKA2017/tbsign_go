@@ -34,7 +34,7 @@ type SiteAccountsResponse struct {
 	CheckinIgnore  int `json:"checkin_ignore"`
 }
 
-var settingsFilter = []string{"ann", "system_url", "stop_reg", "enable_reg", "yr_reg", "cktime", "sign_mode", "sign_hour", "cron_limit", "sign_sleep", "retry_max", "mail_name", "mail_yourname", "mail_host", "mail_port", "mail_secure", "mail_auth", "mail_smtpname", "mail_smtppw", "ver4_ban_limit", "ver4_ban_break_check", "go_forum_sync_policy"} // "system_name", "system_keywords", "system_description"
+var settingsFilter = []string{"ann", "system_url", "stop_reg", "enable_reg", "yr_reg", "cktime", "sign_mode", "sign_hour", "cron_limit", "sign_sleep", "retry_max", "mail_name", "mail_yourname", "mail_host", "mail_port", "mail_secure", "mail_auth", "mail_smtpname", "mail_smtppw", "ver4_ban_limit", "ver4_ban_break_check", "go_forum_sync_policy", "go_ntfy_addr", "go_bark_addr"} // "system_name", "system_keywords", "system_description"
 
 func GetAdminSettings(c echo.Context) error {
 	var adminSettings []model.TcOption
@@ -141,6 +141,12 @@ func UpdateAdminSettings(c echo.Context) error {
 							}
 							err := _function.SetOption(vName, settings[vName])
 							log.Println(err)
+						} else {
+							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
+						}
+					case "go_ntfy_addr", "go_bark_addr":
+						if _function.VerifyURL(v1[0]) {
+							settings[vName] = v1[0]
 						} else {
 							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
 						}

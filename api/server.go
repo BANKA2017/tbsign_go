@@ -138,13 +138,13 @@ func GetLoginPageConfig(c echo.Context) error {
 	enabledInviteCode := len(_function.GetOption("yr_reg")) > 0
 
 	var resp = struct {
-		EnabedResetPassword       bool   `json:"enabled_reset_password"`
+		EnabedEmail               bool   `json:"enabled_email"`
 		EnabledInviteCode         bool   `json:"enabled_invite_code"`
 		EnabledSignup             bool   `json:"enabled_signup"`
 		ClosedRegistrationMessage string `json:"closed_registration_message"`
 		SystemURL                 string `json:"system_url"`
 	}{
-		EnabedResetPassword:       enabledEmail,
+		EnabedEmail:               enabledEmail,
 		EnabledInviteCode:         enabledInviteCode,
 		EnabledSignup:             enabledSignup,
 		ClosedRegistrationMessage: closedCRegistrationMessage,

@@ -18,6 +18,24 @@ type tokenResponse struct {
 	Token string `json:"token"`
 }
 
+type userInfoStruct struct {
+	UID    int32  `json:"uid"`
+	Name   string `json:"name"`
+	Email  string `json:"email"`
+	Avatar string `json:"avatar"`
+	Role   string `json:"role"`
+
+	// push
+	NtfyTopic string `json:"ntfy_topic"`
+	BarkKey   string `json:"bark_key"`
+	PushType  string `json:"push_type"`
+}
+type userInfoWithSettingsStruct struct {
+	userInfoStruct
+
+	SystemSettings map[string]string `json:"system_settings"`
+}
+
 func Signup(c echo.Context) error {
 	// site status
 	isRegistrationEnable := _function.GetOption("enable_reg") == "1"
@@ -166,9 +184,6 @@ func Logout(c echo.Context) error {
 func UpdateAccountInfo(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	username := c.FormValue("username")
-	email := c.FormValue("email")
-
 	var accountInfo []model.TcUser
 	_function.GormDB.R.Where("id = ?", uid).Limit(1).Find(&accountInfo)
 
@@ -176,9 +191,13 @@ func UpdateAccountInfo(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "帐号不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	username = strings.TrimSpace(username)
-	email = strings.TrimSpace(email)
+	username := strings.TrimSpace(c.FormValue("username"))
+	email := strings.TrimSpace(c.FormValue("email"))
+	barkKey := strings.TrimSpace(c.FormValue("bark_key"))
+	ntfyTopic := strings.TrimSpace(c.FormValue("ntfy_topic"))
+	pushType := strings.TrimSpace(c.FormValue("push_type"))
 
+	// email
 	if email != "" {
 		if !_function.VerifyEmail(email) {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "邮箱不合法", false, "tbsign"))
@@ -199,6 +218,7 @@ func UpdateAccountInfo(c echo.Context) error {
 		email = accountInfo[0].Email
 	}
 
+	// username
 	if username != "" {
 		// compare username
 		if username != accountInfo[0].Name {
@@ -215,18 +235,33 @@ func UpdateAccountInfo(c echo.Context) error {
 		username = accountInfo[0].Name
 	}
 
+	// push
+	localPushNtfyTopic := _function.GetUserOption("go_ntfy_topic", uid)
+	if localPushNtfyTopic != ntfyTopic {
+		_function.SetUserOption("go_ntfy_topic", ntfyTopic, uid)
+		localPushNtfyTopic = ntfyTopic
+	}
+	localPushBarkKey := _function.GetUserOption("go_bark_key", uid)
+	if localPushBarkKey != barkKey {
+		_function.SetUserOption("go_bark_key", barkKey, uid)
+		localPushBarkKey = barkKey
+	}
+	localPushType := _function.GetUserOption("go_message_type", uid)
+	if localPushType != pushType && slices.Contains(_function.MessageTypeList, pushType) {
+		_function.SetUserOption("go_message_type", pushType, uid)
+		localPushType = pushType
+	}
+
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 
-	var resp = struct {
-		UID    int32  `json:"uid"`
-		Name   string `json:"username"`
-		Email  string `json:"email"`
-		Avatar string `json:"avatar"`
-	}{
-		UID:    int32(numUID),
-		Name:   username,
-		Email:  email,
-		Avatar: _function.GetGravatarLink(email),
+	var resp = userInfoStruct{
+		UID:       int32(numUID),
+		Name:      username,
+		Email:     email,
+		Avatar:    _function.GetGravatarLink(email),
+		NtfyTopic: localPushNtfyTopic,
+		BarkKey:   localPushBarkKey,
+		PushType:  localPushType,
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
@@ -291,28 +326,28 @@ func GetAccountInfo(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "帐号不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	var resp = struct {
-		UID    int32  `json:"uid"`
-		Name   string `json:"name"`
-		Email  string `json:"email"`
-		Avatar string `json:"avatar"`
-		Role   string `json:"role"`
-		//Settings       map[string]string `json:"settings"`
-		SystemSettings map[string]string `json:"system_settings"`
-	}{
-		UID:    accountInfo[0].ID,
-		Name:   accountInfo[0].Name,
-		Email:  accountInfo[0].Email,
-		Avatar: _function.GetGravatarLink(accountInfo[0].Email),
-		Role:   accountInfo[0].Role,
-		//Settings:       make(map[string]string),
-		SystemSettings: make(map[string]string),
-	}
+	var resp = userInfoWithSettingsStruct{
+		userInfoStruct{
+			UID:    accountInfo[0].ID,
+			Name:   accountInfo[0].Name,
+			Email:  accountInfo[0].Email,
+			Avatar: _function.GetGravatarLink(accountInfo[0].Email),
+			Role:   accountInfo[0].Role,
 
-	//for _, v := range accountSettings {
-	//	resp.Settings[v.Name] = v.Value
-	//}
+			NtfyTopic: _function.GetUserOption("go_ntfy_topic", uid),
+			BarkKey:   _function.GetUserOption("go_bark_key", uid),
+			PushType:  _function.GetUserOption("go_message_type", uid),
+		},
+		make(map[string]string),
+	}
 	resp.SystemSettings["forum_sync_policy"] = _function.GetOption("go_forum_sync_policy")
+	resp.SystemSettings["bark_addr"] = _function.GetOption("go_bark_addr")
+	resp.SystemSettings["ntfy_addr"] = _function.GetOption("go_ntfy_addr")
+
+	if resp.PushType == "" {
+		_function.SetUserOption("go_message_type", "email", uid)
+		resp.PushType = "email"
+	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
 }
@@ -332,6 +367,7 @@ func GetSettings(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", settings, "tbsign"))
 }
 
+// TODO verify password
 func UpdateSettings(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
@@ -366,9 +402,11 @@ func UpdateSettings(c echo.Context) error {
 }
 
 func ResetPassword(c echo.Context) error {
-	email := c.FormValue("email")
-	verifyCode := c.FormValue("code")
-	newPwd := c.FormValue("password")
+	email := strings.TrimSpace(c.FormValue("email"))
+	verifyCode := strings.TrimSpace(c.FormValue("code"))
+	newPwd := strings.TrimSpace(c.FormValue("password"))
+
+	pushType := strings.TrimSpace(c.QueryParams().Get("push_type"))
 
 	if !_function.VerifyEmail(email) {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "邮箱不合法", false, "tbsign"))
@@ -439,9 +477,14 @@ func ResetPassword(c echo.Context) error {
 		mailObject := _function.PushMessageTemplateResetPassword(accountInfo.Email, code)
 
 		// user default message type
-		userMessageType := _function.GetUserOption("go_message_type", strconv.Itoa(int(accountInfo.ID)))
-		if !slices.Contains(_function.MessageTypeList, userMessageType) {
-			userMessageType = "email"
+		userMessageType := "email"
+		if pushType != "" && slices.Contains(_function.MessageTypeList, pushType) {
+			userMessageType = pushType
+		} else {
+			localPushType := _function.GetUserOption("go_message_type", strconv.Itoa(int(accountInfo.ID)))
+			if slices.Contains(_function.MessageTypeList, localPushType) {
+				userMessageType = localPushType
+			}
 		}
 
 		err := _function.SendMessage(userMessageType, accountInfo.ID, mailObject.Title, mailObject.Body)

@@ -68,7 +68,7 @@ func SendNtfy(_to, title, body string) error {
 		ntfyAddr = "https://ntfy.sh"
 	}
 
-	res, err := Fetch(fmt.Sprintf("%s/%s", ntfyAddr, _to), "POST", []byte(body), map[string]string{
+	res, err := Fetch(fmt.Sprintf("%s/%s", ntfyAddr, _to), "POST", []byte(strings.ReplaceAll(body, "<br />", "\n")), map[string]string{
 		"Title":        title,
 		"Content-Type": "text/plain",
 		"Tags":         "tbsign",
@@ -110,7 +110,7 @@ func SendBark(_to, title, body string) error {
 	_body := url.Values{}
 
 	_body.Set("title", title)
-	_body.Set("body", body)
+	_body.Set("body", strings.ReplaceAll(body, "<br />", "\n"))
 	_body.Set("device_key", _to)
 	_body.Set("group", "tbsign")
 
