@@ -2,8 +2,10 @@ package _function
 
 import (
 	"log"
+	"math/rand/v2"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,9 +21,10 @@ var CookieList sync.Map //= make(map[int32]_type.TypeCookie)
 var FidList sync.Map    //= make(map[string]int64)
 
 type ResetPwdStruct struct {
-	Expire int64
-	Value  string
-	Time   int64
+	VerifyCode string
+	Expire     int64
+	Value      string
+	Time       int64
 }
 
 const ResetPwdMaxTimes = 5
@@ -238,4 +241,15 @@ func GetSemver(cur, ver2 string) string {
 func VerifyURL(_url string) bool {
 	_, err := url.ParseRequestURI(_url)
 	return err == nil
+}
+
+func RandomEmoji() string {
+	emojiMap := []string{"💻", "✅", "➡️", "🎉", "🤖", "🐱", "⚙️", "😊", "📌", "✒️", "⌛", "🔔"}
+	randNum := rand.Perm(len(emojiMap))
+
+	resStr := []string{}
+	for _, v := range randNum {
+		resStr = append(resStr, emojiMap[v])
+	}
+	return strings.Join(resStr, "")
 }

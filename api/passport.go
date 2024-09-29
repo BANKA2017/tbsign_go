@@ -197,6 +197,19 @@ func UpdateAccountInfo(c echo.Context) error {
 	ntfyTopic := strings.TrimSpace(c.FormValue("ntfy_topic"))
 	pushType := strings.TrimSpace(c.FormValue("push_type"))
 
+	password := strings.TrimSpace(c.FormValue("password"))
+
+	// compare old password
+	err := _function.VerifyPasswordHash(accountInfo[0].Pw, password)
+	if err != nil && _function.GetOption("go_ver") != "1" {
+		// Compatible with older versions
+		if _function.Md5(_function.Md5(_function.Md5(password))) != accountInfo[0].Pw {
+			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "密码错误", _function.EchoEmptyObject, "tbsign"))
+		}
+	} else if err != nil {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "密码错误", _function.EchoEmptyObject, "tbsign"))
+	}
+
 	// email
 	if email != "" {
 		if !_function.VerifyEmail(email) {
@@ -408,8 +421,12 @@ func ResetPassword(c echo.Context) error {
 
 	pushType := strings.TrimSpace(c.QueryParams().Get("push_type"))
 
+	resMessage := map[string]string{
+		"verify_emoji": "",
+	}
+
 	if !_function.VerifyEmail(email) {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "邮箱不合法", false, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "邮箱不合法", resMessage, "tbsign"))
 	}
 
 	// find account
@@ -418,35 +435,35 @@ func ResetPassword(c echo.Context) error {
 	if accountInfo.ID == 0 {
 		// defense scan
 		// TODO Implement a delay of several seconds to prevent a side-channel attack.
-		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resMessage, "tbsign"))
 	}
 
 	if verifyCode != "" {
 		_v, ok := _function.ResetPwdList.Load(accountInfo.ID)
 
 		if !ok || _v == nil {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", false, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
 		}
 		if __v, ok := _v.(*_function.ResetPwdStruct); ok && __v.Value == verifyCode {
 			if newPwd == "" {
-				return c.JSON(http.StatusOK, _function.ApiTemplate(404, "密码不能为空", false, "tbsign"))
+				return c.JSON(http.StatusOK, _function.ApiTemplate(404, "密码不能为空", resMessage, "tbsign"))
 			} else {
 				// create new password
 				hash, err := _function.CreatePasswordHash(newPwd)
 				if err != nil {
-					return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法更新密码...", false, "tbsign"))
+					return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法更新密码...", resMessage, "tbsign"))
 				}
 
 				_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", accountInfo.ID).Update("pw", string(hash))
 
 				_function.ResetPwdList.Delete(accountInfo.ID)
-				return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
+				return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resMessage, "tbsign"))
 			}
 		} else {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", false, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
 		}
 	} else if verifyCode == "" && newPwd != "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", false, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
 	} else {
 		_v, ok := _function.ResetPwdList.Load(accountInfo.ID)
 		v := new(_function.ResetPwdStruct)
@@ -458,7 +475,7 @@ func ResetPassword(c echo.Context) error {
 		} else {
 			v = _v.(*_function.ResetPwdStruct)
 			if v.Time >= _function.ResetPwdMaxTimes {
-				return c.JSON(http.StatusOK, _function.ApiTemplate(429, "已超过最大验证次数，请稍后再试", false, "tbsign"))
+				return c.JSON(http.StatusOK, _function.ApiTemplate(429, "已超过最大验证次数，请稍后再试", resMessage, "tbsign"))
 			}
 		}
 		// init a callback code
@@ -471,10 +488,11 @@ func ResetPassword(c echo.Context) error {
 
 		v.Value = code
 		v.Time += 1
+		v.VerifyCode = _function.RandomEmoji()
 
 		_function.ResetPwdList.Store(accountInfo.ID, v)
 
-		mailObject := _function.PushMessageTemplateResetPassword(accountInfo.Email, code)
+		mailObject := _function.PushMessageTemplateResetPassword(v.VerifyCode, code)
 
 		// user default message type
 		userMessageType := "email"
@@ -490,9 +508,10 @@ func ResetPassword(c echo.Context) error {
 		err := _function.SendMessage(userMessageType, accountInfo.ID, mailObject.Title, mailObject.Body)
 		if err != nil {
 			log.Println(err)
-			return c.JSON(http.StatusOK, _function.ApiTemplate(500, "消息发送失败", false, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(500, "消息发送失败", resMessage, "tbsign"))
 		} else {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
+			resMessage["verify_emoji"] = v.VerifyCode
+			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resMessage, "tbsign"))
 		}
 	}
 }

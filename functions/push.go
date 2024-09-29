@@ -176,19 +176,19 @@ type PushMessageTemplateStruct struct {
 	Body  string
 }
 
-func PushMessageTemplateResetPassword(email, code string) PushMessageTemplateStruct {
+func PushMessageTemplateResetPassword(verifyMessage, code string) PushMessageTemplateStruct {
 	return PushMessageTemplateStruct{
 		Title: code + " 是你的验证码",
-		Body: "亲爱的 " + email + "<br /><br />" +
-			"你正在 TbSign 进行找回密码，需要进行身份验证。 本次行为的验证码是:<br /><br />" +
+		Body: "你正在 TbSign 进行找回密码，需要进行身份验证。 本次行为的验证码是:<br /><br />" +
 			code + "<br /><br />" +
 			"请在页面输入验证码，进行重置。<br />" +
-			"该消息" + strconv.Itoa(ResetPwdExpire/60) + "分钟内有效，为了你的帐号安全，请勿将验证码提供给他人。",
+			"该消息" + strconv.Itoa(ResetPwdExpire/60) + "分钟内有效，为了你的帐号安全，请勿将验证码提供给他人。<br /><br />" +
+			"请确认以下 emoji 的排列顺序与网页展示的一致:<br />" + verifyMessage,
 	}
 }
 func PushMessageTestTemplate() PushMessageTemplateStruct {
 	return PushMessageTemplateStruct{
 		Title: "TbSign 测试消息",
-		Body:  "TbSign 推送服务测试<br />这是一条测试消息，如果您能阅读到这里，说明消息已经发送成功",
+		Body:  "TbSign 推送服务测试<br />这是一条测试消息，如果您能阅读到这里，说明消息已经发送成功<br />emoji 测试:<br />" + RandomEmoji(),
 	}
 }

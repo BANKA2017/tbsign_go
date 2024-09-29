@@ -59,8 +59,8 @@ func Api(address string, args ...any) {
 	api.DELETE("/passport/delete", DeleteAccount)
 	api.PUT("/passport/update/info", UpdateAccountInfo)
 	api.PUT("/passport/update/password", UpdatePassword)
-	api.GET("/passport/settings", GetSettings)
-	api.PUT("/passport/settings", UpdateSettings)
+	//api.GET("/passport/settings", GetSettings)
+	//api.PUT("/passport/settings", UpdateSettings)
 	api.POST("/passport/reset/password", ResetPassword)
 
 	// tieba account
