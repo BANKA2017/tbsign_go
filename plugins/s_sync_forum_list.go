@@ -25,8 +25,15 @@ var RefreshTiebaListPlugin = _function.VariablePtrWrapper(RefreshTiebaListPlugin
 		Name:    "ver4_ref",
 		Version: "1.0",
 		Options: map[string]string{
-			"ver4_ref_day": "1",
-			"ver4_ref_id":  "0",
+			"ver4_ref_day":          "1",
+			"ver4_ref_id":           "0",
+			"ver4_ref_action_limit": "50",
+		},
+		OptionValidator: map[string]func(value string) bool{
+			"ver4_ref_action_limit": func(value string) bool {
+				numLimit, err := strconv.ParseInt(value, 10, 64)
+				return err == nil && numLimit >= 0
+			},
 		},
 		Endpoints: []PluginEndpintStruct{
 			{Method: "GET", Path: "list", Function: PluginRefreshTiebaListGetAccountList},
@@ -206,8 +213,10 @@ func (pluginInfo *RefreshTiebaListPluginType) Action() {
 	// 4 hours
 	if refID != "0" || _function.Now.Unix() > lastdo+60*60*4 {
 		var accounts = &[]model.TcBaiduid{}
-		// TODO fix hard limit
-		_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id > ?", refID).Limit(50).Find(accounts)
+
+		limit := _function.GetOption("ver4_ref_action_limit")
+		numLimit, _ := strconv.ParseInt(limit, 10, 64)
+		_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id > ?", refID).Limit(int(numLimit)).Find(accounts)
 
 		if len(*accounts) == 0 {
 			_function.SetOption("ver4_ref_id", "0")

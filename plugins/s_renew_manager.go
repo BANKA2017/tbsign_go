@@ -30,7 +30,14 @@ var RenewManager = _function.VariablePtrWrapper(RenewManagerType{
 		Name:    "kd_renew_manager",
 		Version: "0.1",
 		Options: map[string]string{
-			"kd_renew_manager_id": "0",
+			"kd_renew_manager_id":           "0",
+			"kd_renew_manager_action_limit": "50",
+		},
+		OptionValidator: map[string]func(value string) bool{
+			"kd_renew_manager_action_limit": func(value string) bool {
+				numLimit, err := strconv.ParseInt(value, 10, 64)
+				return err == nil && numLimit >= 0
+			},
 		},
 		Test: false,
 		Endpoints: []PluginEndpintStruct{
@@ -60,10 +67,11 @@ func (pluginInfo *RenewManagerType) Action() {
 
 	otime := _function.Now.Add(time.Hour * -24).Unix()
 
-	// TODO update hard limit
+	limit := _function.GetOption("kd_renew_manager_action_limit")
+	numLimit, _ := strconv.ParseInt(limit, 10, 64)
 	localRenewList := new([]model.TcKdRenewManager)
 	subQuery := _function.GormDB.R.Model(&model.TcUsersOption{}).Select("uid").Where("name = 'kd_renew_manager_open' AND value = '1'")
-	_function.GormDB.R.Model(&model.TcKdRenewManager{}).Where("id > ? AND date < ? AND uid IN (?)", id, otime, subQuery).Order("id ASC").Limit(50).Find(&localRenewList)
+	_function.GormDB.R.Model(&model.TcKdRenewManager{}).Where("id > ? AND date < ? AND uid IN (?)", id, otime, subQuery).Order("id ASC").Limit(int(numLimit)).Find(&localRenewList)
 
 	for _, renewItem := range *localRenewList {
 		tmpLog := []string{}
@@ -107,7 +115,18 @@ func (pluginInfo *RenewManagerType) Action() {
 			// 	}
 			// }
 		}
-		renewItem.Log = fmt.Sprintf("%s: %s<br />%s", _function.Now.Local().Format(time.DateOnly), strings.Join(tmpLog, ", "), renewItem.Log)
+
+		// TODO only keep 30 days log
+		// previous logs
+		previousLogs := []string{}
+		for i, s := range strings.Split(renewItem.Log, "<br />") {
+			if i <= 28 {
+				previousLogs = append(previousLogs, s)
+			} else {
+				break
+			}
+		}
+		renewItem.Log = fmt.Sprintf("%s: %s<br />%s", _function.Now.Local().Format(time.DateOnly), strings.Join(tmpLog, ", "), strings.Join(previousLogs, "<br />"))
 
 		_function.GormDB.W.Model(&model.TcKdRenewManager{}).Where("id = ?", renewItem.ID).Updates(renewItem)
 		_function.SetOption("kd_renew_manager_id", strconv.Itoa(int(renewItem.ID)))

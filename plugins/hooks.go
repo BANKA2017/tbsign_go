@@ -1,6 +1,7 @@
 package _plugin
 
 import (
+	"log"
 	"sync"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
@@ -10,6 +11,7 @@ import (
 )
 
 var PluginList = make(map[string]PluginActionHooks)
+var PluginOptionValidatorMap = sync.Map{}
 
 func RegisterPlugin(name string, plugin PluginActionHooks) {
 	PluginList[name] = plugin
@@ -22,13 +24,14 @@ type PluginEndpintStruct struct {
 }
 
 type PluginInfo struct {
-	Name      string
-	Version   string
-	Active    bool
-	Options   map[string]string
-	Info      model.TcPlugin
-	Test      bool
-	Endpoints []PluginEndpintStruct
+	Name            string
+	Version         string
+	Active          bool
+	Options         map[string]string
+	OptionValidator map[string]func(value string) bool
+	Info            model.TcPlugin
+	Test            bool
+	Endpoints       []PluginEndpintStruct
 	sync.RWMutex
 }
 
@@ -112,6 +115,19 @@ func InitPluginList() {
 	for _, pluginStatus := range *pluginListDB {
 		pluginNameSet.Delete(pluginStatus.Name)
 		PluginList[pluginStatus.Name].(PluginHooks).SetDBInfo(pluginStatus)
+
+		// sync option
+		for option, optionValue := range PluginList[pluginStatus.Name].(PluginHooks).GetInfo().Options {
+			if optionValue != "" && _function.GetOption(option) == "" {
+				log.Println("plugin:option:sync:", option, optionValue)
+				_function.SetOption(option, optionValue)
+			}
+		}
+
+		// option validator
+		for optionKey, optionValidator := range PluginList[pluginStatus.Name].(PluginHooks).GetInfo().OptionValidator {
+			PluginOptionValidatorMap.Store(optionKey, optionValidator)
+		}
 	}
 
 	pluginNameSet.Range(func(key any, value any) bool {
@@ -124,6 +140,7 @@ func InitPluginList() {
 		})
 		return true
 	})
+	AddToSettingsFilter()
 }
 
 func UpdatePluginInfo(name string, version string, status bool, options string) error {
@@ -148,6 +165,12 @@ func UpdatePluginInfo(name string, version string, status bool, options string) 
 		Options: "",
 	})
 
+	// option validator
+	for optionKey, optionValidator := range PluginList[name].(PluginHooks).GetInfo().OptionValidator {
+		PluginOptionValidatorMap.Store(optionKey, optionValidator)
+	}
+	AddToSettingsFilter()
+
 	return err
 }
 
@@ -160,5 +183,21 @@ func DeletePluginInfo(name string) error {
 		Options: "",
 	})
 
+	// option validator
+	for optionKey := range PluginList[name].(PluginHooks).GetInfo().OptionValidator {
+		PluginOptionValidatorMap.Delete(optionKey)
+	}
+	AddToSettingsFilter()
+
 	return _function.GormDB.W.Where("name = ?", name).Delete(&model.TcPlugin{}).Error
+}
+
+func AddToSettingsFilter() {
+	tmpSettingsFilter := _function.SettingsKeys
+	PluginOptionValidatorMap.Range(func(key, value any) bool {
+		tmpSettingsFilter = append(tmpSettingsFilter, key.(string))
+		return true
+	})
+
+	_function.SettingsFilter = tmpSettingsFilter
 }

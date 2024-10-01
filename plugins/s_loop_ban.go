@@ -42,9 +42,18 @@ var LoopBanPlugin = _function.VariablePtrWrapper(LoopBanPluginType{
 		Name:    "ver4_ban",
 		Version: "1.4",
 		Options: map[string]string{
-			"ver4_ban_break_check": "0",
-			"ver4_ban_id":          "0",
-			"ver4_ban_limit":       "5",
+			"ver4_ban_break_check":  "0",
+			"ver4_ban_id":           "0",
+			"ver4_ban_limit":        "5",
+			"ver4_ban_action_limit": "50",
+		},
+		OptionValidator: map[string]func(value string) bool{
+			"ver4_ban_break_check": PluginLoopBanOptionValidatorVer4BanBreakCheck,
+			"ver4_ban_limit":       PluginLoopBanOptionValidatorVer4BanLimit,
+			"ver4_ban_action_limit": func(value string) bool {
+				numLimit, err := strconv.ParseInt(value, 10, 64)
+				return err == nil && numLimit >= 0
+			},
 		},
 		Endpoints: []PluginEndpintStruct{
 			{Method: "GET", Path: "switch", Function: PluginLoopBanGetSwitch},
@@ -111,8 +120,9 @@ func (pluginInfo *LoopBanPluginType) Action() {
 	var localBanAccountList = new([]model.TcVer4BanList)
 	subQuery := _function.GormDB.R.Model(&model.TcUsersOption{}).Select("uid").Where("name = 'ver4_ban_open' AND value = '1'")
 
-	// TODO fix hard limit
-	_function.GormDB.R.Model(&model.TcVer4BanList{}).Where("id > ? AND date < ? AND stime < ? AND etime > ? AND uid IN (?)", id, otime, _function.Now.Unix(), _function.Now.Unix(), subQuery).Order("id ASC").Limit(50).Find(&localBanAccountList)
+	limit := _function.GetOption("ver4_ban_action_limit")
+	numLimit, _ := strconv.ParseInt(limit, 10, 64)
+	_function.GormDB.R.Model(&model.TcVer4BanList{}).Where("id > ? AND date < ? AND stime < ? AND etime > ? AND uid IN (?)", id, otime, _function.Now.Unix(), _function.Now.Unix(), subQuery).Order("id ASC").Limit(int(numLimit)).Find(&localBanAccountList)
 
 	var reasonList = &[]model.TcVer4BanUserset{}
 	_function.GormDB.R.Model(&model.TcVer4BanUserset{}).Find(&reasonList)
@@ -197,6 +207,17 @@ func (pluginInfo *LoopBanPluginType) Upgrade() error {
 }
 func (pluginInfo *LoopBanPluginType) Ext() ([]any, error) {
 	return []any{}, nil
+}
+
+// OptionValidator
+
+func PluginLoopBanOptionValidatorVer4BanBreakCheck(value string) bool {
+	return value == "0" || value == "1"
+}
+
+func PluginLoopBanOptionValidatorVer4BanLimit(value string) bool {
+	numValue, err := strconv.ParseInt(value, 10, 64)
+	return err == nil && numValue >= 0
 }
 
 // endpoint

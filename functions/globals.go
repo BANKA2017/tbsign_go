@@ -4,7 +4,6 @@ import (
 	"log"
 	"math/rand/v2"
 	"net/url"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -13,7 +12,6 @@ import (
 	"github.com/BANKA2017/tbsign_go/model"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"golang.org/x/mod/semver"
-	"gorm.io/gorm/clause"
 )
 
 var Options sync.Map    //  make(map[string]string)
@@ -39,80 +37,6 @@ var Now = time.Now().In(LocalTime)
 
 func UpdateNow() {
 	Now = time.Now().In(LocalTime)
-}
-
-func GetOption(keyName string) string {
-	v, ok := Options.Load(keyName)
-	if ok {
-		return v.(string)
-	} else {
-		return ""
-	}
-}
-
-func SetOption[T ~string | ~bool | ~int](keyName string, value T) error {
-	newValue := ""
-	switch any(value).(type) {
-	case string:
-		newValue = any(value).(string)
-	case bool:
-		if any(value).(bool) {
-			newValue = "1"
-		} else {
-			newValue = "0"
-		}
-	case int:
-		newValue = strconv.Itoa(any(value).(int))
-	}
-
-	v, ok := Options.Load(keyName)
-	if ok && v == newValue {
-		return nil
-	}
-
-	err := GormDB.W.Model(&model.TcOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcOption{Name: keyName, Value: newValue}).Error
-
-	if err == nil {
-		Options.Store(keyName, newValue)
-	}
-	return err
-}
-
-func DeleteOption(keyName string) error {
-	err := GormDB.W.Where("name = ?", keyName).Delete(&model.TcOption{}).Error
-	if err == nil {
-		Options.Delete(keyName)
-	}
-	return err
-}
-
-func GetUserOption(keyName string, uid string) string {
-	var tmpUserOption model.TcUsersOption
-	GormDB.R.Model(&model.TcUsersOption{}).Where("uid = ? AND name = ?", uid, keyName).First(&tmpUserOption)
-	return tmpUserOption.Value
-}
-
-func SetUserOption[T ~string | ~bool | ~int](keyName string, value T, uid string) error {
-	numUID, _ := strconv.ParseInt(uid, 10, 64)
-	newValue := ""
-	switch any(value).(type) {
-	case string:
-		newValue = any(value).(string)
-	case bool:
-		if any(value).(bool) {
-			newValue = "1"
-		} else {
-			newValue = "0"
-		}
-	case int:
-		newValue = strconv.Itoa(any(value).(int))
-	}
-
-	return GormDB.W.Model(&model.TcUsersOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcUsersOption{UID: int32(numUID), Name: keyName, Value: newValue}).Error
-}
-
-func DeleteUserOption(keyName string, uid string) error {
-	return GormDB.W.Where("uid = ? AND name = ?", uid, keyName).Delete(&model.TcUsersOption{}).Error
 }
 
 func GetCookie(pid int32, bduss_only ...bool) _type.TypeCookie {

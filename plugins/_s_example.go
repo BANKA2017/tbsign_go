@@ -30,6 +30,10 @@ var ExamplePlugin = _function.VariablePtrWrapper(ExamplePluginType{
 			"key2": "val2",
 			// ...
 		},
+		OptionValidator: map[string]func(value string) bool{
+			"key2": PluginExampleOptionValidatorKey2,
+			// ...
+		},
 		Test: true,
 		Endpoints: []PluginEndpintStruct{
 			{Method: "GET", Path: "example", Function: pluginApiSample},
@@ -74,6 +78,12 @@ func (pluginInfo *ExamplePluginType) Upgrade() error {
 }
 func (pluginInfo *ExamplePluginType) Ext() ([]any, error) {
 	return []any{}, nil
+}
+
+// OptionValidator
+
+func PluginExampleOptionValidatorKey2(value string) bool {
+	return value == "0" || value == "1"
 }
 
 // endpoint

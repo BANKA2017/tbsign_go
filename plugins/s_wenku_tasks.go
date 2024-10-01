@@ -31,8 +31,14 @@ var WenkuTasksPlugin = _function.VariablePtrWrapper(WenkuTasksPluginType{
 		Version: "0.1",
 		Options: map[string]string{
 			"kd_wenku_tasks_offset":       "0",
-			"kd_wenku_tasks_checkin_only": "1",
 			"kd_wenku_tasks_vip_matrix":   "0",
+			"kd_wenku_tasks_action_limit": "50",
+		},
+		OptionValidator: map[string]func(value string) bool{
+			"kd_wenku_tasks_action_limit": func(value string) bool {
+				numLimit, err := strconv.ParseInt(value, 10, 64)
+				return err == nil && numLimit >= 0
+			},
 		},
 		Endpoints: []PluginEndpintStruct{
 			{Method: "GET", Path: "settings", Function: PluginWenkuTasksGetSettings},
@@ -175,8 +181,10 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 	// get list
 	todayBeginning := _function.LocaleTimeDiff(0) //GMT+8
 	kdWenkuTasksUserList := &[]model.TcKdWenkuTask{}
-	// TODO fix hard limit
-	_function.GormDB.R.Model(&model.TcKdWenkuTask{}).Where("date < ? AND id > ?", todayBeginning, id).Limit(50).Find(&kdWenkuTasksUserList)
+
+	limit := _function.GetOption("kd_wenku_tasks_action_limit")
+	numLimit, _ := strconv.ParseInt(limit, 10, 64)
+	_function.GormDB.R.Model(&model.TcKdWenkuTask{}).Where("date < ? AND id > ?", todayBeginning, id).Limit(int(numLimit)).Find(&kdWenkuTasksUserList)
 	for _, taskUserItem := range *kdWenkuTasksUserList {
 		if _, ok := accountStatusList[taskUserItem.UID]; !ok {
 			accountStatusList[taskUserItem.UID] = _function.GetUserOption("kd_wenku_tasks_checkin_only", strconv.Itoa(int(taskUserItem.UID)))

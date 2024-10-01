@@ -34,11 +34,9 @@ type SiteAccountsResponse struct {
 	CheckinIgnore  int `json:"checkin_ignore"`
 }
 
-var settingsFilter = []string{"ann", "system_url", "stop_reg", "enable_reg", "yr_reg", "cktime", "sign_mode", "sign_hour", "cron_limit", "sign_sleep", "retry_max", "mail_name", "mail_yourname", "mail_host", "mail_port", "mail_secure", "mail_auth", "mail_smtpname", "mail_smtppw", "ver4_ban_limit", "ver4_ban_break_check", "go_forum_sync_policy", "go_ntfy_addr", "go_bark_addr"} // "system_name", "system_keywords", "system_description"
-
 func GetAdminSettings(c echo.Context) error {
 	var adminSettings []model.TcOption
-	_function.GormDB.R.Where("name in ?", settingsFilter).Find(&adminSettings)
+	_function.GormDB.R.Where("name in ?", _function.SettingsFilter).Find(&adminSettings)
 
 	settings := make(map[string]string)
 	for _, v := range adminSettings {
@@ -60,11 +58,11 @@ func UpdateAdminSettings(c echo.Context) error {
 	c.Request().ParseForm()
 
 	var adminSettings []model.TcOption
-	_function.GormDB.R.Where("name in ?", settingsFilter).Find(&adminSettings)
+	_function.GormDB.R.Where("name in ?", _function.SettingsFilter).Find(&adminSettings)
 
 	var errStr []string
 	settings := make(map[string]string)
-	for _, vName := range settingsFilter {
+	for _, vName := range _function.SettingsFilter {
 		for k1, v1 := range c.Request().Form {
 			if vName == k1 && len(v1) > 0 {
 				vValue := _function.GetOption(vName)
@@ -95,8 +93,7 @@ func UpdateAdminSettings(c echo.Context) error {
 							settings[vName] = v1[0]
 							_function.SetOption(vName, string(signModeEncoded))
 						}
-
-					case "enable_reg", "ver4_ban_break_check", "mail_auth":
+					case "enable_reg", "mail_auth":
 						if v1[0] == "0" || v1[0] == "1" {
 							settings[vName] = v1[0]
 							_function.SetOption(vName, v1[0])
@@ -110,7 +107,7 @@ func UpdateAdminSettings(c echo.Context) error {
 						} else {
 							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
 						}
-					case "cron_limit", "retry_max", "sign_sleep", "ver4_ban_limit", "mail_port", "cktime":
+					case "cron_limit", "retry_max", "sign_sleep", "mail_port", "cktime":
 						numValue, err := strconv.ParseInt(v1[0], 10, 64)
 						if err == nil && numValue >= 0 {
 							settings[vName] = v1[0]
@@ -151,8 +148,18 @@ func UpdateAdminSettings(c echo.Context) error {
 							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
 						}
 					default:
-						settings[vName] = v1[0]
-						_function.SetOption(vName, v1[0])
+						if PluginOptionValidatorAny, ok := _plugin.PluginOptionValidatorMap.Load(vName); ok {
+							if PluginOptionValidator, ok := PluginOptionValidatorAny.(func(value string) bool); ok && PluginOptionValidator(v1[0]) {
+								settings[vName] = v1[0]
+								_function.SetOption(vName, v1[0])
+							} else {
+								errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
+								log.Println("invalid settings kv", vName, v1[0])
+							}
+						} else {
+							settings[vName] = v1[0]
+							_function.SetOption(vName, v1[0])
+						}
 					}
 				}
 				break

@@ -392,7 +392,7 @@ func GetUserInfoByUsernameOrPortrait(requestType string, value string) (*_type.T
 func PostSync(cookie _type.TypeCookie) (any, error) {
 	form := map[string]string{
 		"BDUSS": cookie.Bduss,
-		"cuid":  "-", //TODO cuid
+		"cuid":  "-", // TODO cuid
 	}
 	AddSign(&form, "4")
 	_body := url.Values{}

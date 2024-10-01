@@ -102,7 +102,6 @@ func (pluginInfo *LotteryPluginPluginType) Action() {
 
 	accounts := new([]model.TcBaiduid)
 
-	// TODO fix hard limit
 	waitSeconds := 2 // wait 2s// should not <=1
 	limit := 60
 	if waitSeconds <= 0 {

@@ -54,8 +54,6 @@ func IsOfficialSupport() bool {
 	return false
 }
 
-//TODO upgrade
-
 // version = "20240707.c7990c7.6a6db54"
 func Upgrade(version string) error {
 	_os := runtime.GOOS

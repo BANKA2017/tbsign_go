@@ -590,8 +590,15 @@ var ForumSupportPluginInfo = _function.VariablePtrWrapper(ForumSupportPluginInfo
 		Name:    "ver4_rank",
 		Version: "1.2",
 		Options: map[string]string{
-			"ver4_rank_daily": "1",
-			"ver4_rank_id":    "0",
+			"ver4_rank_daily":        "1",
+			"ver4_rank_id":           "0",
+			"ver4_rank_action_limit": "50",
+		},
+		OptionValidator: map[string]func(value string) bool{
+			"ver4_rank_action_limit": func(value string) bool {
+				numLimit, err := strconv.ParseInt(value, 10, 64)
+				return err == nil && numLimit >= 0
+			},
 		},
 		Endpoints: []PluginEndpintStruct{
 			{Method: "GET", Path: "switch", Function: PluginForumSupportGetSwitch},
@@ -640,8 +647,10 @@ func (pluginInfo *ForumSupportPluginInfoType) Action() {
 	// get list
 	todayBeginning := _function.LocaleTimeDiff(0) //GMT+8
 	ver4RankLog := &[]model.TcVer4RankLog{}
-	// TODO fix hard limit
-	_function.GormDB.R.Model(&model.TcVer4RankLog{}).Where("date < ? AND id > ?", todayBeginning, id).Limit(50).Find(&ver4RankLog)
+
+	limit := _function.GetOption("ver4_rank_action_limit")
+	numLimit, _ := strconv.ParseInt(limit, 10, 64)
+	_function.GormDB.R.Model(&model.TcVer4RankLog{}).Where("date < ? AND id > ?", todayBeginning, id).Limit(int(numLimit)).Find(&ver4RankLog)
 	for _, forumSupportItem := range *ver4RankLog {
 		if _, ok := accountStatusList[forumSupportItem.UID]; !ok {
 			accountStatusList[forumSupportItem.UID] = _function.GetUserOption("ver4_rank_check", strconv.Itoa(int(forumSupportItem.UID)))
