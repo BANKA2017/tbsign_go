@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
+	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/BANKA2017/tbsign_go/share"
 	"github.com/labstack/echo/v4"
 )
@@ -74,6 +75,28 @@ func PreCheck(next echo.HandlerFunc) echo.HandlerFunc {
 
 		c.Set("uid", uid)
 		c.Set("role", role)
+
+		return next(c)
+	}
+}
+
+func PluginPathPrecheck(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		path := c.Path()
+
+		if share.EnableFrontend && strings.HasPrefix(path, "/api/") {
+			path = strings.TrimPrefix(path, "/api/plugins/")
+		} else {
+			path = strings.TrimPrefix(path, "/plugins/")
+		}
+
+		pluginName := strings.SplitN(path, "/", 2)[0]
+
+		_pluginInfo, ok := _plugin.PluginList[pluginName]
+
+		if !ok || !_pluginInfo.(_plugin.PluginHooks).GetSwitch() {
+			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "插件不可用", _function.EchoEmptyObject, "tbsign"))
+		}
 
 		return next(c)
 	}

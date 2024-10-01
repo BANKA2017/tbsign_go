@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
@@ -668,7 +669,7 @@ func (pluginInfo *ForumSupportPluginInfoType) Action() {
 
 			log.Println("support:", forumSupportItem.Tieba, forumSupportItem.Name, message)
 			_function.GormDB.W.Model(&model.TcVer4RankLog{}).Where("id = ?", forumSupportItem.ID).Updates(model.TcVer4RankLog{
-				Log:  fmt.Sprintf("<br/>%s #%d,%s%s", _function.Now.Local().Format("2006-01-02"), response.No, message, forumSupportItem.Log),
+				Log:  fmt.Sprintf("<br/>%s #%d,%s%s", _function.Now.Local().Format(time.DateOnly), response.No, message, forumSupportItem.Log),
 				Date: int32(_function.Now.Unix()),
 			})
 
@@ -684,7 +685,7 @@ func (pluginInfo *ForumSupportPluginInfoType) Install() error {
 	for k, v := range pluginInfo.Options {
 		_function.SetOption(k, v)
 	}
-	err = _function.UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
+	err = UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
 	if err != nil {
 		return err
 	}
@@ -725,7 +726,7 @@ func (pluginInfo *ForumSupportPluginInfoType) Delete() error {
 	for k := range pluginInfo.Options {
 		_function.DeleteOption(k)
 	}
-	_function.DeletePluginInfo(pluginInfo.Name)
+	DeletePluginInfo(pluginInfo.Name)
 
 	_function.GormDB.W.Migrator().DropTable(&model.TcVer4RankLog{})
 

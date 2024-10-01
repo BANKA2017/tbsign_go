@@ -115,21 +115,6 @@ func DeleteUserOption(keyName string, uid string) error {
 	return GormDB.W.Where("uid = ? AND name = ?", uid, keyName).Delete(&model.TcUsersOption{}).Error
 }
 
-func UpdatePluginInfo(name string, version string, status bool, options string) error {
-	err := GormDB.W.Model(&model.TcPlugin{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcPlugin{
-		Name:    name,
-		Ver:     version,
-		Status:  status,
-		Options: options,
-	}).Error
-
-	return err
-}
-
-func DeletePluginInfo(name string) error {
-	return GormDB.W.Where("name = ?", name).Delete(&model.TcPlugin{}).Error
-}
-
 func GetCookie(pid int32, bduss_only ...bool) _type.TypeCookie {
 	cookie, ok := CookieList.Load(pid)
 	if !ok || cookie == nil {

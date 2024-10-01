@@ -1,8 +1,6 @@
 package _plugin
 
 import (
-	"bytes"
-	"encoding/binary"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,12 +11,10 @@ import (
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
-	tbpb "github.com/BANKA2017/tbsign_go/proto"
 	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slices"
-	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm/clause"
 )
 
@@ -35,11 +31,6 @@ type BanAccountResponse struct {
 	ErrorCode  string `json:"error_code,omitempty"`
 	ErrorMsg   string `json:"error_msg,omitempty"`
 	Info       []any  `json:"info,omitempty"`
-}
-
-type IsManagerPreCheckResponse struct {
-	IsManager bool   `json:"is_manager"`
-	Role      string `json:"role"`
 }
 
 type LoopBanPluginType struct {
@@ -64,7 +55,6 @@ var LoopBanPlugin = _function.VariablePtrWrapper(LoopBanPluginType{
 			{Method: "PATCH", Path: "list", Function: PluginLoopBanAddAccounts},
 			{Method: "DELETE", Path: "list/:id", Function: PluginLoopBanDelAccount},
 			{Method: "POST", Path: "list/empty", Function: PluginLoopBanDelAllAccounts},
-			{Method: "GET", Path: "check/:pid/is_manager/:fname", Function: PluginLoopBanPreCheckIsManager},
 		},
 	},
 })
@@ -105,67 +95,6 @@ func PostClientBan(cookie _type.TypeCookie, fid int32, portrait string, day int3
 	var banDecode BanAccountResponse
 	err = _function.JsonDecode(banResponse, &banDecode)
 	return &banDecode, err
-}
-
-func GetManagerInfo(fid uint64) (*tbpb.GetBawuInfoResIdl_DataRes, error) {
-	pbBytes, err := proto.Marshal(&tbpb.GetBawuInfoReqIdl_DataReq{
-		Common: &tbpb.CommonReq{
-			XClientVersion: _function.ClientVersion,
-		},
-		Fid: fid,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	pbBytesLen := make([]byte, 8)
-	binary.BigEndian.PutUint64(pbBytesLen, uint64(len(pbBytes)))
-
-	body, contentType, err := _function.MultipartBodyBuilder(map[string]any{}, _function.MultipartBodyBinaryFileType{
-		Fieldname: "data",
-		Filename:  "file",
-		Binary:    bytes.Join([][]byte{[]byte("\n"), _function.RemoveLeadingZeros(pbBytesLen), pbBytes}, []byte{}),
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := _function.TBFetch("http://tiebac.baidu.com/c/f/forum/getBawuInfo?cmd=301007", "POST", body, map[string]string{
-		"Content-Type":   contentType,
-		"x_bd_data_type": "protobuf",
-	})
-
-	if err != nil {
-		return nil, err
-	}
-	// log.Println(resp, string(resp))
-	var res tbpb.GetBawuInfoResIdl
-	err = proto.Unmarshal(resp, &res)
-	if err != nil {
-		return nil, err
-	}
-
-	return res.GetData(), nil
-}
-
-func GetManagerStatus(portrait string, fid int64) (*IsManagerPreCheckResponse, error) {
-	managerList, _ := GetManagerInfo(uint64(fid))
-	for _, v := range managerList.BawuTeamInfo.BawuTeamList {
-		if v.RoleName == "吧主助手" {
-			continue
-		}
-		for _, v2 := range v.RoleInfo {
-			if v2.Portrait == portrait {
-				return &IsManagerPreCheckResponse{
-					IsManager: true,
-					Role:      v.RoleName,
-				}, nil
-			}
-		}
-	}
-
-	return &IsManagerPreCheckResponse{}, nil
 }
 
 func (pluginInfo *LoopBanPluginType) Action() {
@@ -213,9 +142,9 @@ func (pluginInfo *LoopBanPluginType) Action() {
 		}
 		msg := banAccountInfo.Log
 		if response.ErrorMsg != "" {
-			msg += _function.Now.Local().Format("2006-01-02 15:04:05") + " 执行结果：<font color=\"red\">操作失败</font>#" + response.ErrorCode + " " + response.ErrorMsg + "<br>"
+			msg += _function.Now.Local().Format(time.DateTime) + " 执行结果：<font color=\"red\">操作失败</font>#" + response.ErrorCode + " " + response.ErrorMsg + "<br>"
 		} else {
-			msg += _function.Now.Local().Format("2006-01-02 15:04:05") + " 执行结果：<font color=\"green\">操作成功</font><br>"
+			msg += _function.Now.Local().Format(time.DateTime) + " 执行结果：<font color=\"green\">操作成功</font><br>"
 		}
 
 		_function.GormDB.W.Model(&model.TcVer4BanList{}).Where("id = ?", banAccountInfo.ID).Updates(model.TcVer4BanList{
@@ -234,7 +163,7 @@ func (pluginInfo *LoopBanPluginType) Install() error {
 	for k, v := range pluginInfo.Options {
 		_function.SetOption(k, v)
 	}
-	_function.UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
+	UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
 
 	// index ?
 	if share.DBMode == "mysql" {
@@ -258,7 +187,7 @@ func (pluginInfo *LoopBanPluginType) Delete() error {
 	for k := range pluginInfo.Options {
 		_function.DeleteOption(k)
 	}
-	_function.DeletePluginInfo(pluginInfo.Name)
+	DeletePluginInfo(pluginInfo.Name)
 	_function.GormDB.W.Migrator().DropTable(&model.TcVer4BanUserset{}, &model.TcVer4BanList{})
 
 	return nil
@@ -407,13 +336,13 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 	// time
 	startTime := time.Now()
 	if start != "" {
-		startTime, err = time.Parse("2006-01-02", start)
+		startTime, err = time.Parse(time.DateOnly, start)
 		if err != nil {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "开始日期格式错误", _function.EchoEmptyObject, "tbsign"))
 		}
 	}
 
-	endTime, err := time.Parse("2006-01-02", end)
+	endTime, err := time.Parse(time.DateOnly, end)
 	if err != nil {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "结束日期格式错误", _function.EchoEmptyObject, "tbsign"))
 	}
@@ -456,14 +385,15 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, fmt.Sprintf("添加帐号数超限（%d/%s）", count+len(portraitList), limit), _function.EchoEmptyObject, "tbsign"))
 	}
 
+	// fid
 	fid := _function.GetFid(fname)
 	if fid == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", IsManagerPreCheckResponse{}, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "贴吧不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// is manager?
 	if _function.GetOption("ver4_ban_break_check") == "0" {
-		managerStatus, err := GetManagerStatus(_function.GetCookie(int32(numPid)).Portrait, fid)
+		managerStatus, err := _function.GetManagerStatus(_function.GetCookie(int32(numPid)).Portrait, fid)
 		if err != nil {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法获取吧务列表", _function.EchoEmptyObject, "tbsign"))
 		}
@@ -549,7 +479,6 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", accountsResult, "tbsign"))
-
 }
 
 func PluginLoopBanDelAccount(c echo.Context) error {
@@ -587,30 +516,4 @@ func PluginLoopBanDelAllAccounts(c echo.Context) error {
 	})
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
-}
-
-func PluginLoopBanPreCheckIsManager(c echo.Context) error {
-	uid := c.Get("uid").(string)
-
-	pid := c.Param("pid")
-	fname := c.Param("fname")
-
-	// pre-check pid
-	var pidCheck []model.TcBaiduid
-	_function.GormDB.R.Where("id = ? AND uid = ?", pid, uid).Limit(1).Find(&pidCheck)
-
-	if len(pidCheck) == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", IsManagerPreCheckResponse{}, "tbsign"))
-	}
-
-	fid := _function.GetFid(fname)
-	if fid == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", IsManagerPreCheckResponse{}, "tbsign"))
-	}
-	resp, err := GetManagerStatus(pidCheck[0].Portrait, fid)
-	if err != nil {
-		log.Println(err)
-	}
-
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
 }

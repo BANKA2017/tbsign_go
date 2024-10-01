@@ -227,7 +227,7 @@ func (pluginInfo *RefreshTiebaListPluginType) Install() error {
 	for k, v := range pluginInfo.Options {
 		_function.SetOption(k, v)
 	}
-	_function.UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
+	UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
 	return nil
 }
 
@@ -235,7 +235,7 @@ func (pluginInfo *RefreshTiebaListPluginType) Delete() error {
 	for k := range pluginInfo.Options {
 		_function.DeleteOption(k)
 	}
-	_function.DeletePluginInfo(pluginInfo.Name)
+	DeletePluginInfo(pluginInfo.Name)
 
 	return nil
 }

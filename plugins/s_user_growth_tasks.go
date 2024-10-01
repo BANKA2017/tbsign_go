@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
@@ -417,7 +418,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 
 			_function.GormDB.W.Model(&model.TcKdGrowth{}).Where("id = ?", taskUserItem.ID).Updates(model.TcKdGrowth{
 				Status: string(jsonResult),
-				Log:    fmt.Sprintf("%s: %s<br/>%s", _function.Now.Local().Format("2006-01-02"), tmpLog, strings.Join(previousLogs, "<br/>")),
+				Log:    fmt.Sprintf("%s: %s<br/>%s", _function.Now.Local().Format(time.DateOnly), tmpLog, strings.Join(previousLogs, "<br/>")),
 				Date:   int32(_function.Now.Unix()),
 			})
 		}
@@ -431,7 +432,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Install() error {
 	for k, v := range pluginInfo.Options {
 		_function.SetOption(k, v)
 	}
-	_function.UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
+	UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
 
 	// index ?
 	if share.DBMode == "mysql" {
@@ -452,7 +453,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Delete() error {
 	for k := range pluginInfo.Options {
 		_function.DeleteOption(k)
 	}
-	_function.DeletePluginInfo(pluginInfo.Name)
+	DeletePluginInfo(pluginInfo.Name)
 	_function.GormDB.W.Migrator().DropTable(&model.TcKdGrowth{})
 
 	return nil

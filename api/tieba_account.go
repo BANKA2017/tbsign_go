@@ -1,6 +1,7 @@
 package _api
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -267,4 +268,30 @@ func CheckTiebaAccount(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 	}
 
+}
+
+func CheckIsManager(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	pid := c.Param("pid")
+	fname := c.Param("fname")
+
+	// pre-check pid
+	var pidCheck []model.TcBaiduid
+	_function.GormDB.R.Where("id = ? AND uid = ?", pid, uid).Limit(1).Find(&pidCheck)
+
+	if len(pidCheck) == 0 {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _type.IsManagerPreCheckResponse{}, "tbsign"))
+	}
+
+	fid := _function.GetFid(fname)
+	if fid == 0 {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", _type.IsManagerPreCheckResponse{}, "tbsign"))
+	}
+	resp, err := _function.GetManagerStatus(pidCheck[0].Portrait, fid)
+	if err != nil {
+		log.Println(err)
+	}
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
 }

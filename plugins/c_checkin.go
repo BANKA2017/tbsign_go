@@ -129,7 +129,7 @@ func Dosign(table string, retry bool) (bool, error) {
 }
 
 func DoCheckinAction() {
-	checkinToday = _function.Now.Local().Format("2006-01-02")
+	checkinToday = _function.Now.Local().Format(time.DateOnly)
 	// a:2:{s:3:"num";i:0;s:6:"lastdo";s:10:"2000-01-01";}
 	cornSignAgain := _function.GetOption("cron_sign_again")
 	cornSignAgainParsed, err := gophp.Unserialize([]byte(cornSignAgain))

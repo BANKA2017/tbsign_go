@@ -183,7 +183,7 @@ func (pluginInfo *LotteryPluginPluginType) Install() error {
 	for k, v := range pluginInfo.Options {
 		_function.SetOption(k, v)
 	}
-	_function.UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
+	UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
 
 	// index ?
 	if share.DBMode == "mysql" {
@@ -204,7 +204,7 @@ func (pluginInfo *LotteryPluginPluginType) Delete() error {
 	for k := range pluginInfo.Options {
 		_function.DeleteOption(k)
 	}
-	_function.DeletePluginInfo(pluginInfo.Name)
+	DeletePluginInfo(pluginInfo.Name)
 	_function.GormDB.W.Migrator().DropTable(&model.TcVer4LotteryLog{})
 
 	return nil

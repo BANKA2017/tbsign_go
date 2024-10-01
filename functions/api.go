@@ -8,6 +8,7 @@ import (
 )
 
 var EchoEmptyObject = make(map[string]any, 0)
+var EchoEmptyArray = make([]string, 0)
 
 func ApiTemplate[T any](code int, message string, data T, version string) _type.ApiTemplate {
 	return _type.ApiTemplate{

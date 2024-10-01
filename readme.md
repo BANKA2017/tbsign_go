@@ -154,7 +154,7 @@ air -- --db_path=tbsign.db --test=true --api=true
       - 命名建议使用 **英语单词/常用缩写**，或者与 **完整拼音** 的组合。请不要用拼音首字母缩写
     - 导出 API 接口的方式请参考现有的插件
       - 导出路由的路径为 `[/api]/plugins/<PluginInfo.Name>/<PluginInfo.Endpoints.Path>`，有没有 `/api` 前缀取决于是否启用自带前端
-    - 其他步骤请参考几个自带的标准插件
+    - 其他步骤请参考几个自带的标准插件，必要的函数和变量配置请参考 [标准插件模板](https://github.com/BANKA2017/tbsign_go/blob/master/plugins/_s_example.go)
   - 升级插件
     - 文件命名应当使用前缀 `u_`(upgrade)，用于不兼容更新，但目前还不存在需要用到的场景，所以暂时无需理会（甚至根本没有写调用逻辑）
   - 核心插件

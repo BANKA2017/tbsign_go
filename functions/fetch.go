@@ -495,3 +495,64 @@ func GetManagerTasks(cookie _type.TypeCookie, fid int64) (*_type.ManagerTasksRes
 	}
 	return &parsed, err
 }
+
+func GetManagerInfo(fid uint64) (*tbpb.GetBawuInfoResIdl_DataRes, error) {
+	pbBytes, err := proto.Marshal(&tbpb.GetBawuInfoReqIdl_DataReq{
+		Common: &tbpb.CommonReq{
+			XClientVersion: ClientVersion,
+		},
+		Fid: fid,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	pbBytesLen := make([]byte, 8)
+	binary.BigEndian.PutUint64(pbBytesLen, uint64(len(pbBytes)))
+
+	body, contentType, err := MultipartBodyBuilder(map[string]any{}, MultipartBodyBinaryFileType{
+		Fieldname: "data",
+		Filename:  "file",
+		Binary:    bytes.Join([][]byte{[]byte("\n"), RemoveLeadingZeros(pbBytesLen), pbBytes}, []byte{}),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := TBFetch("http://tiebac.baidu.com/c/f/forum/getBawuInfo?cmd=301007", "POST", body, map[string]string{
+		"Content-Type":   contentType,
+		"x_bd_data_type": "protobuf",
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	// log.Println(resp, string(resp))
+	var res tbpb.GetBawuInfoResIdl
+	err = proto.Unmarshal(resp, &res)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.GetData(), nil
+}
+
+func GetManagerStatus(portrait string, fid int64) (*_type.IsManagerPreCheckResponse, error) {
+	managerList, _ := GetManagerInfo(uint64(fid))
+	for _, v := range managerList.BawuTeamInfo.BawuTeamList {
+		if v.RoleName == "吧主助手" {
+			continue
+		}
+		for _, v2 := range v.RoleInfo {
+			if v2.Portrait == portrait {
+				return &_type.IsManagerPreCheckResponse{
+					IsManager: true,
+					Role:      v.RoleName,
+				}, nil
+			}
+		}
+	}
+
+	return &_type.IsManagerPreCheckResponse{}, nil
+}

@@ -71,6 +71,7 @@ func Api(address string, args ...any) {
 	api.GET("/account/:pid/status", CheckTiebaAccount)
 	api.GET("/account/qrcode", GetLoginQRCode)
 	api.POST("/account/qrlogin", GetBDUSS)
+	api.GET("/account/check/:pid/is_manager/:fname", CheckIsManager)
 
 	// tieba list
 	api.POST("/list/sync", RefreshTiebaList)
@@ -91,6 +92,7 @@ func Api(address string, args ...any) {
 	api.DELETE("/admin/account/list/:uid", AdminDeleteTiebaAccountList)
 	api.POST("/admin/account/list/:uid/reset", AdminResetTiebaList)
 	api.POST("/admin/plugin/:plugin_name/switch", PluginSwitch)
+	api.DELETE("/admin/plugin/:plugin_name", PluginUninstall)
 	api.POST("/admin/service/push/mail/test", SendTestMessage)
 	/// server
 	api.GET("/admin/server/status", GetServerStatus)
@@ -111,7 +113,9 @@ func Api(address string, args ...any) {
 
 	// plugins
 	plugin := api.Group("/plugins")
+	plugin.Use(PluginPathPrecheck)
 	for _, v := range _plugin.PluginList {
+		// TDOO disable endpoint before install?
 		for _, r := range v.(_plugin.PluginHooks).GetEndpoints() {
 			plugin.Match([]string{r.Method}, "/"+v.(_plugin.PluginHooks).GetInfo().Name+"/"+r.Path, r.Function)
 		}

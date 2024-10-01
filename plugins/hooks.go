@@ -6,6 +6,7 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm/clause"
 )
 
 var PluginList = make(map[string]PluginActionHooks)
@@ -123,4 +124,41 @@ func InitPluginList() {
 		})
 		return true
 	})
+}
+
+func UpdatePluginInfo(name string, version string, status bool, options string) error {
+	// db
+	err := _function.GormDB.W.Model(&model.TcPlugin{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcPlugin{
+		Name:    name,
+		Ver:     version,
+		Status:  status,
+		Options: options,
+	}).Error
+
+	if err != nil {
+		return err
+	}
+
+	// memory cache
+	info := PluginList[name].(PluginHooks).GetInfo()
+	PluginList[name].(PluginHooks).SetDBInfo(model.TcPlugin{
+		Name:    name,
+		Status:  false,
+		Ver:     info.Version,
+		Options: "",
+	})
+
+	return err
+}
+
+func DeletePluginInfo(name string) error {
+	// memory cache
+	PluginList[name].(PluginHooks).SetDBInfo(model.TcPlugin{
+		Name:    name,
+		Status:  false,
+		Ver:     "-1",
+		Options: "",
+	})
+
+	return _function.GormDB.W.Where("name = ?", name).Delete(&model.TcPlugin{}).Error
 }

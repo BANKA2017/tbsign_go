@@ -56,12 +56,15 @@ type ForumInfo struct {
 	Slogan       string `json:"slogan,omitempty"`
 }
 
+type ForumList struct {
+	NonGconforum *[]ForumInfo `json:"non-gconforum,omitempty"`
+	Gconforum    *[]ForumInfo `json:"gconforum,omitempty"`
+}
+
 type ForumListResponse struct {
-	ForumList struct {
-		NonGconforum *[]ForumInfo `json:"non-gconforum,omitempty"`
-		Gconforum    *[]ForumInfo `json:"gconforum,omitempty"`
-	} `json:"forum_list,omitempty"`
-	HasMore string `json:"has_more,omitempty"`
+	// TODO `"forum_list":[]`
+	ForumList *ForumList `json:"forum_list,omitempty"`
+	HasMore   string     `json:"has_more,omitempty"`
 	// ServerTime string `json:"server_time,omitempty"`
 	// Time       int    `json:"time,omitempty"`
 	// Ctime      int    `json:"ctime,omitempty"`
@@ -220,16 +223,19 @@ type LoginResponse struct {
 	} `json:"data,omitempty"`
 }
 
+type BawuTask struct {
+	EndTime  int `json:"end_time,omitempty"`
+	TaskList []struct {
+		TaskName   string `json:"task_name,omitempty"`
+		TaskStatus string `json:"task_status,omitempty"`
+	} `json:"task_list,omitempty"`
+}
+
 type ManagerTasksResponse struct {
-	No    int    `json:"no,omitempty"`
-	Error string `json:"error,omitempty"`
-	Data  struct {
-		BawuTask struct {
-			EndTime  int `json:"end_time,omitempty"`
-			TaskList []struct {
-				TaskName   string `json:"task_name,omitempty"`
-				TaskStatus string `json:"task_status,omitempty"`
-			} `json:"task_list,omitempty"`
-		} `json:"bawu_task,omitempty"`
+	No      int    `json:"no,omitempty"`
+	ErrCode int    `json:"err_code,omitempty"`
+	Error   string `json:"error,omitempty"`
+	Data    struct {
+		BawuTask BawuTask `json:"bawu_task,omitempty"`
 	} `json:"data,omitempty"`
 }

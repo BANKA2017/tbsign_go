@@ -458,9 +458,10 @@ func PluginSwitch(c echo.Context) error {
 	_pluginInfo, ok := _plugin.PluginList[pluginName]
 	if !ok {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "插件不存在", map[string]any{
-			"name":   pluginName,
-			"exists": false,
-			"status": false,
+			"name":    pluginName,
+			"exists":  false,
+			"status":  false,
+			"version": -1,
 		}, "tbsign"))
 	}
 
@@ -471,9 +472,10 @@ func PluginSwitch(c echo.Context) error {
 		err := _pluginInfo.Install()
 		if err != nil {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(500, "插件安装失败", map[string]any{
-				"name":   pluginName,
-				"exists": false,
-				"status": false,
+				"name":    pluginName,
+				"exists":  false,
+				"status":  false,
+				"version": -1,
 			}, "tbsign"))
 		}
 	}
@@ -481,9 +483,43 @@ func PluginSwitch(c echo.Context) error {
 	newPluginStatus := _pluginInfo.(_plugin.PluginHooks).Switch()
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
-		"name":   pluginName,
-		"exists": true,
-		"status": newPluginStatus,
+		"name":    pluginName,
+		"exists":  true,
+		"status":  newPluginStatus,
+		"version": _pluginInfo.(_plugin.PluginHooks).GetDBInfo().Ver,
+	}, "tbsign"))
+}
+
+func PluginUninstall(c echo.Context) error {
+	c.Request().ParseForm()
+	pluginName := c.Param("plugin_name")
+
+	_pluginInfo, ok := _plugin.PluginList[pluginName]
+	if !ok {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "插件不存在", map[string]any{
+			"name":    pluginName,
+			"exists":  false,
+			"status":  false,
+			"version": -1,
+		}, "tbsign"))
+	}
+
+	if _pluginInfo.(_plugin.PluginHooks).GetDBInfo().Ver == "-1" {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "插件尚未安装", map[string]any{
+			"name":    pluginName,
+			"exists":  false,
+			"status":  false,
+			"version": -1,
+		}, "tbsign"))
+	}
+
+	_pluginInfo.Delete()
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
+		"name":    pluginName,
+		"exists":  false,
+		"status":  false,
+		"version": -1,
 	}, "tbsign"))
 }
 

@@ -167,7 +167,7 @@ func SendEmail(_to, title, body string) error {
 		"Content-Transfer-Encoding: 8bit\r\n" +
 		"Message-ID: <" + Now.Format("20060102150405") + "." + strconv.Itoa(Now.Nanosecond()) + "." + mail + ">\r\n" +
 		"\r\n" +
-		body + "<br /><br />" + Now.Format("2006-01-02") + "\r\n")
+		body + "<br /><br />" + Now.Format(time.DateOnly) + "\r\n")
 	return smtp.SendMail(smtp_host+":"+smtp_port, client, mail, to, msg)
 }
 
