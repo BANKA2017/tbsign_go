@@ -74,7 +74,9 @@ func (pluginInfo *RenewManagerType) Action() {
 	_function.GormDB.R.Model(&model.TcKdRenewManager{}).Where("id > ? AND date < ? AND uid IN (?)", id, otime, subQuery).Order("id ASC").Limit(int(numLimit)).Find(&localRenewList)
 
 	for _, renewItem := range *localRenewList {
+		renewItem.Date = int32(_function.Now.Unix())
 		tmpLog := []string{}
+
 		// send cancel top package
 		res, err := PluginRenewManagerCancelTop(_function.GetCookie(renewItem.Pid), renewItem.Fname, renewItem.Tid)
 
@@ -83,15 +85,16 @@ func (pluginInfo *RenewManagerType) Action() {
 			log.Println("renew_manager:", res, err)
 			renewItem.Status = "failed"
 			tmpLog = append(tmpLog, "cacnel_top: failed")
-		}
-		renewItem.Date = int32(_function.Now.Unix())
-		if res.No != 0 {
-			renewItem.Status = "failed"
-			tmpLog = append(tmpLog, fmt.Sprintf("cacnel_top: %d#%s", res.ErrCode, res.Error))
 		} else {
-			renewItem.Status = "success"
-			tmpLog = append(tmpLog, "cacnel_top: done")
+			if res.No != 0 {
+				renewItem.Status = "failed"
+				tmpLog = append(tmpLog, fmt.Sprintf("cacnel_top: %d#%s", res.ErrCode, res.Error))
+			} else {
+				renewItem.Status = "success"
+				tmpLog = append(tmpLog, "cacnel_top: done")
+			}
 		}
+
 		// sync tasks
 		res2, err := _function.GetManagerTasks(_function.GetCookie(renewItem.Pid), int64(renewItem.Fid))
 		if err != nil {
@@ -116,7 +119,6 @@ func (pluginInfo *RenewManagerType) Action() {
 			// }
 		}
 
-		// TODO only keep 30 days log
 		// previous logs
 		previousLogs := []string{}
 		for i, s := range strings.Split(renewItem.Log, "<br />") {

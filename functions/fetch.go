@@ -29,11 +29,6 @@ var IgnoreProxy bool
 var DefaultCient *http.Client
 var TBClient *http.Client
 
-func init() {
-	DefaultCient = InitClient(300)
-	TBClient = InitClient(10)
-}
-
 func InitClient(timeout int) *http.Client {
 	transport := http.DefaultTransport
 

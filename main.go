@@ -189,6 +189,11 @@ func main() {
 	_function.InitOptions()
 	_plugin.InitPluginList()
 
+	/// client
+	/// DO NOT EXEC _function.InitClient BEFORE READING FLAGS AND ENV!!!!!
+	_function.DefaultCient = _function.InitClient(300)
+	_function.TBClient = _function.InitClient(10)
+
 	if share.EnableApi {
 		go _api.Api(share.Address)
 	}
