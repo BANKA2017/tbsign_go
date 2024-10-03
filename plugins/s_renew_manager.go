@@ -27,16 +27,23 @@ type RenewManagerType struct {
 
 var RenewManager = _function.VariablePtrWrapper(RenewManagerType{
 	PluginInfo{
-		Name:    "kd_renew_manager",
-		Version: "0.1",
+		Name:              "kd_renew_manager",
+		PluginNameCN:      "吧主考核",
+		PluginNameCNShort: "吧主考核",
+		PluginNameFE:      "renew_manager",
+		Version:           "0.1",
 		Options: map[string]string{
 			"kd_renew_manager_id":           "0",
 			"kd_renew_manager_action_limit": "50",
 		},
-		OptionValidator: map[string]func(value string) bool{
-			"kd_renew_manager_action_limit": func(value string) bool {
-				numLimit, err := strconv.ParseInt(value, 10, 64)
-				return err == nil && numLimit >= 0
+		SettingOptions: map[string]PluinSettingOption{
+			"kd_renew_manager_action_limit": {
+				OptionName:   "kd_renew_manager_action_limit",
+				OptionNameCN: "每分钟最大执行数",
+				Validate: func(value string) bool {
+					numLimit, err := strconv.ParseInt(value, 10, 64)
+					return err == nil && numLimit >= 0
+				},
 			},
 		},
 		Test: false,

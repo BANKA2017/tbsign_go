@@ -15,10 +15,21 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+type PluginListSettingOption struct {
+	OptionName   string `json:"option_name"`
+	OptionNameCN string `json:"option_name_cn"`
+}
+
 type PluginListContent struct {
 	Name   string `json:"name"`
 	Ver    string `json:"ver"`
 	Status bool   `json:"status"`
+
+	PluginNameCN      string `json:"plugin_name_cn"`
+	PluginNameCNShort string `json:"plugin_name_cn_short"`
+	PluginNameFE      string `json:"plugin_name_fe"`
+
+	SettingOptions []PluginListSettingOption `json:"setting_options"`
 }
 
 func GetServerStatus(c echo.Context) error {
@@ -96,11 +107,26 @@ func GetPluginsList(c echo.Context) error {
 	var resPluginList = make(map[string]PluginListContent)
 
 	for name, info := range _plugin.PluginList {
-		value := info.(_plugin.PluginHooks).GetDBInfo()
+		value := info.(_plugin.PluginHooks).GetInfo()
+		settingOptions := []PluginListSettingOption{}
+
+		for _, settingOptionsItem := range value.SettingOptions {
+			settingOptions = append(settingOptions, PluginListSettingOption{
+				OptionName:   settingOptionsItem.OptionName,
+				OptionNameCN: settingOptionsItem.OptionNameCN,
+			})
+		}
+
 		resPluginList[name] = PluginListContent{
 			Name:   value.Name,
-			Ver:    value.Ver,
-			Status: value.Status,
+			Ver:    value.Info.Ver,
+			Status: value.Info.Status,
+
+			PluginNameCN:      value.PluginNameCN,
+			PluginNameCNShort: value.PluginNameCNShort,
+			PluginNameFE:      value.PluginNameFE,
+
+			SettingOptions: settingOptions,
 		}
 	}
 

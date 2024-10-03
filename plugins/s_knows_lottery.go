@@ -26,8 +26,11 @@ type LotteryPluginPluginType struct {
 
 var LotteryPluginPlugin = _function.VariablePtrWrapper(LotteryPluginPluginType{
 	PluginInfo{
-		Name:    "ver4_lottery",
-		Version: "1.0",
+		Name:              "ver4_lottery",
+		PluginNameCN:      "知道商城抽奖",
+		PluginNameCNShort: "知道商城",
+		PluginNameFE:      "knows_lottery",
+		Version:           "1.0",
 		Options: map[string]string{
 			"ver4_lottery_pid": "0",
 			"ver4_lottery_day": "0",

@@ -22,17 +22,24 @@ type RefreshTiebaListPluginType struct {
 
 var RefreshTiebaListPlugin = _function.VariablePtrWrapper(RefreshTiebaListPluginType{
 	PluginInfo{
-		Name:    "ver4_ref",
-		Version: "1.0",
+		Name:              "ver4_ref",
+		PluginNameCN:      "自动同步贴吧列表",
+		PluginNameCNShort: "自动同步贴吧列表",
+		PluginNameFE:      "",
+		Version:           "1.0",
 		Options: map[string]string{
 			"ver4_ref_day":          "1",
 			"ver4_ref_id":           "0",
 			"ver4_ref_action_limit": "50",
 		},
-		OptionValidator: map[string]func(value string) bool{
-			"ver4_ref_action_limit": func(value string) bool {
-				numLimit, err := strconv.ParseInt(value, 10, 64)
-				return err == nil && numLimit >= 0
+		SettingOptions: map[string]PluinSettingOption{
+			"ver4_ref_action_limit": {
+				OptionName:   "ver4_ref_action_limit",
+				OptionNameCN: "每分钟最大执行数",
+				Validate: func(value string) bool {
+					numLimit, err := strconv.ParseInt(value, 10, 64)
+					return err == nil && numLimit >= 0
+				},
 			},
 		},
 		Endpoints: []PluginEndpintStruct{

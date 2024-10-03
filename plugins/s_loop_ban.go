@@ -39,20 +39,35 @@ type LoopBanPluginType struct {
 
 var LoopBanPlugin = _function.VariablePtrWrapper(LoopBanPluginType{
 	PluginInfo{
-		Name:    "ver4_ban",
-		Version: "1.4",
+		Name:              "ver4_ban",
+		PluginNameCN:      "循环封禁",
+		PluginNameCNShort: "循环封禁",
+		PluginNameFE:      "loop_ban",
+		Version:           "1.4",
 		Options: map[string]string{
 			"ver4_ban_break_check":  "0",
 			"ver4_ban_id":           "0",
 			"ver4_ban_limit":        "5",
 			"ver4_ban_action_limit": "50",
 		},
-		OptionValidator: map[string]func(value string) bool{
-			"ver4_ban_break_check": PluginLoopBanOptionValidatorVer4BanBreakCheck,
-			"ver4_ban_limit":       PluginLoopBanOptionValidatorVer4BanLimit,
-			"ver4_ban_action_limit": func(value string) bool {
-				numLimit, err := strconv.ParseInt(value, 10, 64)
-				return err == nil && numLimit >= 0
+		SettingOptions: map[string]PluinSettingOption{
+			"ver4_ban_break_check": {
+				OptionName:   "ver4_ban_break_check",
+				OptionNameCN: "跳过吧务权限检查",
+				Validate:     PluginLoopBanOptionValidatorVer4BanBreakCheck,
+			},
+			"ver4_ban_limit": {
+				OptionName:   "ver4_ban_limit",
+				OptionNameCN: "可添加循环封禁帐号上限",
+				Validate:     PluginLoopBanOptionValidatorVer4BanLimit,
+			},
+			"ver4_ban_action_limit": {
+				OptionName:   "ver4_ban_action_limit",
+				OptionNameCN: "每分钟最大执行数",
+				Validate: func(value string) bool {
+					numLimit, err := strconv.ParseInt(value, 10, 64)
+					return err == nil && numLimit >= 0
+				},
 			},
 		},
 		Endpoints: []PluginEndpintStruct{

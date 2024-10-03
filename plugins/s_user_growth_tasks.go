@@ -27,16 +27,23 @@ type UserGrowthTasksPluginType struct {
 
 var UserGrowthTasksPlugin = _function.VariablePtrWrapper(UserGrowthTasksPluginType{
 	PluginInfo{
-		Name:    "kd_growth",
-		Version: "0.1",
+		Name:              "kd_growth",
+		PluginNameCN:      "用户成长任务",
+		PluginNameCNShort: "成长任务",
+		PluginNameFE:      "user_growth_tasks",
+		Version:           "0.1",
 		Options: map[string]string{
 			"kd_growth_offset":       "0",
 			"kd_growth_action_limit": "50",
 		},
-		OptionValidator: map[string]func(value string) bool{
-			"kd_growth_action_limit": func(value string) bool {
-				numLimit, err := strconv.ParseInt(value, 10, 64)
-				return err == nil && numLimit >= 0
+		SettingOptions: map[string]PluinSettingOption{
+			"kd_growth_action_limit": {
+				OptionName:   "kd_growth_action_limit",
+				OptionNameCN: "每分钟最大执行数",
+				Validate: func(value string) bool {
+					numLimit, err := strconv.ParseInt(value, 10, 64)
+					return err == nil && numLimit >= 0
+				},
 			},
 		},
 		Endpoints: []PluginEndpintStruct{

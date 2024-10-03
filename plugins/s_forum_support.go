@@ -587,17 +587,24 @@ type ForumSupportPluginInfoType struct {
 
 var ForumSupportPluginInfo = _function.VariablePtrWrapper(ForumSupportPluginInfoType{
 	PluginInfo{
-		Name:    "ver4_rank",
-		Version: "1.2",
+		Name:              "ver4_rank",
+		PluginNameCN:      "贴吧名人堂助攻",
+		PluginNameCNShort: "名人堂",
+		PluginNameFE:      "forum_support",
+		Version:           "1.2",
 		Options: map[string]string{
 			"ver4_rank_daily":        "1",
 			"ver4_rank_id":           "0",
 			"ver4_rank_action_limit": "50",
 		},
-		OptionValidator: map[string]func(value string) bool{
-			"ver4_rank_action_limit": func(value string) bool {
-				numLimit, err := strconv.ParseInt(value, 10, 64)
-				return err == nil && numLimit >= 0
+		SettingOptions: map[string]PluinSettingOption{
+			"ver4_rank_action_limit": {
+				OptionName:   "ver4_rank_action_limit",
+				OptionNameCN: "每分钟最大执行数",
+				Validate: func(value string) bool {
+					numLimit, err := strconv.ParseInt(value, 10, 64)
+					return err == nil && numLimit >= 0
+				},
 			},
 		},
 		Endpoints: []PluginEndpintStruct{

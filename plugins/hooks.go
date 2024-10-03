@@ -23,15 +23,25 @@ type PluginEndpintStruct struct {
 	Function echo.HandlerFunc
 }
 
+type PluinSettingOption struct {
+	OptionName   string
+	OptionNameCN string
+	Validate     func(value string) bool
+}
+
 type PluginInfo struct {
-	Name            string
-	Version         string
-	Active          bool
-	Options         map[string]string
-	OptionValidator map[string]func(value string) bool
-	Info            model.TcPlugin
-	Test            bool
-	Endpoints       []PluginEndpintStruct
+	Name              string
+	PluginNameCN      string `json:"plugin_name_cn"`
+	PluginNameCNShort string `json:"plugin_name_cn_short"`
+	PluginNameFE      string `json:"plugin_name_fe"`
+
+	Version        string
+	Active         bool
+	Options        map[string]string
+	SettingOptions map[string]PluinSettingOption
+	Info           model.TcPlugin
+	Test           bool
+	Endpoints      []PluginEndpintStruct
 	sync.RWMutex
 }
 
@@ -125,8 +135,8 @@ func InitPluginList() {
 		}
 
 		// option validator
-		for optionKey, optionValidator := range PluginList[pluginStatus.Name].(PluginHooks).GetInfo().OptionValidator {
-			PluginOptionValidatorMap.Store(optionKey, optionValidator)
+		for optionKey, optionValidator := range PluginList[pluginStatus.Name].(PluginHooks).GetInfo().SettingOptions {
+			PluginOptionValidatorMap.Store(optionKey, optionValidator.Validate)
 		}
 	}
 
@@ -166,8 +176,8 @@ func UpdatePluginInfo(name string, version string, status bool, options string) 
 	})
 
 	// option validator
-	for optionKey, optionValidator := range PluginList[name].(PluginHooks).GetInfo().OptionValidator {
-		PluginOptionValidatorMap.Store(optionKey, optionValidator)
+	for optionKey, optionValidator := range PluginList[name].(PluginHooks).GetInfo().SettingOptions {
+		PluginOptionValidatorMap.Store(optionKey, optionValidator.Validate)
 	}
 	AddToSettingsFilter()
 
@@ -184,7 +194,7 @@ func DeletePluginInfo(name string) error {
 	})
 
 	// option validator
-	for optionKey := range PluginList[name].(PluginHooks).GetInfo().OptionValidator {
+	for optionKey := range PluginList[name].(PluginHooks).GetInfo().SettingOptions {
 		PluginOptionValidatorMap.Delete(optionKey)
 	}
 	AddToSettingsFilter()

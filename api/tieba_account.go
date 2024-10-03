@@ -101,8 +101,10 @@ func GetBDUSS(c echo.Context) error {
 		Portrait: baiduAccountInfo.User.Portrait,
 	}
 	_function.GormDB.W.Create(&newAccount)
+
 	newAccount.Bduss = ""
 	newAccount.Stoken = ""
+
 	return c.JSON(http.StatusOK, _function.ApiTemplate(201, "OK", newAccount, "tbsign"))
 }
 
@@ -111,8 +113,6 @@ func AddTiebaAccount(c echo.Context) error {
 
 	bduss := strings.TrimSpace(c.FormValue("bduss"))
 	stoken := strings.TrimSpace(c.FormValue("stoken"))
-
-	includeBDUSSAndStoken := c.QueryParams().Get("all") == "1"
 
 	if bduss == "" || stoken == "" {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(401, "BDUSS 或 Stoken 无效", _function.EchoEmptyObject, "tbsign"))
@@ -139,16 +139,15 @@ func AddTiebaAccount(c echo.Context) error {
 			_function.GormDB.W.Model(model.TcBaiduid{}).Where("id = ?", tiebaAccounts[0].ID).Updates(&newData)
 			newData.ID = tiebaAccounts[0].ID
 			newData.UID = tiebaAccounts[0].UID
-			if !includeBDUSSAndStoken {
-				newData.Bduss = ""
-				newData.Stoken = ""
-			}
+
+			newData.Bduss = ""
+			newData.Stoken = ""
+
 			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "已更新 BDUSS", newData, "tbsign"))
 		} else if tiebaAccounts[0].Bduss == bduss && tiebaAccounts[0].Stoken == stoken {
-			if !includeBDUSSAndStoken {
-				tiebaAccounts[0].Bduss = ""
-				tiebaAccounts[0].Stoken = ""
-			}
+			tiebaAccounts[0].Bduss = ""
+			tiebaAccounts[0].Stoken = ""
+
 			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "贴吧账号已存在", tiebaAccounts[0], "tbsign"))
 		}
 	}
@@ -163,10 +162,10 @@ func AddTiebaAccount(c echo.Context) error {
 		Portrait: baiduAccountInfo.User.Portrait,
 	}
 	_function.GormDB.W.Create(&newAccount)
-	if !includeBDUSSAndStoken {
-		newAccount.Bduss = ""
-		newAccount.Stoken = ""
-	}
+
+	newAccount.Bduss = ""
+	newAccount.Stoken = ""
+
 	return c.JSON(http.StatusOK, _function.ApiTemplate(201, "OK", newAccount, "tbsign"))
 }
 
@@ -205,17 +204,14 @@ func RemoveTiebaAccount(c echo.Context) error {
 func GetTiebaAccountList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	includeBDUSSAndStoken := c.QueryParams().Get("all") == "1"
-
 	var tiebaAccounts []model.TcBaiduid
 	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
 
-	if !includeBDUSSAndStoken {
-		for k := range tiebaAccounts {
-			tiebaAccounts[k].Bduss = ""
-			tiebaAccounts[k].Stoken = ""
-		}
+	for k := range tiebaAccounts {
+		tiebaAccounts[k].Bduss = ""
+		tiebaAccounts[k].Stoken = ""
 	}
+
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaAccounts, "tbsign"))
 }
 
@@ -223,8 +219,6 @@ func GetTiebaAccountItem(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	pid := c.Param("pid")
-
-	includeBDUSSAndStoken := c.QueryParams().Get("all") == "1"
 
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
@@ -234,10 +228,9 @@ func GetTiebaAccountItem(c echo.Context) error {
 	var tiebaAccount model.TcBaiduid
 	_function.GormDB.R.Where("id = ? AND uid = ?", numPid, uid).First(&tiebaAccount)
 
-	if !includeBDUSSAndStoken {
-		tiebaAccount.Bduss = ""
-		tiebaAccount.Stoken = ""
-	}
+	tiebaAccount.Bduss = ""
+	tiebaAccount.Stoken = ""
+
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaAccount, "tbsign"))
 }
 

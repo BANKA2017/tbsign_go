@@ -520,14 +520,18 @@ func PluginUninstall(c echo.Context) error {
 		}, "tbsign"))
 	}
 
-	_pluginInfo.Delete()
+	err := _pluginInfo.Delete()
 
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
-		"name":    pluginName,
-		"exists":  false,
-		"status":  false,
-		"version": -1,
-	}, "tbsign"))
+	if err != nil {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(400, err.Error(), _function.EchoEmptyObject, "tbsign"))
+	} else {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
+			"name":    pluginName,
+			"exists":  false,
+			"status":  false,
+			"version": -1,
+		}, "tbsign"))
+	}
 }
 
 func SendTestMessage(c echo.Context) error {

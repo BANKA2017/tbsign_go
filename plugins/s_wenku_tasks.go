@@ -27,17 +27,24 @@ type WenkuTasksPluginType struct {
 
 var WenkuTasksPlugin = _function.VariablePtrWrapper(WenkuTasksPluginType{
 	PluginInfo{
-		Name:    "kd_wenku_tasks",
-		Version: "0.1",
+		Name:              "kd_wenku_tasks",
+		PluginNameCN:      "文库任务",
+		PluginNameCNShort: "文库任务",
+		PluginNameFE:      "wenku_tasks",
+		Version:           "0.1",
 		Options: map[string]string{
 			"kd_wenku_tasks_offset":       "0",
 			"kd_wenku_tasks_vip_matrix":   "0",
 			"kd_wenku_tasks_action_limit": "50",
 		},
-		OptionValidator: map[string]func(value string) bool{
-			"kd_wenku_tasks_action_limit": func(value string) bool {
-				numLimit, err := strconv.ParseInt(value, 10, 64)
-				return err == nil && numLimit >= 0
+		SettingOptions: map[string]PluinSettingOption{
+			"kd_wenku_tasks_action_limit": {
+				OptionName:   "kd_wenku_tasks_action_limit",
+				OptionNameCN: "每分钟最大执行数",
+				Validate: func(value string) bool {
+					numLimit, err := strconv.ParseInt(value, 10, 64)
+					return err == nil && numLimit >= 0
+				},
 			},
 		},
 		Endpoints: []PluginEndpintStruct{
