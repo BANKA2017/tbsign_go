@@ -27,7 +27,7 @@ var _adminPassword string
 var err error
 
 func main() {
-	fmt.Println("TbSign➡️\n")
+	fmt.Println("TbSign➡️\n--- info ---")
 	fmt.Println("build_at:", share.BuiltAt)
 	fmt.Println("commit_hash:", share.BuildGitCommitHash)
 	fmt.Println("frontend_hash:", share.BuildEmbeddedFrontendGitCommitHash)
@@ -35,7 +35,7 @@ func main() {
 		t, _ := time.Parse("2006-01-02 15:04:05 +0000", share.BuiltAt)
 		fmt.Println("version:", fmt.Sprintf("%s.%s.%s\n", t.Format("20060102"), share.BuildGitCommitHash[0:7], share.BuildEmbeddedFrontendGitCommitHash[0:7]))
 	} else {
-		fmt.Println("version: dev\n")
+		fmt.Println("version: dev\n------------")
 	}
 
 	// sqlite

@@ -6,7 +6,6 @@ import (
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
-	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/labstack/echo/v4"
 )
@@ -146,7 +145,7 @@ func RefreshTiebaList(c echo.Context) error {
 
 	// get account list
 	for _, v := range tiebaAccounts {
-		_plugin.ScanTiebaByPid(v.ID)
+		_function.ScanTiebaByPid(v.ID)
 	}
 
 	var tiebaList []model.TcTieba

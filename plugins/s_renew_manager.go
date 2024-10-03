@@ -88,12 +88,12 @@ func (pluginInfo *RenewManagerType) Action() {
 		res, err := PluginRenewManagerCancelTop(_function.GetCookie(renewItem.Pid), renewItem.Fname, renewItem.Tid)
 
 		if err != nil {
-			// TODO ?? more action?
-			log.Println("renew_manager:", res, err)
+			log.Println("renew_manager (cancel_top):", res, err)
 			renewItem.Status = "failed"
 			tmpLog = append(tmpLog, "cacnel_top: failed")
 		} else {
 			if res.No != 0 {
+				log.Println("renew_manager (cancel_top):", res.ErrCode, res.Error)
 				renewItem.Status = "failed"
 				tmpLog = append(tmpLog, fmt.Sprintf("cacnel_top: %d#%s", res.ErrCode, res.Error))
 			} else {
@@ -105,12 +105,12 @@ func (pluginInfo *RenewManagerType) Action() {
 		// sync tasks
 		res2, err := _function.GetManagerTasks(_function.GetCookie(renewItem.Pid), int64(renewItem.Fid))
 		if err != nil {
-			// TODO ?? more action?
-			log.Println("renew_manager:", err)
+			log.Println("renew_manager (sync_tasks):", err)
 			tmpLog = append(tmpLog, "sync: failed")
 		} else {
 			renewItem.End = int32(res2.Data.BawuTask.EndTime)
 			if res2.No != 0 {
+				log.Println("renew_manager (sync):", res2.ErrCode, res2.Error)
 				tmpLog = append(tmpLog, fmt.Sprintf("sync: %d#%s", res2.ErrCode, res2.Error))
 			} else {
 				tmpLog = append(tmpLog, "sync: done")
