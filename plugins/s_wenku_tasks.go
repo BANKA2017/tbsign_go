@@ -74,6 +74,7 @@ type WenkuTaskToSave struct {
 	TaskID     int    `json:"task_id"`
 	TaskStatus int    `json:"task_status"`
 	Msg        string `json:"msg"`
+	SignDay    int64  `json:"sign_day,omitempty"`
 	// RewardNum  int    `json:"reward_num"`
 	// RewardType int    `json:"reward_type"`
 }
@@ -87,12 +88,12 @@ type WenkuTaskList struct {
 	TaskEnd int `json:"taskEnd,omitempty"`
 	// RewardNum  int    `json:"rewardNum,omitempty"`
 	// RewardType int    `json:"rewardType,omitempty"`
-	// TaskExtra  struct {
-	// 	Rewards       []int `json:"rewards,omitempty"`
-	// 	SignDay       int   `json:"signDay,omitempty"`
-	// 	IsFinishToday int   `json:"isFinishToday,omitempty"`
-	// 	NextRewardNum int   `json:"nextRewardNum,omitempty"`
-	// } `json:"taskExtra,omitempty"`
+	TaskExtra struct {
+		// 	Rewards       []int `json:"rewards,omitempty"`
+		SignDay       int `json:"signDay,omitempty"`
+		IsFinishToday int `json:"isFinishToday,omitempty"`
+		// 	NextRewardNum int   `json:"nextRewardNum,omitempty"`
+	} `json:"taskExtra,omitempty"`
 	// RewardIcon string `json:"rewardIcon,omitempty"`
 	MinAppVer string `json:"minAppVer,omitempty"`
 }
@@ -169,7 +170,8 @@ func UpdateWenkuTask(cookie _type.TypeCookie, taskID int, minVersion string, isC
 	return resp, err
 }
 
-// TODO VIP matrix
+var vipMatrixIDSetMap sync.Map
+
 func (pluginInfo *WenkuTasksPluginType) Action() {
 	if !pluginInfo.PluginInfo.CheckActive() {
 		return
@@ -211,127 +213,177 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 			_function.SetUserOption("kd_wenku_tasks_checkin_only", "1", strconv.Itoa(int(taskUserItem.UID)))
 		}
 
-		if _, ok := accountCookiesList[taskUserItem.Pid]; !ok {
-			accountCookiesList[taskUserItem.Pid] = _function.GetCookie(int32(taskUserItem.Pid))
-		}
-		cookie := accountCookiesList[taskUserItem.Pid]
 		var tasksList []WenkuTaskList
 		var result []WenkuTaskToSave
 
 		tasksIDList := sync.Map{}
 
-		signinTasksResponse, err := GetWenkuTaskList(cookie, "signin")
-		if err != nil {
-			log.Println(err)
-			log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "Unable to fetch signin list")
-			//continue
-		} else if signinTasksResponse.Status.Code != 0 {
-			log.Println(&signinTasksResponse)
-			log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, signinTasksResponse.Status.Msg)
-		} else {
-			for _, v := range signinTasksResponse.Data.TaskList {
-				if _, ok := tasksIDList.Load(v.TaskID); !ok && !slices.Contains(wenkuPassTasks, v.TaskID) && v.TaskStatus >= 1 && v.TaskStatus <= 3 {
-					tasksIDList.Store(v.TaskID, nil)
-					tasksList = append(tasksList, v)
+		// vip matrix
+		dbIDSetStr := _function.GetUserOption("kd_wenku_tasks_vip_matrix_id_set", strconv.Itoa(int(taskUserItem.UID)))
+
+		var vipMatrixIDSet []string
+		isVipMatrix := _function.GetUserOption("kd_wenku_tasks_vip_matrix", strconv.Itoa(int(taskUserItem.UID))) == "1"
+		if isVipMatrix {
+			if vipMatrixIDSetUnknow, ok := vipMatrixIDSetMap.Load(strconv.Itoa(int(taskUserItem.ID))); ok {
+				vipMatrixIDSet = vipMatrixIDSetUnknow.([]string)
+			} else {
+				if dbIDSetStr != "|" {
+					for _, v := range strings.Split(dbIDSetStr[1:len(dbIDSetStr)-1], "|") {
+						pidSet := strings.Split(v, ",")
+						vipMatrixIDSetMap.Store(pidSet[0], pidSet)
+						if pidSet[0] == strconv.Itoa(int(taskUserItem.ID)) {
+							vipMatrixIDSet = pidSet
+						}
+					}
 				}
 			}
 		}
-		if accountStatusList[taskUserItem.UID] != "1" {
-			tasksListResponse, err := GetWenkuTaskList(cookie, "tasklist")
+		if isVipMatrix && vipMatrixIDSet[1] == strconv.Itoa(int(_function.Now.Local().Weekday())) && vipMatrixIDSet[2] == "0" {
+			result = append(result, WenkuTaskToSave{
+				TaskName:   "VIP 矩阵自动跳过",
+				TaskID:     -100,
+				TaskStatus: 3,
+				Msg:        "跳过",
+			})
+			dbIDSetStr = strings.Replace(dbIDSetStr, fmt.Sprintf("|%d,%s,%d|", taskUserItem.ID, vipMatrixIDSet[1], 0), fmt.Sprintf("|%d,%s,%d|", taskUserItem.ID, vipMatrixIDSet[1], 1), 1)
+			_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", strconv.Itoa(int(taskUserItem.UID)), dbIDSetStr)
+		} else {
+			if _, ok := accountCookiesList[taskUserItem.Pid]; !ok {
+				accountCookiesList[taskUserItem.Pid] = _function.GetCookie(int32(taskUserItem.Pid))
+			}
+			cookie := accountCookiesList[taskUserItem.Pid]
+
+			signinTasksResponse, err := GetWenkuTaskList(cookie, "signin")
 			if err != nil {
 				log.Println(err)
-				log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "Unable to fetch tasklist list")
+				log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "Unable to fetch signin list")
 				//continue
-			} else if tasksListResponse.Status.Code != 0 {
-				log.Println(&tasksListResponse)
-				log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, tasksListResponse.Status.Msg)
+			} else if signinTasksResponse.Status.Code != 0 {
+				log.Println(&signinTasksResponse)
+				log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, signinTasksResponse.Status.Msg)
 			} else {
-				for _, v := range tasksListResponse.Data.TaskList {
+				for _, v := range signinTasksResponse.Data.TaskList {
 					if _, ok := tasksIDList.Load(v.TaskID); !ok && !slices.Contains(wenkuPassTasks, v.TaskID) && v.TaskStatus >= 1 && v.TaskStatus <= 3 {
 						tasksIDList.Store(v.TaskID, nil)
 						tasksList = append(tasksList, v)
 					}
 				}
 			}
-		}
-
-		for _, _task := range tasksList {
-			if accountStatusList[taskUserItem.UID] == "1" && _task.TaskID != 1 {
-				continue
+			if accountStatusList[taskUserItem.UID] != "1" {
+				tasksListResponse, err := GetWenkuTaskList(cookie, "tasklist")
+				if err != nil {
+					log.Println(err)
+					log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "Unable to fetch tasklist list")
+					//continue
+				} else if tasksListResponse.Status.Code != 0 {
+					log.Println(&tasksListResponse)
+					log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, tasksListResponse.Status.Msg)
+				} else {
+					for _, v := range tasksListResponse.Data.TaskList {
+						if _, ok := tasksIDList.Load(v.TaskID); !ok && !slices.Contains(wenkuPassTasks, v.TaskID) && v.TaskStatus >= 1 && v.TaskStatus <= 3 {
+							tasksIDList.Store(v.TaskID, nil)
+							tasksList = append(tasksList, v)
+						}
+					}
+				}
 			}
 
-			task := _task
+			for _, _task := range tasksList {
+				if accountStatusList[taskUserItem.UID] == "1" && _task.TaskID != 1 {
+					continue
+				}
 
-			if task.TaskStatus == 1 {
-				doTask, err := UpdateWenkuTask(cookie, task.TaskID, task.MinAppVer, false)
-				if err != nil {
+				task := _task
+
+				if task.TaskStatus == 1 {
+					doTask, err := UpdateWenkuTask(cookie, task.TaskID, task.MinAppVer, false)
+					if err != nil {
+						result = append(result, WenkuTaskToSave{
+							TaskName:   task.TaskName,
+							TaskID:     task.TaskID,
+							TaskStatus: -1,
+							Msg:        "未知错误",
+							// RewardType: task.RewardType,
+							// RewardNum:  task.RewardNum,
+						})
+						log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "task_status1", err.Error())
+					} else if doTask.Status.Code != 0 {
+						result = append(result, WenkuTaskToSave{
+							TaskName:   task.TaskName,
+							TaskID:     task.TaskID,
+							TaskStatus: doTask.Status.Code,
+							Msg:        doTask.Status.Msg,
+							// RewardType: task.RewardType,
+							// RewardNum:  task.RewardNum,
+						})
+					} else {
+						task = doTask.Data.Task
+					}
+				}
+				if task.TaskStatus == 2 {
+					claimResponse, err := UpdateWenkuTask(cookie, task.TaskID, task.MinAppVer, true)
+					if err != nil {
+						result = append(result, WenkuTaskToSave{
+							TaskName:   task.TaskName,
+							TaskID:     task.TaskID,
+							TaskStatus: -1,
+							Msg:        "未知错误",
+							// RewardType: task.RewardType,
+							// RewardNum:  task.RewardNum,
+						})
+						log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "task_status2", err.Error())
+					} else if claimResponse.Status.Code != 0 {
+						result = append(result, WenkuTaskToSave{
+							TaskName:   task.TaskName,
+							TaskID:     task.TaskID,
+							TaskStatus: claimResponse.Status.Code,
+							Msg:        claimResponse.Status.Msg,
+							// RewardType: task.RewardType,
+							// RewardNum:  task.RewardNum,
+						})
+					} else {
+						task = claimResponse.Data.Task
+					}
+				}
+
+				if task.TaskStatus == 3 {
+					r := WenkuTaskToSave{
+						TaskName:   task.TaskName,
+						TaskID:     task.TaskID,
+						TaskStatus: task.TaskStatus,
+						Msg:        "success",
+						// RewardType: task.RewardType,
+						// RewardNum:  task.RewardNum,
+					}
+					if task.TaskID == 1 {
+						r.SignDay = int64(task.TaskExtra.SignDay)
+					}
+					result = append(result, r)
+				} else if task.TaskStatus != 3 {
 					result = append(result, WenkuTaskToSave{
 						TaskName:   task.TaskName,
 						TaskID:     task.TaskID,
-						TaskStatus: -1,
+						TaskStatus: task.TaskStatus,
 						Msg:        "未知错误",
 						// RewardType: task.RewardType,
 						// RewardNum:  task.RewardNum,
 					})
-					log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "task_status1", err.Error())
-				} else if doTask.Status.Code != 0 {
-					result = append(result, WenkuTaskToSave{
-						TaskName:   task.TaskName,
-						TaskID:     task.TaskID,
-						TaskStatus: doTask.Status.Code,
-						Msg:        doTask.Status.Msg,
-						// RewardType: task.RewardType,
-						// RewardNum:  task.RewardNum,
-					})
-				} else {
-					task = doTask.Data.Task
+					log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "task_status3", task)
 				}
-			}
-			if task.TaskStatus == 2 {
-				claimResponse, err := UpdateWenkuTask(cookie, task.TaskID, task.MinAppVer, true)
-				if err != nil {
-					result = append(result, WenkuTaskToSave{
-						TaskName:   task.TaskName,
-						TaskID:     task.TaskID,
-						TaskStatus: -1,
-						Msg:        "未知错误",
-						// RewardType: task.RewardType,
-						// RewardNum:  task.RewardNum,
-					})
-					log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "task_status2", err.Error())
-				} else if claimResponse.Status.Code != 0 {
-					result = append(result, WenkuTaskToSave{
-						TaskName:   task.TaskName,
-						TaskID:     task.TaskID,
-						TaskStatus: claimResponse.Status.Code,
-						Msg:        claimResponse.Status.Msg,
-						// RewardType: task.RewardType,
-						// RewardNum:  task.RewardNum,
-					})
-				} else {
-					task = claimResponse.Data.Task
-				}
-			}
 
-			if task.TaskStatus == 3 {
-				result = append(result, WenkuTaskToSave{
-					TaskName:   task.TaskName,
-					TaskID:     task.TaskID,
-					TaskStatus: task.TaskStatus,
-					Msg:        "success",
-					// RewardType: task.RewardType,
-					// RewardNum:  task.RewardNum,
-				})
-			} else if task.TaskStatus != 3 {
-				result = append(result, WenkuTaskToSave{
-					TaskName:   task.TaskName,
-					TaskID:     task.TaskID,
-					TaskStatus: task.TaskStatus,
-					Msg:        "未知错误",
-					// RewardType: task.RewardType,
-					// RewardNum:  task.RewardNum,
-				})
-				log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "task_status3", task)
+				if isVipMatrix && task.TaskID == 1 && vipMatrixIDSet[2] == "1" {
+					since, _ := strconv.ParseInt(vipMatrixIDSet[1], 10, 64)
+					verifyDay := (int64(_function.Now.Local().Weekday()) + 7 - since) % 7
+					if verifyDay == 0 {
+						verifyDay = 7
+					}
+
+					if task.TaskStatus != 3 || task.TaskExtra.SignDay != int(verifyDay) {
+						dbIDSetStr = strings.Replace(dbIDSetStr, fmt.Sprintf("|%d,%s,%d|", taskUserItem.ID, vipMatrixIDSet[1], 1), fmt.Sprintf("|%d,%s,%d|", taskUserItem.ID, vipMatrixIDSet[1], 0), 1)
+						_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", strconv.Itoa(int(taskUserItem.UID)), dbIDSetStr)
+					}
+
+				}
 			}
 		}
 
@@ -367,6 +419,10 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 		_function.SetOption("kd_wenku_tasks_offset", strconv.Itoa(int(taskUserItem.ID)))
 	}
 	_function.SetOption("kd_wenku_tasks_offset", "0")
+	vipMatrixIDSetMap.Range(func(key, value any) bool {
+		vipMatrixIDSetMap.Delete(key)
+		return true
+	})
 }
 
 func (pluginInfo *WenkuTasksPluginType) Install() error {
@@ -439,8 +495,27 @@ func PluginWenkuTasksSetSettings(c echo.Context) error {
 	checkinOnly := c.FormValue("checkin_only") != "0"
 	vipMatrix := c.FormValue("vip_matrix") != "0"
 
+	dbVipMatrix := !slices.Contains([]string{"", "0"}, _function.GetUserOption("kd_wenku_tasks_vip_matrix", uid))
+
 	_function.SetUserOption("kd_wenku_tasks_checkin_only", checkinOnly, uid)
 	_function.SetUserOption("kd_wenku_tasks_vip_matrix", vipMatrix, uid)
+
+	// vip matrix list
+	if vipMatrix && !dbVipMatrix {
+		uidTasksList := new([]model.TcKdWenkuTask)
+		_function.GormDB.R.Model(&model.TcKdWenkuTask{}).Where("uid = ?", uid).Find(uidTasksList)
+		idList := []string{}
+		for i, task := range *uidTasksList {
+			idList = append(idList, fmt.Sprintf("%d,%d,%d", task.ID, i%7, 0))
+		}
+		idListStr := "|"
+		if len(idList) > 0 {
+			idListStr += strings.Join(idList, "|") + "|"
+		}
+		_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", idListStr, uid)
+	} else if !vipMatrix {
+		_function.DeleteUserOption("kd_wenku_tasks_vip_matrix_id_set", uid)
+	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
 		"success": true,
@@ -479,6 +554,16 @@ func PluginWenkuTasksAddAccount(c echo.Context) error {
 		}
 		_function.GormDB.W.Create(&dataToInsert)
 		_function.GormDB.R.Model(&model.TcKdWenkuTask{}).Where("uid = ? AND pid = ?", uid, numPid).First(&dataToInsert)
+
+		// vip matrix
+		if !slices.Contains([]string{"", "0"}, _function.GetUserOption("kd_wenku_tasks_vip_matrix", uid)) {
+			dbIDSetStr := _function.GetUserOption("kd_wenku_tasks_vip_matrix_id_set", uid)
+
+			day := (len(strings.Split(dbIDSetStr, "|")) - 2) % 7
+
+			_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", dbIDSetStr+fmt.Sprintf("%d,%d,%d", dataToInsert.ID, day, 0)+"|", uid)
+		}
+
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", dataToInsert, "tbsign"))
 	}
 }
@@ -501,6 +586,20 @@ func PluginWenkuTasksDelAccount(c echo.Context) error {
 		UID: numUID,
 		ID:  numID,
 	})
+
+	// vip matrix
+	if !slices.Contains([]string{"", "0"}, _function.GetUserOption("kd_wenku_tasks_vip_matrix", uid)) {
+		dbIDSetStr := _function.GetUserOption("kd_wenku_tasks_vip_matrix_id_set", uid)
+
+		newIDSet := []string{}
+		for _, s := range strings.Split(dbIDSetStr, "|") {
+			if !strings.HasPrefix(s, fmt.Sprintf("%d,", numID)) {
+				newIDSet = append(newIDSet, s)
+			}
+		}
+
+		_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", strings.Join(newIDSet, "|"), uid)
+	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
 		"success": true,
