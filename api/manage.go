@@ -248,14 +248,14 @@ func AdminModifyAccountInfo(c echo.Context) error {
 
 	// soft delete?
 	if newRole == "delete" {
+		// plugins
+		_plugin.DeleteAccount("uid", accountInfo.ID)
+
 		// account
 		_function.GormDB.W.Where("id = ?", accountInfo.ID).Delete(&model.TcUser{})
 		_function.GormDB.W.Where("uid = ?", accountInfo.ID).Delete(&model.TcTieba{})
 		_function.GormDB.W.Where("uid = ?", accountInfo.ID).Delete(&model.TcBaiduid{})
 		_function.GormDB.W.Where("uid = ?", accountInfo.ID).Delete(&model.TcUsersOption{})
-
-		// plugins
-		_plugin.DeleteAccount("uid", accountInfo.ID)
 
 		keyBucket.Delete(strconv.Itoa(int(accountInfo.ID)))
 	} else {
@@ -344,11 +344,11 @@ func AdminDeleteTiebaAccountList(c echo.Context) error {
 	var PIDCount int64
 	_function.GormDB.R.Model(&model.TcBaiduid{}).Where("uid = ?", targetUID).Count(&PIDCount)
 	if PIDCount > 0 {
-		_function.GormDB.W.Where("uid = ?", targetUID).Delete(&model.TcBaiduid{})
-		_function.GormDB.W.Where("uid = ?", targetUID).Delete(&model.TcTieba{})
-
 		// plugins
 		_plugin.DeleteAccount("uid", int32(numTargetUID))
+
+		_function.GormDB.W.Where("uid = ?", targetUID).Delete(&model.TcBaiduid{})
+		_function.GormDB.W.Where("uid = ?", targetUID).Delete(&model.TcTieba{})
 
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 	} else {

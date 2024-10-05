@@ -456,6 +456,11 @@ func (pluginInfo *WenkuTasksPluginType) Delete() error {
 
 	_function.GormDB.W.Migrator().DropTable(&model.TcKdWenkuTask{})
 
+	// user options
+	_function.GormDB.W.Where("name = ?", "kd_wenku_tasks_checkin_only").Delete(&model.TcUsersOption{})
+	_function.GormDB.W.Where("name = ?", "kd_wenku_tasks_vip_matrix").Delete(&model.TcUsersOption{})
+	_function.GormDB.W.Where("name = ?", "kd_wenku_tasks_vip_matrix_id_set").Delete(&model.TcUsersOption{})
+
 	return nil
 }
 func (pluginInfo *WenkuTasksPluginType) Upgrade() error {

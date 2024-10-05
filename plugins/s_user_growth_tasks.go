@@ -472,6 +472,10 @@ func (pluginInfo *UserGrowthTasksPluginType) Delete() error {
 	DeletePluginInfo(pluginInfo.Name)
 	_function.GormDB.W.Migrator().DropTable(&model.TcKdGrowth{})
 
+	// user options
+	_function.GormDB.W.Where("name = ?", "kd_growth_sign_only").Delete(&model.TcUsersOption{})
+	_function.GormDB.W.Where("name = ?", "kd_growth_break_icon_tasks").Delete(&model.TcUsersOption{})
+
 	return nil
 }
 func (pluginInfo *UserGrowthTasksPluginType) Upgrade() error {

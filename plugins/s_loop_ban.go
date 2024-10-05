@@ -215,6 +215,9 @@ func (pluginInfo *LoopBanPluginType) Delete() error {
 	DeletePluginInfo(pluginInfo.Name)
 	_function.GormDB.W.Migrator().DropTable(&model.TcVer4BanUserset{}, &model.TcVer4BanList{})
 
+	// user options
+	_function.GormDB.W.Where("name = ?", "ver4_ban_open").Delete(&model.TcUsersOption{})
+
 	return nil
 }
 func (pluginInfo *LoopBanPluginType) Upgrade() error {

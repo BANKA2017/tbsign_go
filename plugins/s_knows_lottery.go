@@ -209,6 +209,9 @@ func (pluginInfo *LotteryPluginPluginType) Delete() error {
 	DeletePluginInfo(pluginInfo.Name)
 	_function.GormDB.W.Migrator().DropTable(&model.TcVer4LotteryLog{})
 
+	// user options
+	_function.GormDB.W.Where("name = ?", "ver4_lottery_check").Delete(&model.TcUsersOption{})
+
 	return nil
 }
 func (pluginInfo *LotteryPluginPluginType) Upgrade() error {

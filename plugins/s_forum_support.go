@@ -746,6 +746,9 @@ func (pluginInfo *ForumSupportPluginInfoType) Delete() error {
 
 	_function.GormDB.W.Migrator().DropTable(&model.TcVer4RankLog{})
 
+	// user options
+	_function.GormDB.W.Where("name = ?", "ver4_rank_check").Delete(&model.TcUsersOption{})
+
 	return nil
 }
 func (pluginInfo *ForumSupportPluginInfoType) Upgrade() error {

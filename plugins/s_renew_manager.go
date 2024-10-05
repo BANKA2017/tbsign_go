@@ -195,6 +195,10 @@ func (pluginInfo *RenewManagerType) Delete() error {
 
 	_function.GormDB.W.Migrator().DropTable(&model.TcKdRenewManager{})
 
+	// user options
+	_function.GormDB.W.Where("name = ?", "kd_renew_manager_open").Delete(&model.TcUsersOption{})
+	_function.GormDB.W.Where("name = ?", "kd_renew_manager_alert").Delete(&model.TcUsersOption{})
+
 	return nil
 }
 func (pluginInfo *RenewManagerType) Upgrade() error {

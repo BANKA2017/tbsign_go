@@ -116,14 +116,15 @@ func DeleteAccount(c echo.Context) error {
 	}
 
 	// set role -> delete
-	_function.GormDB.W.Where("id = ?", uid).Delete(&model.TcUser{})
-	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcTieba{})
-	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcBaiduid{})
-	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcUsersOption{})
 
 	// plugins
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	_plugin.DeleteAccount("uid", int32(numUID))
+
+	_function.GormDB.W.Where("id = ?", uid).Delete(&model.TcUser{})
+	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcTieba{})
+	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcBaiduid{})
+	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcUsersOption{})
 
 	keyBucket.Delete(uid)
 
@@ -546,8 +547,6 @@ func ExportAccountData(c echo.Context) error {
 	_function.GormDB.W.Model(&model.TcBaiduid{}).Where("uid = ?", uid).Find(&tcBaiduid)
 	_function.GormDB.W.Model(&model.TcUsersOption{}).Where("uid = ?", uid).Find(&tcUsersOption)
 
-
-	
 	_function.GormDB.W.Model(&model.TcVer4BanList{}).Where("uid = ?", uid).Find(&tcVer4BanList)
 	_function.GormDB.W.Model(&model.TcVer4RankLog{}).Where("uid = ?", uid).Find(&tcVer4RankLog)
 	_function.GormDB.W.Model(&model.TcKdGrowth{}).Where("uid = ?", uid).Find(&tcKdGrowth)
