@@ -146,7 +146,7 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 ⚠ 插件还无法做到开箱即用，使用前需要通过源码编译
 
-目前插件开发需要分别准备一个前端(.vue)和后端的文件(.go)，配置方面可能会比较麻烦
+目前插件开发至少需要分别准备一个前端(.vue)和后端的文件(.go)，配置方面可能会比较麻烦
 
 - 插件目录 `/plugins` 放下核心文件，这些前缀只是为了便于管理，golang 中同一层的非隐藏文件命名对编译无影响
   - 标准插件
@@ -165,6 +165,18 @@ air -- --db_path=tbsign.db --test=true --api=true
   - *如果对变量设置表单有特殊要求，还需要修改 `system_admin.vue` 的内容
     - 含有特殊后缀 `_action_limit` 的变量将会在前端自动识别成不小于 `0` 的 `number` 类型
     - 其他变量识别成 `text`
+- *数据库 model
+  - 简单的信息可以直接存在表 `tc_options`（全局） 或 `tc_users_options`（用户） 中
+  - 如果需要使用数据库存储插件信息，请准备好表模型并存放在 `model/`，包名为 `model`，尽管 Gorm 可以手搓 raw SQL，但我们并不建议这样做
+
+    参考 codegen 命令为
+
+    ```shell
+    /root/go/bin/gentool -dsn "..." -modelPkgName "model" -onlyModel
+    ```
+
+- *protobuf
+  - 部分请求可能需要用到 protobuf，这部分还没完善，敬请期待
 
 标准插件不再与核心强绑定，使用 [SemVer](https://semver.org/lang/zh-CN/)，但新插件使用的一些新版核心函数可能会导致无法在旧版核心中使用
 
@@ -233,7 +245,7 @@ air -- --db_path=tbsign.db --test=true --api=true
 - [x] ?打包/Docker/或者别的
 - [x] ?自动化部署
 - [ ] ?支持更多 Gorm 也支持的数据库
-- [ ] ?邮箱以外的推送方式
+- [x] ?邮箱以外的推送方式
 - [ ] 完善权限控制
 - [ ] 个人数据导出 (接口 `/passport/export` 已写好，但没想好如何处理好安全问题，当前所有接口都会自动删除 `bduss` 和 `stoken` 的值，但导出会不可避免地需要处理这个问题)
 - [ ] ……更多的想起来再加
