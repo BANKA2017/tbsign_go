@@ -469,6 +469,36 @@ func (pluginInfo *WenkuTasksPluginType) Upgrade() error {
 
 func (pluginInfo *WenkuTasksPluginType) RemoveAccount(_type string, id int32) error {
 	_function.GormDB.W.Where("? = ?", _type, id).Delete(&model.TcKdWenkuTask{})
+
+	if _type == "pid" {
+		// get uid
+		account := new(model.TcBaiduid)
+		_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id = ?", id).First(account)
+		uid := strconv.Itoa(int(account.UID))
+		// get task id
+		task := new(model.TcKdWenkuTask)
+		_function.GormDB.R.Model(&model.TcKdWenkuTask{}).Where("pid = ?", id).First(task)
+
+		// rebuild vip matrix set
+		if !slices.Contains([]string{"", "0"}, _function.GetUserOption("kd_wenku_tasks_vip_matrix", uid)) {
+			dbIDSetStr := _function.GetUserOption("kd_wenku_tasks_vip_matrix_id_set", uid)
+
+			newIDSet := []string{}
+			for _, s := range strings.Split(dbIDSetStr, "|") {
+				if !strings.HasPrefix(s, fmt.Sprintf("%d,", task.ID)) {
+					newIDSet = append(newIDSet, s)
+				}
+			}
+
+			_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", strings.Join(newIDSet, "|"), uid)
+		}
+	} else if _type == "uid" {
+		uid := strconv.Itoa(int(id))
+		if !slices.Contains([]string{"", "0"}, _function.GetUserOption("kd_wenku_tasks_vip_matrix", uid)) {
+			_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", "|", uid)
+		}
+	}
+
 	return nil
 }
 
@@ -570,7 +600,15 @@ func PluginWenkuTasksAddAccount(c echo.Context) error {
 		if !slices.Contains([]string{"", "0"}, _function.GetUserOption("kd_wenku_tasks_vip_matrix", uid)) {
 			dbIDSetStr := _function.GetUserOption("kd_wenku_tasks_vip_matrix_id_set", uid)
 
-			day := (len(strings.Split(dbIDSetStr, "|")) - 2) % 7
+			day := 0
+			if dbIDSetStr != "|" {
+				tmpTasks := strings.Split(dbIDSetStr, "|")
+				tmpLastTask := strings.Split(tmpTasks[len(tmpTasks)-2], ",")
+				tmpLastDay, _ := strconv.ParseInt(tmpLastTask[1], 10, 64)
+				if tmpLastDay != 6 {
+					day = int(tmpLastDay) + 1
+				}
+			}
 
 			_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", dbIDSetStr+fmt.Sprintf("%d,%d,%d", dataToInsert.ID, day, 0)+"|", uid)
 		}
@@ -626,6 +664,11 @@ func PluginWenkuTasksDelAllAccounts(c echo.Context) error {
 	_function.GormDB.W.Model(&model.TcKdWenkuTask{}).Delete(&model.TcKdWenkuTask{
 		UID: numUID,
 	})
+
+	// vip matrix
+	if !slices.Contains([]string{"", "0"}, _function.GetUserOption("kd_wenku_tasks_vip_matrix", uid)) {
+		_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", "|", uid)
+	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 }
