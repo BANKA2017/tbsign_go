@@ -11,6 +11,7 @@ import (
 
 	"github.com/BANKA2017/tbsign_go/model"
 	"github.com/emersion/go-smtp"
+	"golang.org/x/exp/slices"
 
 	"github.com/emersion/go-sasl"
 	"github.com/google/uuid"
@@ -35,6 +36,13 @@ func VerifyEmail(email string) bool {
 }
 
 func SendMessage(_type string, uid int32, _subject, _body string) error {
+	if _type == "default" {
+		_type = GetUserOption("go_message_type", strconv.Itoa(int(uid)))
+		if !slices.Contains(MessageTypeList, _type) {
+			_type = "email"
+		}
+	}
+
 	switch _type {
 	case "ntfy":
 		ntfyTopic := GetUserOption("go_ntfy_topic", strconv.Itoa(int(uid)))

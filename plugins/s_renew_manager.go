@@ -14,7 +14,6 @@ import (
 	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/labstack/echo/v4"
-	"golang.org/x/exp/slices"
 )
 
 func init() {
@@ -149,12 +148,7 @@ func (pluginInfo *RenewManagerType) Action() {
 
 			msg := PluginRenewManagerAlertMessage(_function.GetCookie(renewItem.Pid).Name, renewItem.Fname, endTime.Local().Format("2006年01月02日 15:04:05"), renewItem.Fid)
 
-			localPushType := _function.GetUserOption("go_message_type", strconv.Itoa(int(renewItem.UID)))
-			if !slices.Contains(_function.MessageTypeList, localPushType) {
-				localPushType = "email"
-			}
-
-			err = _function.SendMessage(localPushType, renewItem.UID, msg.Title, msg.Body)
+			err = _function.SendMessage("default", renewItem.UID, msg.Title, msg.Body)
 			if err != nil {
 				log.Println("renew_manager:", err)
 			}

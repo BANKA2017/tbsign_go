@@ -46,8 +46,8 @@ var ExamplePlugin = _function.VariablePtrWrapper(ExamplePluginType{
 			"key3_action_limit": {
 				OptionName:   "key3_action_limit",
 				OptionNameCN: "这个变量在前端会被识别成数字",
-				Validate:     func (value string) bool {
-					return value === "50" // ...
+				Validate: func(value string) bool {
+					return value == "50" // ...
 				},
 			},
 			// ...
