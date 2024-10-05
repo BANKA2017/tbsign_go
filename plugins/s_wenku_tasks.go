@@ -170,7 +170,7 @@ func UpdateWenkuTask(cookie _type.TypeCookie, taskID int, minVersion string, isC
 	return resp, err
 }
 
-var vipMatrixIDSetMap sync.Map
+var WenkuTasksPluginVipMatrixIDSetMap sync.Map
 
 func (pluginInfo *WenkuTasksPluginType) Action() {
 	if !pluginInfo.PluginInfo.CheckActive() {
@@ -224,13 +224,13 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 		var vipMatrixIDSet []string
 		isVipMatrix := _function.GetUserOption("kd_wenku_tasks_vip_matrix", strconv.Itoa(int(taskUserItem.UID))) == "1"
 		if isVipMatrix {
-			if vipMatrixIDSetUnknow, ok := vipMatrixIDSetMap.Load(strconv.Itoa(int(taskUserItem.ID))); ok {
+			if vipMatrixIDSetUnknow, ok := WenkuTasksPluginVipMatrixIDSetMap.Load(strconv.Itoa(int(taskUserItem.ID))); ok {
 				vipMatrixIDSet = vipMatrixIDSetUnknow.([]string)
 			} else {
 				if dbIDSetStr != "|" {
 					for _, v := range strings.Split(dbIDSetStr[1:len(dbIDSetStr)-1], "|") {
 						pidSet := strings.Split(v, ",")
-						vipMatrixIDSetMap.Store(pidSet[0], pidSet)
+						WenkuTasksPluginVipMatrixIDSetMap.Store(pidSet[0], pidSet)
 						if pidSet[0] == strconv.Itoa(int(taskUserItem.ID)) {
 							vipMatrixIDSet = pidSet
 						}
@@ -419,8 +419,8 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 		_function.SetOption("kd_wenku_tasks_offset", strconv.Itoa(int(taskUserItem.ID)))
 	}
 	_function.SetOption("kd_wenku_tasks_offset", "0")
-	vipMatrixIDSetMap.Range(func(key, value any) bool {
-		vipMatrixIDSetMap.Delete(key)
+	WenkuTasksPluginVipMatrixIDSetMap.Range(func(key, value any) bool {
+		WenkuTasksPluginVipMatrixIDSetMap.Delete(key)
 		return true
 	})
 }
