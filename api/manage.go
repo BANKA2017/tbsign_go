@@ -181,7 +181,7 @@ func AdminModifyAccountInfo(c echo.Context) error {
 	if targetUID == "" {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyObject, "tbsign"))
 	} else if uid == targetUID {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无法修改自己的帐号", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无法修改自己的账号", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	numTargetUID, err := strconv.ParseInt(targetUID, 10, 64)
@@ -324,7 +324,7 @@ func AdminDeleteTiebaAccountList(c echo.Context) error {
 	if targetUID == "" {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	} else if uid == targetUID {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无法修改自己的帐号", false, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无法修改自己的账号", false, "tbsign"))
 	}
 
 	numTargetUID, err := strconv.ParseInt(targetUID, 10, 64)

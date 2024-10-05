@@ -543,7 +543,7 @@ func PluginGrowthTasksAddAccount(c echo.Context) error {
 	var count int64
 	_function.GormDB.R.Model(&model.TcKdGrowth{}).Where("uid = ? AND pid = ?", uid, numPid).Count(&count)
 	if count > 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "帐号已存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "账号已存在", _function.EchoEmptyObject, "tbsign"))
 	} else {
 		dataToInsert := model.TcKdGrowth{
 			UID:  numUID,
@@ -611,6 +611,6 @@ func PluginGrowthTasksGetTasksStatus(c echo.Context) error {
 		}
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", status.Data, "tbsign"))
 	} else {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "帐号不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "账号不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 }

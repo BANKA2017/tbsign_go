@@ -110,7 +110,7 @@ func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword str
 		}
 	}
 
-	fmt.Println("🔒注册管理员帐号...")
+	fmt.Println("🔒注册管理员账号...")
 	if !autoInstall {
 		fmt.Print("管理员用户名: ")
 		name, err = reader.ReadString('\n')
@@ -150,7 +150,7 @@ func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword str
 		log.Fatal(err)
 	}
 
-	fmt.Println("⌛正在注册管理员帐号...")
+	fmt.Println("⌛正在注册管理员账号...")
 	_function.GormDB.W.Create(&model.TcUser{
 		ID:    1,
 		Name:  name,

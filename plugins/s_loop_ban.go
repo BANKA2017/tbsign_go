@@ -58,7 +58,7 @@ var LoopBanPlugin = _function.VariablePtrWrapper(LoopBanPluginType{
 			},
 			"ver4_ban_limit": {
 				OptionName:   "ver4_ban_limit",
-				OptionNameCN: "可添加循环封禁帐号上限",
+				OptionNameCN: "可添加循环封禁账号上限",
 				Validate:     PluginLoopBanOptionValidatorVer4BanLimit,
 			},
 			"ver4_ban_action_limit": {
@@ -418,7 +418,7 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 
 	count := len(existsAccountList)
 	if count >= int(numLimit) || count+len(portraitList) > int(numLimit) {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, fmt.Sprintf("添加帐号数超限（%d/%s）", count+len(portraitList), limit), _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, fmt.Sprintf("添加账号数超限（%d/%s）", count+len(portraitList), limit), _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// fid
@@ -474,7 +474,7 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 				PID:      int32(numPid),
 				Portrait: portrait,
 				Success:  false,
-				Msg:      "帐号不存在",
+				Msg:      "账号不存在",
 			})
 		}
 		successPortraitList = append(successPortraitList, portrait)

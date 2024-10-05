@@ -182,7 +182,7 @@ func PushMessageTemplateResetPassword(verifyMessage, code string) PushMessageTem
 		Body: "你正在 TbSign 进行找回密码，需要进行身份验证。 本次行为的验证码是:<br /><br />" +
 			code + "<br /><br />" +
 			"请在页面输入验证码，进行重置。<br />" +
-			"该消息" + strconv.Itoa(ResetPwdExpire/60) + "分钟内有效，为了你的帐号安全，请勿将验证码提供给他人。<br /><br />" +
+			"该消息" + strconv.Itoa(ResetPwdExpire/60) + "分钟内有效，为了你的账号安全，请勿将验证码提供给他人。<br /><br />" +
 			"请确认以下 emoji 的排列顺序与网页展示的一致:<br />" + verifyMessage,
 	}
 }

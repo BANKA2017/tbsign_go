@@ -72,7 +72,7 @@ func Signup(c echo.Context) error {
 
 	passwordHash, err := _function.CreatePasswordHash(password)
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法建立帐号", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法建立账号", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	_function.GormDB.W.Create(&model.TcUser{
@@ -127,7 +127,7 @@ func DeleteAccount(c echo.Context) error {
 
 	keyBucket.Delete(uid)
 
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "帐号已删除，感谢您的使用", map[string]any{
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "账号已删除，感谢您的使用", map[string]any{
 		"uid":  int64(accountInfo.ID),
 		"name": accountInfo.Name,
 		"role": accountInfo.Role,
@@ -139,7 +139,7 @@ func Login(c echo.Context) error {
 	password := strings.TrimSpace(c.FormValue("password"))
 
 	if account == "" || password == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(401, "帐号或密码错误", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(401, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// check
@@ -147,23 +147,23 @@ func Login(c echo.Context) error {
 	_function.GormDB.R.Where("name = ? OR email = ?", account, account).Limit(1).Find(&accountInfo)
 
 	if len(accountInfo) == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(401, "帐号或密码错误", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(401, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	err := _function.VerifyPasswordHash(accountInfo[0].Pw, password)
 	if err != nil && _function.GetOption("go_ver") != "1" {
 		// Compatible with older versions -> md5(md5(md5($pwd)))
 		if _function.Md5(_function.Md5(_function.Md5(password))) != accountInfo[0].Pw {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(401, "帐号或密码错误", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(401, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
 		}
 	} else if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(401, "帐号或密码错误", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(401, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	if accountInfo[0].Role == "banned" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "帐号已封禁", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号已封禁", _function.EchoEmptyObject, "tbsign"))
 	} else if accountInfo[0].Role == "deleted" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "帐号已删除", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号已删除", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	var resp = tokenResponse{
@@ -188,7 +188,7 @@ func UpdateAccountInfo(c echo.Context) error {
 	_function.GormDB.R.Where("id = ?", uid).Limit(1).Find(&accountInfo)
 
 	if len(accountInfo) == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "帐号不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	username := strings.TrimSpace(c.FormValue("username"))
@@ -294,7 +294,7 @@ func UpdatePassword(c echo.Context) error {
 	_function.GormDB.R.Where("id = ?", uid).Limit(1).Find(&accountInfo)
 
 	if len(accountInfo) == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "帐号不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// compare old password
@@ -305,7 +305,7 @@ func UpdatePassword(c echo.Context) error {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "旧密码错误", _function.EchoEmptyObject, "tbsign"))
 		}
 	} else if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(401, "帐号或密码错误", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(401, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// create new password
@@ -336,7 +336,7 @@ func GetAccountInfo(c echo.Context) error {
 	// _function.GormDB.R.Where("uid = ?", uid).Find(&accountSettings)
 
 	if len(accountInfo) == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "帐号不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	var resp = userInfoWithSettingsStruct{
