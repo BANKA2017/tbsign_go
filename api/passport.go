@@ -9,6 +9,7 @@ import (
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
+	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slices"
 )
@@ -121,9 +122,8 @@ func DeleteAccount(c echo.Context) error {
 	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcUsersOption{})
 
 	// plugins
-	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcVer4BanList{})
-	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcVer4RankLog{})
-	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcKdGrowth{})
+	numUID, _ := strconv.ParseInt(uid, 10, 64)
+	_plugin.DeleteAccount("uid", int32(numUID))
 
 	keyBucket.Delete(uid)
 
@@ -545,6 +545,9 @@ func ExportAccountData(c echo.Context) error {
 	_function.GormDB.W.Model(&model.TcTieba{}).Where("uid = ?", uid).Find(&tcTieba)
 	_function.GormDB.W.Model(&model.TcBaiduid{}).Where("uid = ?", uid).Find(&tcBaiduid)
 	_function.GormDB.W.Model(&model.TcUsersOption{}).Where("uid = ?", uid).Find(&tcUsersOption)
+
+
+	
 	_function.GormDB.W.Model(&model.TcVer4BanList{}).Where("uid = ?", uid).Find(&tcVer4BanList)
 	_function.GormDB.W.Model(&model.TcVer4RankLog{}).Where("uid = ?", uid).Find(&tcVer4RankLog)
 	_function.GormDB.W.Model(&model.TcKdGrowth{}).Where("uid = ?", uid).Find(&tcKdGrowth)

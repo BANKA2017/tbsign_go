@@ -101,6 +101,11 @@ func (pluginInfo *RefreshTiebaListPluginType) Delete() error {
 func (pluginInfo *RefreshTiebaListPluginType) Upgrade() error {
 	return nil
 }
+
+func (pluginInfo *RefreshTiebaListPluginType) RemoveAccount(_type string, id int32) error {
+	return nil
+}
+
 func (pluginInfo *RefreshTiebaListPluginType) Ext() ([]any, error) {
 	return []any{}, nil
 }

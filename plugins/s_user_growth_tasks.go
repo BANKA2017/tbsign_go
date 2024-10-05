@@ -477,6 +477,12 @@ func (pluginInfo *UserGrowthTasksPluginType) Delete() error {
 func (pluginInfo *UserGrowthTasksPluginType) Upgrade() error {
 	return nil
 }
+
+func (pluginInfo *UserGrowthTasksPluginType) RemoveAccount(_type string, id int32) error {
+	_function.GormDB.W.Where("? = ?", _type, id).Delete(&model.TcKdGrowth{})
+	return nil
+}
+
 func (pluginInfo *UserGrowthTasksPluginType) Ext() ([]any, error) {
 	return []any{}, nil
 }

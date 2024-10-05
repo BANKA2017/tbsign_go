@@ -214,6 +214,12 @@ func (pluginInfo *LotteryPluginPluginType) Delete() error {
 func (pluginInfo *LotteryPluginPluginType) Upgrade() error {
 	return nil
 }
+
+func (pluginInfo *LotteryPluginPluginType) RemoveAccount(_type string, id int32) error {
+	_function.GormDB.W.Where("? = ?", _type, id).Delete(&model.TcVer4LotteryLog{})
+	return nil
+}
+
 func (pluginInfo *LotteryPluginPluginType) Ext() ([]any, error) {
 	return []any{}, nil
 }

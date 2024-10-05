@@ -94,6 +94,13 @@ func (pluginInfo *ExamplePluginType) Delete() error {
 func (pluginInfo *ExamplePluginType) Upgrade() error {
 	return nil
 }
+
+// _type: `uid`, `pid`
+func (pluginInfo *ExamplePluginType) RemoveAccount(_type string, id int32) error {
+	// 清理账号
+	return nil
+}
+
 func (pluginInfo *ExamplePluginType) Ext() ([]any, error) {
 	return []any{}, nil
 }

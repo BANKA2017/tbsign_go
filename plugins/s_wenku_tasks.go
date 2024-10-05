@@ -461,6 +461,12 @@ func (pluginInfo *WenkuTasksPluginType) Delete() error {
 func (pluginInfo *WenkuTasksPluginType) Upgrade() error {
 	return nil
 }
+
+func (pluginInfo *WenkuTasksPluginType) RemoveAccount(_type string, id int32) error {
+	_function.GormDB.W.Where("? = ?", _type, id).Delete(&model.TcKdWenkuTask{})
+	return nil
+}
+
 func (pluginInfo *WenkuTasksPluginType) Ext() ([]any, error) {
 	return []any{}, nil
 }

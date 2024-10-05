@@ -200,6 +200,12 @@ func (pluginInfo *RenewManagerType) Delete() error {
 func (pluginInfo *RenewManagerType) Upgrade() error {
 	return nil
 }
+
+func (pluginInfo *RenewManagerType) RemoveAccount(_type string, id int32) error {
+	_function.GormDB.W.Where("? = ?", _type, id).Delete(&model.TcKdRenewManager{})
+	return nil
+}
+
 func (pluginInfo *RenewManagerType) Ext() ([]any, error) {
 	return []any{}, nil
 }

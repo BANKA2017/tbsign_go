@@ -255,9 +255,8 @@ func AdminModifyAccountInfo(c echo.Context) error {
 		_function.GormDB.W.Where("uid = ?", accountInfo.ID).Delete(&model.TcUsersOption{})
 
 		// plugins
-		_function.GormDB.W.Where("uid = ?", accountInfo.ID).Delete(&model.TcVer4BanList{})
-		_function.GormDB.W.Where("uid = ?", accountInfo.ID).Delete(&model.TcVer4RankLog{})
-		_function.GormDB.W.Where("uid = ?", accountInfo.ID).Delete(&model.TcKdGrowth{})
+		_plugin.DeleteAccount("uid", accountInfo.ID)
+
 		keyBucket.Delete(strconv.Itoa(int(accountInfo.ID)))
 	} else {
 		_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", accountInfo.ID).Updates(&newAccountInfo)
@@ -349,9 +348,8 @@ func AdminDeleteTiebaAccountList(c echo.Context) error {
 		_function.GormDB.W.Where("uid = ?", targetUID).Delete(&model.TcTieba{})
 
 		// plugins
-		_function.GormDB.W.Where("uid = ?", targetUID).Delete(&model.TcVer4BanList{})
-		_function.GormDB.W.Where("uid = ?", targetUID).Delete(&model.TcVer4RankLog{})
-		_function.GormDB.W.Where("uid = ?", targetUID).Delete(&model.TcKdGrowth{})
+		_plugin.DeleteAccount("uid", int32(numTargetUID))
+
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 	} else {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))

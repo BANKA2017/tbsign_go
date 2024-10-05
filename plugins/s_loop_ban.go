@@ -220,6 +220,15 @@ func (pluginInfo *LoopBanPluginType) Delete() error {
 func (pluginInfo *LoopBanPluginType) Upgrade() error {
 	return nil
 }
+
+func (pluginInfo *LoopBanPluginType) RemoveAccount(_type string, id int32) error {
+	_function.GormDB.W.Where("? = ?", _type, id).Delete(&model.TcVer4BanList{})
+	if _type == "uid" {
+		_function.GormDB.W.Where("? = ?", _type, id).Delete(&model.TcVer4BanUserset{})
+	}
+	return nil
+}
+
 func (pluginInfo *LoopBanPluginType) Ext() ([]any, error) {
 	return []any{}, nil
 }
