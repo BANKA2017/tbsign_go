@@ -167,13 +167,17 @@ air -- --db_path=tbsign.db --test=true --api=true
     - 其他变量识别成 `text`
 - *数据库 model
   - 简单的信息可以直接存在表 `tc_options`（全局） 或 `tc_users_options`（用户） 中
-  - 如果需要使用数据库存储插件信息，请准备好表模型并存放在 `model/`，包名为 `model`，尽管 Gorm 可以手搓 raw SQL，但我们并不建议这样做
+  - 如果需要使用数据库存储插件信息
+    - 请准备好表模型并存放在 `model/`，包名为 `model`
+    - 或者生成好表模型后将相关内容拷贝到插件的 go 文件内，包名为 `_plugin`
 
     参考 codegen 命令为
 
     ```shell
     /root/go/bin/gentool -dsn "..." -modelPkgName "model" -onlyModel
     ```
+
+    尽管 Gorm 可以手搓 raw SQL，但我们并不建议这样做
 
 - *protobuf
   - 部分请求可能需要用到 protobuf，这部分还没完善，敬请期待
