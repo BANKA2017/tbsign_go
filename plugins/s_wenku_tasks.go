@@ -240,7 +240,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 		}
 		if isVipMatrix && vipMatrixIDSet[1] == strconv.Itoa(int(_function.Now.Local().Weekday())) && vipMatrixIDSet[2] == "0" {
 			result = append(result, WenkuTaskToSave{
-				TaskName:   "VIP 矩阵自动跳过",
+				TaskName:   "VIP 账号组自动跳过",
 				TaskID:     -100,
 				TaskStatus: 3,
 				Msg:        "跳过",
