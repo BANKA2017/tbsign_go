@@ -69,12 +69,15 @@ var wenkuTasksLink = string([]byte{104, 116, 116, 112, 115, 58, 47, 47, 97, 112,
 
 var updateWenkuTaskLink = string([]byte{104, 116, 116, 112, 115, 58, 47, 47, 97, 112, 112, 119, 107, 46, 98, 97, 105, 100, 117, 46, 99, 111, 109, 47, 110, 97, 97, 112, 105, 47, 116, 97, 115, 107, 47, 117, 112, 100, 97, 116, 101, 116, 97, 115, 107, 63, 116, 97, 115, 107, 73, 100, 61, 37, 100, 38, 115, 121, 115, 95, 118, 101, 114, 61, 49, 55, 46, 54, 46, 49, 38, 117, 105, 100, 61, 98, 100, 95, 48, 38, 97, 112, 112, 95, 118, 101, 114, 61, 37, 115, 38, 98, 105, 100, 61, 49, 38, 102, 114, 111, 109, 61, 105, 111, 115, 95, 38, 66, 100, 105, 95, 98, 101, 97, 114, 61, 38, 97, 112, 112, 95, 117, 97, 61, 105, 80, 97, 100, 49, 49, 44, 49, 38, 102, 114, 61, 50, 38, 112, 105, 100, 61, 49, 37, 115})
 
+var claimWenku7DaySignVIPLink = string([]byte{104, 116, 116, 112, 115, 58, 47, 47, 116, 97, 110, 98, 105, 46, 98, 97, 105, 100, 117, 46, 99, 111, 109, 47, 104, 53, 97, 112, 112, 116, 111, 112, 105, 99, 47, 112, 114, 111, 120, 121, 47, 110, 97, 97, 112, 105, 47, 97, 99, 116, 105, 118, 105, 116, 121, 47, 108, 111, 116, 116, 101, 114, 121, 63, 97, 99, 116, 105, 111, 110, 61, 100, 114, 97, 119, 38, 110, 97, 95, 117, 110, 99, 104, 101, 99, 107, 61, 49, 38, 99, 111, 109, 98, 111, 61, 55, 100, 97, 121, 115, 105, 103, 110, 38, 95, 116, 61, 37, 100})
+
 type WenkuTaskToSave struct {
-	TaskName   string `json:"task_name"`
-	TaskID     int    `json:"task_id"`
-	TaskStatus int    `json:"task_status"`
-	Msg        string `json:"msg"`
-	SignDay    int64  `json:"sign_day,omitempty"`
+	TaskName    string `json:"task_name"`
+	TaskID      int    `json:"task_id"`
+	TaskStatus  int    `json:"task_status"`
+	Msg         string `json:"msg"`
+	SignDay     int64  `json:"sign_day,omitempty"`
+	ClaimStatus string `json:"claim_status,omitempty"`
 	// RewardNum  int    `json:"reward_num"`
 	// RewardType int    `json:"reward_type"`
 }
@@ -118,6 +121,26 @@ type UpdateWenkuTaskResponse struct {
 	Data struct {
 		Task   WenkuTaskList `json:"task,omitempty"`
 		Errstr string        `json:"errstr,omitempty"`
+	} `json:"data,omitempty"`
+}
+
+type ClaimWenku7DaySignVIPResponse struct {
+	Status struct {
+		Code int    `json:"code,omitempty"`
+		Msg  string `json:"msg,omitempty"`
+	} `json:"status,omitempty"`
+	Data struct {
+		IsForbiddenUser int `json:"isForbiddenUser,omitempty"`
+		IsWin           int `json:"isWin,omitempty"`
+		MyBean          int `json:"myBean,omitempty"`
+		RemaiNum        int `json:"remaiNum,omitempty"`
+		Prize           struct {
+			Prizeid int    `json:"prizeid,omitempty"`
+			Icon    string `json:"icon,omitempty"`
+			Name    string `json:"name,omitempty"`
+			Desc    string `json:"desc,omitempty"`
+		} `json:"prize,omitempty"`
+		Errstr string `json:"errstr,omitempty"`
 	} `json:"data,omitempty"`
 }
 
@@ -166,6 +189,24 @@ func UpdateWenkuTask(cookie _type.TypeCookie, taskID int, minVersion string, isC
 	// log.Println(string(response))
 
 	resp := new(UpdateWenkuTaskResponse)
+	err = _function.JsonDecode(response, resp)
+	return resp, err
+}
+
+func ClaimWenku7DaySignVIP(cookie _type.TypeCookie) (*ClaimWenku7DaySignVIPResponse, error) {
+	headersMap := map[string]string{
+		"Cookie":     "BDUSS=" + cookie.Bduss,
+		"user-agent": WenkuUserAgent,
+	}
+
+	response, err := _function.TBFetch(fmt.Sprintf(claimWenku7DaySignVIPLink, _function.Now.UnixMilli()), "GET", []byte{}, headersMap)
+	if err != nil {
+		return nil, err
+	}
+
+	// log.Println(string(response))
+
+	resp := new(ClaimWenku7DaySignVIPResponse)
 	err = _function.JsonDecode(response, resp)
 	return resp, err
 }

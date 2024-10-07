@@ -60,6 +60,8 @@ var RenewManager = _function.VariablePtrWrapper(RenewManagerType{
 	},
 })
 
+var managerTasksPageLink = []byte{104, 116, 116, 112, 115, 58, 47, 47, 116, 105, 101, 98, 97, 46, 98, 97, 105, 100, 117, 46, 99, 111, 109, 47, 109, 111, 47, 113, 47, 98, 97, 119, 117, 47, 116, 97, 115, 107, 105, 110, 102, 111, 118, 105, 101, 119, 63, 116, 98, 105, 111, 115, 119, 107, 61, 49, 38, 102, 105, 100, 61}
+
 func (pluginInfo *RenewManagerType) Action() {
 	if !pluginInfo.PluginInfo.CheckActive() {
 		return
@@ -211,7 +213,7 @@ func (pluginInfo *RenewManagerType) Ext() ([]any, error) {
 func PluginRenewManagerAlertMessage(name, fname, end string, fid int32) _function.PushMessageTemplateStruct {
 	return _function.PushMessageTemplateStruct{
 		Title: fmt.Sprintf("吧主考核提醒 - %s吧", fname),
-		Body:  fmt.Sprintf("@%s 您的吧主账号在 %s吧 (fid:%d) 的考核任务将于 %s 截止，目前剩余不到 15 天。<br /><br />由于 TbSign 已超过 15 天 未能完成考核，请您尽快前往 [吧主考核页面](https://tieba.baidu.com/mo/q/bawu/taskinfoview?tbioswk=1&fid=%d) 完成相关任务。", name, fname, fid, end, fid),
+		Body:  fmt.Sprintf("@%s 您的吧主账号在 %s吧 (fid:%d) 的考核任务将于 %s 截止，目前剩余不到 15 天。<br /><br />由于 TbSign 已超过 15 天 未能完成考核，请您尽快前往 [吧主考核页面](%s%d) 完成相关任务。", name, fname, fid, end, managerTasksPageLink, fid),
 	}
 }
 
