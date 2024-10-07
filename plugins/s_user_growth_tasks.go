@@ -76,12 +76,12 @@ type UserGrowthTasksClientResponse struct {
 }
 
 type LevelInfo struct {
-	Level          int    `json:"level,omitempty"`
-	Name           string `json:"name,omitempty"`
-	GrowthValue    int    `json:"growth_value,omitempty"`
-	NextLevelValue int    `json:"next_level_value,omitempty"`
-	Status         int    `json:"status,omitempty"`
-	IsCurrent      int    `json:"is_current,omitempty"`
+	Level          int    `json:"level"`
+	Name           string `json:"name"`
+	GrowthValue    int    `json:"growth_value"`
+	NextLevelValue int    `json:"next_level_value"`
+	Status         int    `json:"status"`
+	IsCurrent      int    `json:"is_current"`
 }
 
 type UserGrowthTasksListResponse struct {
@@ -94,8 +94,8 @@ type UserGrowthTasksListResponse struct {
 			Portrait   string `json:"portrait,omitempty"`
 			IsTiebaVip bool   `json:"is_tieba_vip,omitempty"`
 		} `json:"user,omitempty"`
-		/// LevelInfo []LevelInfo `json:"level_info,omitempty"`
-		TabList []struct {
+		LevelInfo []LevelInfo `json:"level_info,omitempty"`
+		TabList   []struct {
 			TabName      string `json:"tab_name,omitempty"`
 			Name         string `json:"name,omitempty"`
 			Text         string `json:"text,omitempty"`
