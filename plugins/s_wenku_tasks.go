@@ -148,7 +148,7 @@ type ClaimWenku7DaySignVIPResponse struct {
 func GetWenkuTaskList(cookie _type.TypeCookie, _type string) (*GetWenkuTaskListResponse, error) {
 	headersMap := map[string]string{
 		"Cookie":     "BDUSS=" + cookie.Bduss,
-		"user-agent": WenkuUserAgent,
+		"User-Agent": WenkuUserAgent,
 	}
 
 	response, err := _function.TBFetch(fmt.Sprintf(wenkuTasksLink, _type), "GET", []byte{}, headersMap)
@@ -178,7 +178,7 @@ func UpdateWenkuTask(cookie _type.TypeCookie, taskID int, minVersion string, isC
 
 	headersMap := map[string]string{
 		"Cookie":     "BDUSS=" + cookie.Bduss,
-		"user-agent": strings.Replace(WenkuUserAgent, WenkuSemver, minVersion, 1),
+		"User-Agent": strings.Replace(WenkuUserAgent, WenkuSemver, minVersion, 1),
 	}
 
 	response, err := _function.TBFetch(fmt.Sprintf(updateWenkuTaskLink, taskID, minVersion, naUncheckStr), "GET", []byte{}, headersMap)
@@ -196,7 +196,8 @@ func UpdateWenkuTask(cookie _type.TypeCookie, taskID int, minVersion string, isC
 func ClaimWenku7DaySignVIP(cookie _type.TypeCookie) (*ClaimWenku7DaySignVIPResponse, error) {
 	headersMap := map[string]string{
 		"Cookie":     "BDUSS=" + cookie.Bduss,
-		"user-agent": WenkuUserAgent,
+		"User-Agent": WenkuUserAgent,
+		"Referrer":   string([]byte{104, 116, 116, 112, 115, 58, 47, 47, 116, 97, 110, 98, 105, 46, 98, 97, 105, 100, 117, 46, 99, 111, 109, 47, 104, 53, 97, 112, 112, 116, 111, 112, 105, 99, 47, 98, 114, 111, 119, 115, 101, 47, 108, 111, 116, 116, 101, 114, 121, 118, 105, 112, 50, 48, 50, 50, 49, 49}),
 	}
 
 	response, err := _function.TBFetch(fmt.Sprintf(claimWenku7DaySignVIPLink, _function.Now.UnixMilli()), "GET", []byte{}, headersMap)

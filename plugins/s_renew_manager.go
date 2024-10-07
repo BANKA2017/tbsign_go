@@ -246,8 +246,8 @@ type PluginRenewManagerCancelTopResponse struct {
 func PluginRenewManagerCancelTop(cookie _type.TypeCookie, fname string, tid string) (*PluginRenewManagerCancelTopResponse, error) {
 	headersMap := map[string]string{
 		"Cookie":       "BDUSS=" + cookie.Bduss + ";STOKEN=" + cookie.Stoken,
-		"content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-		"referrer":     "https://tieba.baidu.com/p/" + tid,
+		"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+		"Referrer":     "https://tieba.baidu.com/p/" + tid,
 	}
 
 	body := url.Values{}
