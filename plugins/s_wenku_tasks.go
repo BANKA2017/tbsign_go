@@ -55,6 +55,7 @@ var WenkuTasksPlugin = _function.VariablePtrWrapper(WenkuTasksPluginType{
 			{Method: "DELETE", Path: "list/:id", Function: PluginWenkuTasksDelAccount},
 			{Method: "POST", Path: "list/empty", Function: PluginWenkuTasksDelAllAccounts},
 			{Method: "GET", Path: "status/:pid", Function: PluginWenkuTasksGetTasksStatus},
+			{Method: "POST", Path: "claim/:pid", Function: PluginWenkuTasksClaim7DaySignVIP},
 		},
 	},
 })
@@ -767,5 +768,29 @@ func PluginWenkuTasksGetTasksStatus(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tasksList, "tbsign"))
 	} else {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "账号不存在", _function.EchoEmptyObject, "tbsign"))
+	}
+}
+
+func PluginWenkuTasksClaim7DaySignVIP(c echo.Context) error {
+	uid := c.Get("uid").(string)
+	pid := c.Param("pid")
+
+	// pre check
+	var count int64
+	_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id = ? AND uid = ?", pid, uid).Count(&count)
+
+	if count > 0 {
+		numPid, _ := strconv.ParseInt(pid, 10, 64)
+		cookie := _function.GetCookie(int32(numPid))
+
+		res, err := ClaimWenku7DaySignVIP(cookie)
+
+		if err != nil {
+			log.Println("wenku_tasks_api: claim 7days vip", pid, err, res)
+			c.JSON(http.StatusOK, _function.ApiTemplate(500, "领取失败", ClaimWenku7DaySignVIPResponse{}, "tbsign"))
+		}
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", res, "tbsign"))
+	} else {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "账号不存在", ClaimWenku7DaySignVIPResponse{}, "tbsign"))
 	}
 }
