@@ -756,7 +756,7 @@ func (pluginInfo *ForumSupportPluginInfoType) Upgrade() error {
 }
 
 func (pluginInfo *ForumSupportPluginInfoType) RemoveAccount(_type string, id int32) error {
-	_function.GormDB.W.Where("? = ?", _type, id).Delete(&model.TcVer4RankLog{})
+	_function.GormDB.W.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcVer4RankLog{})
 	return nil
 }
 

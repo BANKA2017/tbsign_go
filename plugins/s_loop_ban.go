@@ -225,9 +225,9 @@ func (pluginInfo *LoopBanPluginType) Upgrade() error {
 }
 
 func (pluginInfo *LoopBanPluginType) RemoveAccount(_type string, id int32) error {
-	_function.GormDB.W.Where("? = ?", _type, id).Delete(&model.TcVer4BanList{})
+	_function.GormDB.W.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcVer4BanList{})
 	if _type == "uid" {
-		_function.GormDB.W.Where("? = ?", _type, id).Delete(&model.TcVer4BanUserset{})
+		_function.GormDB.W.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcVer4BanUserset{})
 	}
 	return nil
 }

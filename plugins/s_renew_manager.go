@@ -202,7 +202,7 @@ func (pluginInfo *RenewManagerType) Upgrade() error {
 }
 
 func (pluginInfo *RenewManagerType) RemoveAccount(_type string, id int32) error {
-	_function.GormDB.W.Where("? = ?", _type, id).Delete(&model.TcKdRenewManager{})
+	_function.GormDB.W.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcKdRenewManager{})
 	return nil
 }
 

@@ -483,7 +483,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Upgrade() error {
 }
 
 func (pluginInfo *UserGrowthTasksPluginType) RemoveAccount(_type string, id int32) error {
-	_function.GormDB.W.Where("? = ?", _type, id).Delete(&model.TcKdGrowth{})
+	_function.GormDB.W.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcKdGrowth{})
 	return nil
 }
 

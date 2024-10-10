@@ -213,7 +213,104 @@ func ClaimWenku7DaySignVIP(cookie _type.TypeCookie) (*ClaimWenku7DaySignVIPRespo
 	return resp, err
 }
 
-var WenkuTasksPluginVipMatrixIDSetMap sync.Map
+type WenkuTasksPluginVipMatrixIDSet struct {
+	MatrixIDMap *sync.Map
+	WeekDayList *sync.Map
+	LastDay     string
+}
+
+func (m *WenkuTasksPluginVipMatrixIDSet) Init() {
+	m.MatrixIDMap = new(sync.Map)
+	m.WeekDayList = new(sync.Map)
+}
+
+func (m *WenkuTasksPluginVipMatrixIDSet) Import(str string) error {
+	if len(str) > 1 && strings.HasPrefix(str, "|") && strings.HasSuffix(str, "|") {
+		for _, v := range strings.Split(str[1:len(str)-1], "|") {
+			pidSet := strings.Split(v, ",")
+			m.MatrixIDMap.Store(pidSet[0], pidSet)
+			if _, ok := m.WeekDayList.Load(pidSet[1]); !ok {
+				m.WeekDayList.Store(pidSet[1], nil)
+			}
+			m.LastDay = pidSet[1]
+		}
+	}
+
+	return nil
+}
+
+func (m *WenkuTasksPluginVipMatrixIDSet) Export() string {
+	tmpStr := []string{}
+	m.MatrixIDMap.Range(func(key, value any) bool {
+		tmpStr = append(tmpStr, strings.Join(value.([]string), ","))
+		return true
+	})
+
+	if len(tmpStr) == 0 {
+		return "|"
+	}
+
+	return fmt.Sprintf("|%s|", strings.Join(tmpStr, "|"))
+}
+
+func (m *WenkuTasksPluginVipMatrixIDSet) AddID(id int32) error {
+	strID := strconv.Itoa(int(id))
+	if _, ok := m.MatrixIDMap.Load(strID); ok {
+		return nil
+	}
+	weekDayList := []string{"0", "1", "2", "3", "4", "5", "6"}
+	var currentDay int64 = -1
+
+	for i, d := range weekDayList {
+		if _, ok := m.WeekDayList.Load(d); !ok {
+			currentDay = int64(i)
+			m.WeekDayList.Store(d, 0)
+			m.LastDay = d
+			break
+		}
+	}
+
+	if currentDay == -1 {
+		tmpLastDay, _ := strconv.ParseInt(m.LastDay, 10, 64)
+		if tmpLastDay != 6 {
+			currentDay = tmpLastDay + 1
+		} else {
+			currentDay = 0
+		}
+	}
+
+	strCurrentDay := strconv.Itoa(int(currentDay))
+
+	m.MatrixIDMap.Store(strCurrentDay, []string{strID, strCurrentDay, "0"})
+
+	return nil
+}
+
+func (m *WenkuTasksPluginVipMatrixIDSet) DelID(id int32) error {
+	strID := strconv.Itoa(int(id))
+
+	if _, ok := m.MatrixIDMap.Load(strID); !ok {
+		return nil
+	}
+	data, _ := m.MatrixIDMap.LoadAndDelete(strID)
+	m.WeekDayList.Delete(data.([]string)[1])
+
+	return nil
+}
+
+func (m *WenkuTasksPluginVipMatrixIDSet) Clean() {
+	m.MatrixIDMap.Range(func(key, value any) bool {
+		m.MatrixIDMap.Delete(key)
+		return true
+	})
+
+	m.WeekDayList.Range(func(key, value any) bool {
+		m.WeekDayList.Delete(key)
+		return true
+	})
+
+	m.LastDay = ""
+}
 
 func (pluginInfo *WenkuTasksPluginType) Action() {
 	if !pluginInfo.PluginInfo.CheckActive() {
@@ -237,6 +334,10 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 	limit := _function.GetOption("kd_wenku_tasks_action_limit")
 	numLimit, _ := strconv.ParseInt(limit, 10, 64)
 	_function.GormDB.R.Model(&model.TcKdWenkuTask{}).Where("date < ? AND id > ?", todayBeginning, id).Limit(int(numLimit)).Find(&kdWenkuTasksUserList)
+
+	var wenkuTasksPluginVipMatrixIDSetMap WenkuTasksPluginVipMatrixIDSet
+	wenkuTasksPluginVipMatrixIDSetMap.Init()
+
 	for _, taskUserItem := range *kdWenkuTasksUserList {
 		if _, ok := accountStatusList[taskUserItem.UID]; !ok {
 			accountStatusList[taskUserItem.UID] = _function.GetUserOption("kd_wenku_tasks_checkin_only", strconv.Itoa(int(taskUserItem.UID)))
@@ -262,23 +363,15 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 		tasksIDList := sync.Map{}
 
 		// vip matrix
-		dbIDSetStr := _function.GetUserOption("kd_wenku_tasks_vip_matrix_id_set", strconv.Itoa(int(taskUserItem.UID)))
-
 		var vipMatrixIDSet []string
 		isVipMatrix := _function.GetUserOption("kd_wenku_tasks_vip_matrix", strconv.Itoa(int(taskUserItem.UID))) == "1"
 		if isVipMatrix {
-			if vipMatrixIDSetUnknow, ok := WenkuTasksPluginVipMatrixIDSetMap.Load(strconv.Itoa(int(taskUserItem.ID))); ok {
+			if vipMatrixIDSetUnknow, ok := wenkuTasksPluginVipMatrixIDSetMap.MatrixIDMap.Load(strconv.Itoa(int(taskUserItem.ID))); ok {
 				vipMatrixIDSet = vipMatrixIDSetUnknow.([]string)
 			} else {
-				if dbIDSetStr != "|" {
-					for _, v := range strings.Split(dbIDSetStr[1:len(dbIDSetStr)-1], "|") {
-						pidSet := strings.Split(v, ",")
-						WenkuTasksPluginVipMatrixIDSetMap.Store(pidSet[0], pidSet)
-						if pidSet[0] == strconv.Itoa(int(taskUserItem.ID)) {
-							vipMatrixIDSet = pidSet
-						}
-					}
-				}
+				wenkuTasksPluginVipMatrixIDSetMap.Import(_function.GetUserOption("kd_wenku_tasks_vip_matrix_id_set", strconv.Itoa(int(taskUserItem.UID))))
+				_vipMatrixIDSet, _ := wenkuTasksPluginVipMatrixIDSetMap.MatrixIDMap.Load(strconv.Itoa(int(taskUserItem.ID)))
+				vipMatrixIDSet = _vipMatrixIDSet.([]string)
 			}
 		}
 		if isVipMatrix && vipMatrixIDSet[1] == strconv.Itoa(int(_function.Now.Local().Weekday())) && vipMatrixIDSet[2] == "0" {
@@ -288,8 +381,10 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 				TaskStatus: 3,
 				Msg:        "跳过",
 			})
-			dbIDSetStr = strings.Replace(dbIDSetStr, fmt.Sprintf("|%d,%s,%d|", taskUserItem.ID, vipMatrixIDSet[1], 0), fmt.Sprintf("|%d,%s,%d|", taskUserItem.ID, vipMatrixIDSet[1], 1), 1)
-			_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", strconv.Itoa(int(taskUserItem.UID)), dbIDSetStr)
+			vipMatrixIDSet[2] = "1"
+			wenkuTasksPluginVipMatrixIDSetMap.MatrixIDMap.Store(vipMatrixIDSet[0], vipMatrixIDSet)
+
+			_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", wenkuTasksPluginVipMatrixIDSetMap.Export(), strconv.Itoa(int(taskUserItem.UID)))
 		} else {
 			if _, ok := accountCookiesList[taskUserItem.Pid]; !ok {
 				accountCookiesList[taskUserItem.Pid] = _function.GetCookie(int32(taskUserItem.Pid))
@@ -422,8 +517,10 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 					}
 
 					if task.TaskStatus != 3 || task.TaskExtra.SignDay != int(verifyDay) {
-						dbIDSetStr = strings.Replace(dbIDSetStr, fmt.Sprintf("|%d,%s,%d|", taskUserItem.ID, vipMatrixIDSet[1], 1), fmt.Sprintf("|%d,%s,%d|", taskUserItem.ID, vipMatrixIDSet[1], 0), 1)
-						_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", strconv.Itoa(int(taskUserItem.UID)), dbIDSetStr)
+						vipMatrixIDSet[2] = "0"
+						wenkuTasksPluginVipMatrixIDSetMap.MatrixIDMap.Store(vipMatrixIDSet[0], vipMatrixIDSet)
+
+						_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", wenkuTasksPluginVipMatrixIDSetMap.Export(), strconv.Itoa(int(taskUserItem.UID)))
 					}
 
 				}
@@ -462,10 +559,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 		_function.SetOption("kd_wenku_tasks_offset", strconv.Itoa(int(taskUserItem.ID)))
 	}
 	_function.SetOption("kd_wenku_tasks_offset", "0")
-	WenkuTasksPluginVipMatrixIDSetMap.Range(func(key, value any) bool {
-		WenkuTasksPluginVipMatrixIDSetMap.Delete(key)
-		return true
-	})
+	wenkuTasksPluginVipMatrixIDSetMap.Clean()
 }
 
 func (pluginInfo *WenkuTasksPluginType) Install() error {
@@ -511,8 +605,6 @@ func (pluginInfo *WenkuTasksPluginType) Upgrade() error {
 }
 
 func (pluginInfo *WenkuTasksPluginType) RemoveAccount(_type string, id int32) error {
-	_function.GormDB.W.Where("? = ?", _type, id).Delete(&model.TcKdWenkuTask{})
-
 	if _type == "pid" {
 		// get uid
 		account := new(model.TcBaiduid)
@@ -524,16 +616,11 @@ func (pluginInfo *WenkuTasksPluginType) RemoveAccount(_type string, id int32) er
 
 		// rebuild vip matrix set
 		if !slices.Contains([]string{"", "0"}, _function.GetUserOption("kd_wenku_tasks_vip_matrix", uid)) {
-			dbIDSetStr := _function.GetUserOption("kd_wenku_tasks_vip_matrix_id_set", uid)
-
-			newIDSet := []string{}
-			for _, s := range strings.Split(dbIDSetStr, "|") {
-				if !strings.HasPrefix(s, fmt.Sprintf("%d,", task.ID)) {
-					newIDSet = append(newIDSet, s)
-				}
-			}
-
-			_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", strings.Join(newIDSet, "|"), uid)
+			var vipMatrixSet WenkuTasksPluginVipMatrixIDSet
+			vipMatrixSet.Init()
+			vipMatrixSet.Import(_function.GetUserOption("kd_wenku_tasks_vip_matrix_id_set", uid))
+			vipMatrixSet.DelID(int32(task.ID))
+			_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", vipMatrixSet.Export(), uid)
 		}
 	} else if _type == "uid" {
 		uid := strconv.Itoa(int(id))
@@ -541,6 +628,8 @@ func (pluginInfo *WenkuTasksPluginType) RemoveAccount(_type string, id int32) er
 			_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", "|", uid)
 		}
 	}
+
+	_function.GormDB.W.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcKdWenkuTask{})
 
 	return nil
 }
@@ -588,15 +677,15 @@ func PluginWenkuTasksSetSettings(c echo.Context) error {
 	if vipMatrix && !dbVipMatrix {
 		uidTasksList := new([]model.TcKdWenkuTask)
 		_function.GormDB.R.Model(&model.TcKdWenkuTask{}).Where("uid = ?", uid).Find(uidTasksList)
-		idList := []string{}
-		for i, task := range *uidTasksList {
-			idList = append(idList, fmt.Sprintf("%d,%d,%d", task.ID, i%7, 0))
+
+		var vipMatrixSet WenkuTasksPluginVipMatrixIDSet
+		vipMatrixSet.Init()
+
+		for _, task := range *uidTasksList {
+			vipMatrixSet.AddID(int32(task.ID))
 		}
-		idListStr := "|"
-		if len(idList) > 0 {
-			idListStr += strings.Join(idList, "|") + "|"
-		}
-		_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", idListStr, uid)
+
+		_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", vipMatrixSet.Export(), uid)
 	} else if !vipMatrix {
 		_function.DeleteUserOption("kd_wenku_tasks_vip_matrix_id_set", uid)
 	}
@@ -641,19 +730,13 @@ func PluginWenkuTasksAddAccount(c echo.Context) error {
 
 		// vip matrix
 		if !slices.Contains([]string{"", "0"}, _function.GetUserOption("kd_wenku_tasks_vip_matrix", uid)) {
-			dbIDSetStr := _function.GetUserOption("kd_wenku_tasks_vip_matrix_id_set", uid)
 
-			day := 0
-			if dbIDSetStr != "|" {
-				tmpTasks := strings.Split(dbIDSetStr, "|")
-				tmpLastTask := strings.Split(tmpTasks[len(tmpTasks)-2], ",")
-				tmpLastDay, _ := strconv.ParseInt(tmpLastTask[1], 10, 64)
-				if tmpLastDay != 6 {
-					day = int(tmpLastDay) + 1
-				}
-			}
+			var vipMatrixSet WenkuTasksPluginVipMatrixIDSet
+			vipMatrixSet.Init()
+			vipMatrixSet.Import(_function.GetUserOption("kd_wenku_tasks_vip_matrix_id_set", uid))
+			vipMatrixSet.AddID(int32(dataToInsert.ID))
+			_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", vipMatrixSet.Export(), uid)
 
-			_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", dbIDSetStr+fmt.Sprintf("%d,%d,%d", dataToInsert.ID, day, 0)+"|", uid)
 		}
 
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", dataToInsert, "tbsign"))
@@ -681,16 +764,11 @@ func PluginWenkuTasksDelAccount(c echo.Context) error {
 
 	// vip matrix
 	if !slices.Contains([]string{"", "0"}, _function.GetUserOption("kd_wenku_tasks_vip_matrix", uid)) {
-		dbIDSetStr := _function.GetUserOption("kd_wenku_tasks_vip_matrix_id_set", uid)
-
-		newIDSet := []string{}
-		for _, s := range strings.Split(dbIDSetStr, "|") {
-			if !strings.HasPrefix(s, fmt.Sprintf("%d,", numID)) {
-				newIDSet = append(newIDSet, s)
-			}
-		}
-
-		_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", strings.Join(newIDSet, "|"), uid)
+		var vipMatrixSet WenkuTasksPluginVipMatrixIDSet
+		vipMatrixSet.Init()
+		vipMatrixSet.Import(_function.GetUserOption("kd_wenku_tasks_vip_matrix_id_set", uid))
+		vipMatrixSet.DelID(int32(numID))
+		_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", vipMatrixSet.Export(), uid)
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
