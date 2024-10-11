@@ -243,9 +243,9 @@ func GetForumList(cookie _type.TypeCookie, uid string, page int64) (*_type.Forum
 		return nil, err
 	}
 
-	var forumListDecode _type.ForumListResponse
-	err = JsonDecode(forumListResponse, &forumListDecode)
-	return &forumListDecode, err
+	forumListDecode := new(_type.ForumListResponse)
+	err = JsonDecode(forumListResponse, forumListDecode)
+	return forumListDecode, err
 }
 
 func GetOneKeySignList(cookie _type.TypeCookie) (any, error) {
