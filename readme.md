@@ -107,8 +107,10 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 ### 兼容性
 
-- [⚠️] 通过 *迁移法* 启动的程序能够与 [百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/) 共存，但 *用户成长任务* 和 *文库任务* 插件没有对应的 PHP 版本
-- [❌] 通过 *全新安装* 启动的程序无法兼容 [百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/)，因为缺少相关数据表和设置选项
+- [⚠️] 通过 *迁移法* 启动的程序能够与 [百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/) 共存，但部分插件没有对应的 PHP 版本
+- [❌] 通过 *全新安装* 启动的程序无法兼容 [百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/)，因为缺少部分数据表和设置选项
+- [❌] 不支持 MySQL 5.x，使用了**不支持**的语法
+- [⚠️] xgo 镜像使用的 tag 为 `latest`，可能会有操作系统不再受到支持（如 Windows 7）
 
 ## 前端
 
@@ -142,7 +144,8 @@ air -- --db_path=tbsign.db --test=true --api=true
 - [x] [循环封禁](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_ban)
 - [x] 用户成长任务
 - [x] [知道商城抽奖](https://github.com/96dl/Tieba-Cloud-Sign-Plugins/blob/master/ver4_lottery/ver4_lottery_desc.php)
-- [ ] 文库任务(WIP)
+- [x] 文库任务
+- [x] 吧主考核
 
 ### 插件开发
 
@@ -219,7 +222,7 @@ air -- --db_path=tbsign.db --test=true --api=true
 - [x] 会运行未安装/未激活的插件
 - [ ] 邀请码系统在考虑要不要做，如果不想做就会移入**不会解决列表**
 - [x] 邮箱相关……邮箱找回✅
-- [ ] 签发用户 JWT 的密钥仅存在于内存中，系统重启后会掉登录
+- [x] ~~签发用户 JWT 的密钥仅存在于内存中，系统重启后会掉登录~~ 特性！都是特性！
 
 **下面提到的不会解决**
 

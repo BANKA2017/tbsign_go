@@ -21,6 +21,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	tbpb "github.com/BANKA2017/tbsign_go/proto"
+	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
 )
 
@@ -86,8 +87,10 @@ func Fetch(_url string, _method string, _body []byte, _headers map[string]string
 		log.Println("fetch:", err)
 		return nil, err
 	}
-	//log.Println(_url)
-	//log.Println(string(response[:]))
+
+	if share.TestMode {
+		log.Printf("\n---TEST MODE FETCH---\nurl: %s\nmethod: %s\nbody: %v\nheaders: %v\n------\nres code: %d\nres headers: %v\nres str: %s\n---TEST MODE FETCH---\n\n", _url, _method, _body, _headers, resp.StatusCode, resp.Header, string(response))
+	}
 
 	return response[:], err
 }
