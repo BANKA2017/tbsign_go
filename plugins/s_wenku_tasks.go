@@ -432,10 +432,12 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 				}
 
 				task := _task
+				hasError := false
 
 				if task.TaskStatus == 1 {
 					doTask, err := UpdateWenkuTask(cookie, task.TaskID, task.MinAppVer, false)
 					if err != nil {
+						hasError = true
 						result = append(result, WenkuTaskToSave{
 							TaskName:   task.TaskName,
 							TaskID:     task.TaskID,
@@ -445,7 +447,19 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 							// RewardNum:  task.RewardNum,
 						})
 						log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "task_status1", err.Error())
+					} else if doTask.Status.Code == 9 {
+						hasError = true
+						result = append(result, WenkuTaskToSave{
+							TaskName:   task.TaskName,
+							TaskID:     task.TaskID,
+							TaskStatus: 9,
+							Msg:        "您的账号因涉嫌刷分作弊而被封禁，不能进行此项操作",
+							// RewardType: task.RewardType,
+							// RewardNum:  task.RewardNum,
+						})
+						log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "task_status9", task)
 					} else if doTask.Status.Code != 0 {
+						hasError = true
 						result = append(result, WenkuTaskToSave{
 							TaskName:   task.TaskName,
 							TaskID:     task.TaskID,
@@ -458,9 +472,10 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 						task = doTask.Data.Task
 					}
 				}
-				if task.TaskStatus == 2 {
+				if !hasError && task.TaskStatus == 2 {
 					claimResponse, err := UpdateWenkuTask(cookie, task.TaskID, task.MinAppVer, true)
 					if err != nil {
+						hasError = true
 						result = append(result, WenkuTaskToSave{
 							TaskName:   task.TaskName,
 							TaskID:     task.TaskID,
@@ -471,6 +486,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 						})
 						log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "task_status2", err.Error())
 					} else if claimResponse.Status.Code != 0 {
+						hasError = true
 						result = append(result, WenkuTaskToSave{
 							TaskName:   task.TaskName,
 							TaskID:     task.TaskID,
@@ -484,7 +500,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 					}
 				}
 
-				if task.TaskStatus == 3 {
+				if !hasError && task.TaskStatus == 3 {
 					r := WenkuTaskToSave{
 						TaskName:   task.TaskName,
 						TaskID:     task.TaskID,
@@ -497,17 +513,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 						r.SignDay = int64(task.TaskExtra.SignDay)
 					}
 					result = append(result, r)
-				} else if task.TaskStatus == 9 {
-					result = append(result, WenkuTaskToSave{
-						TaskName:   task.TaskName,
-						TaskID:     task.TaskID,
-						TaskStatus: task.TaskStatus,
-						Msg:        "您的账号因涉嫌刷分作弊而被封禁，不能进行此项操作",
-						// RewardType: task.RewardType,
-						// RewardNum:  task.RewardNum,
-					})
-					log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "task_status9", task)
-				} else if task.TaskStatus != 3 {
+				} else if !hasError && task.TaskStatus != 3 {
 					result = append(result, WenkuTaskToSave{
 						TaskName:   task.TaskName,
 						TaskID:     task.TaskID,
