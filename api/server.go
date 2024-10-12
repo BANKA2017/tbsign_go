@@ -55,7 +55,7 @@ func GetServerStatus(c echo.Context) error {
 	})
 
 	today := strconv.Itoa(_function.Now.Local().Day())
-	_function.GormDB.R.Model(&model.TcTieba{}).Select("SUM(CASE WHEN NOT no AND status = 0 AND latest = "+today+" THEN 1 ELSE 0 END) AS success", "SUM(CASE WHEN NOT no AND status <> 0 AND latest = "+today+" THEN 1 ELSE 0 END) AS failed", "SUM(CASE WHEN NOT no AND latest <> "+today+" THEN 1 ELSE 0 END) AS waiting", "SUM(CASE WHEN no THEN 1 ELSE 0 END) AS ignore").Scan(checkinStatus)
+	_function.GormDB.R.Model(&model.TcTieba{}).Select("SUM(CASE WHEN NOT no AND status = 0 AND latest = "+today+" THEN 1 ELSE 0 END) AS success", "SUM(CASE WHEN NOT no AND status <> 0 AND latest = "+today+" THEN 1 ELSE 0 END) AS failed", "SUM(CASE WHEN NOT no AND latest <> "+today+" THEN 1 ELSE 0 END) AS waiting", "SUM(CASE WHEN no THEN 1 ELSE 0 END) AS `ignore`").Scan(checkinStatus)
 
 	ForumCount := checkinStatus.Success + checkinStatus.Failed + checkinStatus.Waiting + checkinStatus.Ignore
 

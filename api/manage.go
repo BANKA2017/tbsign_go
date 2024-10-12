@@ -414,7 +414,7 @@ func GetAccountsList(c echo.Context) error {
 
 	today := strconv.Itoa(_function.Now.Local().Day())
 	forumCountQuery := _function.GormDB.R.Model(&model.TcTieba{}).
-		Select(`uid, COUNT(*) AS forum_count, SUM(CASE WHEN NOT no AND status = 0 AND latest = ? THEN 1 ELSE 0 END) AS success, SUM(CASE WHEN NOT no AND status <> 0 AND latest = ? THEN 1 ELSE 0 END) AS failed, SUM(CASE WHEN NOT no AND latest <> ? THEN 1 ELSE 0 END) AS waiting, SUM(CASE WHEN no THEN 1 ELSE 0 END) AS ignore`, today, today, today).
+		Select("uid, COUNT(*) AS forum_count, SUM(CASE WHEN NOT no AND status = 0 AND latest = ? THEN 1 ELSE 0 END) AS success, SUM(CASE WHEN NOT no AND status <> 0 AND latest = ? THEN 1 ELSE 0 END) AS failed, SUM(CASE WHEN NOT no AND latest <> ? THEN 1 ELSE 0 END) AS waiting, SUM(CASE WHEN no THEN 1 ELSE 0 END) AS `ignore`", today, today, today).
 		Group("uid")
 
 	if query != "" {
@@ -426,7 +426,7 @@ func GetAccountsList(c echo.Context) error {
 			Offset(int((numPage - 1) * numCount))
 
 		_function.GormDB.R.Table("(?) as accounts", accountsQuery).
-			Select(`accounts.*,  COALESCE(pid_count, 0) AS baidu_account_count,  COALESCE(forum_count, 0) AS forum_count, COALESCE(success, 0) AS checkin_success, COALESCE(failed, 0) AS checkin_failed, COALESCE(waiting, 0) AS checkin_waiting, COALESCE(ignore, 0) AS checkin_ignore`).
+			Select("accounts.*,  COALESCE(pid_count, 0) AS baidu_account_count,  COALESCE(forum_count, 0) AS forum_count, COALESCE(success, 0) AS checkin_success, COALESCE(failed, 0) AS checkin_failed, COALESCE(waiting, 0) AS checkin_waiting, COALESCE(`ignore`, 0) AS checkin_ignore").
 			Joins("LEFT JOIN (?) pid_counts ON accounts.id = pid_counts.uid", pidCountQuery).
 			Joins("LEFT JOIN (?) forum_counts ON accounts.id = forum_counts.uid", forumCountQuery).
 			Order("accounts.id").
@@ -439,7 +439,7 @@ func GetAccountsList(c echo.Context) error {
 			Offset(int((numPage - 1) * numCount))
 
 		_function.GormDB.R.Table("(?) as accounts", accountsQuery).
-			Select(`accounts.*, COALESCE(pid_count, 0) AS baidu_account_count, COALESCE(forum_count, 0) AS forum_count,COALESCE(success, 0) AS checkin_success,COALESCE(failed, 0) AS checkin_failed,COALESCE(waiting, 0) AS checkin_waiting,COALESCE(ignore, 0) AS checkin_ignore`).
+			Select("accounts.*, COALESCE(pid_count, 0) AS baidu_account_count, COALESCE(forum_count, 0) AS forum_count,COALESCE(success, 0) AS checkin_success,COALESCE(failed, 0) AS checkin_failed,COALESCE(waiting, 0) AS checkin_waiting,COALESCE(`ignore`, 0) AS checkin_ignore").
 			Joins("LEFT JOIN (?) pid_counts ON accounts.id = pid_counts.uid", pidCountQuery).
 			Joins("LEFT JOIN (?) forum_counts ON accounts.id = forum_counts.uid", forumCountQuery).
 			Order("accounts.id").
