@@ -63,6 +63,8 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 只要 `db_path`/`tc_db_path` 的值不为空字符串，就会使用 SQLite；否则使用 MySQL
 
+- MySQL 要求版本在 MySQL 8.0 以上
+
 ## 安装
 
 - 迁移法 (仅 MySQL)
