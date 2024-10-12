@@ -439,7 +439,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 						result = append(result, WenkuTaskToSave{
 							TaskName:   task.TaskName,
 							TaskID:     task.TaskID,
-							TaskStatus: -1,
+							TaskStatus: -999,
 							Msg:        "未知错误",
 							// RewardType: task.RewardType,
 							// RewardNum:  task.RewardNum,
@@ -464,7 +464,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 						result = append(result, WenkuTaskToSave{
 							TaskName:   task.TaskName,
 							TaskID:     task.TaskID,
-							TaskStatus: -1,
+							TaskStatus: -999,
 							Msg:        "未知错误",
 							// RewardType: task.RewardType,
 							// RewardNum:  task.RewardNum,
@@ -497,6 +497,16 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 						r.SignDay = int64(task.TaskExtra.SignDay)
 					}
 					result = append(result, r)
+				} else if task.TaskStatus == 9 {
+					result = append(result, WenkuTaskToSave{
+						TaskName:   task.TaskName,
+						TaskID:     task.TaskID,
+						TaskStatus: task.TaskStatus,
+						Msg:        "您的账号因涉嫌刷分作弊而被封禁，不能进行此项操作",
+						// RewardType: task.RewardType,
+						// RewardNum:  task.RewardNum,
+					})
+					log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "task_status9", task)
 				} else if task.TaskStatus != 3 {
 					result = append(result, WenkuTaskToSave{
 						TaskName:   task.TaskName,

@@ -144,7 +144,7 @@ air -- --db_path=tbsign.db --test=true --api=true
 - [x] [循环封禁](https://github.com/MoeNetwork/Tieba-Cloud-Sign/tree/master/plugins/ver4_ban)
 - [x] 用户成长任务
 - [x] [知道商城抽奖](https://github.com/96dl/Tieba-Cloud-Sign-Plugins/blob/master/ver4_lottery/ver4_lottery_desc.php)
-- [x] 文库任务
+- [x] ⚠️文库任务，*使用此插件可能会导致文库签到功能被封禁，封禁理由为：**您的账号因涉嫌刷分作弊而被封禁，不能进行此项操作***
 - [x] 吧主考核
 
 ### 插件开发
