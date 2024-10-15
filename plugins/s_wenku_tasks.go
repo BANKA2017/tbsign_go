@@ -281,7 +281,7 @@ func (m *WenkuTasksPluginVipMatrixIDSet) AddID(id int32) error {
 
 	strCurrentDay := strconv.Itoa(int(currentDay))
 
-	m.MatrixIDMap.Store(strCurrentDay, []string{strID, strCurrentDay, "0"})
+	m.MatrixIDMap.Store(strID, []string{strID, strCurrentDay, "0"})
 
 	return nil
 }
