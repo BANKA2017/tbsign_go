@@ -226,17 +226,22 @@ func (m *WenkuTasksPluginVipMatrixIDSet) Init() {
 
 func (m *WenkuTasksPluginVipMatrixIDSet) Import(str string, uid string) error {
 	// filter
-	pidArray := new([]string)
-	_function.GormDB.R.Model(&model.TcBaiduid{}).Where("uid = ?", uid).Pluck("id", pidArray)
+	pidList := new([]model.TcBaiduid)
+	_function.GormDB.R.Model(&model.TcBaiduid{}).Select("id").Where("uid = ?", uid).Find(pidList)
 
-	if len(*pidArray) == 0 {
+	if len(*pidList) == 0 {
 		return nil
+	}
+
+	pidArray := []string{}
+	for _, pid := range *pidList {
+		pidArray = append(pidArray, strconv.Itoa(int(pid.ID)))
 	}
 
 	if len(str) > 1 && strings.HasPrefix(str, "|") && strings.HasSuffix(str, "|") {
 		for _, v := range strings.Split(str[1:len(str)-1], "|") {
 			pidSet := strings.Split(v, ",")
-			if slices.Contains(*pidArray, pidSet[0]) {
+			if slices.Contains(pidArray, pidSet[0]) {
 				m.MatrixIDMap.Store(pidSet[0], pidSet)
 				if _, ok := m.WeekDayList.Load(pidSet[1]); !ok {
 					m.WeekDayList.Store(pidSet[1], nil)
