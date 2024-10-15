@@ -261,7 +261,7 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 ## 更多
 
-更多的想法和已知 bug 请查看实时更新的 [#1 💔一些已知的问题（不定期更新）](https://github.com/BANKA2017/tbsign_go/issues/1)
+更多的 todo 和已知 bug 请查看实时更新的 [Projects/TbSign➡️](https://github.com/users/BANKA2017/projects/4)
 
 ## 感谢
 
