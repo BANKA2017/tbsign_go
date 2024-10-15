@@ -277,6 +277,7 @@ func (m *WenkuTasksPluginVipMatrixIDSet) AddID(id int32) error {
 		} else {
 			currentDay = 0
 		}
+		m.LastDay = strconv.Itoa(int(currentDay))
 	}
 
 	strCurrentDay := strconv.Itoa(int(currentDay))
