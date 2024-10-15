@@ -226,27 +226,27 @@ func (m *WenkuTasksPluginVipMatrixIDSet) Init() {
 
 func (m *WenkuTasksPluginVipMatrixIDSet) Import(str string, uid string) error {
 	// filter
-	pidList := new([]model.TcBaiduid)
-	_function.GormDB.R.Model(&model.TcBaiduid{}).Select("id").Where("uid = ?", uid).Find(pidList)
+	idList := new([]model.TcKdWenkuTask)
+	_function.GormDB.R.Model(&model.TcKdWenkuTask{}).Select("id").Where("uid = ?", uid).Find(idList)
 
-	if len(*pidList) == 0 {
+	if len(*idList) == 0 {
 		return nil
 	}
 
-	pidArray := []string{}
-	for _, pid := range *pidList {
-		pidArray = append(pidArray, strconv.Itoa(int(pid.ID)))
+	idArray := []string{}
+	for _, id := range *idList {
+		idArray = append(idArray, strconv.Itoa(int(id.ID)))
 	}
 
 	if len(str) > 1 && strings.HasPrefix(str, "|") && strings.HasSuffix(str, "|") {
 		for _, v := range strings.Split(str[1:len(str)-1], "|") {
-			pidSet := strings.Split(v, ",")
-			if slices.Contains(pidArray, pidSet[0]) {
-				m.MatrixIDMap.Store(pidSet[0], pidSet)
-				if _, ok := m.WeekDayList.Load(pidSet[1]); !ok {
-					m.WeekDayList.Store(pidSet[1], nil)
+			idSet := strings.Split(v, ",")
+			if slices.Contains(idArray, idSet[0]) {
+				m.MatrixIDMap.Store(idSet[0], idSet)
+				if _, ok := m.WeekDayList.Load(idSet[1]); !ok {
+					m.WeekDayList.Store(idSet[1], nil)
 				}
-				m.LastDay = pidSet[1]
+				m.LastDay = idSet[1]
 			}
 		}
 	}
