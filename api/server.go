@@ -29,7 +29,7 @@ type PluginListContent struct {
 	PluginNameCNShort string `json:"plugin_name_cn_short"`
 	PluginNameFE      string `json:"plugin_name_fe"`
 
-	SettingOptions []PluginListSettingOption `json:"setting_options"`
+	SettingOptions []PluginListSettingOption `json:"setting_options,omitempty"`
 }
 
 func GetServerStatus(c echo.Context) error {
@@ -104,20 +104,13 @@ func ShutdownSystem(c echo.Context) error {
 }
 
 func GetPluginsList(c echo.Context) error {
-	var resPluginList = make(map[string]PluginListContent)
+	isAdmin := c.Get("role").(string) == "admin"
+	var resPluginList = make(map[string]*PluginListContent)
 
 	for name, info := range _plugin.PluginList {
 		value := info.(_plugin.PluginHooks).GetInfo()
-		settingOptions := []PluginListSettingOption{}
 
-		for _, settingOptionsItem := range value.SettingOptions {
-			settingOptions = append(settingOptions, PluginListSettingOption{
-				OptionName:   settingOptionsItem.OptionName,
-				OptionNameCN: settingOptionsItem.OptionNameCN,
-			})
-		}
-
-		resPluginList[name] = PluginListContent{
+		resPluginList[name] = _function.VariablePtrWrapper(PluginListContent{
 			Name:   value.Name,
 			Ver:    value.Info.Ver,
 			Status: value.Info.Status,
@@ -125,8 +118,17 @@ func GetPluginsList(c echo.Context) error {
 			PluginNameCN:      value.PluginNameCN,
 			PluginNameCNShort: value.PluginNameCNShort,
 			PluginNameFE:      value.PluginNameFE,
+		})
+		if isAdmin {
+			settingOptions := []PluginListSettingOption{}
 
-			SettingOptions: settingOptions,
+			for _, settingOptionsItem := range value.SettingOptions {
+				settingOptions = append(settingOptions, PluginListSettingOption{
+					OptionName:   settingOptionsItem.OptionName,
+					OptionNameCN: settingOptionsItem.OptionNameCN,
+				})
+			}
+			resPluginList[name].SettingOptions = settingOptions
 		}
 	}
 
