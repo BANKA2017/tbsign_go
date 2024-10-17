@@ -18,7 +18,7 @@ var DefaultOptions = map[string]string{
 	"mail_smtpname":        "",
 	"mail_smtppw":          "",
 	"mail_yourname":        "no-reply",
-	"retry_max":            "10",
+	"retry_max":            "20",
 	"sign_asyn":            "0",
 	"sign_hour":            "0",
 	"sign_mode":            "a:1:{i:0;s:1:\"1\";}",
