@@ -28,18 +28,18 @@ var PreCheckWhiteListWithoutFE = []string{
 	"/passport/login",
 	"/passport/signup",
 	"/passport/reset/password",
-	"/tools/userinfo/tieba_uid/:tiebauid",
-	"/tools/userinfo/panel/:query_type/:user_value",
-	"/tools/tieba/fname_to_fid/:fname",
+	// "/tools/userinfo/tieba_uid/:tiebauid",
+	// "/tools/userinfo/panel/:query_type/:user_value",
+	// "/tools/tieba/fname_to_fid/:fname",
 	"/config/page/login",
 }
 var PreCheckWhiteListWithFE = []string{
 	"/api/passport/login",
 	"/api/passport/signup",
 	"/api/passport/reset/password",
-	"/api/tools/userinfo/tieba_uid/:tiebauid",
-	"/api/tools/userinfo/panel/:query_type/:user_value",
-	"/api/tools/tieba/fname_to_fid/:fname",
+	// "/api/tools/userinfo/tieba_uid/:tiebauid",
+	// "/api/tools/userinfo/panel/:query_type/:user_value",
+	// "/api/tools/tieba/fname_to_fid/:fname",
 	"/api/config/page/login",
 }
 
