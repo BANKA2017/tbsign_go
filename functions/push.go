@@ -147,7 +147,7 @@ func SendEmail(_to, title, body string) error {
 	smtp_host := GetOption("mail_host")
 	smtp_port := GetOption("mail_port")
 	smtp_secure := GetOption("mail_secure")
-	smtp_auth := GetOption("mail_auth") != "0"
+	smtp_auth := GetOption("mail_auth")
 	smtp_username := GetOption("mail_smtpname")
 	smtp_password := GetOption("mail_smtppw")
 
@@ -155,13 +155,23 @@ func SendEmail(_to, title, body string) error {
 		return fmt.Errorf("mail: Email settings not completed")
 	}
 
-	if smtp_auth && (smtp_username == "" || smtp_password == "") {
+	if smtp_auth != "0" && (smtp_username == "" || smtp_password == "") {
 		return fmt.Errorf("mail: Login failed")
 	}
 
 	var client sasl.Client
-	if smtp_auth {
+	if smtp_auth == "1" {
 		client = sasl.NewLoginClient(smtp_username, smtp_password)
+	} else if smtp_auth == "2" {
+		// TODO well... might works?
+		// https://learn.microsoft.com/en-us/exchange/client-developer/legacy-protocols/how-to-authenticate-an-imap-pop-smtp-application-by-using-oauth
+		numSMTPPort, _ := strconv.ParseInt(smtp_port, 10, 64)
+		client = sasl.NewOAuthBearerClient(&sasl.OAuthBearerOptions{
+			Username: smtp_username,
+			Token:    smtp_password,
+			Host:     smtp_host,
+			Port:     int(numSMTPPort),
+		})
 	} else {
 		client = sasl.NewAnonymousClient(uuid.New().String())
 	}
