@@ -272,6 +272,80 @@ func PluginRenewManagerCancelTop(cookie _type.TypeCookie, fname string, tid stri
 	return resp, err
 }
 
+type PluginRenewManagerGetThreadInfoResponse struct {
+	No    int    `json:"no,omitempty"`
+	Error string `json:"error,omitempty"`
+	Data  struct {
+		Forum struct {
+			// ForumHelper struct {
+			// 	Name      string `json:"name,omitempty"`
+			// 	AvatarURL string `json:"avatar_url,omitempty"`
+			// } `json:"forum_helper,omitempty"`
+			// ForumAvatar string `json:"forum_avatar,omitempty"`
+			ForumName string `json:"forum_name,omitempty"`
+		} `json:"forum,omitempty"`
+		ThreadInfo struct {
+			ThreadID int64 `json:"thread_id,omitempty"`
+			// PostID          int64  `json:"post_id,omitempty"`
+			Title string `json:"title,omitempty"`
+			// Content         string `json:"content,omitempty"`
+			// PostCate        int    `json:"post_cate,omitempty"`
+			// PostTag         int    `json:"post_tag,omitempty"`
+			PostCreateTime string `json:"post_create_time,omitempty"`
+			// PostLocation    string `json:"post_location,omitempty"`
+			// ShowPostContent string `json:"show_post_content,omitempty"`
+			// PassPostContent string `json:"pass_post_content,omitempty"`
+			// ContentDetail   []struct {
+			// 	Type  int    `json:"type,omitempty"`
+			// 	Value string `json:"value,omitempty"`
+			// } `json:"content_detail,omitempty"`
+			// AllPics      []any `json:"all_pics,omitempty"`
+			// IsFrsMask    int   `json:"is_frs_mask,omitempty"`
+			// CommentNum   int   `json:"comment_num,omitempty"`
+			// ReadNum      int   `json:"read_num,omitempty"`
+			// AgreeNum     int   `json:"agree_num,omitempty"`
+			// ShareNum     int   `json:"share_num,omitempty"`
+			// DisagreeNum  int   `json:"disagree_num,omitempty"`
+			// ShareUserNum int   `json:"share_user_num,omitempty"`
+			// CollectNum   int   `json:"collect_num,omitempty"`
+		} `json:"thread_info,omitempty"`
+		// Tbs      string `json:"tbs,omitempty"`
+		UserInfo struct {
+			UserName     string `json:"user_name,omitempty"`
+			UserNick     string `json:"user_nick,omitempty"`
+			ShowNickname string `json:"show_nickname,omitempty"`
+			Portrait     string `json:"portrait,omitempty"`
+		} `json:"user_info,omitempty"`
+	} `json:"data,omitempty"`
+}
+
+func PluginRenewManagerGetThreadInfo(cookie _type.TypeCookie, tid int64, fid int64) (*PluginRenewManagerGetThreadInfoResponse, error) {
+	headersMap := map[string]string{
+		"Cookie": "BDUSS=" + cookie.Bduss + ";STOKEN=" + cookie.Stoken,
+	}
+
+	query := url.Values{}
+	query.Set("thread_id", strconv.Itoa(int(tid)))
+	query.Set("forum_id", strconv.Itoa(int(fid)))
+	query.Set("type", "1")
+	query.Set("sub_type", "1")
+	query.Set("tbs", cookie.Tbs)
+
+	res, err := _function.TBFetch("https://tieba.baidu.com/mo/q/bawu/getRecoverInfo?"+query.Encode(), "GET", nil, headersMap)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// log.Println(string(res))
+
+	resp := new(PluginRenewManagerGetThreadInfoResponse)
+
+	err = _function.JsonDecode(res, resp)
+
+	return resp, err
+}
+
 // endpoint
 func PluginRenewManagerGetSwitch(c echo.Context) error {
 	uid := c.Get("uid").(string)
