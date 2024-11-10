@@ -15,6 +15,7 @@ import (
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slices"
+	"gorm.io/gorm"
 )
 
 func init() {
@@ -648,7 +649,14 @@ func (pluginInfo *WenkuTasksPluginType) Upgrade() error {
 	return nil
 }
 
-func (pluginInfo *WenkuTasksPluginType) RemoveAccount(_type string, id int32) error {
+func (pluginInfo *WenkuTasksPluginType) RemoveAccount(_type string, id int32, tx *gorm.DB) error {
+	_sql := _function.GormDB.W
+	if tx != nil {
+		_sql = tx
+	}
+
+	var err error
+
 	if _type == "pid" {
 		// get uid
 		account := new(model.TcBaiduid)
@@ -664,18 +672,22 @@ func (pluginInfo *WenkuTasksPluginType) RemoveAccount(_type string, id int32) er
 			vipMatrixSet.Init()
 			vipMatrixSet.Import(_function.GetUserOption("kd_wenku_tasks_vip_matrix_id_set", uid), uid)
 			vipMatrixSet.DelID(int32(task.ID))
-			_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", vipMatrixSet.Export(uid), uid)
+			err = _function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", vipMatrixSet.Export(uid), uid, tx)
+			if err != nil {
+				return err
+			}
 		}
 	} else if _type == "uid" {
 		uid := strconv.Itoa(int(id))
 		if !slices.Contains([]string{"", "0"}, _function.GetUserOption("kd_wenku_tasks_vip_matrix", uid)) {
-			_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", "|", uid)
+			err = _function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", "|", uid, tx)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
-	_function.GormDB.W.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcKdWenkuTask{})
-
-	return nil
+	return _sql.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcKdWenkuTask{}).Error
 }
 
 func (pluginInfo *WenkuTasksPluginType) Ext() ([]any, error) {

@@ -2,6 +2,7 @@ package _api
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"regexp"
@@ -248,14 +249,31 @@ func AdminModifyAccountInfo(c echo.Context) error {
 
 	// soft delete?
 	if newRole == "delete" {
-		// plugins
-		_plugin.DeleteAccount("uid", accountInfo.ID)
+		err := _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
+			var err error
+			// plugins
+			if err = _plugin.DeleteAccount("uid", accountInfo.ID, tx); err != nil {
+				return err
+			}
+			// account
+			if err = tx.Where("id = ?", accountInfo.ID).Delete(&model.TcUser{}).Error; err != nil {
+				return err
+			}
+			if err = tx.Where("uid = ?", accountInfo.ID).Delete(&model.TcTieba{}).Error; err != nil {
+				return err
+			}
+			if err = tx.Where("uid = ?", accountInfo.ID).Delete(&model.TcBaiduid{}).Error; err != nil {
+				return err
+			}
+			if err = tx.Where("uid = ?", accountInfo.ID).Delete(&model.TcUsersOption{}).Error; err != nil {
+				return err
+			}
+			return err
+		})
 
-		// account
-		_function.GormDB.W.Where("id = ?", accountInfo.ID).Delete(&model.TcUser{})
-		_function.GormDB.W.Where("uid = ?", accountInfo.ID).Delete(&model.TcTieba{})
-		_function.GormDB.W.Where("uid = ?", accountInfo.ID).Delete(&model.TcBaiduid{})
-		_function.GormDB.W.Where("uid = ?", accountInfo.ID).Delete(&model.TcUsersOption{})
+		if err != nil {
+			return c.JSON(http.StatusOK, _function.ApiTemplate(500, fmt.Sprintf("删除用户 %d:%s 失败 (%s)", accountInfo.ID, accountInfo.Name, err.Error()), _function.EchoEmptyObject, "tbsign"))
+		}
 
 		keyBucket.Delete(strconv.Itoa(int(accountInfo.ID)))
 	} else {
@@ -344,11 +362,24 @@ func AdminDeleteTiebaAccountList(c echo.Context) error {
 	var PIDCount int64
 	_function.GormDB.R.Model(&model.TcBaiduid{}).Where("uid = ?", targetUID).Count(&PIDCount)
 	if PIDCount > 0 {
-		// plugins
-		_plugin.DeleteAccount("uid", int32(numTargetUID))
+		err := _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
+			var err error
+			// plugins
+			if err = _plugin.DeleteAccount("uid", int32(numTargetUID), tx); err != nil {
+				return err
+			}
 
-		_function.GormDB.W.Where("uid = ?", targetUID).Delete(&model.TcBaiduid{})
-		_function.GormDB.W.Where("uid = ?", targetUID).Delete(&model.TcTieba{})
+			if err = tx.Where("uid = ?", targetUID).Delete(&model.TcBaiduid{}).Error; err != nil {
+				return err
+			}
+			if err = tx.Where("uid = ?", targetUID).Delete(&model.TcTieba{}).Error; err != nil {
+				return err
+			}
+			return err
+		})
+		if err != nil {
+			return c.JSON(http.StatusOK, _function.ApiTemplate(500, fmt.Sprintf("清空用户 %d:%s 的贴吧列表失败 (%s)", accountInfo.ID, accountInfo.Name, err.Error()), false, "tbsign"))
+		}
 
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 	} else {

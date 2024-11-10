@@ -7,6 +7,7 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 func init() {
@@ -102,7 +103,7 @@ func (pluginInfo *RefreshTiebaListPluginType) Upgrade() error {
 	return nil
 }
 
-func (pluginInfo *RefreshTiebaListPluginType) RemoveAccount(_type string, id int32) error {
+func (pluginInfo *RefreshTiebaListPluginType) RemoveAccount(_type string, id int32, tx *gorm.DB) error {
 	return nil
 }
 

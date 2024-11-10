@@ -1,6 +1,7 @@
 package _api
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 func GetLoginQRCode(c echo.Context) error {
@@ -180,24 +182,42 @@ func RemoveTiebaAccount(c echo.Context) error {
 	}
 
 	// fid pid
-	var tiebaAccounts []model.TcBaiduid
-	_function.GormDB.R.Where("uid = ?", uid).Find(&tiebaAccounts)
+	var tiebaAccount model.TcBaiduid
+	err = _function.GormDB.R.Where("uid = ? AND id = ?", uid, numPid).Find(&tiebaAccount).Error
 
-	for _, v := range tiebaAccounts {
-		if v.ID == int32(numPid) {
-			// plugins
-			_plugin.DeleteAccount("pid", v.ID)
-
-			_function.GormDB.W.Where("id = ?", v.ID).Delete(&model.TcBaiduid{})
-			_function.GormDB.W.Where("pid = ?", v.ID).Delete(&model.TcTieba{})
-
-			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]int32{
-				"pid": v.ID,
-			}, "tbsign"))
-		}
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "Pid 不存在", _function.EchoEmptyObject, "tbsign"))
+	} else if err != nil {
+		log.Println("remove-tieba-account", uid, pid, err)
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	return c.JSON(http.StatusOK, _function.ApiTemplate(404, "Pid 不存在", _function.EchoEmptyObject, "tbsign"))
+	err = _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
+		var err error
+
+		// plugins
+		if err = _plugin.DeleteAccount("pid", int32(numPid), tx); err != nil {
+			return err
+		}
+
+		if err = _function.GormDB.W.Where("id = ?", numPid).Delete(&model.TcBaiduid{}).Error; err != nil {
+			return err
+		}
+		if err = _function.GormDB.W.Where("pid = ?", numPid).Delete(&model.TcTieba{}).Error; err != nil {
+			return err
+		}
+		return err
+	})
+
+	if err != nil {
+		log.Println("remove-tieba-account", uid, pid, err)
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyObject, "tbsign"))
+	}
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]int32{
+		"pid": int32(numPid),
+	}, "tbsign"))
+
 }
 
 func GetTiebaAccountList(c echo.Context) error {

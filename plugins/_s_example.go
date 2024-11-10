@@ -10,6 +10,7 @@ import (
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 // 注册插件
@@ -96,8 +97,9 @@ func (pluginInfo *ExamplePluginType) Upgrade() error {
 }
 
 // _type: `uid`, `pid`
-func (pluginInfo *ExamplePluginType) RemoveAccount(_type string, id int32) error {
+func (pluginInfo *ExamplePluginType) RemoveAccount(_type string, id int32, tx *gorm.DB) error {
 	// 清理账号
+	// tx 用于事务，但可能为 nil，如果不需要一致性(不建议)的话可以无视直接用 _function.GormDB.W
 	return nil
 }
 

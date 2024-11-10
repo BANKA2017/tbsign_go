@@ -14,6 +14,7 @@ import (
 	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 func init() {
@@ -218,9 +219,12 @@ func (pluginInfo *LotteryPluginPluginType) Upgrade() error {
 	return nil
 }
 
-func (pluginInfo *LotteryPluginPluginType) RemoveAccount(_type string, id int32) error {
-	_function.GormDB.W.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcVer4LotteryLog{})
-	return nil
+func (pluginInfo *LotteryPluginPluginType) RemoveAccount(_type string, id int32, tx *gorm.DB) error {
+	_sql := _function.GormDB.W
+	if tx != nil {
+		_sql = tx
+	}
+	return _sql.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcVer4LotteryLog{}).Error
 }
 
 func (pluginInfo *LotteryPluginPluginType) Ext() ([]any, error) {

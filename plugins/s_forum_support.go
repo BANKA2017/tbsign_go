@@ -13,6 +13,7 @@ import (
 	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 func init() {
@@ -755,9 +756,12 @@ func (pluginInfo *ForumSupportPluginInfoType) Upgrade() error {
 	return nil
 }
 
-func (pluginInfo *ForumSupportPluginInfoType) RemoveAccount(_type string, id int32) error {
-	_function.GormDB.W.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcVer4RankLog{})
-	return nil
+func (pluginInfo *ForumSupportPluginInfoType) RemoveAccount(_type string, id int32, tx *gorm.DB) error {
+	_sql := _function.GormDB.W
+	if tx != nil {
+		_sql = tx
+	}
+	return _sql.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcVer4RankLog{}).Error
 }
 
 func (pluginInfo *ForumSupportPluginInfoType) Ext() ([]any, error) {

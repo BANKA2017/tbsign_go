@@ -15,6 +15,7 @@ import (
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slices"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -224,10 +225,17 @@ func (pluginInfo *LoopBanPluginType) Upgrade() error {
 	return nil
 }
 
-func (pluginInfo *LoopBanPluginType) RemoveAccount(_type string, id int32) error {
-	_function.GormDB.W.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcVer4BanList{})
+func (pluginInfo *LoopBanPluginType) RemoveAccount(_type string, id int32, tx *gorm.DB) error {
+	_sql := _function.GormDB.W
+	if tx != nil {
+		_sql = tx
+	}
+	err := _sql.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcVer4BanList{}).Error
+	if err != nil {
+		return err
+	}
 	if _type == "uid" {
-		_function.GormDB.W.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcVer4BanUserset{})
+		return _sql.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcVer4BanUserset{}).Error
 	}
 	return nil
 }

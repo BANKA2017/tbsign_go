@@ -12,6 +12,7 @@ import (
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slices"
+	"gorm.io/gorm"
 )
 
 type tokenResponse struct {
@@ -119,12 +120,33 @@ func DeleteAccount(c echo.Context) error {
 
 	// plugins
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
-	_plugin.DeleteAccount("uid", int32(numUID))
 
-	_function.GormDB.W.Where("id = ?", uid).Delete(&model.TcUser{})
-	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcTieba{})
-	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcBaiduid{})
-	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcUsersOption{})
+	err = _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
+		var err error
+		if err = _plugin.DeleteAccount("uid", int32(numUID), tx); err != nil {
+			return err
+		}
+
+		if err = tx.Where("id = ?", uid).Delete(&model.TcUser{}).Error; err != nil {
+			return err
+		}
+		if err = tx.Where("uid = ?", uid).Delete(&model.TcTieba{}).Error; err != nil {
+			return err
+		}
+		if err = tx.Where("uid = ?", uid).Delete(&model.TcBaiduid{}).Error; err != nil {
+			return err
+		}
+		if err = tx.Where("uid = ?", uid).Delete(&model.TcUsersOption{}).Error; err != nil {
+			return err
+		}
+
+		return err
+
+	})
+	if err != nil {
+		log.Println("del-account", uid, err)
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "账号删除失败", _function.EchoEmptyObject, "tbsign"))
+	}
 
 	keyBucket.Delete(uid)
 

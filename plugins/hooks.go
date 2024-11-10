@@ -7,6 +7,7 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -61,7 +62,7 @@ type PluginActionHooks interface {
 	Action() //error
 	Delete() error
 	Upgrade() error
-	RemoveAccount(string, int32) error
+	RemoveAccount(string, int32, *gorm.DB) error
 	// ExportAccount(int32) any
 	// for future
 	Ext() ([]any, error)
@@ -214,9 +215,9 @@ func AddToSettingsFilter() {
 	_function.SettingsFilter = tmpSettingsFilter
 }
 
-func DeleteAccount(_type string, id int32) error {
+func DeleteAccount(_type string, id int32, tx *gorm.DB) error {
 	for _, p := range PluginList {
-		p.RemoveAccount(_type, id)
+		p.RemoveAccount(_type, id, tx)
 	}
 	return nil
 }

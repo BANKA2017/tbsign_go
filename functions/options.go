@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/BANKA2017/tbsign_go/model"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -21,7 +22,7 @@ func GetOption(keyName string) string {
 	}
 }
 
-func SetOption[T ~string | ~bool | ~int](keyName string, value T) error {
+func SetOption[T ~string | ~bool | ~int](keyName string, value T, ext ...any) error {
 	newValue := ""
 	switch any(value).(type) {
 	case string:
@@ -41,7 +42,13 @@ func SetOption[T ~string | ~bool | ~int](keyName string, value T) error {
 		return nil
 	}
 
-	err := GormDB.W.Model(&model.TcOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcOption{Name: keyName, Value: newValue}).Error
+	_sql := GormDB.W
+	if len(ext) > 0 {
+		if tx, ok := ext[0].(*gorm.DB); ok {
+			_sql = tx
+		}
+	}
+	err := _sql.Model(&model.TcOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcOption{Name: keyName, Value: newValue}).Error
 
 	if err == nil {
 		Options.Store(keyName, newValue)
@@ -49,8 +56,14 @@ func SetOption[T ~string | ~bool | ~int](keyName string, value T) error {
 	return err
 }
 
-func DeleteOption(keyName string) error {
-	err := GormDB.W.Where("name = ?", keyName).Delete(&model.TcOption{}).Error
+func DeleteOption(keyName string, ext ...any) error {
+	_sql := GormDB.W
+	if len(ext) > 0 {
+		if tx, ok := ext[0].(*gorm.DB); ok {
+			_sql = tx
+		}
+	}
+	err := _sql.Where("name = ?", keyName).Delete(&model.TcOption{}).Error
 	if err == nil {
 		Options.Delete(keyName)
 	}
@@ -63,7 +76,7 @@ func GetUserOption(keyName string, uid string) string {
 	return tmpUserOption.Value
 }
 
-func SetUserOption[T ~string | ~bool | ~int](keyName string, value T, uid string) error {
+func SetUserOption[T ~string | ~bool | ~int](keyName string, value T, uid string, ext ...any) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	newValue := ""
 	switch any(value).(type) {
@@ -79,9 +92,21 @@ func SetUserOption[T ~string | ~bool | ~int](keyName string, value T, uid string
 		newValue = strconv.Itoa(any(value).(int))
 	}
 
-	return GormDB.W.Model(&model.TcUsersOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcUsersOption{UID: int32(numUID), Name: keyName, Value: newValue}).Error
+	_sql := GormDB.W
+	if len(ext) > 0 {
+		if tx, ok := ext[0].(*gorm.DB); ok {
+			_sql = tx
+		}
+	}
+	return _sql.Model(&model.TcUsersOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcUsersOption{UID: int32(numUID), Name: keyName, Value: newValue}).Error
 }
 
-func DeleteUserOption(keyName string, uid string) error {
-	return GormDB.W.Where("uid = ? AND name = ?", uid, keyName).Delete(&model.TcUsersOption{}).Error
+func DeleteUserOption(keyName string, uid string, ext ...any) error {
+	_sql := GormDB.W
+	if len(ext) > 0 {
+		if tx, ok := ext[0].(*gorm.DB); ok {
+			_sql = tx
+		}
+	}
+	return _sql.Where("uid = ? AND name = ?", uid, keyName).Delete(&model.TcUsersOption{}).Error
 }

@@ -15,6 +15,7 @@ import (
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slices"
+	"gorm.io/gorm"
 )
 
 func init() {
@@ -288,7 +289,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 			if err != nil {
 				log.Println(err)
 				log.Println("user_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "Unable to fetch tasks list")
-				//continue
+				continue
 			}
 
 			/// // find level info
@@ -482,9 +483,12 @@ func (pluginInfo *UserGrowthTasksPluginType) Upgrade() error {
 	return nil
 }
 
-func (pluginInfo *UserGrowthTasksPluginType) RemoveAccount(_type string, id int32) error {
-	_function.GormDB.W.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcKdGrowth{})
-	return nil
+func (pluginInfo *UserGrowthTasksPluginType) RemoveAccount(_type string, id int32, tx *gorm.DB) error {
+	_sql := _function.GormDB.W
+	if tx != nil {
+		_sql = tx
+	}
+	return _sql.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcKdGrowth{}).Error
 }
 
 func (pluginInfo *UserGrowthTasksPluginType) Ext() ([]any, error) {
