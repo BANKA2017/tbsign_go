@@ -24,7 +24,7 @@ jobs:
       - name: Init
         run: |
           git clone https://github.com/BANKA2017/tbsign_go_fe
-          go install src.techknowlogick.com/xgo@latest
+          go install src.techknowlogick.com/xgo@v1.7.1-0.20241001173926-419a3c2a0387
           docker pull techknowlogick/xgo:go-1.23.1
       - uses: actions/setup-go@v5
         with:
