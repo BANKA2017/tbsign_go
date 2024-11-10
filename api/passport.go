@@ -480,6 +480,7 @@ func ResetPassword(c echo.Context) error {
 				_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", accountInfo.ID).Update("pw", string(hash))
 
 				_function.ResetPwdList.Delete(accountInfo.ID)
+				keyBucket.Delete(strconv.Itoa(int(accountInfo.ID)))
 				return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resMessage, "tbsign"))
 			}
 		} else {
