@@ -25,7 +25,7 @@ jobs:
         run: |
           git clone https://github.com/BANKA2017/tbsign_go_fe
           go install src.techknowlogick.com/xgo@latest
-          docker pull techknowlogick/xgo:latest
+          docker pull ghcr.io/techknowlogick/xgo:go-1.23.2
       - uses: actions/setup-go@v5
         with:
           go-version: 'stable'
@@ -33,7 +33,7 @@ jobs:
           cache-dependency-path: 'go.sum'
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'yarn'
           cache-dependency-path: tbsign_go_fe/yarn.lock
 
