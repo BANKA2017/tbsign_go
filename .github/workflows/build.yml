@@ -64,7 +64,7 @@ jobs:
           -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash' \
           "
-          $HOME/go/bin/xgo -out "$build_prefix" -ldflags "$ldflags" --targets=linux/amd64,linux/arm64,windows/amd64,darwin/amd64,darwin/arm64 ../
+          $HOME/go/bin/xgo -go go-1.23.2 -out "$build_prefix" -ldflags "$ldflags" --targets=linux/amd64,linux/arm64,windows/amd64,darwin/amd64,darwin/arm64 ../
 
       - name: Rename & SHA-256
         run: |
