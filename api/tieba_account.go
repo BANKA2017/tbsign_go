@@ -81,7 +81,7 @@ func GetBDUSS(c echo.Context) error {
 				Name:     baiduAccountInfo.User.Name,
 				Portrait: baiduAccountInfo.User.Portrait,
 			}
-			_function.GormDB.W.Model(model.TcBaiduid{}).Where("id = ?", tiebaAccounts[0].ID).Updates(&newData)
+			_function.GormDB.W.Model(&model.TcBaiduid{}).Where("id = ?", tiebaAccounts[0].ID).Updates(&newData)
 			newData.ID = tiebaAccounts[0].ID
 			newData.UID = tiebaAccounts[0].UID
 			newData.Bduss = ""
@@ -139,7 +139,7 @@ func AddTiebaAccount(c echo.Context) error {
 				Name:     baiduAccountInfo.User.Name,
 				Portrait: baiduAccountInfo.User.Portrait,
 			}
-			_function.GormDB.W.Model(model.TcBaiduid{}).Where("id = ?", tiebaAccounts[0].ID).Updates(&newData)
+			_function.GormDB.W.Model(&model.TcBaiduid{}).Where("id = ?", tiebaAccounts[0].ID).Updates(&newData)
 			newData.ID = tiebaAccounts[0].ID
 			newData.UID = tiebaAccounts[0].UID
 

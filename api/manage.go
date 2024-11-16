@@ -192,7 +192,7 @@ func AdminModifyAccountInfo(c echo.Context) error {
 
 	// exists?
 	var accountInfo model.TcUser
-	_function.GormDB.R.Model([]model.TcUser{}).Where("id = ?", targetUID).Find(&accountInfo)
+	_function.GormDB.R.Model(&model.TcUser{}).Where("id = ?", targetUID).Find(&accountInfo)
 	if accountInfo.ID == 0 {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyObject, "tbsign"))
 	}
@@ -277,7 +277,7 @@ func AdminModifyAccountInfo(c echo.Context) error {
 
 		keyBucket.Delete(strconv.Itoa(int(accountInfo.ID)))
 	} else {
-		_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", accountInfo.ID).Updates(&newAccountInfo)
+		_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", accountInfo.ID).Updates(&newAccountInfo)
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", &SiteAccountsResponse{
@@ -306,7 +306,7 @@ func AdminResetTiebaList(c echo.Context) error {
 
 	// exists?
 	var accountInfo model.TcUser
-	err = _function.GormDB.R.Model([]model.TcUser{}).Where("id = ?", targetUID).First(&accountInfo).Error
+	err = _function.GormDB.R.Model(&model.TcUser{}).Where("id = ?", targetUID).First(&accountInfo).Error
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
@@ -351,7 +351,7 @@ func AdminDeleteTiebaAccountList(c echo.Context) error {
 
 	// exists?
 	var accountInfo model.TcUser
-	err = _function.GormDB.R.Model([]model.TcUser{}).Where("id = ?", targetUID).First(&accountInfo).Error
+	err = _function.GormDB.R.Model(&model.TcUser{}).Where("id = ?", targetUID).First(&accountInfo).Error
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
@@ -437,11 +437,9 @@ func GetAccountsList(c echo.Context) error {
 	/// TODO any injection attacks?
 	accountInfo := new([]SiteAccountsResponse)
 
-	pidCountQuery := _function.GormDB.R.Table("(?) as pid_counts",
-		_function.GormDB.R.Model(&model.TcBaiduid{}).
-			Select("uid, COUNT(*) AS pid_count").
-			Group("uid"),
-	)
+	pidCountQuery := _function.GormDB.R.Model(&model.TcBaiduid{}).
+		Select("uid, COUNT(*) AS pid_count").
+		Group("uid")
 
 	today := strconv.Itoa(_function.Now.Local().Day())
 	forumCountQuery := _function.GormDB.R.Model(&model.TcTieba{}).
@@ -457,7 +455,7 @@ func GetAccountsList(c echo.Context) error {
 			Offset(int((numPage - 1) * numCount))
 
 		_function.GormDB.R.Table("(?) as accounts", accountsQuery).
-			Select("accounts.*,  COALESCE(pid_count, 0) AS baidu_account_count,  COALESCE(forum_count, 0) AS forum_count, COALESCE(success, 0) AS checkin_success, COALESCE(failed, 0) AS checkin_failed, COALESCE(waiting, 0) AS checkin_waiting, COALESCE(`ignore`, 0) AS checkin_ignore").
+			Select("accounts.*, COALESCE(pid_count, 0) AS baidu_account_count, COALESCE(forum_count, 0) AS forum_count, COALESCE(success, 0) AS checkin_success, COALESCE(failed, 0) AS checkin_failed, COALESCE(waiting, 0) AS checkin_waiting, COALESCE(`ignore`, 0) AS checkin_ignore").
 			Joins("LEFT JOIN (?) pid_counts ON accounts.id = pid_counts.uid", pidCountQuery).
 			Joins("LEFT JOIN (?) forum_counts ON accounts.id = forum_counts.uid", forumCountQuery).
 			Order("accounts.id").

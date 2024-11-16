@@ -233,6 +233,7 @@ func UpdateAccountInfo(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "密码错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
+	// TODO use transaction
 	// email
 	if email != "" {
 		if !_function.VerifyEmail(email) {
@@ -247,7 +248,7 @@ func UpdateAccountInfo(c echo.Context) error {
 			if emailExistsCount > 0 {
 				return c.JSON(http.StatusOK, _function.ApiTemplate(403, "邮箱已存在", _function.EchoEmptyObject, "tbsign"))
 			} else {
-				_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", uid).Update("email", email)
+				_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", uid).Update("email", email)
 			}
 		}
 	} else {
@@ -264,7 +265,7 @@ func UpdateAccountInfo(c echo.Context) error {
 			if usernameExistsCount > 0 {
 				return c.JSON(http.StatusOK, _function.ApiTemplate(403, "用户名已存在", _function.EchoEmptyObject, "tbsign"))
 			} else {
-				_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", uid).Update("name", username)
+				_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", uid).Update("name", username)
 			}
 		}
 	} else {
@@ -337,7 +338,7 @@ func UpdatePassword(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法更新密码...", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", uid).Update("pw", string(hash))
+	_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", uid).Update("pw", string(hash))
 
 	var resp = tokenResponse{
 		Type:  "bearer",
@@ -477,7 +478,7 @@ func ResetPassword(c echo.Context) error {
 					return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法更新密码...", resMessage, "tbsign"))
 				}
 
-				_function.GormDB.W.Model(model.TcUser{}).Where("id = ?", accountInfo.ID).Update("pw", string(hash))
+				_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", accountInfo.ID).Update("pw", string(hash))
 
 				_function.ResetPwdList.Delete(accountInfo.ID)
 				keyBucket.Delete(strconv.Itoa(int(accountInfo.ID)))

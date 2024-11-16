@@ -103,7 +103,7 @@ func Dosign(table string, retry bool) (bool, error) {
 				}
 
 				// TODO better sql update
-				_function.GormDB.W.Model(model.TcTieba{}).Where("id = ?", id).Updates(&_type.TcTieba{
+				_function.GormDB.W.Model(&model.TcTieba{}).Where("id = ?", id).Updates(&_type.TcTieba{
 					Status:    _function.VariablePtrWrapper(int32(errorCode)),
 					LastError: _function.VariablePtrWrapper(errorMsg),
 					TcTieba: model.TcTieba{
