@@ -133,7 +133,7 @@ func (pluginInfo *LoopBanPluginType) Action() {
 		id = 0
 	}
 	otime := _function.Now.Add(time.Hour * -24).Unix()
-	var localBanAccountList = new([]model.TcVer4BanList)
+	var localBanAccountList []*model.TcVer4BanList
 	subQuery := _function.GormDB.R.Model(&model.TcUsersOption{}).Select("uid").Where("name = 'ver4_ban_open' AND value = '1'")
 
 	limit := _function.GetOption("ver4_ban_action_limit")
@@ -143,7 +143,7 @@ func (pluginInfo *LoopBanPluginType) Action() {
 	var reasonList = &[]model.TcVer4BanUserset{}
 	_function.GormDB.R.Model(&model.TcVer4BanUserset{}).Find(&reasonList)
 
-	for _, banAccountInfo := range *localBanAccountList {
+	for _, banAccountInfo := range localBanAccountList {
 		// find reason
 		var reason = "您因为违反吧规，已被吧务封禁，如有疑问请联系吧务！"
 		for _, reasonDB := range *reasonList {

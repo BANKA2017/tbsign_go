@@ -227,15 +227,15 @@ func (m *WenkuTasksPluginVipMatrixIDSet) Init() {
 
 func (m *WenkuTasksPluginVipMatrixIDSet) Import(str string, uid string) error {
 	// filter
-	idList := new([]model.TcKdWenkuTask)
-	_function.GormDB.R.Model(&model.TcKdWenkuTask{}).Select("id").Where("uid = ?", uid).Find(idList)
+	var idList []*model.TcKdWenkuTask
+	_function.GormDB.R.Model(&model.TcKdWenkuTask{}).Select("id").Where("uid = ?", uid).Find(&idList)
 
-	if len(*idList) == 0 {
+	if len(idList) == 0 {
 		return nil
 	}
 
 	idArray := []string{}
-	for _, id := range *idList {
+	for _, id := range idList {
 		idArray = append(idArray, strconv.Itoa(int(id.ID)))
 	}
 
@@ -731,13 +731,13 @@ func PluginWenkuTasksSetSettings(c echo.Context) error {
 
 	// vip matrix list
 	if vipMatrix && !dbVipMatrix {
-		uidTasksList := new([]model.TcKdWenkuTask)
-		_function.GormDB.R.Model(&model.TcKdWenkuTask{}).Where("uid = ?", uid).Find(uidTasksList)
+		var uidTasksList []*model.TcKdWenkuTask
+		_function.GormDB.R.Model(&model.TcKdWenkuTask{}).Where("uid = ?", uid).Find(&uidTasksList)
 
 		var vipMatrixSet WenkuTasksPluginVipMatrixIDSet
 		vipMatrixSet.Init()
 
-		for _, task := range *uidTasksList {
+		for _, task := range uidTasksList {
 			vipMatrixSet.AddID(int32(task.ID), uid)
 		}
 

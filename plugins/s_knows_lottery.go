@@ -236,8 +236,8 @@ func (pluginInfo *LotteryPluginPluginType) Ext() ([]any, error) {
 func PluginKnowsLotteryGetLogs(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	log := new([]model.TcVer4LotteryLog)
-	_function.GormDB.R.Model(&model.TcVer4LotteryLog{}).Where("uid = ?", uid).Order("id DESC").Find(log)
+	var log []*model.TcVer4LotteryLog
+	_function.GormDB.R.Model(&model.TcVer4LotteryLog{}).Where("uid = ?", uid).Order("id DESC").Find(&log)
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", log, "tbsign"))
 }

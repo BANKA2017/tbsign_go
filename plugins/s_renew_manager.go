@@ -78,11 +78,11 @@ func (pluginInfo *RenewManagerType) Action() {
 
 	limit := _function.GetOption("kd_renew_manager_action_limit")
 	numLimit, _ := strconv.ParseInt(limit, 10, 64)
-	localRenewList := new([]model.TcKdRenewManager)
+	var localRenewList []*model.TcKdRenewManager
 	subQuery := _function.GormDB.R.Model(&model.TcUsersOption{}).Select("uid").Where("name = 'kd_renew_manager_open' AND value = '1'")
 	_function.GormDB.R.Model(&model.TcKdRenewManager{}).Where("id > ? AND date < ? AND uid IN (?)", id, otime, subQuery).Order("id ASC").Limit(int(numLimit)).Find(&localRenewList)
 
-	for _, renewItem := range *localRenewList {
+	for _, renewItem := range localRenewList {
 		renewItem.Date = int32(_function.Now.Unix())
 		tmpLog := []string{}
 
@@ -402,8 +402,8 @@ func PluginRenewManagerAlertSwitch(c echo.Context) error {
 func PluginRenewManagerGetList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	list := new([]model.TcKdRenewManager)
-	_function.GormDB.R.Model(&model.TcKdRenewManager{}).Where("uid = ?", uid).Order("id ASC").Find(list)
+	var list []model.TcKdRenewManager
+	_function.GormDB.R.Model(&model.TcKdRenewManager{}).Where("uid = ?", uid).Order("id ASC").Find(&list)
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", list, "tbsign"))
 }
@@ -440,9 +440,9 @@ func PluginRenewManagerAddAccount(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "贴吧不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	existsList := new([]model.TcKdRenewManager)
+	var existsList []*model.TcKdRenewManager
 	_function.GormDB.R.Model(&model.TcKdRenewManager{}).Where("uid = ? AND pid = ? AND fid = ?", uid, pid, fid).Limit(1).Find(&existsList)
-	if len(*existsList) > 0 {
+	if len(existsList) > 0 {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "重复任务", _function.EchoEmptyObject, "tbsign"))
 	}
 
@@ -471,11 +471,11 @@ func PluginRenewManagerAddAccount(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "添加失败", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	renewerTasks := new([]model.TcKdRenewManager)
-	_function.GormDB.R.Model(&model.TcKdRenewManager{}).Where("uid = ? AND pid = ? AND fid = ?", uid, numPid, fid).Find(renewerTasks)
+	var renewerTasks []*model.TcKdRenewManager
+	_function.GormDB.R.Model(&model.TcKdRenewManager{}).Where("uid = ? AND pid = ? AND fid = ?", uid, numPid, fid).Find(&renewerTasks)
 
-	if len(*renewerTasks) == 1 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", (*renewerTasks)[0], "tbsign"))
+	if len(renewerTasks) == 1 {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", (renewerTasks)[0], "tbsign"))
 	} else {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "查询出错", _function.EchoEmptyObject, "tbsign"))
 	}

@@ -49,7 +49,7 @@ type PluginInfo struct {
 type PluginHooks interface {
 	GetInfo() *PluginInfo
 	GetDBInfo() model.TcPlugin
-	SetDBInfo(model.TcPlugin) error
+	SetDBInfo(*model.TcPlugin) error
 	Switch() bool
 	GetSwitch() bool
 	CheckActive() bool
@@ -113,7 +113,7 @@ func (pluginInfo *PluginInfo) GetEndpoints() []PluginEndpintStruct {
 }
 
 func InitPluginList() {
-	pluginListDB := new([]model.TcPlugin)
+	var pluginListDB []*model.TcPlugin
 	// get plugin list
 
 	pluginNameList := []string{}
@@ -123,9 +123,9 @@ func InitPluginList() {
 		pluginNameSet.Store(name, nil)
 	}
 
-	_function.GormDB.R.Where("name in ?", pluginNameList).Find(pluginListDB)
+	_function.GormDB.R.Where("name in ?", pluginNameList).Find(&pluginListDB)
 
-	for _, pluginStatus := range *pluginListDB {
+	for _, pluginStatus := range pluginListDB {
 		pluginNameSet.Delete(pluginStatus.Name)
 		PluginList[pluginStatus.Name].(PluginHooks).SetDBInfo(pluginStatus)
 
@@ -145,7 +145,7 @@ func InitPluginList() {
 
 	pluginNameSet.Range(func(key any, value any) bool {
 		pluginNameSet.Delete(key)
-		PluginList[key.(string)].(PluginHooks).SetDBInfo(model.TcPlugin{
+		PluginList[key.(string)].(PluginHooks).SetDBInfo(&model.TcPlugin{
 			Name:    key.(string),
 			Status:  false,
 			Ver:     "-1",
@@ -171,7 +171,7 @@ func UpdatePluginInfo(name string, version string, status bool, options string) 
 
 	// memory cache
 	info := PluginList[name].(PluginHooks).GetInfo()
-	PluginList[name].(PluginHooks).SetDBInfo(model.TcPlugin{
+	PluginList[name].(PluginHooks).SetDBInfo(&model.TcPlugin{
 		Name:    name,
 		Status:  false,
 		Ver:     info.Version,
@@ -189,7 +189,7 @@ func UpdatePluginInfo(name string, version string, status bool, options string) 
 
 func DeletePluginInfo(name string) error {
 	// memory cache
-	PluginList[name].(PluginHooks).SetDBInfo(model.TcPlugin{
+	PluginList[name].(PluginHooks).SetDBInfo(&model.TcPlugin{
 		Name:    name,
 		Status:  false,
 		Ver:     "-1",
