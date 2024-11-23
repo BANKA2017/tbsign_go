@@ -76,9 +76,9 @@ func (pluginInfo *PluginInfo) GetDBInfo() model.TcPlugin {
 	return pluginInfo.Info
 }
 
-func (pluginInfo *PluginInfo) SetDBInfo(info model.TcPlugin) error {
+func (pluginInfo *PluginInfo) SetDBInfo(info *model.TcPlugin) error {
 	pluginInfo.RWMutex.Lock()
-	pluginInfo.Info = info
+	pluginInfo.Info = *info
 	pluginInfo.RWMutex.Unlock()
 	return nil
 }
