@@ -100,11 +100,11 @@ func (pluginInfo *LotteryPluginPluginType) Action() {
 	// 10 am gmt+8
 	stime := _function.LocaleTimeDiff(10)
 
-	queryLotteryLogs := _function.GormDB.R.Model(&model.TcVer4LotteryLog{}).Select("pid").Where("date > ?", stime).Where("pid > ?", id).Group("pid").Having("max(date) >= ? OR COUNT(*) >= ?", _function.Now.Add(time.Minute*-10).Unix(), 2)
+	queryLotteryLogs := _function.GormDB.R.Model(&model.TcVer4LotteryLog{}).Select("pid").Where("date >= ?", stime).Where("pid > ?", id).Group("pid").Having("max(date) >= ? OR COUNT(*) >= ?", _function.Now.Add(time.Minute*-10).Unix(), 2)
 
 	queryUserOptions := _function.GormDB.R.Model(&model.TcUsersOption{}).Select("uid").Where("name='ver4_lottery_check' AND value = '1'")
 
-	accounts := new([]model.TcBaiduid)
+	var accounts []*model.TcBaiduid
 
 	waitSeconds := 2 // wait 2s// should not <=1
 	limit := 60
@@ -114,10 +114,10 @@ func (pluginInfo *LotteryPluginPluginType) Action() {
 		limit = limit / waitSeconds
 	}
 
-	_function.GormDB.R.Model(&model.TcBaiduid{}).Select("id", "name", "portrait").Where("id > ? AND id NOT IN (?) AND uid IN (?)", id, queryLotteryLogs, queryUserOptions).Order("id").Limit(limit).Find(accounts)
+	_function.GormDB.R.Model(&model.TcBaiduid{}).Select("id", "name", "portrait").Where("id > ? AND id NOT IN (?) AND uid IN (?)", id, queryLotteryLogs, queryUserOptions).Order("id").Limit(limit).Find(&accounts)
 
-	if len(*accounts) > 0 {
-		for i, account := range *accounts {
+	if len(accounts) > 0 {
+		for i, account := range accounts {
 			if i > 0 {
 				time.Sleep(time.Second * time.Duration(waitSeconds))
 			}
