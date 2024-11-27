@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"mime"
 	"mime/multipart"
 	"net/http"
 	"strings"
@@ -89,7 +90,15 @@ func Fetch(_url string, _method string, _body []byte, _headers map[string]string
 	}
 
 	if share.TestMode {
-		log.Printf("\n---TEST MODE FETCH---\nurl: %s\nmethod: %s\nbody: %v\nheaders: %v\n------\nres code: %d\nres headers: %v\nres str: %s\n---TEST MODE FETCH---\n\n", _url, _method, _body, _headers, resp.StatusCode, resp.Header, string(response))
+		strResponse := "[binary file]"
+		if contentType, ok := resp.Header["Content-Type"]; ok && len(contentType) > 0 {
+			mediatype, _, _ := mime.ParseMediaType(contentType[0])
+			if slices.Contains([]string{"html", "txt", "json", "xml"}, strings.ReplaceAll(strings.ReplaceAll(mediatype, "application/", ""), "text/", "")) {
+				strResponse = string(response)
+			}
+		}
+
+		log.Printf("\n---TEST MODE FETCH---\nurl: %s\nmethod: %s\nbody: %v\nheaders: %v\n------\nres code: %d\nres headers: %v\nres str: %s\n---TEST MODE FETCH---\n\n", _url, _method, _body, _headers, resp.StatusCode, resp.Header, strResponse)
 	}
 
 	return response[:], err

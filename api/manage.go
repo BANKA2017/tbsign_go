@@ -248,7 +248,7 @@ func AdminModifyAccountInfo(c echo.Context) error {
 	}
 
 	// soft delete?
-	if newRole == "delete" {
+	if newRole == "deleted" {
 		err := _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
 			var err error
 			// plugins

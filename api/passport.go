@@ -116,7 +116,7 @@ func DeleteAccount(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "您不能删除账号，因为您是根管理员", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	// set role -> delete
+	// set role -> deleted
 
 	// plugins
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
