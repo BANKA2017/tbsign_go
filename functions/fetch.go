@@ -12,9 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"crypto/md5"
 	"encoding/binary"
-	"encoding/hex"
 	"encoding/json"
 	"net/url"
 	"strconv"
@@ -156,8 +154,7 @@ func AddSign(form *map[string]string, client_type string) {
 		payload.WriteString((*form)[v])
 	}
 	//log.Println("payload", payload)
-	_md5 := md5.Sum([]byte(AppendStrings(payload.String() + "tiebaclient!!!")))
-	(*form)["sign"] = strings.ToUpper(hex.EncodeToString(_md5[:]))
+	(*form)["sign"] = strings.ToUpper(Md5(AppendStrings(payload.String() + "tiebaclient!!!")))
 }
 
 func GetTbs(bduss string) (*_type.TbsResponse, error) {
