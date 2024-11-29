@@ -167,7 +167,7 @@ func GetWenkuTaskList(cookie _type.TypeCookie, _type string) (*GetWenkuTaskListR
 
 // isClaim = false -> do task
 func UpdateWenkuTask(cookie _type.TypeCookie, taskID int, minVersion string, isClaim bool) (*UpdateWenkuTaskResponse, error) {
-	naUncheckStr := fmt.Sprintf("&extra=%%7B%%0A++%%22app_ver%%22+:+%%22%s%%22%%0A%%7D", minVersion)
+	naUncheckStr := _function.AppendStrings("&extra=%%7B%%0A++%%22app_ver%%22+:+%%22", minVersion, "%%22%%0A%%7D")
 	if isClaim {
 		naUncheckStr = "&na_uncheck=1"
 	}
@@ -269,7 +269,7 @@ func (m *WenkuTasksPluginVipMatrixIDSet) Export(uid string) string {
 		return "|"
 	}
 
-	return fmt.Sprintf("|%s|", strings.Join(tmpStr, "|"))
+	return _function.AppendStrings("|", strings.Join(tmpStr, "|"), "|")
 }
 
 // !!! use this func for ONLY ONE UID !!!
@@ -687,7 +687,7 @@ func (pluginInfo *WenkuTasksPluginType) RemoveAccount(_type string, id int32, tx
 		}
 	}
 
-	return _sql.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcKdWenkuTask{}).Error
+	return _sql.Where(_function.AppendStrings(_type, " = ?"), id).Delete(&model.TcKdWenkuTask{}).Error
 }
 
 func (pluginInfo *WenkuTasksPluginType) Ext() ([]any, error) {

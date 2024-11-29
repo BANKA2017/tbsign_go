@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -62,12 +63,12 @@ func Upgrade(version string) error {
 	if !IsOfficialSupport() {
 		return fmt.Errorf("❌ 不支持的版本(%s/%s)，请下载源码后参考 build.sh 编译运行", runtime.GOOS, runtime.GOARCH)
 	} else if share.BuiltAt == "Now" {
-		return fmt.Errorf("❌ 不支持的版本 (开发版)，请参考 build.sh 编译运行")
+		return errors.New("❌ 不支持的版本 (开发版)，请参考 build.sh 编译运行")
 	}
 
 	// pre check version
 	if !regexp.MustCompile(`^\d{8}\.[0-9a-f]{7}\.[0-9a-f]{7}$`).MatchString(version) {
-		return fmt.Errorf("❌ 版本号格式不正确")
+		return errors.New("❌ 版本号格式不正确")
 	}
 
 	//get releases "https://api.github.com/repos/banka2017/tbsign_go/releases?per_page=5"
@@ -138,7 +139,7 @@ func Upgrade(version string) error {
 		fmt.Println("更新完成！")
 	} else {
 		os.Remove(tmpFile)
-		return fmt.Errorf("更新失败！sha256 记录不正确")
+		return errors.New("更新失败！sha256 记录不正确")
 	}
 	return nil
 }

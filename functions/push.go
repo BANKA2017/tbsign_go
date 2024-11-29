@@ -1,6 +1,7 @@
 package _function
 
 import (
+	"errors"
 	"fmt"
 	"mime"
 	"net/url"
@@ -68,7 +69,7 @@ type NtfyResponseStruct struct {
 
 func SendNtfy(_to, title, body string) error {
 	if _to == "" {
-		return fmt.Errorf("ntfy: topic is empty!")
+		return errors.New("ntfy: topic is empty")
 	}
 	// get custom address
 	ntfyAddr := GetOption("go_ntfy_addr")
@@ -76,7 +77,7 @@ func SendNtfy(_to, title, body string) error {
 		ntfyAddr = "https://ntfy.sh"
 	}
 
-	res, err := Fetch(fmt.Sprintf("%s/%s", ntfyAddr, _to), "POST", []byte(strings.ReplaceAll(body, "<br />", "\n")), map[string]string{
+	res, err := Fetch(AppendStrings(ntfyAddr, "/", _to), "POST", []byte(strings.ReplaceAll(body, "<br />", "\n")), map[string]string{
 		"Title":        title,
 		"Content-Type": "text/plain",
 		"Tags":         "tbsign",
@@ -107,7 +108,7 @@ type BarkResponseStruct struct {
 
 func SendBark(_to, title, body string) error {
 	if _to == "" {
-		return fmt.Errorf("bark: key is empty!")
+		return errors.New("bark: key is empty")
 	}
 	// get custom address
 	barkAddr := GetOption("go_bark_addr")
@@ -122,7 +123,7 @@ func SendBark(_to, title, body string) error {
 	_body.Set("device_key", _to)
 	_body.Set("group", "tbsign")
 
-	res, err := Fetch(fmt.Sprintf("%s/push", barkAddr), "POST", []byte(_body.Encode()), map[string]string{}, DefaultCient)
+	res, err := Fetch(AppendStrings(barkAddr, "/push"), "POST", []byte(_body.Encode()), map[string]string{}, DefaultCient)
 	if err != nil {
 		return err
 	}
@@ -152,11 +153,11 @@ func SendEmail(_to, title, body string) error {
 	smtp_password := GetOption("mail_smtppw")
 
 	if mail == "" || mail_name == "" || smtp_host == "" || smtp_port == "" || smtp_secure == "" {
-		return fmt.Errorf("mail: Email settings not completed")
+		return errors.New("mail: Email settings not completed")
 	}
 
 	if smtp_auth != "0" && (smtp_username == "" || smtp_password == "") {
-		return fmt.Errorf("mail: Login failed")
+		return errors.New("mail: Login failed")
 	}
 
 	var client sasl.Client

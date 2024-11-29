@@ -230,12 +230,12 @@ func (pluginInfo *LoopBanPluginType) RemoveAccount(_type string, id int32, tx *g
 	if tx != nil {
 		_sql = tx
 	}
-	err := _sql.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcVer4BanList{}).Error
+	err := _sql.Where(_function.AppendStrings(_type, " = ?"), id).Delete(&model.TcVer4BanList{}).Error
 	if err != nil {
 		return err
 	}
 	if _type == "uid" {
-		return _sql.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcVer4BanUserset{}).Error
+		return _sql.Where(_function.AppendStrings(_type, " = ?"), id).Delete(&model.TcVer4BanUserset{}).Error
 	}
 	return nil
 }

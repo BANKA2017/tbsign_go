@@ -1,6 +1,7 @@
 package _plugin
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -66,7 +67,7 @@ func GetLotteryToken(cookie _type.TypeCookie) (string, error) {
 	for _, match := range regexp.MustCompile(`(?m)'luckyToken',(?:\s+|)'([^']+)'`).FindAllSubmatch(resp, -1) {
 		return string(match[1]), nil
 	}
-	return "", fmt.Errorf("get_lottery_token: No token")
+	return "", errors.New("get_lottery_token: No token")
 }
 
 func GetLottery(cookie _type.TypeCookie, token string) (*GetLotteryResponse, error) {
@@ -224,7 +225,7 @@ func (pluginInfo *LotteryPluginPluginType) RemoveAccount(_type string, id int32,
 	if tx != nil {
 		_sql = tx
 	}
-	return _sql.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcVer4LotteryLog{}).Error
+	return _sql.Where(_function.AppendStrings(_type, " = ?"), id).Delete(&model.TcVer4LotteryLog{}).Error
 }
 
 func (pluginInfo *LotteryPluginPluginType) Ext() ([]any, error) {

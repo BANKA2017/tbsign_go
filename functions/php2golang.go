@@ -10,7 +10,6 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"io"
 	"regexp"
 )
@@ -46,7 +45,7 @@ func Addslashes(str string) string {
 func Md5(str string) string {
 	h := md5.New()
 	io.WriteString(h, str)
-	return fmt.Sprintf("%x", h.Sum(nil))
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 func Sha1(str string) string {

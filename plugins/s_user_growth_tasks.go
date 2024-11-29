@@ -488,7 +488,7 @@ func (pluginInfo *UserGrowthTasksPluginType) RemoveAccount(_type string, id int3
 	if tx != nil {
 		_sql = tx
 	}
-	return _sql.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcKdGrowth{}).Error
+	return _sql.Where(_function.AppendStrings(_type, " = ?"), id).Delete(&model.TcKdGrowth{}).Error
 }
 
 func (pluginInfo *UserGrowthTasksPluginType) Ext() ([]any, error) {
