@@ -78,16 +78,16 @@ func (pluginInfo *PluginInfo) GetDBInfo() model.TcPlugin {
 
 func (pluginInfo *PluginInfo) SetDBInfo(info *model.TcPlugin) error {
 	pluginInfo.RWMutex.Lock()
+	defer pluginInfo.RWMutex.Unlock()
 	pluginInfo.Info = *info
-	pluginInfo.RWMutex.Unlock()
 	return nil
 }
 
 func (pluginInfo *PluginInfo) Switch() bool {
 	pluginInfo.RWMutex.Lock()
+	defer pluginInfo.RWMutex.Unlock()
 	pluginInfo.Info.Status = !pluginInfo.Info.Status
 	_function.GormDB.W.Model(&model.TcPlugin{}).Where("name = ?", pluginInfo.Name).Update("status", pluginInfo.Info.Status)
-	pluginInfo.RWMutex.Unlock()
 	return pluginInfo.Info.Status
 }
 
