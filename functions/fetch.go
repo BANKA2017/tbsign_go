@@ -15,6 +15,7 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"net/url"
 	"strconv"
 
@@ -93,7 +94,7 @@ func Fetch(_url string, _method string, _body []byte, _headers map[string]string
 		strResponse := "[binary file]"
 		if contentType, ok := resp.Header["Content-Type"]; ok && len(contentType) > 0 {
 			mediatype, _, _ := mime.ParseMediaType(contentType[0])
-			if slices.Contains([]string{"html", "txt", "json", "xml"}, strings.ReplaceAll(strings.ReplaceAll(mediatype, "application/", ""), "text/", "")) {
+			if slices.Contains([]string{"html", "txt", "json", "xml", "javascript", "x-javascript"}, strings.ReplaceAll(strings.ReplaceAll(mediatype, "application/", ""), "text/", "")) {
 				strResponse = string(response)
 			}
 		}
@@ -229,7 +230,7 @@ func GetWebForumList(cookie _type.TypeCookie, page int64) (*_type.WebForumListRe
 	return &forumListDecode, err
 }
 
-func GetForumList(cookie _type.TypeCookie, uid string, page int64) (*_type.ForumListResponse, error) {
+func GetForumList(cookie _type.TypeCookie, uid string, page int64) (*_type.ForumListResponse[*_type.ForumList], error) {
 	var form = make(map[string]string)
 	form["BDUSS"] = cookie.Bduss
 	form["stoken"] = cookie.Stoken
@@ -255,8 +256,27 @@ func GetForumList(cookie _type.TypeCookie, uid string, page int64) (*_type.Forum
 		return nil, err
 	}
 
-	forumListDecode := new(_type.ForumListResponse)
-	err = JsonDecode(forumListResponse, forumListDecode)
+	tmpForumListDecode := new(_type.ForumListResponse[json.RawMessage])
+	err = JsonDecode(forumListResponse, tmpForumListDecode)
+	if err != nil {
+		return nil, err
+	}
+
+	forumListDecode := VariablePtrWrapper(_type.ForumListResponse[*_type.ForumList]{
+		ErrorCode: tmpForumListDecode.ErrorCode,
+		HasMore:   tmpForumListDecode.HasMore,
+		ForumList: new(_type.ForumList),
+	})
+
+	if !bytes.Equal([]byte{91, 93}, tmpForumListDecode.ForumList) {
+		tmpForumList := new(_type.ForumList)
+		err = JsonDecode(tmpForumListDecode.ForumList, tmpForumList)
+		if err != nil {
+			return forumListDecode, err
+		}
+		forumListDecode.ForumList = tmpForumList
+	}
+
 	return forumListDecode, err
 }
 

@@ -95,11 +95,11 @@ func ScanTiebaByPid(pid int32) {
 			// merge list
 			var mergedList []_type.ForumInfo
 			if response.ForumList != nil {
-				if response.ForumList.NonGconforum != nil && len(*response.ForumList.NonGconforum) > 0 {
-					mergedList = append(mergedList, *response.ForumList.NonGconforum...)
+				if len(response.ForumList.NonGconforum) > 0 {
+					mergedList = append(mergedList, response.ForumList.NonGconforum...)
 				}
-				if response.ForumList.Gconforum != nil && len(*response.ForumList.Gconforum) > 0 {
-					mergedList = append(mergedList, *response.ForumList.Gconforum...)
+				if len(response.ForumList.Gconforum) > 0 {
+					mergedList = append(mergedList, response.ForumList.Gconforum...)
 				}
 			}
 

@@ -57,14 +57,14 @@ type ForumInfo struct {
 }
 
 type ForumList struct {
-	NonGconforum *[]ForumInfo `json:"non-gconforum,omitempty"`
-	Gconforum    *[]ForumInfo `json:"gconforum,omitempty"`
+	NonGconforum []ForumInfo `json:"non-gconforum,omitempty"`
+	Gconforum    []ForumInfo `json:"gconforum,omitempty"`
 }
 
-type ForumListResponse struct {
+type ForumListResponse[T any] struct {
 	// TODO fix `"forum_list":[]`
-	ForumList *ForumList `json:"forum_list,omitempty"`
-	HasMore   string     `json:"has_more,omitempty"`
+	ForumList T      `json:"forum_list,omitempty"`
+	HasMore   string `json:"has_more,omitempty"`
 	// ServerTime string `json:"server_time,omitempty"`
 	// Time       int    `json:"time,omitempty"`
 	// Ctime      int    `json:"ctime,omitempty"`
