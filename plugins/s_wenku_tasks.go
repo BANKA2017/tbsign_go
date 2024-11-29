@@ -64,7 +64,7 @@ var WenkuTasksPlugin = _function.VariablePtrWrapper(WenkuTasksPluginType{
 const IOSVersion = "18.1.1"
 const WenkuSemver = "9.1.40"
 
-var WenkuUserAgent = fmt.Sprintf("%%E7%%99%%BE%%E5%%BA%%A6%%E6%%96%%87%%E5%%BA%%93/%s.5 CFNetwork/1568.200.51 Darwin/24.1.0", WenkuSemver)
+var WenkuUserAgent = _function.AppendStrings("%E7%99%BE%E5%BA%A6%E6%96%87%E5%BA%93/", WenkuSemver, ".5 CFNetwork/1568.200.51 Darwin/24.1.0")
 
 var wenkuPassTasks = []int{4}
 
