@@ -168,7 +168,7 @@ func GetWenkuTaskList(cookie _type.TypeCookie, _type string) (*GetWenkuTaskListR
 
 // isClaim = false -> do task
 func UpdateWenkuTask(cookie _type.TypeCookie, taskID int, minVersion string, isClaim bool) (*UpdateWenkuTaskResponse, error) {
-	naUncheckStr := _function.AppendStrings("&extra=%%7B%%0A++%%22app_ver%%22+:+%%22", minVersion, "%%22%%0A%%7D")
+	naUncheckStr := _function.AppendStrings("&extra=%7B%0A%20%20%22app_ver%22%20%3A%20%22", minVersion, "%22%0A%7D")
 	if isClaim {
 		naUncheckStr = "&na_uncheck=1"
 	}
