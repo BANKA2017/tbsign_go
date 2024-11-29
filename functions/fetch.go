@@ -110,12 +110,12 @@ type MultipartBodyBinaryFileType struct {
 	Binary    []byte
 }
 
-func MultipartBodyBuilder(_body map[string]any, files ...MultipartBodyBinaryFileType) ([]byte, string, error) {
+func MultipartBodyBuilder(_body map[string][]byte, files ...MultipartBodyBinaryFileType) ([]byte, string, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	for k, v := range _body {
 		part, _ := writer.CreateFormField(k)
-		part.Write([]byte(v.(string)))
+		part.Write(v)
 	}
 
 	for _, _file := range files {
@@ -345,7 +345,7 @@ func GetUserInfoByTiebaUID(tbuid string) (*tbpb.GetUserByTiebaUidResIdl_DataRes,
 	pbBytesLen := make([]byte, 8)
 	binary.BigEndian.PutUint64(pbBytesLen, uint64(len(pbBytes)))
 
-	body, contentType, err := MultipartBodyBuilder(map[string]any{}, MultipartBodyBinaryFileType{
+	body, contentType, err := MultipartBodyBuilder(map[string][]byte{}, MultipartBodyBinaryFileType{
 		Fieldname: "data",
 		Filename:  "file",
 		Binary:    bytes.Join([][]byte{[]byte("\n"), RemoveLeadingZeros(pbBytesLen), pbBytes}, []byte{}),
@@ -517,7 +517,7 @@ func GetManagerInfo(fid uint64) (*tbpb.GetBawuInfoResIdl_DataRes, error) {
 	pbBytesLen := make([]byte, 8)
 	binary.BigEndian.PutUint64(pbBytesLen, uint64(len(pbBytes)))
 
-	body, contentType, err := MultipartBodyBuilder(map[string]any{}, MultipartBodyBinaryFileType{
+	body, contentType, err := MultipartBodyBuilder(map[string][]byte{}, MultipartBodyBinaryFileType{
 		Fieldname: "data",
 		Filename:  "file",
 		Binary:    bytes.Join([][]byte{[]byte("\n"), RemoveLeadingZeros(pbBytesLen), pbBytes}, []byte{}),
