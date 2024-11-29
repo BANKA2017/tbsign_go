@@ -1,5 +1,7 @@
 package _type
 
+import "encoding/json"
+
 type TbsResponse struct {
 	Tbs     string `json:"tbs"`
 	IsLogin int    `json:"is_login"`
@@ -171,16 +173,16 @@ type TiebaPanelUserInfoResponse struct {
 	Data  struct {
 		Name string `json:"name,omitempty"`
 		// Identity                  any    `json:"identity,omitempty"`
-		NameShow                  string `json:"name_show,omitempty"`
-		ShowNickname              string `json:"show_nickname,omitempty"`
-		ProfessionManagerNickName string `json:"profession_manager_nick_name,omitempty"`
-		Portrait                  string `json:"portrait,omitempty"`
-		TbAge                     any    `json:"tb_age,omitempty"`
-		PostNum                   any    `json:"post_num,omitempty"`
-		Honor                     any    `json:"honor,omitempty"`
-		VipInfo                   any    `json:"vipInfo,omitempty"`
-		TbVip                     bool   `json:"tb_vip,omitempty"`
-		FollowedCount             any    `json:"followed_count,omitempty"`
+		NameShow                  string          `json:"name_show,omitempty"`
+		ShowNickname              string          `json:"show_nickname,omitempty"`
+		ProfessionManagerNickName string          `json:"profession_manager_nick_name,omitempty"`
+		Portrait                  string          `json:"portrait,omitempty"`
+		TbAge                     json.RawMessage `json:"tb_age,omitempty"`
+		PostNum                   json.RawMessage `json:"post_num,omitempty"`
+		Honor                     json.RawMessage `json:"honor,omitempty"`
+		VipInfo                   json.RawMessage `json:"vipInfo,omitempty"`
+		TbVip                     bool            `json:"tb_vip,omitempty"`
+		FollowedCount             json.RawMessage `json:"followed_count,omitempty"`
 	} `json:"data,omitempty"`
 }
 
