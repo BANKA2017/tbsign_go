@@ -352,7 +352,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 
 	// get list
 	todayBeginning := _function.LocaleTimeDiff(0) //GMT+8
-	kdWenkuTasksUserList := &[]model.TcKdWenkuTask{}
+	var kdWenkuTasksUserList []*model.TcKdWenkuTask
 
 	limit := _function.GetOption("kd_wenku_tasks_action_limit")
 	numLimit, _ := strconv.ParseInt(limit, 10, 64)
@@ -361,7 +361,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 	var wenkuTasksPluginVipMatrixIDSetMap WenkuTasksPluginVipMatrixIDSet
 	wenkuTasksPluginVipMatrixIDSetMap.Init()
 
-	for _, taskUserItem := range *kdWenkuTasksUserList {
+	for _, taskUserItem := range kdWenkuTasksUserList {
 		strUID := strconv.Itoa(int(taskUserItem.UID))
 
 		if _, ok := accountStatusList[taskUserItem.UID]; !ok {
@@ -759,7 +759,7 @@ func PluginWenkuTasksSetSettings(c echo.Context) error {
 func PluginWenkuTasksGetList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	var accounts []model.TcKdWenkuTask
+	var accounts []*model.TcKdWenkuTask
 	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&accounts)
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", accounts, "tbsign"))

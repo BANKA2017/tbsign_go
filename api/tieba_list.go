@@ -32,7 +32,7 @@ func AddTieba(c echo.Context) error {
 	}
 
 	// pre-check
-	var tiebaItems []model.TcTieba
+	var tiebaItems []*model.TcTieba
 	_function.GormDB.R.Where("uid = ? AND pid = ? AND fid = ?", uid, pid, fid).Limit(1).Find(&tiebaItems)
 
 	if len(tiebaItems) > 0 {
@@ -140,7 +140,7 @@ func CleanTiebaList(c echo.Context) error {
 func RefreshTiebaList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	var tiebaAccounts []model.TcBaiduid
+	var tiebaAccounts []*model.TcBaiduid
 	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
 
 	// get account list
@@ -148,7 +148,7 @@ func RefreshTiebaList(c echo.Context) error {
 		_function.ScanTiebaByPid(v.ID)
 	}
 
-	var tiebaList []model.TcTieba
+	var tiebaList []*model.TcTieba
 	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaList)
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaList, "tbsign"))
 }
@@ -156,7 +156,7 @@ func RefreshTiebaList(c echo.Context) error {
 func GetTiebaList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	var tiebaList []model.TcTieba
+	var tiebaList []*model.TcTieba
 	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaList)
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaList, "tbsign"))
 }

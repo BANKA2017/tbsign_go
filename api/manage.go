@@ -36,7 +36,7 @@ type SiteAccountsResponse struct {
 }
 
 func GetAdminSettings(c echo.Context) error {
-	var adminSettings []model.TcOption
+	var adminSettings []*model.TcOption
 	_function.GormDB.R.Where("name in ?", _function.SettingsFilter).Find(&adminSettings)
 
 	settings := make(map[string]string)
@@ -58,7 +58,7 @@ func GetAdminSettings(c echo.Context) error {
 func UpdateAdminSettings(c echo.Context) error {
 	c.Request().ParseForm()
 
-	var adminSettings []model.TcOption
+	var adminSettings []*model.TcOption
 	_function.GormDB.R.Where("name in ?", _function.SettingsFilter).Find(&adminSettings)
 
 	var errStr []string

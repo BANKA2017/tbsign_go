@@ -63,17 +63,17 @@ func (pluginInfo *RefreshTiebaListPluginType) Action() {
 
 	// 4 hours
 	if refID != "0" || _function.Now.Unix() > lastdo+60*60*4 {
-		var accounts = &[]model.TcBaiduid{}
+		var accounts []*model.TcBaiduid
 
 		limit := _function.GetOption("ver4_ref_action_limit")
 		numLimit, _ := strconv.ParseInt(limit, 10, 64)
-		_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id > ?", refID).Limit(int(numLimit)).Find(accounts)
+		_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id > ?", refID).Limit(int(numLimit)).Find(&accounts)
 
-		if len(*accounts) == 0 {
+		if len(accounts) == 0 {
 			_function.SetOption("ver4_ref_id", "0")
 			_function.SetOption("ver4_ref_day", strconv.Itoa(_function.Now.Local().Day()))
 		} else {
-			for _, account := range *accounts {
+			for _, account := range accounts {
 				_function.ScanTiebaByPid(account.ID)
 				_function.SetOption("ver4_ref_id", strconv.Itoa(int(account.ID)))
 				_function.SetOption("ver4_ref_lastdo", strconv.Itoa(int(_function.Now.Unix())))
@@ -115,10 +115,10 @@ func (pluginInfo *RefreshTiebaListPluginType) Ext() ([]any, error) {
 func PluginRefreshTiebaListGetAccountList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	var tiebaAccounts []model.TcBaiduid
+	var tiebaAccounts []*model.TcBaiduid
 	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
 
-	var tiebaList []model.TcTieba
+	var tiebaList []*model.TcTieba
 	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaList)
 
 	type accountListResponse struct {
@@ -158,14 +158,14 @@ func PluginRefreshTiebaListRefreshTiebaList(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	var tiebaAccounts []model.TcBaiduid
+	var tiebaAccounts []*model.TcBaiduid
 	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
 
 	// get account list
 	for _, v := range tiebaAccounts {
 		if v.ID == int32(numPid) {
 			_function.ScanTiebaByPid(v.ID)
-			var tiebaList []model.TcTieba
+			var tiebaList []*model.TcTieba
 			_function.GormDB.R.Where("uid = ? AND pid = ?", uid, pid).Order("id ASC").Find(&tiebaList)
 			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaList, "tbsign"))
 		}

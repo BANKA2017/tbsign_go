@@ -93,7 +93,7 @@ func GetFid(name string) int64 {
 
 func InitOptions() {
 	// get db options
-	var tmpOptions []model.TcOption
+	var tmpOptions []*model.TcOption
 
 	GormDB.R.Find(&tmpOptions)
 

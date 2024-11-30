@@ -14,12 +14,12 @@ var AccountLoginFailedChannel = make(chan _type.TypeCookie, 100)
 func ScanTiebaByPid(pid int32) {
 	account := GetCookie(pid)
 
-	var localTiebaList = &[]model.TcTieba{}
+	var localTiebaList []*model.TcTieba
 	GormDB.R.Model(&model.TcTieba{}).Where("pid = ?", account.ID).Find(&localTiebaList)
 
 	localTiebaFidList := []int{}
 
-	for _, v := range *localTiebaList {
+	for _, v := range localTiebaList {
 		localTiebaFidList = append(localTiebaFidList, int(v.Fid))
 	}
 
@@ -158,7 +158,7 @@ func ScanTiebaByPid(pid int32) {
 
 	if (GetOption("go_forum_sync_policy") == "add_delete" || GetOption("go_forum_sync_policy") == "delete_only") && len(wholeTiebaFidList) != len(localTiebaFidList) {
 		delList := []int32{}
-		for _, v := range *localTiebaList {
+		for _, v := range localTiebaList {
 			if !slices.Contains(wholeTiebaFidList, v.Fid) && v.Fid != 0 {
 				delList = append(delList, v.ID)
 			}

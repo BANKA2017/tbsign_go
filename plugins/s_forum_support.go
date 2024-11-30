@@ -654,12 +654,12 @@ func (pluginInfo *ForumSupportPluginInfoType) Action() {
 
 	// get list
 	todayBeginning := _function.LocaleTimeDiff(0) //GMT+8
-	ver4RankLog := &[]model.TcVer4RankLog{}
+	var ver4RankLog []*model.TcVer4RankLog
 
 	limit := _function.GetOption("ver4_rank_action_limit")
 	numLimit, _ := strconv.ParseInt(limit, 10, 64)
 	_function.GormDB.R.Model(&model.TcVer4RankLog{}).Where("date < ? AND id > ?", todayBeginning, id).Limit(int(numLimit)).Find(&ver4RankLog)
-	for _, forumSupportItem := range *ver4RankLog {
+	for _, forumSupportItem := range ver4RankLog {
 		if _, ok := accountStatusList[forumSupportItem.UID]; !ok {
 			accountStatusList[forumSupportItem.UID] = _function.GetUserOption("ver4_rank_check", strconv.Itoa(int(forumSupportItem.UID)))
 		}
@@ -775,7 +775,7 @@ func PluginForumSupportGetCharactersList(c echo.Context) error {
 func PluginForumSupportGetSettings(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	var rankList []model.TcVer4RankLog
+	var rankList []*model.TcVer4RankLog
 	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&rankList)
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", rankList, "tbsign"))
@@ -793,15 +793,15 @@ func PluginForumSupportUpdateSettings(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "非法 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	var rankList []model.TcVer4RankLog
+	var rankList []*model.TcVer4RankLog
 	_function.GormDB.R.Where("uid = ? AND pid = ?", uid, pid).Order("id ASC").Find(&rankList)
 
 	c.Request().ParseForm()
 
 	nid := c.Request().Form["nid[]"]
 
-	var addRankList []model.TcVer4RankLog
-	var delRankList []model.TcVer4RankLog
+	var addRankList []*model.TcVer4RankLog
+	var delRankList []*model.TcVer4RankLog
 	var delRankIDList []int32
 	var failedList []int64
 
@@ -836,7 +836,7 @@ func PluginForumSupportUpdateSettings(c echo.Context) error {
 
 			numFid, _ := strconv.ParseInt(forum.Fid, 10, 64)
 
-			addRankList = append(addRankList, model.TcVer4RankLog{
+			addRankList = append(addRankList, &model.TcVer4RankLog{
 				UID:   int32(numUID),
 				Pid:   int32(numPid),
 				Fid:   int32(numFid),
@@ -870,9 +870,9 @@ func PluginForumSupportUpdateSettings(c echo.Context) error {
 	_function.GormDB.W.Where("id IN ?", delRankIDList).Delete(&model.TcVer4RankLog{})
 
 	var resp = struct {
-		Add    []model.TcVer4RankLog `json:"add"`
-		Del    []model.TcVer4RankLog `json:"del"`
-		Failed []int64               `json:"failed"`
+		Add    []*model.TcVer4RankLog `json:"add"`
+		Del    []*model.TcVer4RankLog `json:"del"`
+		Failed []int64                `json:"failed"`
 	}{
 		Add:    addRankList,
 		Del:    delRankList,

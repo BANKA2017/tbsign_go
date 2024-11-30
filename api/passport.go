@@ -166,7 +166,7 @@ func Login(c echo.Context) error {
 	}
 
 	// check
-	var accountInfo []model.TcUser
+	var accountInfo []*model.TcUser
 	_function.GormDB.R.Where("name = ? OR email = ?", account, account).Limit(1).Find(&accountInfo)
 
 	if len(accountInfo) == 0 {
@@ -207,7 +207,7 @@ func Logout(c echo.Context) error {
 func UpdateAccountInfo(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	var accountInfo []model.TcUser
+	var accountInfo []*model.TcUser
 	_function.GormDB.R.Where("id = ?", uid).Limit(1).Find(&accountInfo)
 
 	if len(accountInfo) == 0 {
@@ -314,7 +314,7 @@ func UpdatePassword(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "新/旧密码都不可为空", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	var accountInfo []model.TcUser
+	var accountInfo []*model.TcUser
 	_function.GormDB.R.Where("id = ?", uid).Limit(1).Find(&accountInfo)
 
 	if len(accountInfo) == 0 {
@@ -353,10 +353,10 @@ func GetAccountInfo(c echo.Context) error {
 
 	// check filter
 
-	var accountInfo []model.TcUser
+	var accountInfo []*model.TcUser
 	_function.GormDB.R.Where("id = ?", uid).Find(&accountInfo)
 
-	// var accountSettings []model.TcUsersOption
+	// var accountSettings []*model.TcUsersOption
 	// _function.GormDB.R.Where("uid = ?", uid).Find(&accountSettings)
 
 	if len(accountInfo) == 0 {
@@ -392,7 +392,7 @@ func GetAccountInfo(c echo.Context) error {
 func GetSettings(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	var accountSettings []model.TcUsersOption
+	var accountSettings []*model.TcUsersOption
 	_function.GormDB.R.Where("uid = ?", uid).Find(&accountSettings)
 
 	settings := make(map[string]string)
@@ -410,10 +410,10 @@ func UpdateSettings(c echo.Context) error {
 
 	c.Request().ParseForm()
 
-	var accountSettings []model.TcUsersOption
+	var accountSettings []*model.TcUsersOption
 	_function.GormDB.R.Where("uid = ?", uid).Find(&accountSettings)
 
-	var newSettings []model.TcUsersOption
+	var newSettings []*model.TcUsersOption
 
 	for _, v := range accountSettings {
 		for k1, v1 := range c.Request().Form {
@@ -546,7 +546,7 @@ func ExportAccountData(c echo.Context) error {
 
 	password := c.FormValue("password")
 
-	var tcUser []model.TcUser
+	var tcUser []*model.TcUser
 	_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", uid).Find(&tcUser)
 	if len(tcUser) > 0 {
 		err := _function.VerifyPasswordHash(tcUser[0].Pw, password)
@@ -560,12 +560,12 @@ func ExportAccountData(c echo.Context) error {
 	oneTcUser.Pw = ""
 	oneTcUser.T = ""
 
-	var tcTieba []model.TcTieba
-	var tcBaiduid []model.TcBaiduid
-	var tcUsersOption []model.TcUsersOption
-	var tcVer4BanList []model.TcVer4BanList
-	var tcVer4RankLog []model.TcVer4RankLog
-	var tcKdGrowth []model.TcKdGrowth
+	var tcTieba []*model.TcTieba
+	var tcBaiduid []*model.TcBaiduid
+	var tcUsersOption []*model.TcUsersOption
+	var tcVer4BanList []*model.TcVer4BanList
+	var tcVer4RankLog []*model.TcVer4RankLog
+	var tcKdGrowth []*model.TcKdGrowth
 
 	_function.GormDB.W.Model(&model.TcTieba{}).Where("uid = ?", uid).Find(&tcTieba)
 	_function.GormDB.W.Model(&model.TcBaiduid{}).Where("uid = ?", uid).Find(&tcBaiduid)

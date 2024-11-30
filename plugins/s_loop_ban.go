@@ -140,13 +140,13 @@ func (pluginInfo *LoopBanPluginType) Action() {
 	numLimit, _ := strconv.ParseInt(limit, 10, 64)
 	_function.GormDB.R.Model(&model.TcVer4BanList{}).Where("id > ? AND date < ? AND stime < ? AND etime > ? AND uid IN (?)", id, otime, _function.Now.Unix(), _function.Now.Unix(), subQuery).Order("id ASC").Limit(int(numLimit)).Find(&localBanAccountList)
 
-	var reasonList = &[]model.TcVer4BanUserset{}
+	var reasonList []*model.TcVer4BanUserset
 	_function.GormDB.R.Model(&model.TcVer4BanUserset{}).Find(&reasonList)
 
 	for _, banAccountInfo := range localBanAccountList {
 		// find reason
 		var reason = "您因为违反吧规，已被吧务封禁，如有疑问请联系吧务！"
-		for _, reasonDB := range *reasonList {
+		for _, reasonDB := range reasonList {
 			if reasonDB.UID == banAccountInfo.UID && reasonDB.C != "" {
 				reason = reasonDB.C
 				break
@@ -298,7 +298,7 @@ func PluginLoopBanSwitch(c echo.Context) error {
 func PluginLoopBanGetReason(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	var loopBanSettings []model.TcVer4BanUserset
+	var loopBanSettings []*model.TcVer4BanUserset
 	_function.GormDB.R.Where("uid = ?", uid).Limit(1).Find(&loopBanSettings)
 
 	reason := ""
@@ -337,7 +337,7 @@ func PluginLoopBanSetReason(c echo.Context) error {
 func PluginLoopBanGetList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	var loopBanList []model.TcVer4BanList
+	var loopBanList []*model.TcVer4BanList
 	_function.GormDB.R.Model(&model.TcVer4BanList{}).Where("uid = ?", uid).Order("id ASC").Find(&loopBanList)
 
 	limit := _function.GetOption("ver4_ban_limit")
@@ -433,7 +433,7 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 	limit := _function.GetOption("ver4_ban_limit")
 	numLimit, _ := strconv.ParseInt(limit, 10, 64)
 
-	var existsAccountList []model.TcVer4BanList
+	var existsAccountList []*model.TcVer4BanList
 	_function.GormDB.R.Model(&model.TcVer4BanList{}).Where("uid = ?", uid).Order("id ASC").Find(&existsAccountList)
 
 	count := len(existsAccountList)
@@ -460,7 +460,7 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 
 	// get account info
 	var accountsResult []addAccountsResponseList
-	var accountsToInsert []model.TcVer4BanList
+	var accountsToInsert []*model.TcVer4BanList
 	var successPortraitList []string
 	for _, portrait := range portraitList {
 		// check db
@@ -498,7 +498,7 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 			})
 		}
 		successPortraitList = append(successPortraitList, portrait)
-		accountsToInsert = append(accountsToInsert, model.TcVer4BanList{
+		accountsToInsert = append(accountsToInsert, &model.TcVer4BanList{
 			UID:      int32(numUID),
 			Pid:      int32(numPid),
 			Name:     banUserInfo.Data.Name,
@@ -515,7 +515,7 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 		_function.GormDB.W.Create(&accountsToInsert)
 	}
 
-	var loopBanList []model.TcVer4BanList
+	var loopBanList []*model.TcVer4BanList
 	_function.GormDB.R.Model(&model.TcVer4BanList{}).Where("uid = ? AND portrait IN ?", uid, successPortraitList).Order("id ASC").Find(&loopBanList)
 
 	for _, v := range loopBanList {

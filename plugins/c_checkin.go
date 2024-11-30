@@ -38,7 +38,7 @@ func Dosign(table string, retry bool) (bool, error) {
 		return hasFailed, nil
 	}
 	limit, _ := strconv.ParseInt(_function.GetOption("cron_limit"), 10, 64)
-	var tiebaList []model.TcTieba
+	var tiebaList []*model.TcTieba
 
 	// retry has no limit
 	if retry || limit == 0 {

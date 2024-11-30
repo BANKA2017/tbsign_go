@@ -402,7 +402,7 @@ func PluginRenewManagerAlertSwitch(c echo.Context) error {
 func PluginRenewManagerGetList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	var list []model.TcKdRenewManager
+	var list []*model.TcKdRenewManager
 	_function.GormDB.R.Model(&model.TcKdRenewManager{}).Where("uid = ?", uid).Order("id ASC").Find(&list)
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", list, "tbsign"))
@@ -525,7 +525,7 @@ func PluginRenewManagerPreCheckStatus(c echo.Context) error {
 	fname := c.Param("fname")
 
 	// pre-check pid
-	var pidCheck []model.TcBaiduid
+	var pidCheck []*model.TcBaiduid
 	_function.GormDB.R.Where("id = ? AND uid = ?", pid, uid).Limit(1).Find(&pidCheck)
 
 	if len(pidCheck) == 0 {

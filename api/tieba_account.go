@@ -70,7 +70,7 @@ func GetBDUSS(c echo.Context) error {
 	}
 
 	// pre-check
-	var tiebaAccounts []model.TcBaiduid
+	var tiebaAccounts []*model.TcBaiduid
 	_function.GormDB.R.Where("uid = ? AND portrait = ?", uid, baiduAccountInfo.User.Portrait).Limit(1).Find(&tiebaAccounts)
 
 	if len(tiebaAccounts) > 0 {
@@ -128,7 +128,7 @@ func AddTiebaAccount(c echo.Context) error {
 	}
 
 	// pre-check
-	var tiebaAccounts []model.TcBaiduid
+	var tiebaAccounts []*model.TcBaiduid
 	_function.GormDB.R.Where("uid = ? AND portrait = ?", uid, baiduAccountInfo.User.Portrait).Limit(1).Find(&tiebaAccounts)
 
 	if len(tiebaAccounts) > 0 {
@@ -222,7 +222,7 @@ func RemoveTiebaAccount(c echo.Context) error {
 func GetTiebaAccountList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	var tiebaAccounts []model.TcBaiduid
+	var tiebaAccounts []*model.TcBaiduid
 	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
 
 	for k := range tiebaAccounts {
@@ -288,7 +288,7 @@ func CheckIsManager(c echo.Context) error {
 	fname := c.Param("fname")
 
 	// pre-check pid
-	var pidCheck []model.TcBaiduid
+	var pidCheck []*model.TcBaiduid
 	_function.GormDB.R.Where("id = ? AND uid = ?", pid, uid).Limit(1).Find(&pidCheck)
 
 	if len(pidCheck) == 0 {

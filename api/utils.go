@@ -93,7 +93,7 @@ func verifyAuthorization(authorization string) (string, string) {
 				}
 
 				uid, _ := claims.GetSubject()
-				var accountInfo []model.TcUser
+				var accountInfo []*model.TcUser
 				_function.GormDB.R.Where("id = ?", uid).Limit(1).Find(&accountInfo)
 				if len(accountInfo) == 1 {
 					return strconv.Itoa(int(accountInfo[0].ID)), accountInfo[0].Role

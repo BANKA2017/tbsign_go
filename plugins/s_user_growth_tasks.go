@@ -250,12 +250,12 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 
 	// get list
 	todayBeginning := _function.LocaleTimeDiff(0) //GMT+8
-	kdGrowthTasksUserList := &[]model.TcKdGrowth{}
+	var kdGrowthTasksUserList []*model.TcKdGrowth
 
 	limit := _function.GetOption("kd_growth_action_limit")
 	numLimit, _ := strconv.ParseInt(limit, 10, 64)
 	_function.GormDB.R.Model(&model.TcKdGrowth{}).Where("date < ? AND id > ?", todayBeginning, id).Limit(int(numLimit)).Find(&kdGrowthTasksUserList)
-	for _, taskUserItem := range *kdGrowthTasksUserList {
+	for _, taskUserItem := range kdGrowthTasksUserList {
 		if _, ok := accountStatusList[taskUserItem.UID]; !ok {
 			accountStatusList[taskUserItem.UID] = _function.GetUserOption("kd_growth_sign_only", strconv.Itoa(int(taskUserItem.UID)))
 		}
@@ -537,7 +537,7 @@ func PluginGrowthTasksSetSettings(c echo.Context) error {
 func PluginGrowthTasksGetList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	var accounts []model.TcKdGrowth
+	var accounts []*model.TcKdGrowth
 	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&accounts)
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", accounts, "tbsign"))
