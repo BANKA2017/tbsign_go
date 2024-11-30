@@ -199,11 +199,10 @@ func RemoveTiebaAccount(c echo.Context) error {
 		if err = _plugin.DeleteAccount("pid", int32(numPid), tx); err != nil {
 			return err
 		}
-
-		if err = _function.GormDB.W.Where("id = ?", numPid).Delete(&model.TcBaiduid{}).Error; err != nil {
+		if err = tx.Where("id = ?", numPid).Delete(&model.TcBaiduid{}).Error; err != nil {
 			return err
 		}
-		if err = _function.GormDB.W.Where("pid = ?", numPid).Delete(&model.TcTieba{}).Error; err != nil {
+		if err = tx.Where("pid = ?", numPid).Delete(&model.TcTieba{}).Error; err != nil {
 			return err
 		}
 		return err

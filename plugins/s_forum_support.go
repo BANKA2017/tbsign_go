@@ -761,7 +761,7 @@ func (pluginInfo *ForumSupportPluginInfoType) RemoveAccount(_type string, id int
 	if tx != nil {
 		_sql = tx
 	}
-	return _sql.Where(fmt.Sprintf("%s = ?", _type), id).Delete(&model.TcVer4RankLog{}).Error
+	return _sql.Where(_function.AppendStrings(_type, " = ?"), id).Delete(&model.TcVer4RankLog{}).Error
 }
 
 func (pluginInfo *ForumSupportPluginInfoType) Ext() ([]any, error) {

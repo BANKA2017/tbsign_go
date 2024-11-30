@@ -9,6 +9,8 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+var AccountLoginFailedChannel = make(chan _type.TypeCookie, 100)
+
 func ScanTiebaByPid(pid int32) {
 	account := GetCookie(pid)
 
@@ -79,6 +81,9 @@ func ScanTiebaByPid(pid int32) {
 	}
 
 	accountInfo, err := GetBaiduUserInfo(account)
+	if accountInfo.ErrorCode == "1" {
+		AccountLoginFailedChannel <- account
+	}
 	if err == nil {
 		pn = 1
 		for {

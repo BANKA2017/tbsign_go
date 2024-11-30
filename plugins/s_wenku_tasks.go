@@ -662,6 +662,10 @@ func (pluginInfo *WenkuTasksPluginType) RemoveAccount(_type string, id int32, tx
 		// get uid
 		account := new(model.TcBaiduid)
 		_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id = ?", id).First(account)
+		if account.ID == 0 {
+			// pid is not exists
+			return nil
+		}
 		uid := strconv.Itoa(int(account.UID))
 		// get task id
 		task := new(model.TcKdWenkuTask)

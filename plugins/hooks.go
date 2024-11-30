@@ -217,7 +217,9 @@ func AddToSettingsFilter() {
 
 func DeleteAccount(_type string, id int32, tx *gorm.DB) error {
 	for _, p := range PluginList {
-		p.RemoveAccount(_type, id, tx)
+		if err := p.RemoveAccount(_type, id, tx); err != nil {
+			return err
+		}
 	}
 	return nil
 }

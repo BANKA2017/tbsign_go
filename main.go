@@ -245,6 +245,8 @@ func main() {
 				_function.FidList.Delete(key)
 				return true
 			})
+		case <-_function.AccountLoginFailedChannel:
+			// do nothing now
 		}
 	}
 }

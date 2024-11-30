@@ -42,7 +42,7 @@ func Addslashes(str string) string {
 }
 
 func Md5(str string) string {
-	_md5 :=md5.Sum([]byte(str))
+	_md5 := md5.Sum([]byte(str))
 	return hex.EncodeToString(_md5[:])
 }
 
