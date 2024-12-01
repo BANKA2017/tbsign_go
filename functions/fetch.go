@@ -277,6 +277,41 @@ func GetForumList(cookie _type.TypeCookie, uid string, page int64) (*_type.Forum
 	return forumListDecode, err
 }
 
+func GetForumList2(cookie _type.TypeCookie, page int64) (*_type.ForumGuideResponse, error) {
+	var form = make(map[string]string)
+	form["BDUSS"] = cookie.Bduss
+	form["stoken"] = cookie.Stoken
+	form["sort_type"] = "3"
+	form["call_from"] = "3"
+	form["page_no"] = strconv.Itoa(int(page))
+	form["res_num"] = "200"
+	form["tbs"] = cookie.Tbs
+	//form["top_forum_num"] = "0"
+
+	AddSign(&form, "4")
+	_body := url.Values{}
+	for k, v := range form {
+		if k != "sign" {
+			_body.Set(k, v)
+		}
+	}
+
+	headersMap := map[string]string{
+		//"Cookie":      "BDUSS=" + cookie.Bduss + ";STOKEN=" + cookie.Stoken,
+		"Subapp-Type": "hybrid",
+	}
+
+	forumListResponse, err := TBFetch("https://tieba.baidu.com/c/f/forum/forumGuide", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), headersMap)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var forumListDecode _type.ForumGuideResponse
+	err = JsonDecode(forumListResponse, &forumListDecode)
+	return &forumListDecode, err
+}
+
 func GetOneKeySignList(cookie _type.TypeCookie) (any, error) {
 	var form = make(map[string]string)
 	form["BDUSS"] = cookie.Bduss

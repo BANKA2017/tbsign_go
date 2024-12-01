@@ -241,3 +241,24 @@ type ManagerTasksResponse struct {
 		BawuTask BawuTask `json:"bawu_task,omitempty"`
 	} `json:"data,omitempty"`
 }
+
+type ForumGuideResponse struct {
+	ErrorMsg         string `json:"error_msg"`
+	ErrorCode        int    `json:"error_code"`
+	IsLogin          int    `json:"is_login"`
+	LikeForumHasMore bool   `json:"like_forum_has_more"`
+	LikeForum        []struct {
+		// HotNum      int    `json:"hot_num"`
+		// SortValue   int    `json:"sort_value"`
+		// LevelName   string `json:"level_name"`
+		ForumName string `json:"forum_name"`
+		// MemberCount int    `json:"member_count"`
+		IsSign int `json:"is_sign"`
+		// ThreadNum       int    `json:"thread_num"`
+		// NeedTrans       bool   `json:"need_trans"`
+		// LevelID         int    `json:"level_id"`
+		ForumID int `json:"forum_id"`
+		// Avatar          string `json:"avatar"`
+		// TopSortValue    int    `json:"top_sort_value"`
+	} `json:"like_forum"`
+}
