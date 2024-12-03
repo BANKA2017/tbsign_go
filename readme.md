@@ -221,6 +221,45 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 为平衡**安全**与**便利**，系统设置页面（网页）新增了备份功能开关，并添加了启动时确定是否启用的总开关（cli）。未启用的站点将禁用相关 API，是否开启功能由站点管理员自行决定。
 
+### 格式
+
+导出格式与对应数据表一致，可通过编辑文件实现批量导入账号
+
+```json
+{
+  "tc_baiduid": [
+    {
+      "id": 1,
+      "bduss": "",
+      "stoken": "",
+      "portrait": "tb.1.xxx.xxxx",
+
+      "name": ""
+    }
+  ],
+  "tc_tieba": [
+    {
+      "pid": 1,
+      "fid": 29,
+      "tieba": "小说",
+
+      "no": false,
+      "status": 0,
+      "latest": 3,
+      "last_error": "NULL"
+    }
+  ]
+}
+```
+
+- `tc_baiduid.id` 的值未必等于最终该账号的 `pid`，此值仅用于映射 `tc_tieba.pid`
+- `tc_tieba.pid` 必须要有对应的 `tc_baiduid.id` 值
+- `tc_baiduid.name`、`tc_tieba.no`、`tc_tieba.status`、`tc_tieba.latest`、`tc_tieba.last_error` 可以没有值，但建议加上
+  - `name` 是用户名，有些后期通过手机注册的用户可能没有用户名
+  - `no` 用于表示是否**忽略**签到
+  - `status` 和 `last_error` 用于表示上一次签到的情况
+  - `latest` 表示最后签到的日期，每月第一天是 `1`
+
 ## 已知问题
 
 - [x] 不支持限制单次签到贴吧总数，会一次性全部签完
