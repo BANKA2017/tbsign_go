@@ -380,6 +380,7 @@ func GetAccountInfo(c echo.Context) error {
 	resp.SystemSettings["forum_sync_policy"] = _function.GetOption("go_forum_sync_policy")
 	resp.SystemSettings["bark_addr"] = _function.GetOption("go_bark_addr")
 	resp.SystemSettings["ntfy_addr"] = _function.GetOption("go_ntfy_addr")
+	resp.SystemSettings["allow_export_personal_data"] = _function.GetOption("go_export_personal_data")
 
 	if resp.PushType == "" {
 		_function.SetUserOption("go_message_type", "email", uid)
@@ -544,6 +545,16 @@ func ResetPassword(c echo.Context) error {
 func ExportAccountData(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
+	// isPureGoMode
+	if _function.GetOption("go_ver") != "1" {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "运行在兼容模式下的云签数据不允许导出", _function.EchoEmptyObject, "tbsign"))
+	}
+
+	// allowed?
+	if _function.GetOption("go_export_personal_data") != "1" {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "站点管理员已关闭数据导出功能", _function.EchoEmptyObject, "tbsign"))
+	}
+
 	password := c.FormValue("password")
 
 	var tcUser []*model.TcUser
@@ -554,34 +565,220 @@ func ExportAccountData(c echo.Context) error {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "密码错误", _function.EchoEmptyObject, "tbsign"))
 		}
 	} else {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号不存在 (请问是如何登录的)", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号不存在", _function.EchoEmptyObject, "tbsign"))
 	}
-	oneTcUser := tcUser[0]
-	oneTcUser.Pw = ""
-	oneTcUser.T = ""
 
 	var tcTieba []*model.TcTieba
 	var tcBaiduid []*model.TcBaiduid
-	var tcUsersOption []*model.TcUsersOption
-	var tcVer4BanList []*model.TcVer4BanList
-	var tcVer4RankLog []*model.TcVer4RankLog
-	var tcKdGrowth []*model.TcKdGrowth
+
+	// TODO plugin data export
+	// var tcUsersOption []*model.TcUsersOption
+	// var tcVer4BanList []*model.TcVer4BanList
+	// var tcVer4RankLog []*model.TcVer4RankLog
+	// var tcKdGrowth []*model.TcKdGrowth
 
 	_function.GormDB.W.Model(&model.TcTieba{}).Where("uid = ?", uid).Find(&tcTieba)
 	_function.GormDB.W.Model(&model.TcBaiduid{}).Where("uid = ?", uid).Find(&tcBaiduid)
-	_function.GormDB.W.Model(&model.TcUsersOption{}).Where("uid = ?", uid).Find(&tcUsersOption)
 
-	_function.GormDB.W.Model(&model.TcVer4BanList{}).Where("uid = ?", uid).Find(&tcVer4BanList)
-	_function.GormDB.W.Model(&model.TcVer4RankLog{}).Where("uid = ?", uid).Find(&tcVer4RankLog)
-	_function.GormDB.W.Model(&model.TcKdGrowth{}).Where("uid = ?", uid).Find(&tcKdGrowth)
+	// _function.GormDB.W.Model(&model.TcUsersOption{}).Where("uid = ?", uid).Find(&tcUsersOption)
+	// _function.GormDB.W.Model(&model.TcVer4BanList{}).Where("uid = ?", uid).Find(&tcVer4BanList)
+	// _function.GormDB.W.Model(&model.TcVer4RankLog{}).Where("uid = ?", uid).Find(&tcVer4RankLog)
+	// _function.GormDB.W.Model(&model.TcKdGrowth{}).Where("uid = ?", uid).Find(&tcKdGrowth)
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
-		"tc_user":          oneTcUser,
-		"tc_tieba":         tcTieba,
-		"tc_baiduid":       tcBaiduid,
-		"tc_users_option":  tcUsersOption,
-		"tc_ver4_ban_list": tcVer4BanList,
-		"tc_ver4_bank_log": tcVer4RankLog,
-		"tc_kd_growth":     tcKdGrowth,
+		"tc_tieba":   tcTieba,
+		"tc_baiduid": tcBaiduid,
+		// "tc_users_option":  tcUsersOption,
+		// "tc_ver4_ban_list": tcVer4BanList,
+		// "tc_ver4_bank_log": tcVer4RankLog,
+		// "tc_kd_growth":     tcKdGrowth,
+	}, "tbsign"))
+}
+
+type TcBackupUploadStructTcBaiduid struct {
+	Label    int    `json:"label"`
+	Bduss    string `json:"bduss"`
+	Stoken   string `json:"stoken"`
+	Name     string `json:"name"`
+	Portrait string `json:"portrait"`
+}
+
+type TcBackupUploadStructTcTieba struct {
+	Label     int    `json:"label"`
+	Fid       int    `json:"fid"`
+	Tieba     string `json:"tieba"`
+	No        bool   `json:"no"`
+	Status    int    `json:"status"`
+	Latest    int    `json:"latest"`
+	LastError string `json:"last_error"`
+}
+
+type TcBackupUploadStruct struct {
+	TcBaiduid []TcBackupUploadStructTcBaiduid `json:"tc_baiduid,omitempty"`
+	TcTieba   []TcBackupUploadStructTcTieba   `json:"tc_tieba,omitempty"`
+}
+
+func ImportAccountData(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	// isPureGoMode
+	if _function.GetOption("go_ver") != "1" {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "运行在兼容模式下的云签数据不允许导入", _function.EchoEmptyObject, "tbsign"))
+	}
+
+	// allowed?
+	if _function.GetOption("go_export_personal_data") != "1" {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "站点管理员已关闭数据导入功能", _function.EchoEmptyObject, "tbsign"))
+	}
+
+	password := strings.TrimSpace(c.FormValue("password"))
+
+	var tcUser []*model.TcUser
+	_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", uid).Find(&tcUser)
+	if len(tcUser) > 0 {
+		err := _function.VerifyPasswordHash(tcUser[0].Pw, password)
+		if err != nil {
+			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "密码错误", _function.EchoEmptyObject, "tbsign"))
+		}
+	} else {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号不存在", _function.EchoEmptyObject, "tbsign"))
+	}
+
+	backupData := strings.TrimSpace(c.FormValue("data"))
+
+	decodedData := new(TcBackupUploadStruct)
+	err := _function.JsonDecode([]byte(backupData), decodedData)
+	if err != nil {
+		log.Println("decode-backup-data-err", err, uid)
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "备份数据读取失败", _function.EchoEmptyObject, "tbsign"))
+	}
+
+	numUID, _ := strconv.ParseInt(uid, 10, 64)
+
+	var tcTieba []*model.TcTieba
+	var tcBaiduid []*model.TcBaiduid
+	_function.GormDB.W.Model(&model.TcTieba{}).Where("uid = ?", uid).Find(&tcTieba)
+	_function.GormDB.W.Model(&model.TcBaiduid{}).Where("uid = ?", uid).Find(&tcBaiduid)
+
+	var labelPidKV = make(map[int]int32)
+	var newTcBaiduID []model.TcBaiduid
+	var newTcBaiduPortrait []string
+	var newTcTieba []model.TcTieba
+	var newTcTiebaWithoutAccount []TcBackupUploadStructTcTieba
+
+	// newAccount
+	for _, importBaiduidItem := range decodedData.TcBaiduid {
+		exists := false
+		for _, localTcBaiduidItem := range tcBaiduid {
+			if importBaiduidItem.Portrait == localTcBaiduidItem.Portrait {
+				if _, ok := labelPidKV[importBaiduidItem.Label]; !ok {
+					labelPidKV[importBaiduidItem.Label] = localTcBaiduidItem.ID
+				}
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			newTcBaiduID = append(newTcBaiduID, model.TcBaiduid{
+				UID:      int32(numUID),
+				Bduss:    importBaiduidItem.Bduss,
+				Stoken:   importBaiduidItem.Stoken,
+				Name:     importBaiduidItem.Name,
+				Portrait: importBaiduidItem.Portrait,
+			})
+			newTcBaiduPortrait = append(newTcBaiduPortrait, importBaiduidItem.Portrait)
+		}
+	}
+
+	for _, importTiebaItem := range decodedData.TcTieba {
+		if pid, ok := labelPidKV[importTiebaItem.Label]; ok {
+			exists := false
+			for _, localTcTiebaItem := range tcTieba {
+				if localTcTiebaItem.Pid == pid && localTcTiebaItem.Fid == int32(importTiebaItem.Fid) {
+					exists = true
+					break
+				}
+			}
+			if !exists {
+				newTcTieba = append(newTcTieba, model.TcTieba{
+					UID:       int32(numUID),
+					Pid:       pid,
+					Fid:       int32(importTiebaItem.Fid),
+					Tieba:     importTiebaItem.Tieba,
+					No:        importTiebaItem.No,
+					Status:    int32(importTiebaItem.Status),
+					Latest:    int32(importTiebaItem.Latest),
+					LastError: importTiebaItem.LastError,
+				})
+			}
+		} else {
+			newTcTiebaWithoutAccount = append(newTcTiebaWithoutAccount, importTiebaItem)
+		}
+	}
+
+	err = _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
+		var err error
+
+		if len(newTcBaiduID) > 0 {
+			if err = tx.Create(&newTcBaiduID).Error; err != nil {
+				return err
+			}
+		}
+
+		if len(newTcTieba) > 0 {
+			if err = tx.Create(&newTcTieba).Error; err != nil {
+				return err
+			}
+		}
+
+		return err
+	})
+
+	if err != nil {
+		log.Println("create-backup-data-err", err, uid)
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "备份数据导入失败", _function.EchoEmptyObject, "tbsign"))
+	}
+
+	if len(newTcTiebaWithoutAccount) > 0 {
+		_function.GormDB.W.Model(&model.TcBaiduid{}).Where("uid = ? AND portrait IN (?)", uid, newTcBaiduPortrait).Find(&newTcBaiduID)
+
+		for _, importBaiduidItem := range decodedData.TcBaiduid {
+			for _, localTcBaiduidItem := range newTcBaiduID {
+				if importBaiduidItem.Portrait == localTcBaiduidItem.Portrait {
+					if _, ok := labelPidKV[importBaiduidItem.Label]; !ok {
+						labelPidKV[importBaiduidItem.Label] = localTcBaiduidItem.ID
+					}
+					break
+				}
+			}
+		}
+
+		var newTcTiebaWithoutAccountToInsert []model.TcTieba
+		for _, importTiebaItem := range newTcTiebaWithoutAccount {
+			if pid, ok := labelPidKV[importTiebaItem.Label]; ok {
+				newTcTiebaWithoutAccountToInsert = append(newTcTiebaWithoutAccountToInsert, model.TcTieba{
+					UID:       int32(numUID),
+					Pid:       pid,
+					Fid:       int32(importTiebaItem.Fid),
+					Tieba:     importTiebaItem.Tieba,
+					No:        importTiebaItem.No,
+					Status:    int32(importTiebaItem.Status),
+					Latest:    int32(importTiebaItem.Latest),
+					LastError: importTiebaItem.LastError,
+				})
+			}
+		}
+
+		if len(newTcTiebaWithoutAccountToInsert) > 0 {
+			if err := _function.GormDB.W.Create(&newTcTiebaWithoutAccountToInsert).Error; err != nil {
+				log.Println("create-backup-data-err2", err, uid)
+				return c.JSON(http.StatusOK, _function.ApiTemplate(500, "部分贴吧列表导入失败", _function.EchoEmptyObject, "tbsign"))
+			}
+		}
+	}
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]int{
+		"tc_tieba":   len(decodedData.TcTieba) - len(tcTieba),
+		"tc_baiduid": len(decodedData.TcBaiduid) - len(tcBaiduid),
 	}, "tbsign"))
 }
