@@ -53,6 +53,7 @@ func main() {
 	// api
 	flag.BoolVar(&share.EnableApi, "api", false, "active backend endpoints")
 	flag.BoolVar(&share.EnableFrontend, "fe", false, "active frontend endpoints")
+	flag.BoolVar(&share.EnableBackup, "allow_backup", false, "allow backup (export/import)")
 	flag.StringVar(&share.Address, "address", ":1323", "address :1323")
 
 	// setup
@@ -98,7 +99,11 @@ func main() {
 	}
 
 	if !share.EnableApi && share.EnableFrontend {
-		log.Fatal("ERROR: 不允许关闭仅启用前端!!!")
+		log.Fatal("ERROR: 不允许关闭 api 的同时又启用前端!!!")
+	}
+
+	if !share.EnableBackup && os.Getenv("tc_allow_backup") != "" {
+		share.EnableBackup = os.Getenv("tc_allow_backup") == "true"
 	}
 
 	if share.Address == ":1323" && os.Getenv("tc_address") != "" {

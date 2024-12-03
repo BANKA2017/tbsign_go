@@ -11,23 +11,24 @@
 
 ## flags
 
-| flag           | default          | description                                          |
-| :------------- | :--------------- | :--------------------------------------------------- |
-| username       |                  | 数据库账号                                           |
-| pwd            |                  | 数据库密码                                           |
-| endpoint       | `127.0.0.1:3306` | 数据库端点                                           |
-| db             | `tbsign`         | 数据库名称                                           |
-| db_path        |                  | SQLite 文件目录                                      |
-| test           | `false`          | 测试模式，此模式下不会运行计划任务                   |
-| api            | `false`          | 是否启动 api                                         |
-| fe             | `false`          | 是否启动自带前端，仅当 `api` 为 `true` 时可为 `true` |
-| address        | `:1323`          | 后端运行地址                                         |
-| setup          | `false`          | 强制安装程序（可能会覆盖现有配置）                   |
-| auto_install   | `false`          | 自动安装（仅当数据库不存在时安装）                   |
-| admin_name     |                  | 管理员账号，仅当 `auto_install` 为 `true` 时会用到   |
-| admin_email    |                  | 管理员邮箱，仅当 `auto_install` 为 `true` 时会用到   |
-| admin_password |                  | 管理员密码，仅当 `auto_install` 为 `true` 时会用到   |
-| no_proxy       | `false`          | 忽略环境变量中的代理配置                             |
+| flag           | default          | description                                                                   |
+| :------------- | :--------------- | :---------------------------------------------------------------------------- |
+| username       |                  | 数据库账号                                                                    |
+| pwd            |                  | 数据库密码                                                                    |
+| endpoint       | `127.0.0.1:3306` | 数据库端点                                                                    |
+| db             | `tbsign`         | 数据库名称                                                                    |
+| db_path        |                  | SQLite 文件目录                                                               |
+| test           | `false`          | 测试模式，此模式下不会运行计划任务                                            |
+| api            | `false`          | 是否启动 api                                                                  |
+| fe             | `false`          | 是否启动自带前端，仅当 `api` 为 `true` 时可为 `true`                          |
+| address        | `:1323`          | 后端运行地址                                                                  |
+| setup          | `false`          | 强制安装程序（可能会覆盖现有配置）                                            |
+| auto_install   | `false`          | 自动安装（仅当数据库不存在时安装）                                            |
+| admin_name     |                  | 管理员账号，仅当 `auto_install` 为 `true` 时会用到                            |
+| admin_email    |                  | 管理员邮箱，仅当 `auto_install` 为 `true` 时会用到                            |
+| admin_password |                  | 管理员密码，仅当 `auto_install` 为 `true` 时会用到                            |
+| no_proxy       | `false`          | 忽略环境变量中的代理配置                                                      |
+| allow_backup   | `false`          | 允许用户批量导出/导入账号和贴吧列表，建议阅读 readme.md 的 [备份](#备份) 部分 |
 
 示例
 
@@ -43,21 +44,22 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 不支持 `.env` 文件，请直接设置环境变量，使用顺序是 `flags` > `env` > `default`
 
-| flag              | description                                             |
-| :---------------- | :------------------------------------------------------ |
-| tc_username       | 数据库账号                                              |
-| tc_pwd            | 数据库密码                                              |
-| tc_endpoint       | 数据库端点                                              |
-| tc_db             | 数据库名称                                              |
-| tc_db_path        | SQLite 文件目录                                         |
-| tc_test           | 测试模式，此模式下不会运行计划任务                      |
-| tc_api            | 是否启动后端 api                                        |
-| tc_fe             | 是否启动自带前端，仅当 `tc_api` 为 `true` 时可为 `true` |
-| tc_address        | 后端运行地址                                            |
-| tc_auto_install   | 自动安装（仅当数据库不存在时安装）                      |
-| tc_admin_name     | 管理员账号，仅当 `tc_auto_install` 为 `true` 时会用到   |
-| tc_admin_email    | 管理员邮箱，仅当 `tc_auto_install` 为 `true` 时会用到   |
-| tc_admin_password | 管理员密码，仅当 `tc_auto_install` 为 `true` 时会用到   |
+| flag              | description                                                                   |
+| :---------------- | :---------------------------------------------------------------------------- |
+| tc_username       | 数据库账号                                                                    |
+| tc_pwd            | 数据库密码                                                                    |
+| tc_endpoint       | 数据库端点                                                                    |
+| tc_db             | 数据库名称                                                                    |
+| tc_db_path        | SQLite 文件目录                                                               |
+| tc_test           | 测试模式，此模式下不会运行计划任务                                            |
+| tc_api            | 是否启动后端 api                                                              |
+| tc_fe             | 是否启动自带前端，仅当 `tc_api` 为 `true` 时可为 `true`                       |
+| tc_address        | 后端运行地址                                                                  |
+| tc_auto_install   | 自动安装（仅当数据库不存在时安装）                                            |
+| tc_admin_name     | 管理员账号，仅当 `tc_auto_install` 为 `true` 时会用到                         |
+| tc_admin_email    | 管理员邮箱，仅当 `tc_auto_install` 为 `true` 时会用到                         |
+| tc_admin_password | 管理员密码，仅当 `tc_auto_install` 为 `true` 时会用到                         |
+| tc_allow_backup   | 允许用户批量导出/导入账号和贴吧列表，建议阅读 readme.md 的 [备份](#备份) 部分 |
 
 ## 数据库
 
@@ -211,6 +213,14 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 其它系统请自行编译运行
 
+## 备份
+
+从 [tbsign_go.20241203.f7b5434.881b23b](https://github.com/BANKA2017/tbsign_go/tree/tbsign_go.20241203.f7b5434.881b23b) 版本起，支持用户导出/导入部分账号数据。
+
+此前，tbsign_go 设计上不允许 API 返回 `bduss` 和 `stoken`，只能通过查看数据库获取，确保即使站点账号被盗，仍无法从 tbsign_go 导出敏感数据。此版本后，若站点开放备份功能，用户登录后可通过账号密码导出这些数据。
+
+为平衡**安全**与**便利**，系统设置页面（网页）新增了备份功能开关，并添加了启动时确定是否启用的总开关（cli）。未启用的站点将禁用相关 API，是否开启功能由站点管理员自行决定。
+
 ## 已知问题
 
 - [x] 不支持限制单次签到贴吧总数，会一次性全部签完
@@ -256,7 +266,7 @@ air -- --db_path=tbsign.db --test=true --api=true
 - [ ] ?支持更多 Gorm 也支持的数据库
 - [x] ?邮箱以外的推送方式
 - [ ] 完善权限控制
-- [ ] 个人数据导出 (接口 `/passport/export` 已写好，但没想好如何处理好安全问题，当前所有接口都会自动删除 `bduss` 和 `stoken` 的值，但导出会不可避免地需要处理这个问题)
+- [x] 个人数据导出 (接口 `/passport/export` 已写好，但没想好如何处理好安全问题，当前所有接口都会自动删除 `bduss` 和 `stoken` 的值，但导出会不可避免地需要处理这个问题)，强烈建议阅读 readme.md 的 [备份](#备份) 部分
 - [ ] ……更多的想起来再加
 
 ## 更多

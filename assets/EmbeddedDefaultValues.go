@@ -36,4 +36,5 @@ var DefaultOptions = map[string]string{
 	"go_ntfy_addr":            "https://ntfy.sh",
 	"go_bark_addr":            "https://api.day.app",
 	"go_export_personal_data": "0",
+	"go_import_personal_data": "0",
 }

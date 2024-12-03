@@ -10,6 +10,7 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
+	"github.com/BANKA2017/tbsign_go/share"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
@@ -381,6 +382,12 @@ func GetAccountInfo(c echo.Context) error {
 	resp.SystemSettings["bark_addr"] = _function.GetOption("go_bark_addr")
 	resp.SystemSettings["ntfy_addr"] = _function.GetOption("go_ntfy_addr")
 	resp.SystemSettings["allow_export_personal_data"] = _function.GetOption("go_export_personal_data")
+	resp.SystemSettings["allow_import_personal_data"] = _function.GetOption("go_import_personal_data")
+
+	if !share.EnableBackup {
+		resp.SystemSettings["allow_export_personal_data"] = "0"
+		resp.SystemSettings["allow_import_personal_data"] = "0"
+	}
 
 	if resp.PushType == "" {
 		_function.SetUserOption("go_message_type", "email", uid)
@@ -627,7 +634,7 @@ func ImportAccountData(c echo.Context) error {
 	}
 
 	// allowed?
-	if _function.GetOption("go_export_personal_data") != "1" {
+	if _function.GetOption("go_import_personal_data") != "1" {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "站点管理员已关闭数据导入功能", _function.EchoEmptyObject, "tbsign"))
 	}
 

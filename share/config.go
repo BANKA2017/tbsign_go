@@ -13,6 +13,7 @@ var DBMode string
 var TestMode bool
 var EnableApi bool
 var EnableFrontend bool
+var EnableBackup bool
 
 var Address string
 

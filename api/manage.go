@@ -94,7 +94,7 @@ func UpdateAdminSettings(c echo.Context) error {
 							settings[vName] = v1[0]
 							_function.SetOption(vName, string(signModeEncoded))
 						}
-					case "enable_reg", "mail_auth", "go_export_personal_data":
+					case "enable_reg", "mail_auth", "go_export_personal_data", "go_import_personal_data":
 						if v1[0] == "0" || v1[0] == "1" {
 							settings[vName] = v1[0]
 							_function.SetOption(vName, v1[0])

@@ -55,8 +55,12 @@ func Api(address string, args ...any) {
 	api.POST("/passport/login", Login)
 	api.POST("/passport/logout", Logout)
 	api.POST("/passport/signup", Signup)
-	api.POST("/passport/export", ExportAccountData)
-	api.POST("/passport/import", ImportAccountData)
+
+	if share.EnableBackup {
+		api.POST("/passport/export", ExportAccountData)
+		api.POST("/passport/import", ImportAccountData)
+	}
+
 	api.DELETE("/passport/delete", DeleteAccount)
 	api.PUT("/passport/update/info", UpdateAccountInfo)
 	api.PUT("/passport/update/password", UpdatePassword)
