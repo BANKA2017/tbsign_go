@@ -1,12 +1,16 @@
 package _function
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"database/sql"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 
-	"gorm.io/driver/mysql"
+	"github.com/go-sql-driver/mysql"
+	gorm_mysql_driver "gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -61,12 +65,33 @@ func ConnectToSQLite(path string, logLevel logger.LogLevel, servicePrefix string
 	return readDBHandle, writeDBHandle, err
 }
 
-func ConnectToMySQL(username string, password string, endpoint string, dbname string, logLevel logger.LogLevel, servicePrefix string) (*gorm.DB, *gorm.DB, error) {
+func ConnectToMySQL(username string, password string, endpoint string, dbname string, caPath string, logLevel logger.LogLevel, servicePrefix string) (*gorm.DB, *gorm.DB, error) {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", username, password, endpoint, dbname)
+
+	if caPath != "" {
+		rootCertPool := x509.NewCertPool()
+		pem, err := os.ReadFile(caPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
+			log.Fatal("Failed to append PEM.")
+		}
+		parsedURL, err := url.Parse("tcp://" + endpoint)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		mysql.RegisterTLSConfig("custom", &tls.Config{
+			ServerName: parsedURL.Hostname(),
+			RootCAs:    rootCertPool,
+		})
+		dsn = AppendStrings(dsn, "&tls=custom")
+	}
 
 	sqlDB, _ := sql.Open("mysql", dsn)
 	//defer sqlDB.Close()
-	dbHandle, err := gorm.Open(mysql.New(mysql.Config{
+	dbHandle, err := gorm.Open(gorm_mysql_driver.New(gorm_mysql_driver.Config{
 		Conn: sqlDB,
 	}), &gorm.Config{Logger: logger.Default.LogMode(logLevel)})
 

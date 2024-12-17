@@ -17,6 +17,7 @@
 | pwd            |                  | 数据库密码                                                                    |
 | endpoint       | `127.0.0.1:3306` | 数据库端点                                                                    |
 | db             | `tbsign`         | 数据库名称                                                                    |
+| db_ca_path     |                  | CA 证书的目录（仅用于 MySQL），请看 [CA 证书](#ca-证书) 部分                  |
 | db_path        |                  | SQLite 文件目录                                                               |
 | test           | `false`          | 测试模式，此模式下不会运行计划任务                                            |
 | api            | `false`          | 是否启动 api                                                                  |
@@ -50,6 +51,7 @@ air -- --db_path=tbsign.db --test=true --api=true
 | tc_pwd            | 数据库密码                                                                    |
 | tc_endpoint       | 数据库端点                                                                    |
 | tc_db             | 数据库名称                                                                    |
+| tc_db_ca_path     | CA 证书的目录（仅用于 MySQL），请看 [CA 证书](#ca-证书) 部分                  |
 | tc_db_path        | SQLite 文件目录                                                               |
 | tc_test           | 测试模式，此模式下不会运行计划任务                                            |
 | tc_api            | 是否启动后端 api                                                              |
@@ -66,6 +68,16 @@ air -- --db_path=tbsign.db --test=true --api=true
 只要 `db_path`/`tc_db_path` 的值不为空字符串，就会使用 SQLite；否则使用 MySQL
 
 - MySQL 要求版本在 MySQL 8.0 以上
+
+### CA 证书
+
+有的云服务，要求用户使用 TLS 连接到它们的服务；有的用户对内网环境有特殊的安全需求，此时可能需要用到证书文件
+
+例如下面的是 Debian/Ubuntu 的目录，其他操作系统所使用的目录可能会有所不同；如果证书尚未被导入到系统，系统管理员可能需要自行填写证书的实际目录
+
+```shell
+go run main.go --db_ca_path=/etc/ssl/certs/ca-certificates.crt
+```
 
 ## 安装
 
@@ -112,7 +124,7 @@ air -- --db_path=tbsign.db --test=true --api=true
 - [⚠️] 通过 *迁移法* 启动的程序能够与 [百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/) 共存，但部分插件没有对应的 PHP 版本
 - [❌] 通过 *全新安装* 启动的程序无法兼容 [百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/)，因为缺少部分数据表和设置选项
 - [❌] 不支持 MySQL 5.x，使用了**不支持**的语法
-- [⚠️] xgo 镜像使用的 tag 为 `latest`，可能会有操作系统不再受到支持（如 Windows 7）
+- [⚠️] xgo 镜像使用的 tag 为 `go-1.23.1`，可能会有操作系统不再受到支持（如 Windows 7）
 
 ## 前端
 

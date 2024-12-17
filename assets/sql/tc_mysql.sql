@@ -1,5 +1,5 @@
 CREATE TABLE `tc_baiduid` (
-  `id` int UNSIGNED NOT NULL,
+  `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
   `uid` int UNSIGNED NOT NULL,
   `bduss` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `stoken` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE `tc_plugins` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `tc_tieba` (
-  `id` int UNSIGNED NOT NULL,
+  `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
   `uid` int UNSIGNED NOT NULL,
   `pid` int UNSIGNED NOT NULL DEFAULT '0',
   `fid` int UNSIGNED NOT NULL DEFAULT '0',
@@ -32,7 +32,7 @@ CREATE TABLE `tc_tieba` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `tc_users` (
-  `id` int NOT NULL,
+  `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `pw` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `email` varchar(40) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
@@ -71,12 +71,3 @@ ALTER TABLE `tc_users`
 
 ALTER TABLE `tc_users_options`
   ADD UNIQUE KEY `uid_and_key_name` (`uid`,`name`) USING BTREE;
-
-ALTER TABLE `tc_baiduid`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
-
-ALTER TABLE `tc_tieba`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
-
-ALTER TABLE `tc_users`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;

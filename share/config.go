@@ -6,6 +6,7 @@ var DBUsername string
 var DBPassword string
 var DBEndpoint string
 var DBName string
+var DBCAPath string
 
 var DBPath string
 var DBMode string

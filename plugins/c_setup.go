@@ -15,7 +15,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword string, dbEndpoint string, dbName string, logLevel logger.LogLevel, dbExists bool, autoInstall bool, name string, email string, password string) {
+func SetupSystem(dbMode, dbPath, dbUsername, dbPassword, dbEndpoint, dbName, dbCAPath string, logLevel logger.LogLevel, dbExists, autoInstall bool, name, email, password string) {
 	reader := bufio.NewReader(os.Stdin)
 	var err error
 
@@ -50,7 +50,7 @@ func SetupSystem(dbMode string, dbPath string, dbUsername string, dbPassword str
 				fmt.Println("已建立数据库:", dbName)
 			}
 		}
-		_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToMySQL(dbUsername, dbPassword, dbEndpoint, dbName, logLevel, "db")
+		_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToMySQL(dbUsername, dbPassword, dbEndpoint, dbName, dbCAPath, logLevel, "db")
 		if err != nil {
 			log.Fatal("db:", err)
 		}
