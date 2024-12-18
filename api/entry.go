@@ -36,6 +36,7 @@ func Api(address string, args ...any) {
 
 			// ext
 			_variable["dbmode"] = share.DBMode
+			_variable["tlsdb"] = share.DBCAPath != ""
 			_variable["testmode"] = share.TestMode
 
 			c.Set("variables", _variable)

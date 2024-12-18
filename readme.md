@@ -71,13 +71,15 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 ### CA 证书
 
-有的云服务，要求用户使用 TLS 连接到它们的服务；有的用户对内网环境有特殊的安全需求，此时可能需要用到证书文件
+有的云服务，要求用户使用 TLS 连接到它们的数据库；有的用户对内网环境有特殊的安全需求，此时可能需要用到证书文件
 
 例如下面的是 Debian/Ubuntu 的目录，其他操作系统所使用的目录可能会有所不同；如果证书尚未被导入到系统，系统管理员可能需要自行填写证书的实际目录
 
 ```shell
 go run main.go --db_ca_path=/etc/ssl/certs/ca-certificates.crt
 ```
+
+如果留空，则不使用证书
 
 ## 安装
 
