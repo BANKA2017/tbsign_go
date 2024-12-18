@@ -17,7 +17,7 @@
 | pwd            |                  | 数据库密码                                                                    |
 | endpoint       | `127.0.0.1:3306` | 数据库端点                                                                    |
 | db             | `tbsign`         | 数据库名称                                                                    |
-| db_ca_path     |                  | CA 证书的目录（仅用于 MySQL），请看 [CA 证书](#ca-证书) 部分                  |
+| db_tls         | `false`          | CA 证书的选项（仅用于 MySQL），请看 [CA 证书](#ca-证书) 部分                  |
 | db_path        |                  | SQLite 文件目录                                                               |
 | test           | `false`          | 测试模式，此模式下不会运行计划任务                                            |
 | api            | `false`          | 是否启动 api                                                                  |
@@ -51,7 +51,7 @@ air -- --db_path=tbsign.db --test=true --api=true
 | tc_pwd            | 数据库密码                                                                    |
 | tc_endpoint       | 数据库端点                                                                    |
 | tc_db             | 数据库名称                                                                    |
-| tc_db_ca_path     | CA 证书的目录（仅用于 MySQL），请看 [CA 证书](#ca-证书) 部分                  |
+| tc_db_tls         | CA 证书的选项（仅用于 MySQL），请看 [CA 证书](#ca-证书) 部分                  |
 | tc_db_path        | SQLite 文件目录                                                               |
 | tc_test           | 测试模式，此模式下不会运行计划任务                                            |
 | tc_api            | 是否启动后端 api                                                              |
@@ -73,13 +73,14 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 有的云服务，要求用户使用 TLS 连接到它们的数据库；有的用户对内网环境有特殊的安全需求，此时可能需要用到证书文件
 
-例如下面的是 Debian/Ubuntu 的目录，其他操作系统所使用的目录可能会有所不同；如果证书尚未被导入到系统，系统管理员可能需要自行填写证书的实际目录
+可用于 `db_tls` 的值包括 `true`, `false`, `skip-verify`, `preferred` 以及证书文件的路径，更多信息请参考 [go-sql-driver/mysql#tls](https://github.com/go-sql-driver/mysql?tab=readme-ov-file#tls) 
+
+例如下面的第二项是 Debian/Ubuntu 的目录；如果证书尚未被导入到系统，系统管理员可能就需要这样填写证书的实际目录
 
 ```shell
-go run main.go --db_ca_path=/etc/ssl/certs/ca-certificates.crt
+go run main.go --db_tls=true
+go run main.go --db_tls=/etc/ssl/certs/ca-certificates.crt
 ```
-
-如果留空，则不使用证书
 
 ## 安装
 

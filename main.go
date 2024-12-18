@@ -46,7 +46,7 @@ func main() {
 	flag.StringVar(&share.DBPassword, "pwd", "", "Password")
 	flag.StringVar(&share.DBEndpoint, "endpoint", "127.0.0.1:3306", "endpoint")
 	flag.StringVar(&share.DBName, "db", "tbsign", "Database name")
-	flag.StringVar(&share.DBCAPath, "db_ca_path", "", "Path for CA cert (MySQL only)")
+	flag.StringVar(&share.DBTLSOption, "db_tls", "false", "Option for CA cert (MySQL only)")
 
 	//proxy
 	flag.BoolVar(&_function.IgnoreProxy, "no_proxy", false, "Ignore the http proxy config from environment vars")
@@ -86,8 +86,8 @@ func main() {
 	if share.DBName == "" && os.Getenv("tc_db") != "" {
 		share.DBName = os.Getenv("tc_db")
 	}
-	if share.DBCAPath == "" && os.Getenv("tc_db_ca_path") != "" {
-		share.DBCAPath = os.Getenv("tc_db_ca_path")
+	if share.DBTLSOption == "false" && os.Getenv("tc_db_tls") != "" {
+		share.DBTLSOption = os.Getenv("tc_db_tls")
 	}
 	if share.DBPath == "" && os.Getenv("tc_db_path") != "" {
 		share.DBPath = os.Getenv("tc_db_path")
@@ -158,7 +158,7 @@ func main() {
 
 		// setup
 		if setup {
-			_plugin.SetupSystem(share.DBMode, share.DBPath, "", "", "", "", share.DBCAPath, logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
+			_plugin.SetupSystem(share.DBMode, share.DBPath, "", "", "", "", share.DBTLSOption, logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
 		}
 	} else {
 		// mysql
@@ -166,7 +166,7 @@ func main() {
 			log.Fatal("global: Empty username or password")
 		}
 		// precheck table
-		_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToMySQL(share.DBUsername, share.DBPassword, share.DBEndpoint, "", share.DBCAPath, logLevel, "db")
+		_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToMySQL(share.DBUsername, share.DBPassword, share.DBEndpoint, "", share.DBTLSOption, logLevel, "db")
 
 		if err != nil {
 			log.Fatal("db:", err)
@@ -185,9 +185,9 @@ func main() {
 
 		// setup
 		if setup {
-			_plugin.SetupSystem(share.DBMode, "", share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, share.DBCAPath, logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
+			_plugin.SetupSystem(share.DBMode, "", share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, share.DBTLSOption, logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
 		} else {
-			_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToMySQL(share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, share.DBCAPath, logLevel, "db")
+			_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToMySQL(share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, share.DBTLSOption, logLevel, "db")
 			if err != nil {
 				log.Fatal("db:", err)
 			}
