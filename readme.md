@@ -131,6 +131,7 @@ go run main.go --db_tls=/etc/ssl/certs/ca-certificates.crt
 - [⚠️] 通过 *迁移法* 启动的程序能够与 [百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/) 共存，但部分插件没有对应的 PHP 版本
 - [❌] 通过 *全新安装* 启动的程序无法兼容 [百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/)，因为缺少部分数据表和设置选项
 - [❌] MySQL 不支持无法使用 [MySQL 窗口函数](https://dev.mysql.com/doc/refman/8.0/en/window-functions.html) 的发行版，使用了**不支持**的函数 `ROW_NUMBER()`
+- [⚠️] 开发环境使用的 MySQL 版本号为 `8.0` 或更高，其他 MySQL 发行版请自行测试是否可用
 - [⚠️] xgo 镜像使用的 tag 为 `go-1.23.1`，可能会有操作系统不再受到支持（如 Windows 7）
 
 ## 前端
