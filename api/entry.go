@@ -36,6 +36,7 @@ func Api(address string, args ...any) {
 
 			// ext
 			_variable["dbmode"] = share.DBMode
+			_variable["dbversion"] = share.DBVersion
 			_variable["tlsdb"] = share.DBTLSOption != "false" && share.DBTLSOption != ""
 			_variable["testmode"] = share.TestMode
 

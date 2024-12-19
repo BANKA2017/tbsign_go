@@ -67,7 +67,11 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 只要 `db_path`/`tc_db_path` 的值不为空字符串，就会使用 SQLite；否则使用 MySQL
 
-- MySQL 要求版本在 MySQL 8.0 以上
+MySQL 要求支持 [MySQL 窗口函数](https://dev.mysql.com/doc/refman/8.0/en/window-functions.html)
+
+- MySQL >= [8.0](https://dev.mysql.com/doc/refman/8.0/en/window-functions.html)
+- MariaDB >= [10.2](https://mariadb.com/kb/en/changes-improvements-in-mariadb-10-2/)
+- TiDB >= [3.0](https://docs.pingcap.com/tidb/stable/release-3.0-ga)
 
 ### CA 证书
 
@@ -126,7 +130,7 @@ go run main.go --db_tls=/etc/ssl/certs/ca-certificates.crt
 
 - [⚠️] 通过 *迁移法* 启动的程序能够与 [百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/) 共存，但部分插件没有对应的 PHP 版本
 - [❌] 通过 *全新安装* 启动的程序无法兼容 [百度贴吧云签到](https://github.com/MoeNetwork/Tieba-Cloud-Sign/)，因为缺少部分数据表和设置选项
-- [❌] 不支持 MySQL 5.x，使用了**不支持**的语法
+- [❌] MySQL 不支持无法使用 [MySQL 窗口函数](https://dev.mysql.com/doc/refman/8.0/en/window-functions.html) 的发行版，使用了**不支持**的函数 `ROW_NUMBER()`
 - [⚠️] xgo 镜像使用的 tag 为 `go-1.23.1`，可能会有操作系统不再受到支持（如 Windows 7）
 
 ## 前端

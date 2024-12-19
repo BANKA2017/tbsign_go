@@ -143,6 +143,9 @@ func main() {
 	}
 
 	dbExists := true
+	versionStruct := struct {
+		Version string
+	}{}
 
 	if share.DBPath != "" {
 		// sqlite
@@ -160,6 +163,9 @@ func main() {
 		if setup {
 			_plugin.SetupSystem(share.DBMode, share.DBPath, "", "", "", "", share.DBTLSOption, logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
 		}
+
+		_function.GormDB.R.Raw("SELECT sqlite_version() AS version;").Scan(&versionStruct)
+		share.DBVersion = versionStruct.Version
 	} else {
 		// mysql
 		if share.DBUsername == "" || share.DBPassword == "" {
@@ -192,7 +198,14 @@ func main() {
 				log.Fatal("db:", err)
 			}
 		}
+
+		// version
+
+		_function.GormDB.R.Raw("SELECT @@version AS version;").Scan(&versionStruct)
+		share.DBVersion = versionStruct.Version
 	}
+
+	// log.Println(share.DBVersion)
 
 	// init
 	_function.InitOptions()

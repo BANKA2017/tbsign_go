@@ -7,6 +7,7 @@ var DBPassword string
 var DBEndpoint string
 var DBName string
 var DBTLSOption string
+var DBVersion string
 
 var DBPath string
 var DBMode string
