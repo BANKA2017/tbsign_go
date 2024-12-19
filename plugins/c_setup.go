@@ -12,6 +12,7 @@ import (
 	"github.com/BANKA2017/tbsign_go/assets"
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
+	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
@@ -71,15 +72,21 @@ func SetupSystem(dbMode, dbPath, dbUsername, dbPassword, dbEndpoint, dbName, dbT
 
 	fmt.Println("⌛正在建立数据表和索引")
 	if dbMode == "mysql" {
-		for i, v := range strings.Split(string(_tc_mysql), ";") {
-			if len(strings.TrimSpace(v)) == 0 {
-				continue
+		err = _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
+			for i, v := range strings.Split(string(_tc_mysql), ";") {
+				if len(strings.TrimSpace(v)) == 0 {
+					continue
+				}
+				fmt.Println("⌛导入第" + strconv.Itoa(i+1) + "项...")
+				err := tx.Exec(v).Error
+				if err != nil {
+					return err
+				}
 			}
-			fmt.Println("⌛导入第" + strconv.Itoa(i+1) + "项...")
-			err := _function.GormDB.W.Exec(v).Error
-			if err != nil {
-				log.Fatal(err)
-			}
+			return nil
+		})
+		if err != nil {
+			log.Fatal(err)
 		}
 	} else {
 		err := _function.GormDB.W.Exec(string(_tc_sqlite)).Error
@@ -89,12 +96,18 @@ func SetupSystem(dbMode, dbPath, dbUsername, dbPassword, dbEndpoint, dbName, dbT
 	}
 
 	fmt.Println("⌛正在导入默认设置...")
-	for key, value := range assets.DefaultOptions {
-		fmt.Printf("%s: %s\n", key, value)
-		err := _function.SetOption(key, value)
-		if err != nil {
-			log.Fatal(err)
+	err = _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
+		for key, value := range assets.DefaultOptions {
+			fmt.Printf("%s: %s\n", key, value)
+			err := _function.SetOption(key, value, tx)
+			if err != nil {
+				return err
+			}
 		}
+		return nil
+	})
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	// fmt.Println("⌛正在安装插件...")
