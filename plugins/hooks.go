@@ -117,7 +117,7 @@ func InitPluginList() {
 	// get plugin list
 
 	pluginNameList := []string{}
-	pluginNameSet := make(map[string]bool)
+	pluginNameSet := make(map[string]bool, len(PluginList))
 	for name := range PluginList {
 		pluginNameList = append(pluginNameList, name)
 		pluginNameSet[name] = true

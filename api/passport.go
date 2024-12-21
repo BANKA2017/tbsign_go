@@ -403,7 +403,7 @@ func GetSettings(c echo.Context) error {
 	var accountSettings []*model.TcUsersOption
 	_function.GormDB.R.Where("uid = ?", uid).Find(&accountSettings)
 
-	settings := make(map[string]string)
+	settings := make(map[string]string, len(accountSettings))
 
 	for _, v := range accountSettings {
 		settings[v.Name] = v.Value
@@ -446,6 +446,8 @@ func UpdateSettings(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", settings, "tbsign"))
 }
 
+var resetPasswordVerifyCodeLength = 6
+
 func ResetPassword(c echo.Context) error {
 	email := strings.TrimSpace(c.FormValue("email"))
 	verifyCode := strings.TrimSpace(c.FormValue("code"))
@@ -471,6 +473,9 @@ func ResetPassword(c echo.Context) error {
 	}
 
 	if verifyCode != "" {
+		if len(verifyCode) != resetPasswordVerifyCodeLength {
+			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
+		}
 		_v, ok := _function.ResetPwdList.Load(accountInfo.ID)
 
 		if !ok || _v == nil {
@@ -513,11 +518,11 @@ func ResetPassword(c echo.Context) error {
 		}
 		// init a callback code
 		code := strconv.Itoa(int(rand.Uint32()))
-		for len(code) < 6 {
+		for len(code) < resetPasswordVerifyCodeLength {
 			code = "0" + code
 		}
 
-		code = code[0:6]
+		code = code[0:resetPasswordVerifyCodeLength]
 
 		v.Value = code
 		v.Time += 1

@@ -39,7 +39,7 @@ func GetAdminSettings(c echo.Context) error {
 	var adminSettings []*model.TcOption
 	_function.GormDB.R.Where("name in ?", _function.SettingsFilter).Find(&adminSettings)
 
-	settings := make(map[string]string)
+	settings := make(map[string]string, len(adminSettings))
 	for _, v := range adminSettings {
 		if v.Name == "sign_mode" {
 			tmpOption := []string{}
