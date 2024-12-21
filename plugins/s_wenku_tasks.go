@@ -385,7 +385,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 		var tasksList []WenkuTaskList
 		var result []WenkuTaskToSave
 
-		tasksIDList := sync.Map{}
+		tasksIDList := make(map[int]bool)
 
 		// vip matrix
 		var vipMatrixIDSet []string
@@ -431,8 +431,8 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 				log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, signinTasksResponse.Status.Msg)
 			} else {
 				for _, v := range signinTasksResponse.Data.TaskList {
-					if _, ok := tasksIDList.Load(v.TaskID); !ok && !slices.Contains(wenkuPassTasks, v.TaskID) && v.TaskStatus >= 1 && v.TaskStatus <= 3 {
-						tasksIDList.Store(v.TaskID, nil)
+					if !tasksIDList[v.TaskID] && !slices.Contains(wenkuPassTasks, v.TaskID) && v.TaskStatus >= 1 && v.TaskStatus <= 3 {
+						tasksIDList[v.TaskID] = true
 						tasksList = append(tasksList, v)
 					}
 				}
@@ -448,8 +448,8 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 					log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, tasksListResponse.Status.Msg)
 				} else {
 					for _, v := range tasksListResponse.Data.TaskList {
-						if _, ok := tasksIDList.Load(v.TaskID); !ok && !slices.Contains(wenkuPassTasks, v.TaskID) && v.TaskStatus >= 1 && v.TaskStatus <= 3 {
-							tasksIDList.Store(v.TaskID, nil)
+						if !tasksIDList[v.TaskID] && !slices.Contains(wenkuPassTasks, v.TaskID) && v.TaskStatus >= 1 && v.TaskStatus <= 3 {
+							tasksIDList[v.TaskID] = true
 							tasksList = append(tasksList, v)
 						}
 					}
@@ -869,7 +869,7 @@ func PluginWenkuTasksGetTasksStatus(c echo.Context) error {
 
 		var tasksList []WenkuTaskList
 
-		tasksIDList := sync.Map{}
+		tasksIDList := make(map[int]bool)
 
 		signinTasksResponse, err := GetWenkuTaskList(cookie, "signin")
 		if err != nil {
@@ -881,8 +881,8 @@ func PluginWenkuTasksGetTasksStatus(c echo.Context) error {
 			log.Println("wenku_tasks_api: ", cookie.ID, cookie.UID, "Unable to fetch signin list", signinTasksResponse.Status.Msg)
 		} else {
 			for _, v := range signinTasksResponse.Data.TaskList {
-				if _, ok := tasksIDList.Load(v.TaskID); !ok {
-					tasksIDList.Store(v.TaskID, nil)
+				if !tasksIDList[v.TaskID] {
+					tasksIDList[v.TaskID] = true
 					tasksList = append(tasksList, v)
 				}
 			}
@@ -897,8 +897,8 @@ func PluginWenkuTasksGetTasksStatus(c echo.Context) error {
 			log.Println("wenku_tasks_api: ", cookie.ID, cookie.UID, "Unable to fetch tasklist list", tasksListResponse.Status.Msg)
 		} else {
 			for _, v := range tasksListResponse.Data.TaskList {
-				if _, ok := tasksIDList.Load(v.TaskID); !ok {
-					tasksIDList.Store(v.TaskID, nil)
+				if !tasksIDList[v.TaskID] {
+					tasksIDList[v.TaskID] = true
 					tasksList = append(tasksList, v)
 				}
 			}

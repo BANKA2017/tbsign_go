@@ -42,9 +42,11 @@ func main() {
 	flag.StringVar(&share.DBPath, "db_path", "", "Database path")
 
 	// mysql
+	var tmpHost string
 	flag.StringVar(&share.DBUsername, "username", "", "Username")
 	flag.StringVar(&share.DBPassword, "pwd", "", "Password")
-	flag.StringVar(&share.DBEndpoint, "endpoint", "127.0.0.1:3306", "endpoint")
+	flag.StringVar(&tmpHost, "endpoint", "127.0.0.1:3306", "MySQL host:port (deprecated)")
+	flag.StringVar(&share.DBEndpoint, "host", "127.0.0.1:3306", "MySQL host:port")
 	flag.StringVar(&share.DBName, "db", "tbsign", "Database name")
 	flag.StringVar(&share.DBTLSOption, "db_tls", "false", "Option for CA cert (MySQL only)")
 
@@ -69,6 +71,10 @@ func main() {
 
 	flag.Parse()
 
+	if share.DBEndpoint == "127.0.0.1:3306" && tmpHost != "127.0.0.1:3306" {
+		share.DBEndpoint = tmpHost
+	}
+
 	if setup {
 		log.Println("WARNING: 覆盖安装已启用，会覆盖现有数据，请做好备份")
 	}
@@ -80,7 +86,10 @@ func main() {
 	if share.DBPassword == "" {
 		share.DBPassword = os.Getenv("tc_pwd")
 	}
-	if share.DBEndpoint == "" && os.Getenv("tc_endpoint") != "" {
+	if share.DBEndpoint == "127.0.0.1:3306" && os.Getenv("tc_host") != "" {
+		share.DBEndpoint = os.Getenv("tc_host")
+	}
+	if share.DBEndpoint == "127.0.0.1:3306" && os.Getenv("tc_endpoint") != "" {
 		share.DBEndpoint = os.Getenv("tc_endpoint")
 	}
 	if share.DBName == "" && os.Getenv("tc_db") != "" {

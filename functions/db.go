@@ -107,6 +107,6 @@ func ConnectToMySQL(username string, password string, endpoint string, dbname st
 		Conn: sqlDB,
 	}), &gorm.Config{Logger: logger.Default.LogMode(logLevel)})
 
-	log.Println(servicePrefix+ ": mysql connected!")
+	log.Println(servicePrefix + ": mysql connected!")
 	return dbHandle, dbHandle, err
 }

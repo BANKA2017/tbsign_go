@@ -117,16 +117,16 @@ func InitPluginList() {
 	// get plugin list
 
 	pluginNameList := []string{}
-	pluginNameSet := sync.Map{}
+	pluginNameSet := make(map[string]bool)
 	for name := range PluginList {
 		pluginNameList = append(pluginNameList, name)
-		pluginNameSet.Store(name, nil)
+		pluginNameSet[name] = true
 	}
 
 	_function.GormDB.R.Where("name in ?", pluginNameList).Find(&pluginListDB)
 
 	for _, pluginStatus := range pluginListDB {
-		pluginNameSet.Delete(pluginStatus.Name)
+		delete(pluginNameSet, pluginStatus.Name)
 		PluginList[pluginStatus.Name].(PluginHooks).SetDBInfo(pluginStatus)
 
 		// sync option
@@ -142,17 +142,15 @@ func InitPluginList() {
 			PluginOptionValidatorMap.Store(optionKey, optionValidator.Validate)
 		}
 	}
-
-	pluginNameSet.Range(func(key any, value any) bool {
-		pluginNameSet.Delete(key)
-		PluginList[key.(string)].(PluginHooks).SetDBInfo(&model.TcPlugin{
-			Name:    key.(string),
+	for key := range pluginNameSet {
+		delete(pluginNameSet, key)
+		PluginList[key].(PluginHooks).SetDBInfo(&model.TcPlugin{
+			Name:    key,
 			Status:  false,
 			Ver:     "-1",
 			Options: "",
 		})
-		return true
-	})
+	}
 	AddToSettingsFilter()
 }
 

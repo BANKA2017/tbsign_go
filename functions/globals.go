@@ -1,6 +1,8 @@
 package _function
 
 import (
+	crypto_rand "crypto/rand"
+	"encoding/base64"
 	"log"
 	"math/rand/v2"
 	"net/url"
@@ -161,4 +163,15 @@ func RandomEmoji() string {
 		resStr = append(resStr, emojiMap[v])
 	}
 	return strings.Join(resStr, "")
+}
+
+func RandomTokenBuilder(n int64) (string, error) {
+	token := make([]byte, n)
+
+	_, err := crypto_rand.Read(token)
+	if err != nil {
+		return "", err
+	}
+
+	return base64.RawURLEncoding.EncodeToString(token), nil
 }
