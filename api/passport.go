@@ -478,21 +478,29 @@ func ResetPassword(c echo.Context) error {
 		if !ok || _v == nil {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
 		}
-		if __v, ok := _v.(*_function.ResetPwdStruct); ok && __v.Value == verifyCode {
-			if newPwd == "" {
-				return c.JSON(http.StatusOK, _function.ApiTemplate(404, "密码不能为空", resMessage, "tbsign"))
-			} else {
-				// create new password
-				hash, err := _function.CreatePasswordHash(newPwd)
-				if err != nil {
-					return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法更新密码...", resMessage, "tbsign"))
+
+		if __v, ok := _v.(*_function.ResetPwdStruct); ok && __v.TryTime <= _function.ResetPwdMaxTimes {
+			__v.TryTime += 1
+			_function.ResetPwdList.Store(accountInfo.ID, __v)
+
+			if __v.Value == verifyCode {
+				if newPwd == "" {
+					return c.JSON(http.StatusOK, _function.ApiTemplate(404, "密码不能为空", resMessage, "tbsign"))
+				} else {
+					// create new password
+					hash, err := _function.CreatePasswordHash(newPwd)
+					if err != nil {
+						return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法更新密码...", resMessage, "tbsign"))
+					}
+
+					_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", accountInfo.ID).Update("pw", string(hash))
+
+					_function.ResetPwdList.Delete(accountInfo.ID)
+					keyBucket.Delete(strconv.Itoa(int(accountInfo.ID)))
+					return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resMessage, "tbsign"))
 				}
-
-				_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", accountInfo.ID).Update("pw", string(hash))
-
-				_function.ResetPwdList.Delete(accountInfo.ID)
-				keyBucket.Delete(strconv.Itoa(int(accountInfo.ID)))
-				return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resMessage, "tbsign"))
+			} else {
+				return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
 			}
 		} else {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))

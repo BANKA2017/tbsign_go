@@ -168,7 +168,7 @@ func ResetMessageBuilder(uid int32, forceMode bool) *_function.ResetPwdStruct {
 		v = _v.(*_function.ResetPwdStruct)
 	}
 
-	if forceMode || v.Time < _function.ResetPwdMaxTimes {
+	if forceMode || v.ResetTime < _function.ResetPwdMaxTimes {
 		// init a callback code
 		code := strconv.Itoa(int(rand.Uint32()))
 		for len(code) < resetPasswordVerifyCodeLength {
@@ -178,11 +178,12 @@ func ResetMessageBuilder(uid int32, forceMode bool) *_function.ResetPwdStruct {
 		code = code[0:resetPasswordVerifyCodeLength]
 
 		v.Value = code
-		v.Time += 1
+		v.ResetTime += 1
 		v.VerifyCode = _function.RandomEmoji()
-
-		_function.ResetPwdList.Store(uid, v)
+		v.TryTime = 0
 	}
+
+	_function.ResetPwdList.Store(uid, v)
 
 	return v
 }
@@ -191,7 +192,7 @@ func SendResetMessage(uid int32, pushType string, forceMode bool) (string, error
 
 	v := ResetMessageBuilder(uid, forceMode)
 
-	if !forceMode && v.Time >= _function.ResetPwdMaxTimes {
+	if !forceMode && (v.ResetTime >= _function.ResetPwdMaxTimes || v.TryTime >= _function.ResetPwdMaxTimes) {
 		if len(v.Value) == resetPasswordVerifyCodeLength {
 			v.Value, _ = _function.RandomTokenBuilder(48)
 			_function.ResetPwdList.Store(uid, v)

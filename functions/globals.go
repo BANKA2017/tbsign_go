@@ -24,7 +24,8 @@ type ResetPwdStruct struct {
 	VerifyCode string `json:"verify_code"`
 	Expire     int64  `json:"expire"`
 	Value      string `json:"value"`
-	Time       int64  `json:"time"`
+	ResetTime  int64  `json:"time"`
+	TryTime    int64  `json:"try_time"`
 }
 
 const ResetPwdMaxTimes = 5
