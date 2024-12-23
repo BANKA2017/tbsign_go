@@ -21,10 +21,10 @@ var CookieList sync.Map //= make(map[int32]_type.TypeCookie)
 var FidList sync.Map    //= make(map[string]int64)
 
 type ResetPwdStruct struct {
-	VerifyCode string
-	Expire     int64
-	Value      string
-	Time       int64
+	VerifyCode string `json:"verify_code"`
+	Expire     int64  `json:"expire"`
+	Value      string `json:"value"`
+	Time       int64  `json:"time"`
 }
 
 const ResetPwdMaxTimes = 5

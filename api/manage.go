@@ -402,6 +402,41 @@ func AdminDeleteAccountToken(c echo.Context) error {
 	}
 }
 
+func AdminResetPassword(c echo.Context) error {
+	uid := c.Get("uid").(string)
+	targetUID := c.Param("uid")
+
+	var resetCodeResponse _function.ResetPwdStruct
+
+	if uid == targetUID {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "您已登录，请到首页修改密码", resetCodeResponse, "tbsign"))
+	}
+	if targetUID == "" {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", resetCodeResponse, "tbsign"))
+	} else if uid == targetUID {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无法修改自己的账号", resetCodeResponse, "tbsign"))
+	}
+
+	numTargetUID, err := strconv.ParseInt(targetUID, 10, 64)
+	if err != nil || numTargetUID <= 0 {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", resetCodeResponse, "tbsign"))
+	}
+
+	// exists?
+	var accountInfo model.TcUser
+	err = _function.GormDB.R.Model(&model.TcUser{}).Where("id = ?", targetUID).First(&accountInfo).Error
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", resetCodeResponse, "tbsign"))
+	}
+	if accountInfo.Role == "admin" && uid != "1" {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "只有根管理员允许改变管理员状态", resetCodeResponse, "tbsign"))
+	}
+
+	resetCodeResponse = *ResetMessageBuilder(int32(numTargetUID), true)
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resetCodeResponse, "tbsign"))
+}
+
 func GetAccountsList(c echo.Context) error {
 	page := c.QueryParams().Get("page")
 	count := c.QueryParams().Get("count")

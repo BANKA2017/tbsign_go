@@ -2,7 +2,6 @@ package _api
 
 import (
 	"log"
-	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
@@ -446,14 +445,12 @@ func UpdateSettings(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", settings, "tbsign"))
 }
 
-var resetPasswordVerifyCodeLength = 6
-
 func ResetPassword(c echo.Context) error {
 	email := strings.TrimSpace(c.FormValue("email"))
 	verifyCode := strings.TrimSpace(c.FormValue("code"))
 	newPwd := strings.TrimSpace(c.FormValue("password"))
 
-	pushType := strings.TrimSpace(c.QueryParams().Get("push_type"))
+	// pushType := strings.TrimSpace(c.QueryParams().Get("push_type"))
 
 	resMessage := map[string]string{
 		"verify_emoji": "",
@@ -503,52 +500,14 @@ func ResetPassword(c echo.Context) error {
 	} else if verifyCode == "" && newPwd != "" {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
 	} else {
-		_v, ok := _function.ResetPwdList.Load(accountInfo.ID)
-		v := new(_function.ResetPwdStruct)
+		VerifyCode, err := SendResetMessage(accountInfo.ID, "", false)
 
-		if !ok || _v == nil {
-			v = _function.VariablePtrWrapper(_function.ResetPwdStruct{
-				Expire: _function.Now.Unix() + _function.ResetPwdExpire,
-			})
-		} else {
-			v = _v.(*_function.ResetPwdStruct)
-			if v.Time >= _function.ResetPwdMaxTimes {
-				return c.JSON(http.StatusOK, _function.ApiTemplate(429, "已超过最大验证次数，请稍后再试", resMessage, "tbsign"))
-			}
-		}
-		// init a callback code
-		code := strconv.Itoa(int(rand.Uint32()))
-		for len(code) < resetPasswordVerifyCodeLength {
-			code = "0" + code
-		}
-
-		code = code[0:resetPasswordVerifyCodeLength]
-
-		v.Value = code
-		v.Time += 1
-		v.VerifyCode = _function.RandomEmoji()
-
-		_function.ResetPwdList.Store(accountInfo.ID, v)
-
-		mailObject := _function.PushMessageTemplateResetPassword(v.VerifyCode, code)
-
-		// user default message type
-		userMessageType := "email"
-		if pushType != "" && slices.Contains(_function.MessageTypeList, pushType) {
-			userMessageType = pushType
-		} else {
-			localPushType := _function.GetUserOption("go_message_type", strconv.Itoa(int(accountInfo.ID)))
-			if slices.Contains(_function.MessageTypeList, localPushType) {
-				userMessageType = localPushType
-			}
-		}
-
-		err := _function.SendMessage(userMessageType, accountInfo.ID, mailObject.Title, mailObject.Body)
-		if err != nil {
-			log.Println(err)
+		if err != nil && err.Error() == "已超过最大验证次数，请稍后再试" {
+			return c.JSON(http.StatusOK, _function.ApiTemplate(429, "已超过最大验证次数，请稍后再试", resMessage, "tbsign"))
+		} else if err != nil && err.Error() == "消息发送失败" {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(500, "消息发送失败", resMessage, "tbsign"))
 		} else {
-			resMessage["verify_emoji"] = v.VerifyCode
+			resMessage["verify_emoji"] = VerifyCode
 			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resMessage, "tbsign"))
 		}
 	}

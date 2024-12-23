@@ -3,10 +3,13 @@ package _api
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
-	"crypto/rand"
+	crypto_rand "crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
+	"log"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"sync"
@@ -118,7 +121,7 @@ func bearerTokenBuilder(uid string, forceUpdate bool) string {
 	if key, ok := keyBucket.Load(uid); ok && !forceUpdate {
 		privateKey = key.(*ecdsa.PrivateKey)
 	} else {
-		privateKey, _ = ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		privateKey, _ = ecdsa.GenerateKey(elliptic.P256(), crypto_rand.Reader)
 		keyBucket.Store(uid, privateKey)
 	}
 
@@ -148,4 +151,72 @@ func bearerTokenBuilder(uid string, forceUpdate bool) string {
 	ss, _ := token.SignedString(privateKey)
 
 	return ss
+}
+
+var resetPasswordVerifyCodeLength = 6
+
+func ResetMessageBuilder(uid int32, forceMode bool) *_function.ResetPwdStruct {
+	_v, ok := _function.ResetPwdList.Load(uid)
+	var v *_function.ResetPwdStruct
+
+	if !ok || _v == nil || _v.(*_function.ResetPwdStruct).Expire <= _function.Now.Unix() {
+		v = _function.VariablePtrWrapper(_function.ResetPwdStruct{
+			Expire: _function.Now.Unix() + _function.ResetPwdExpire,
+		})
+
+	} else {
+		v = _v.(*_function.ResetPwdStruct)
+	}
+
+	if forceMode || v.Time < _function.ResetPwdMaxTimes {
+		// init a callback code
+		code := strconv.Itoa(int(rand.Uint32()))
+		for len(code) < resetPasswordVerifyCodeLength {
+			code = "0" + code
+		}
+
+		code = code[0:resetPasswordVerifyCodeLength]
+
+		v.Value = code
+		v.Time += 1
+		v.VerifyCode = _function.RandomEmoji()
+
+		_function.ResetPwdList.Store(uid, v)
+	}
+
+	return v
+}
+
+func SendResetMessage(uid int32, pushType string, forceMode bool) (string, error) {
+
+	v := ResetMessageBuilder(uid, forceMode)
+
+	if !forceMode && v.Time >= _function.ResetPwdMaxTimes {
+		if len(v.Value) == resetPasswordVerifyCodeLength {
+			v.Value, _ = _function.RandomTokenBuilder(48)
+			_function.ResetPwdList.Store(uid, v)
+		}
+		return "", errors.New("已超过最大验证次数，请稍后再试")
+	}
+
+	mailObject := _function.PushMessageTemplateResetPassword(v.VerifyCode, v.Value)
+
+	// user default message type
+	userMessageType := "email"
+	if pushType != "" && slices.Contains(_function.MessageTypeList, pushType) {
+		userMessageType = pushType
+	} else {
+		localPushType := _function.GetUserOption("go_message_type", strconv.Itoa(int(uid)))
+		if slices.Contains(_function.MessageTypeList, localPushType) {
+			userMessageType = localPushType
+		}
+	}
+
+	err := _function.SendMessage(userMessageType, uid, mailObject.Title, mailObject.Body)
+	if err != nil {
+		log.Println("send-reset-message", err)
+		return "", errors.New("消息发送失败")
+	} else {
+		return v.VerifyCode, nil
+	}
 }
