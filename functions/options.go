@@ -72,7 +72,7 @@ func DeleteOption(keyName string, ext ...any) error {
 
 func GetUserOption(keyName string, uid string) string {
 	var tmpUserOption model.TcUsersOption
-	GormDB.R.Model(&model.TcUsersOption{}).Where("uid = ? AND name = ?", uid, keyName).First(&tmpUserOption)
+	GormDB.R.Model(&model.TcUsersOption{}).Where("uid = ? AND name = ?", uid, keyName).Take(&tmpUserOption)
 	return tmpUserOption.Value
 }
 

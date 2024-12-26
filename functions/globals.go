@@ -47,7 +47,7 @@ func GetCookie(pid int32, bduss_only ...bool) _type.TypeCookie {
 	if !ok || cookie == nil {
 		var _cookie _type.TypeCookie
 		var cookieDB model.TcBaiduid
-		GormDB.R.Model(&model.TcBaiduid{}).Where("id = ?", pid).First(&cookieDB)
+		GormDB.R.Model(&model.TcBaiduid{}).Where("id = ?", pid).Take(&cookieDB)
 
 		_cookie.ID = cookieDB.ID
 		_cookie.Name = cookieDB.Name
@@ -79,7 +79,7 @@ func GetFid(name string) int64 {
 	if !ok || fid == nil {
 		// find in db
 		var tiebaInfo model.TcTieba
-		GormDB.R.Model(&model.TcTieba{}).Where("tieba = ? AND fid IS NOT NULL AND fid != ''", name).First(&tiebaInfo)
+		GormDB.R.Model(&model.TcTieba{}).Where("tieba = ? AND fid IS NOT NULL AND fid != ''", name).Take(&tiebaInfo)
 		_fid := int64(tiebaInfo.Fid)
 		if _fid == 0 {
 			forumNameInfo, err := GetForumNameShare(name)

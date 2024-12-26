@@ -413,7 +413,7 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 
 	// pre check
 	var accountInfo model.TcBaiduid
-	_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id = ? AND uid = ?", pid, uid).First(&accountInfo)
+	_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id = ? AND uid = ?", pid, uid).Take(&accountInfo)
 	if accountInfo.Portrait == "" {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}

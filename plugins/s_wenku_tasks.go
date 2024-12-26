@@ -370,7 +370,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 		if accountStatusList[taskUserItem.UID] == "" {
 			// check uid is exists
 			var accountInfo model.TcBaiduid
-			_function.GormDB.R.Model(&model.TcBaiduid{}).Where("uid = ?", taskUserItem.UID).First(&accountInfo)
+			_function.GormDB.R.Model(&model.TcBaiduid{}).Where("uid = ?", taskUserItem.UID).Take(&accountInfo)
 			if accountInfo.Portrait == "" {
 				// clean
 				_function.GormDB.W.Where("uid = ?", taskUserItem.UID).Delete(&model.TcKdWenkuTask{})
@@ -661,7 +661,7 @@ func (pluginInfo *WenkuTasksPluginType) RemoveAccount(_type string, id int32, tx
 	if _type == "pid" {
 		// get uid
 		account := new(model.TcBaiduid)
-		_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id = ?", id).First(account)
+		_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id = ?", id).Take(account)
 		if account.ID == 0 {
 			// pid is not exists
 			return nil
@@ -669,7 +669,7 @@ func (pluginInfo *WenkuTasksPluginType) RemoveAccount(_type string, id int32, tx
 		uid := strconv.Itoa(int(account.UID))
 		// get task id
 		task := new(model.TcKdWenkuTask)
-		_function.GormDB.R.Model(&model.TcKdWenkuTask{}).Where("pid = ?", id).First(task)
+		_function.GormDB.R.Model(&model.TcKdWenkuTask{}).Where("pid = ?", id).Take(task)
 
 		// rebuild vip matrix set
 		if !slices.Contains([]string{"", "0"}, _function.GetUserOption("kd_wenku_tasks_vip_matrix", uid)) {
@@ -787,7 +787,7 @@ func PluginWenkuTasksAddAccount(c echo.Context) error {
 			Date: 0,
 		}
 		_function.GormDB.W.Create(&dataToInsert)
-		_function.GormDB.R.Model(&model.TcKdWenkuTask{}).Where("uid = ? AND pid = ?", uid, numPid).First(&dataToInsert)
+		_function.GormDB.R.Model(&model.TcKdWenkuTask{}).Where("uid = ? AND pid = ?", uid, numPid).Take(&dataToInsert)
 
 		// vip matrix
 		if !slices.Contains([]string{"", "0"}, _function.GetUserOption("kd_wenku_tasks_vip_matrix", uid)) {

@@ -306,7 +306,7 @@ func AdminResetTiebaList(c echo.Context) error {
 
 	// exists?
 	var accountInfo model.TcUser
-	err = _function.GormDB.R.Model(&model.TcUser{}).Where("id = ?", targetUID).First(&accountInfo).Error
+	err = _function.GormDB.R.Model(&model.TcUser{}).Where("id = ?", targetUID).Take(&accountInfo).Error
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
@@ -351,7 +351,7 @@ func AdminDeleteTiebaAccountList(c echo.Context) error {
 
 	// exists?
 	var accountInfo model.TcUser
-	err = _function.GormDB.R.Model(&model.TcUser{}).Where("id = ?", targetUID).First(&accountInfo).Error
+	err = _function.GormDB.R.Model(&model.TcUser{}).Where("id = ?", targetUID).Take(&accountInfo).Error
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
@@ -424,7 +424,7 @@ func AdminResetPassword(c echo.Context) error {
 
 	// exists?
 	var accountInfo model.TcUser
-	err = _function.GormDB.R.Model(&model.TcUser{}).Where("id = ?", targetUID).First(&accountInfo).Error
+	err = _function.GormDB.R.Model(&model.TcUser{}).Where("id = ?", targetUID).Take(&accountInfo).Error
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", resetCodeResponse, "tbsign"))
 	}

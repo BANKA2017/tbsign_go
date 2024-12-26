@@ -262,7 +262,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 		if accountStatusList[taskUserItem.UID] == "" {
 			// check uid is exists
 			var accountInfo model.TcBaiduid
-			_function.GormDB.R.Model(&model.TcBaiduid{}).Where("uid = ?", taskUserItem.UID).First(&accountInfo)
+			_function.GormDB.R.Model(&model.TcBaiduid{}).Where("uid = ?", taskUserItem.UID).Take(&accountInfo)
 			if accountInfo.Portrait == "" {
 				// clean
 				_function.GormDB.W.Where("uid = ?", taskUserItem.UID).Delete(&model.TcKdGrowth{})
@@ -565,7 +565,7 @@ func PluginGrowthTasksAddAccount(c echo.Context) error {
 			Date: 0,
 		}
 		_function.GormDB.W.Create(&dataToInsert)
-		_function.GormDB.R.Model(&model.TcKdGrowth{}).Where("uid = ? AND pid = ?", uid, numPid).First(&dataToInsert)
+		_function.GormDB.R.Model(&model.TcKdGrowth{}).Where("uid = ? AND pid = ?", uid, numPid).Take(&dataToInsert)
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", dataToInsert, "tbsign"))
 	}
 }

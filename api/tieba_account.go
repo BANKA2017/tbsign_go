@@ -244,7 +244,7 @@ func GetTiebaAccountItem(c echo.Context) error {
 	}
 
 	var tiebaAccount model.TcBaiduid
-	_function.GormDB.R.Where("id = ? AND uid = ?", numPid, uid).First(&tiebaAccount)
+	_function.GormDB.R.Where("id = ? AND uid = ?", numPid, uid).Take(&tiebaAccount)
 
 	tiebaAccount.Bduss = ""
 	tiebaAccount.Stoken = ""

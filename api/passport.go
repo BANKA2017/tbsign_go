@@ -103,7 +103,7 @@ func DeleteAccount(c echo.Context) error {
 	}
 
 	var accountInfo model.TcUser
-	_function.GormDB.R.Model(&model.TcUser{}).Where("id = ?", uid).First(&accountInfo)
+	_function.GormDB.R.Model(&model.TcUser{}).Where("id = ?", uid).Take(&accountInfo)
 
 	// verify password
 	err := _function.VerifyPasswordHash(accountInfo.Pw, password)

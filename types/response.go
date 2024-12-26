@@ -64,7 +64,6 @@ type ForumList struct {
 }
 
 type ForumListResponse[T any] struct {
-	// TODO fix `"forum_list":[]`
 	ForumList T      `json:"forum_list,omitempty"`
 	HasMore   string `json:"has_more,omitempty"`
 	// ServerTime string `json:"server_time,omitempty"`
