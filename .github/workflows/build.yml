@@ -9,7 +9,7 @@ concurrency:
 
 env:
   NUXT_BASE_PATH: "/api"
-  CGO_ENABLED: "1"
+  CGO_ENABLED: "0"
 
 jobs:
   build:

@@ -30,7 +30,7 @@ ldflags="\
 -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
 -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash' \
 "
-go build -ldflags "$ldflags"
+CGO_ENABLED=0 go build -ldflags "$ldflags"
 mv tbsign_go $flag
 cd $flag
 

@@ -219,11 +219,7 @@ go run main.go --db_tls=/etc/ssl/certs/ca-certificates.crt
 
 ### CGO
 
-需要设置 `CGO_ENABLED=1`， [go-sqlite3](https://github.com/mattn/go-sqlite3) 需要用到 CGO
-
 > go-sqlite3 is cgo package. If you want to build your app using go-sqlite3, you need gcc. However, after you have built and installed go-sqlite3 with `go install github.com/mattn/go-sqlite3` (which requires gcc), you can build your app without relying on gcc in future.
-
-因此官方提供的可执行文件可能无法在不支持 `glibc` 的 Linux 发行版（如 `Alpine`）运行，请自行解决
 
 ### build.sh
 
