@@ -28,12 +28,12 @@ jobs:
           docker pull techknowlogick/xgo:go-1.23.1
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.23.1'
-          cache-dependency-path: 'go.sum'
+          go-version: "1.23.1"
+          cache-dependency-path: "go.sum"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'yarn'
+          cache: "yarn"
           cache-dependency-path: tbsign_go_fe/yarn.lock
 
       - name: Frontend
@@ -95,4 +95,3 @@ jobs:
           fail_on_unmatched_files: true
           tag_name: ${{ env.build_prefix }}
           generate_release_notes: true
-
