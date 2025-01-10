@@ -136,6 +136,43 @@ go run main.go --db_tls=/etc/ssl/certs/ca-certificates.crt
 - [⚠️] 开发环境使用的 MySQL 版本号为 `8.0` 或更高，其他 MySQL 发行版请自行测试是否可用
 - [⚠️] xgo 镜像使用的 tag 为 `go-1.23.1`，可能会有操作系统不再受到支持（如 Windows 7）
 
+### Docker
+
+因为各种原因想要使用 Docker 部署的用户，请参考下面的 compose 配置，官方 releases 支持的 `os-arch` 组合是 `linux-amd64` 和 `linux-arm64`
+
+```yml
+# docker-compose.yml
+# docker compose up -d
+services:
+  tbsign-go:
+    image: alpine:3                           # 如果 alpine:3 无法运行，可以改为 debian:12
+    container_name: tbsign-go
+    environment:
+      tc_db_path: "/app/tbsign/tbsign_go.db"  # SQLite 目录，填的是容器的 path，而不是宿主机的 path，建议跟可执行文件放在一起
+      tc_api: "true"
+      tc_fe: "true"
+      # ...
+      # 其他环境变量请参考前面 #env 部分
+      ## 可能只支持自动化安装，或者提前安装好再迁移数据库
+    volumes:
+      - /path/to/binary/file:/app/tbsign      # 将 `/path/to/node/file` 改成可执行文件所在的目录（不含可执行文件的名字）
+    working_dir: /app/tbsign
+    command: ["sh", "-c", "./tbsign_go"]      # 如果文件名不叫 tbsign_go，别忘了改名；如果使用 debian:12，要改为 ["sh", "-c", "apt update && apt install -y ca-certificates && update-ca-certificates && ./tbsign_go"]
+    ports:
+      - 8080:1323                             # 宿主机端口:容器内端口，根据实际情况修改
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 100
+        window: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 50m
+        max-file: "3"
+```
+
 ## 前端
 
 ➡️ <https://github.com/BANKA2017/tbsign_go_fe>
