@@ -262,6 +262,8 @@ services:
 
 简单写了个编译脚本，存放在 `build.sh`
 
+默认 `CGO_ENABLED=0`，如果编译结果无法运行可以尝试改为 `CGO_ENABLED=1`
+
 ### 版本号
 
 格式为 `tbsign_go.<YYYYMMDD>.<BACKEND_COMMIT_HASH[0:7]>.<FRONTEND_COMMIT_HASH[0:7]>.<OS>-<ARCH>` ，如果是用于 Windows 系统的二进制还会有 `.exe` 拓展名
