@@ -155,17 +155,12 @@ services:
       # 其他环境变量请参考前面 #env 部分
       ## 可能只支持自动化安装，或者提前安装好再迁移数据库
     volumes:
-      - /path/to/binary/file:/app/tbsign      # 将 `/path/to/node/file` 改成可执行文件所在的目录（不含可执行文件的名字）
+      - /path/to/binary/file:/app/tbsign      # 将 `/path/to/binary/file` 改成可执行文件所在的目录（不含可执行文件的名字）
     working_dir: /app/tbsign
     command: ["sh", "-c", "./tbsign_go"]      # 如果文件名不叫 tbsign_go，别忘了改名；如果使用 debian:12，要改为 ["sh", "-c", "apt update && apt install -y ca-certificates && update-ca-certificates && ./tbsign_go"]
     ports:
       - 8080:1323                             # 宿主机端口:容器内端口，根据实际情况修改
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 100
-        window: 5s
+    restart: unless-stopped
     logging:
       driver: "json-file"
       options:
