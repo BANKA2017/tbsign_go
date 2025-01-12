@@ -43,6 +43,7 @@ jobs:
           export NUXT_COMMIT_HASH=$fe_commit_hash
           echo "fe_commit_hash=${fe_commit_hash}" >> "$GITHUB_ENV"
           yarn install
+          yarn run postinstall
           yarn run generate
           rm -r ../assets/dist
           cp -R .output/public/ ../assets/dist

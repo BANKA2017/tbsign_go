@@ -12,6 +12,7 @@ cd tbsign_go_fe
 fe_commit_hash=$(git rev-parse HEAD)
 export NUXT_COMMIT_HASH=$fe_commit_hash
 yarn install
+yarn run postinstall
 yarn run generate
 unset NUXT_BASE_PATH
 unset NUXT_COMMIT_HASH
