@@ -60,7 +60,7 @@ func GetServerStatus(c echo.Context) error {
 	ForumCount := checkinStatus.Success + checkinStatus.Failed + checkinStatus.Waiting + checkinStatus.Ignore
 
 	onlineCount := 0
-	keyBucket.Range(func(key, value any) bool {
+	HttpAuthRefreshTokenMap.Range(func(key, value any) bool {
 		onlineCount++
 		return true
 	})

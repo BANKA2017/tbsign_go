@@ -275,7 +275,7 @@ func AdminModifyAccountInfo(c echo.Context) error {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(500, fmt.Sprintf("删除用户 %d:%s 失败 (%s)", accountInfo.ID, accountInfo.Name, err.Error()), _function.EchoEmptyObject, "tbsign"))
 		}
 
-		keyBucket.Delete(strconv.Itoa(int(accountInfo.ID)))
+		HttpAuthRefreshTokenMap.Delete(int(accountInfo.ID))
 	} else {
 		_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", accountInfo.ID).Updates(&newAccountInfo)
 	}
@@ -395,7 +395,9 @@ func AdminDeleteAccountToken(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无法踢自己下线", false, "tbsign"))
 	}
 
-	if _, ok := keyBucket.LoadAndDelete(targetUID); ok {
+	numTargetUID, _ := strconv.ParseInt(targetUID, 10, 64)
+
+	if _, ok := HttpAuthRefreshTokenMap.LoadAndDelete(int(numTargetUID)); ok {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 	} else {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不在线上", false, "tbsign"))

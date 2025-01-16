@@ -256,6 +256,15 @@ func main() {
 				}
 			}
 
+			// session list
+			now := time.Now().Unix()
+			_api.HttpAuthRefreshTokenMap.Range(func(key, value any) bool {
+				if value.(*_api.HttpAuthRefreshTokenMapItemStruct).Expire <= now {
+					_api.HttpAuthRefreshTokenMap.Delete(key)
+				}
+				return true
+			})
+
 			// clean pwd list
 			_function.ResetPwdList.Range(func(uid, value any) bool {
 				if value.(*_function.ResetPwdStruct).Expire < _function.Now.Unix() {

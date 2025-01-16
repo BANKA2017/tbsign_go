@@ -11,8 +11,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-const authorizationPrefix = "bearer "
-
 func SetHeaders(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		if !share.EnableFrontend {
@@ -43,13 +41,7 @@ func PreCheck(next echo.HandlerFunc) echo.HandlerFunc {
 
 		authorization := c.Request().Header.Get("Authorization")
 
-		lengthOfAuthorizationPrefix := len(authorizationPrefix)
-
-		if len(authorization) <= lengthOfAuthorizationPrefix || !strings.EqualFold(authorizationPrefix, authorization[0:lengthOfAuthorizationPrefix]) {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(401, "无效 session", _function.EchoEmptyObject, "tbsign"))
-		}
-
-		uid, role := verifyAuthorization(authorization[lengthOfAuthorizationPrefix:])
+		uid, role := verifyAuthorization(authorization)
 
 		// login
 		if uid == "0" {

@@ -1,24 +1,20 @@
 package _api
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	crypto_rand "crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	"github.com/BANKA2017/tbsign_go/share"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slices"
 )
@@ -64,45 +60,28 @@ func verifyAuthorization(authorization string) (string, string) {
 	if authorization == "" {
 		return "0", "guest"
 	} else {
-		// Parse the token
-
-		_unverifiedToken, _, err := jwt.NewParser().ParseUnverified(authorization, &jwt.RegisteredClaims{})
-		if err != nil {
+		token := strings.Split(strings.TrimSpace(authorization), ":")
+		// TODO static target
+		if len(token) != 2 {
 			return "0", "guest"
 		}
 
-		var tmpUID string
-		if claims, ok := _unverifiedToken.Claims.(*jwt.RegisteredClaims); ok {
-			tmpUID = claims.Subject
-		} else {
+		uid, err := strconv.ParseInt(token[0], 10, 64)
+		if err != nil || uid <= 0 {
 			return "0", "guest"
 		}
 
-		if key, ok := keyBucket.Load(tmpUID); ok {
-			token, err := jwt.ParseWithClaims(authorization, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
-				if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
-					return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-				}
-				return &key.(*ecdsa.PrivateKey).PublicKey, nil
-			}, jwt.WithIssuedAt(), jwt.WithIssuer("TbSign->"), jwt.WithExpirationRequired(), jwt.WithValidMethods([]string{"ES256"}))
-			if err != nil || !token.Valid {
+		if storeToken, ok := HttpAuthRefreshTokenMap.Load(int(uid)); ok {
+			tokenContent, ok := storeToken.(*HttpAuthRefreshTokenMapItemStruct)
+			if !ok || tokenContent.Expire <= time.Now().Unix() || tokenContent.Content != token[1] {
 				return "0", "guest"
+			}
+			var accountInfo []*model.TcUser
+			_function.GormDB.R.Where("id = ?", uid).Limit(1).Find(&accountInfo)
+			if len(accountInfo) == 1 {
+				return strconv.Itoa(int(accountInfo[0].ID)), accountInfo[0].Role
 			} else {
-				claims := token.Claims.(*jwt.RegisteredClaims)
-				now := time.Now()
-				//exp & nbf
-				if now.After(claims.ExpiresAt.Time) || now.Before(claims.NotBefore.Time) {
-					return "0", "guest"
-				}
-
-				uid, _ := claims.GetSubject()
-				var accountInfo []*model.TcUser
-				_function.GormDB.R.Where("id = ?", uid).Limit(1).Find(&accountInfo)
-				if len(accountInfo) == 1 {
-					return strconv.Itoa(int(accountInfo[0].ID)), accountInfo[0].Role
-				} else {
-					return "0", "guest"
-				}
+				return "0", "guest"
 			}
 		} else {
 			return "0", "guest"
@@ -114,15 +93,17 @@ func sessionTokenBuilder(uid int32, password string) string {
 	return base64.RawURLEncoding.EncodeToString([]byte(strconv.Itoa(int(uid)) + ":" + hex.EncodeToString(_function.GenHMAC256([]byte(password), []byte(strconv.Itoa(int(uid))+password)))))
 }
 
-var keyBucket sync.Map //= make(map[string]*ecdsa.PrivateKey) // uid -> key
+type HttpAuthRefreshTokenMapItemStruct struct {
+	Content string
+	Expire  int64
+}
 
-func bearerTokenBuilder(uid string, forceUpdate bool) string {
-	privateKey := new(ecdsa.PrivateKey)
-	if key, ok := keyBucket.Load(uid); ok && !forceUpdate {
-		privateKey = key.(*ecdsa.PrivateKey)
-	} else {
-		privateKey, _ = ecdsa.GenerateKey(elliptic.P256(), crypto_rand.Reader)
-		keyBucket.Store(uid, privateKey)
+var HttpAuthRefreshTokenMap sync.Map // int -> HttpAuthRefreshTokenMapItemStruct
+
+func tokenBuilder(uid int) string {
+	token, err := _function.RandomTokenBuilder(48)
+	if err != nil {
+		return ""
 	}
 
 	// expire
@@ -136,21 +117,12 @@ func bearerTokenBuilder(uid string, forceUpdate bool) string {
 		numberCookieExpire = 30
 	}
 
-	// Create the Claims
-	now := time.Now()
-	claims := jwt.RegisteredClaims{
-		Subject:   uid,
-		NotBefore: jwt.NewNumericDate(now),
-		IssuedAt:  jwt.NewNumericDate(now),
-		ExpiresAt: jwt.NewNumericDate(now.Add(time.Duration(numberCookieExpire) * time.Second)),
-		Audience:  []string{"TbSign->"},
-		Issuer:    "TbSign->",
-	}
+	HttpAuthRefreshTokenMap.Store(int(uid), &HttpAuthRefreshTokenMapItemStruct{
+		Content: token,
+		Expire:  time.Now().Add(time.Duration(numberCookieExpire) * time.Second).Unix(),
+	})
 
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-	ss, _ := token.SignedString(privateKey)
-
-	return ss
+	return _function.AppendStrings(strconv.Itoa(uid), ":", token)
 }
 
 var resetPasswordVerifyCodeLength = 6

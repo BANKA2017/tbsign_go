@@ -148,7 +148,7 @@ func DeleteAccount(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "账号删除失败", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	keyBucket.Delete(uid)
+	HttpAuthRefreshTokenMap.Delete(int(numUID))
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "账号已删除，感谢您的使用", map[string]any{
 		"uid":  int64(accountInfo.ID),
@@ -190,8 +190,8 @@ func Login(c echo.Context) error {
 	}
 
 	var resp = tokenResponse{
-		Type:  "bearer",
-		Token: bearerTokenBuilder(strconv.Itoa(int(accountInfo[0].ID)), true),
+		Type:  "session",
+		Token: tokenBuilder(int(accountInfo[0].ID)),
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
@@ -199,7 +199,10 @@ func Login(c echo.Context) error {
 
 func Logout(c echo.Context) error {
 	uid := c.Get("uid").(string)
-	keyBucket.Delete(uid)
+
+	numUID, _ := strconv.ParseInt(uid, 10, 64)
+
+	HttpAuthRefreshTokenMap.Delete(int(numUID))
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 }
@@ -340,9 +343,11 @@ func UpdatePassword(c echo.Context) error {
 
 	_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", uid).Update("pw", string(hash))
 
+	numUID, _ := strconv.ParseInt(uid, 10, 64)
+
 	var resp = tokenResponse{
-		Type:  "bearer",
-		Token: bearerTokenBuilder(uid, true),
+		Type:  "session",
+		Token: tokenBuilder(int(numUID)),
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
@@ -496,7 +501,7 @@ func ResetPassword(c echo.Context) error {
 					_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", accountInfo.ID).Update("pw", string(hash))
 
 					_function.ResetPwdList.Delete(accountInfo.ID)
-					keyBucket.Delete(strconv.Itoa(int(accountInfo.ID)))
+					HttpAuthRefreshTokenMap.Delete(int(accountInfo.ID))
 					return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resMessage, "tbsign"))
 				}
 			} else {
