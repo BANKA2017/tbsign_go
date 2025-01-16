@@ -16,8 +16,9 @@ import (
 )
 
 type tokenResponse struct {
-	Type  string `json:"type"`
-	Token string `json:"token"`
+	Type     string `json:"type"`
+	Token    string `json:"token"`
+	ExpireAt int64  `json:"expire_at"`
 }
 
 type userInfoStruct struct {
@@ -189,9 +190,12 @@ func Login(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号已删除", _function.EchoEmptyObject, "tbsign"))
 	}
 
+	token, expireAt := tokenBuilder(int(accountInfo[0].ID))
+
 	var resp = tokenResponse{
-		Type:  "session",
-		Token: tokenBuilder(int(accountInfo[0].ID)),
+		Type:     "session",
+		Token:    token,
+		ExpireAt: expireAt,
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
@@ -345,9 +349,12 @@ func UpdatePassword(c echo.Context) error {
 
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 
+	token, expireAt := tokenBuilder(int(numUID))
+
 	var resp = tokenResponse{
-		Type:  "session",
-		Token: tokenBuilder(int(numUID)),
+		Type:     "session",
+		Token:    token,
+		ExpireAt: expireAt,
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))

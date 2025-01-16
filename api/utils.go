@@ -73,7 +73,7 @@ func verifyAuthorization(authorization string) (string, string) {
 
 		if storeToken, ok := HttpAuthRefreshTokenMap.Load(int(uid)); ok {
 			tokenContent, ok := storeToken.(*HttpAuthRefreshTokenMapItemStruct)
-			if !ok || tokenContent.Expire <= time.Now().Unix() || tokenContent.Content != token[1] {
+			if !ok || tokenContent.ExpireAt <= time.Now().Unix() || tokenContent.Content != token[1] {
 				return "0", "guest"
 			}
 			var accountInfo []*model.TcUser
@@ -94,16 +94,16 @@ func sessionTokenBuilder(uid int32, password string) string {
 }
 
 type HttpAuthRefreshTokenMapItemStruct struct {
-	Content string
-	Expire  int64
+	Content  string
+	ExpireAt int64
 }
 
 var HttpAuthRefreshTokenMap sync.Map // int -> HttpAuthRefreshTokenMapItemStruct
 
-func tokenBuilder(uid int) string {
+func tokenBuilder(uid int) (string, int64) {
 	token, err := _function.RandomTokenBuilder(48)
 	if err != nil {
-		return ""
+		return "", 0
 	}
 
 	// expire
@@ -117,12 +117,14 @@ func tokenBuilder(uid int) string {
 		numberCookieExpire = 30
 	}
 
+	expireAt := time.Now().Add(time.Duration(numberCookieExpire) * time.Second).Unix()
+
 	HttpAuthRefreshTokenMap.Store(int(uid), &HttpAuthRefreshTokenMapItemStruct{
-		Content: token,
-		Expire:  time.Now().Add(time.Duration(numberCookieExpire) * time.Second).Unix(),
+		Content:  token,
+		ExpireAt: expireAt,
 	})
 
-	return _function.AppendStrings(strconv.Itoa(uid), ":", token)
+	return _function.AppendStrings(strconv.Itoa(uid), ":", token), expireAt
 }
 
 var resetPasswordVerifyCodeLength = 6

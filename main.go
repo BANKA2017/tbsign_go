@@ -259,7 +259,7 @@ func main() {
 			// session list
 			now := time.Now().Unix()
 			_api.HttpAuthRefreshTokenMap.Range(func(key, value any) bool {
-				if value.(*_api.HttpAuthRefreshTokenMapItemStruct).Expire <= now {
+				if value.(*_api.HttpAuthRefreshTokenMapItemStruct).ExpireAt <= now {
 					_api.HttpAuthRefreshTokenMap.Delete(key)
 				}
 				return true
