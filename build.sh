@@ -27,11 +27,13 @@ cp -R ../tbsign_go_fe/.output/public/ assets/dist
 commit_hash=$(git rev-parse HEAD)
 builtAt="$(date -Iseconds)"
 goRuntime=$(go version | sed 's/go version go[0-9]*\.[0-9]*\.[0-9]* //')
+tc_ldd=$(ldd --version | head -n 1)
 ldflags="\
 -X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$builtAt' \
 -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$goRuntime' \
 -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
 -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash' \
+-X 'github.com/BANKA2017/tbsign_go/share.BuildLibc=$tc_ldd' \
 "
 CGO_ENABLED=1 go build -ldflags "$ldflags"
 mv tbsign_go $flag
