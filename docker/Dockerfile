@@ -9,6 +9,6 @@ ENV tc_db_path="/app/tbsign/tbsign_go.db" \
     tc_api="true" \
     tc_fe="true"
 
-CMD ["sh", "-c", "./tbsign_go"]
+CMD ["sh", "-c", "chmod +x tbsign_go && ./tbsign_go"]
 
 EXPOSE 8080

@@ -55,6 +55,10 @@ func IsOfficialSupport() bool {
 	return false
 }
 
+func IsGlibc() bool {
+	return strings.EqualFold(share.BuildLibc, "glibc")
+}
+
 // version = "20240707.c7990c7.6a6db54"
 func Upgrade(version string) error {
 	_os := runtime.GOOS
@@ -64,6 +68,8 @@ func Upgrade(version string) error {
 		return fmt.Errorf("❌ 不支持的版本(%s/%s)，请下载源码后参考 build.sh 编译运行", runtime.GOOS, runtime.GOARCH)
 	} else if share.BuiltAt == "Now" {
 		return errors.New("❌ 不支持的版本 (开发版)，请参考 build.sh 编译运行")
+	} else if !IsGlibc() {
+		return errors.New("❌ 不支持的版本 (非 glibc)，请下载源码后参考 build.sh 编译运行")
 	}
 
 	// pre check version
