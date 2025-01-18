@@ -56,7 +56,7 @@ jobs:
           short_fe_commit_hash=${fe_commit_hash:0:7}
           build_prefix="tbsign_go.$(date +'%+4Y%m%d').$short_commit_hash.$short_fe_commit_hash"
           echo "build_prefix=${build_prefix}" >> "$GITHUB_ENV"
-          builtAt="$(date +'%+4Y-%m-%d %H:%M:%S %z')"
+          builtAt="$(date -Iseconds)"
           goRuntime=$(go version | sed 's/go version go[0-9]*\.[0-9]*\.[0-9]* //')
           ldflags="\
           -X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$builtAt' \
