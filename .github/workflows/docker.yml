@@ -65,7 +65,7 @@ jobs:
       - uses: actions/download-artifact@v4
 
       - name: Set Date Tag
-        run: echo "DATE_TAG=$(date +'%Y%m%d')" >> $GITHUB_ENV
+        run: echo "DATE_TAG=$(date +'%Y%m%d')" >> "$GITHUB_ENV"
 
       - name: Set Up QEMU
         uses: docker/setup-qemu-action@v3
@@ -100,5 +100,7 @@ jobs:
           file: docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: latest,${{ env.DATE_TAG }}
+          tags: |
+            ghcr.io/${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ghcr.io/${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}${{ env.DATE_TAG }}
           labels: ${{ steps.meta.outputs.labels }}
