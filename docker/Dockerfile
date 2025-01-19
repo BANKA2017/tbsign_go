@@ -10,6 +10,8 @@ ENV tc_db_path="/app/tbsign/db/tbsign_go.db" \
     tc_fe="true" \
     tc_address=":1323"
 
-CMD ["sh", "-c", "chmod +x tbsign_go && ./tbsign_go"]
+RUN chmod +x ./tbsign_go && \
+    echo -e "#\!/bin/sh\nsh -c ./tbsign_go" > /run.sh
+ENTRYPOINT ["/run.sh"]
 
 EXPOSE 1323

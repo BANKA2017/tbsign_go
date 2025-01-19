@@ -1,0 +1,27 @@
+# docker compose up -d
+services:
+  tbsign-go:
+    image: ghcr.io/banka2017/tbsign_go:master
+    container_name: tbsign-go
+    environment:
+      ## tc_db_path: "/app/tbsign/db/tbsign_go.db" ### 使用 MySQL 时需要取消注释并且设为空字符串 ""
+      ## tc_api: "true"
+      ## tc_fe: "true"
+      ## tc_address: ":1323"
+      # 上面为 image 自带的环境变量
+      # ...
+      # 其他环境变量请参考前面 #env 部分
+      ## 只支持自动化安装，或者提前安装好再迁移数据库
+
+    ## 使用 SQLite 时建议取消注释，便于备份数据库
+    # volumes:
+    #   - /path/to/db/file:/app/tbsign/db  # 将 `/path/to/db/file` 改成数据库所在的目录（不含文件名）
+
+    ports:
+      - 8080:1323                     # 宿主机端口:容器内端口，根据实际情况修改
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 11m                 # 根据实际情况填写，max-size * max-file = 占用空间
+        max-file: "20"                # 根据实际情况填写，max-size * max-file = 占用空间
