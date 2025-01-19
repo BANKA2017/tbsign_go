@@ -47,7 +47,7 @@ else
     LDFLAGS="$CURRENT_LDFLAGS"
 fi
 
-CGO_ENABLED=1 CC="$libc" go build -ldflags "$LDFLAGS" -tags netgo
+CGO_ENABLED=1 go build -ldflags "$LDFLAGS" -tags netgo
 mv tbsign_go $flag
 cd $flag
 
