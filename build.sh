@@ -9,8 +9,8 @@ export NUXT_BASE_PATH="/api"
 
 mkdir tbsign_build
 cd tbsign_build
-git clone https://github.com/BANKA2017/tbsign_go_fe
-git clone https://github.com/BANKA2017/tbsign_go
+git clone --depth=1 https://github.com/BANKA2017/tbsign_go_fe
+git clone --depth=1 https://github.com/BANKA2017/tbsign_go
 
 # fe
 echo "build: frontend"
