@@ -136,38 +136,6 @@ go run main.go --db_tls=/etc/ssl/certs/ca-certificates.crt
 - [⚠️] 开发环境使用的 MySQL 版本号为 `8.0` 或更高，其他 MySQL 发行版请自行测试是否可用
 - [⚠️] xgo 镜像使用的 tag 为 `go-1.23.1`，可能会有操作系统不再受到支持（如 Windows 7）
 
-### Docker
-
-因为各种原因想要使用 Docker 部署的用户，请参考下面的 compose 配置，官方 releases 支持的 `os-arch` 组合是 `linux-amd64` 和 `linux-arm64`
-
-```yml
-# docker-compose.yml
-# docker compose up -d
-services:
-  tbsign-go:
-    image: alpine:3                           # 如果 alpine:3 无法运行，可以改为 debian:12
-    container_name: tbsign-go
-    environment:
-      tc_db_path: "/app/tbsign/tbsign_go.db"  # SQLite 目录，填的是容器的 path，而不是宿主机的 path，建议跟可执行文件放在一起
-      tc_api: "true"
-      tc_fe: "true"
-      # ...
-      # 其他环境变量请参考前面 #env 部分
-      ## 可能只支持自动化安装，或者提前安装好再迁移数据库
-    volumes:
-      - /path/to/binary/file:/app/tbsign      # 将 `/path/to/binary/file` 改成可执行文件所在的目录（不含可执行文件的名字）
-    working_dir: /app/tbsign
-    command: ["sh", "-c", "./tbsign_go"]      # 如果文件名不叫 tbsign_go，别忘了改名；如果使用 debian:12，要改为 ["sh", "-c", "apt update && apt install -y ca-certificates && update-ca-certificates && ./tbsign_go"]
-    ports:
-      - 8080:1323                             # 宿主机端口:容器内端口，根据实际情况修改
-    restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: 50m
-        max-file: "3"
-```
-
 ## 前端
 
 ➡️ <https://github.com/BANKA2017/tbsign_go_fe>
@@ -253,17 +221,48 @@ services:
 
 > go-sqlite3 is cgo package. If you want to build your app using go-sqlite3, you need gcc. However, after you have built and installed go-sqlite3 with `go install github.com/mattn/go-sqlite3` (which requires gcc), you can build your app without relying on gcc in future.
 
+如有静态编译的需求（如下文的 Docker 使用 Alpine 默认不使用 glibc），可以使用 `musl-gcc`，参考命令
+
+```bash
+# apt install -y musl-dev
+
+CGO_ENABLED=1 CC=musl-gcc go build -ldflags "-linkmode external -extldflags -static" -tags netgo
+
+# 或者 docker 一步到位
+docker run --rm -v $(pwd):/app/tbsign -e EXTERNAL_LDFLAGS="-linkmode external -extldflags -static" -w /app/tbsign alpine:3 sh -c "apk add --no-cache --upgrade nodejs npm go git gcc musl-dev && npm install -g corepack && corepack enable && chmod +x build.sh && sh ./build.sh"
+
+# root@rpi4:~# ldd tbsign_go
+# not a dynamic executable
+```
+
 ### build.sh
 
-简单写了个编译脚本，存放在 `build.sh`
+简单写了个编译脚本，存放在 `~/build.sh`
 
-默认 `CGO_ENABLED=0`，如果编译结果无法运行可以尝试改为 `CGO_ENABLED=1`
+### Docker
+
+➡️ [ghcr.io/banka2017/tbsign_go](https://github.com/BANKA2017/tbsign_go/pkgs/container/tbsign_go)
+
+Dockerfile 在 `~/docker`，官方发布的镜像只会支持 `linux/arm64` 和 `linux/amd64`
+
+Docker 版不支持在设置页面下载更新
+
+参考启动命令
+
+```bash
+docker run -d --restart unless-stopped -v ./db:/app/tbsign/db -p 8080:1323 ghcr.io/banka2017/tbsign_go:master
+```
+
+- 默认数据库目录在 `/app/tbsign/db/tbsign_go.db`，如果使用 `SQLite` 建议将 `/app/tbsign/db` 映射到宿主机；如果使用 `MySQL` 可以忽略本条
+- 开放端口号为 `1323`
 
 ### 版本号
 
-格式为 `tbsign_go.<YYYYMMDD>.<BACKEND_COMMIT_HASH[0:7]>.<FRONTEND_COMMIT_HASH[0:7]>.<OS>-<ARCH>` ，如果是用于 Windows 系统的二进制还会有 `.exe` 拓展名
+格式为 `tbsign_go.<YYYYMMDD>.<BACKEND_COMMIT_HASH[0:7]>.<FRONTEND_COMMIT_HASH[0:7]>.<OS>-<ARCH>` ，如果是用于 Windows 系统的可执行文件还会有 `.exe` 拓展名
 
-官方提供的二进制包含 linux/amd64, linux/arm64, windows/amd64, darwin/amd64, darwin/arm64 五个版本，使用 [xgo](https://github.com/techknowlogick/xgo) 进行交叉编译，手动触发编译的 Actions 任务
+官方提供的可执行文件包含 linux/amd64, linux/arm64, windows/amd64, darwin/amd64, darwin/arm64 五个版本，使用 [xgo](https://github.com/techknowlogick/xgo) 进行交叉编译，手动触发编译的 Actions 任务
+
+\* 由于添加 `musl-libc` 静态编译产物比较麻烦，所以不会发布 `musl` 版的可执行文件，如有需要可以解包 Docker 镜像
 
 其它系统请自行编译运行
 
