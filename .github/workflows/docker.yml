@@ -21,7 +21,7 @@ jobs:
 
       - name: Build arm64-musl package
         run: |
-          docker run --rm -v $(pwd):/app/tbsign -e CC=musl-gcc -e EXTERNAL_LDFLAGS="-linkmode external -extldflags -static" -w /app/tbsign alpine:3 sh -c "apk add --no-cache --upgrade nodejs npm go git gcc musl-dev && npm install -g corepack && corepack enable && chmod +x build.sh && sh ./build.sh"
+          docker run --rm -v $(pwd):/app/tbsign -e CCC=musl-gcc -e EXTERNAL_LDFLAGS="-linkmode external -extldflags -static" -w /app/tbsign alpine:3 sh -c "apk add --no-cache --upgrade nodejs npm go git gcc musl-dev && npm install -g corepack && corepack enable && chmod +x build.sh && sh ./build.sh"
 
       - name: Upload package
         uses: actions/upload-artifact@v4
@@ -38,7 +38,7 @@ jobs:
 
       - name: Build amd64-musl package
         run: |
-          docker run --rm -v $(pwd):/app/tbsign -e CC=musl-gcc -e EXTERNAL_LDFLAGS="-linkmode external -extldflags -static" -w /app/tbsign alpine:3 sh -c "apk add --no-cache --upgrade nodejs npm go git gcc musl-dev && npm install -g corepack && corepack enable && chmod +x build.sh && sh ./build.sh"
+          docker run --rm -v $(pwd):/app/tbsign -e CCC=musl-gcc -e EXTERNAL_LDFLAGS="-linkmode external -extldflags -static" -w /app/tbsign alpine:3 sh -c "apk add --no-cache --upgrade nodejs npm go git gcc musl-dev && npm install -g corepack && corepack enable && chmod +x build.sh && sh ./build.sh"
 
       - name: Upload package
         uses: actions/upload-artifact@v4

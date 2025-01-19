@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## from env
-libc="${CC:-$(go env CC)}"
+libc="${CCC:-$(go env CC)}"
 EXTERNAL_LDFLAGS="${EXTERNAL_LDFLAGS:-}"
 
 flag=$(pwd)
