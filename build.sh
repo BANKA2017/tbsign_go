@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## from env
-libc="${CCC:-$(go env CC)}"
+PUBLISH_TYPE="${PUBLISH_TYPE:-binary}"
 EXTERNAL_LDFLAGS="${EXTERNAL_LDFLAGS:-}"
 
 flag=$(pwd)
@@ -38,7 +38,7 @@ CURRENT_LDFLAGS="\
 -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$goRuntime' \
 -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
 -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash' \
--X 'github.com/BANKA2017/tbsign_go/share.BuildLibc=$libc' \
+-X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE' \
 "
 
 if [ -n "$EXTERNAL_LDFLAGS" ]; then

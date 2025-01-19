@@ -76,7 +76,7 @@ func GetServerStatus(c echo.Context) error {
 			"runtime":                       share.BuildRuntime,
 			"commit_hash":                   share.BuildGitCommitHash,
 			"embedded_frontend_commit_hash": share.BuildEmbeddedFrontendGitCommitHash,
-			"libc":                          share.BuildLibc,
+			"publish_type":                  share.BuildPublishType,
 		},
 		"cron_sign_again": _function.GetOption("cron_sign_again"),
 		"compat":          _function.GetOption("core_version"),

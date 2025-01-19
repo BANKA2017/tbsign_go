@@ -55,8 +55,8 @@ func IsOfficialSupport() bool {
 	return false
 }
 
-func IsGCC() bool {
-	return strings.ToLower(share.BuildLibc) == "gcc"
+func IsBinaryType() bool {
+	return strings.ToLower(share.BuildPublishType) == "binary"
 }
 
 // version = "20240707.c7990c7.6a6db54"
@@ -68,8 +68,8 @@ func Upgrade(version string) error {
 		return fmt.Errorf("❌ 不支持的版本(%s/%s)，请下载源码后参考 build.sh 编译运行", runtime.GOOS, runtime.GOARCH)
 	} else if share.BuiltAt == "Now" {
 		return errors.New("❌ 不支持的版本 (开发版)，请参考 build.sh 编译运行")
-	} else if !IsGCC() {
-		return errors.New("❌ 不支持的版本 (非 glibc)，请下载源码后参考 build.sh 编译运行")
+	} else if !IsBinaryType() {
+		return fmt.Errorf("❌ 不支持直接下载更新的版本(%s)", share.BuildPublishType)
 	}
 
 	// pre check version
