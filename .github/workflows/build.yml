@@ -24,11 +24,11 @@ jobs:
       - name: Init
         run: |
           git clone https://github.com/BANKA2017/tbsign_go_fe
-          go install src.techknowlogick.com/xgo@v1.7.1-0.20241001173926-419a3c2a0387
-          docker pull techknowlogick/xgo:go-1.23.1
+          go install src.techknowlogick.com/xgo@v1.8.1-0.20250116210223-976b12fc778d
+          docker pull techknowlogick/xgo:go-1.23.5
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.23.1"
+          go-version: "1.23.5"
           cache-dependency-path: "go.sum"
       - uses: actions/setup-node@v4
         with:
@@ -64,7 +64,7 @@ jobs:
           -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash' \
           "
-          $HOME/go/bin/xgo -go go-1.23.1 -out "$build_prefix" -ldflags "$ldflags" -tags netgo --targets=linux/amd64,linux/arm64,windows/amd64,darwin/amd64,darwin/arm64 ../
+          $HOME/go/bin/xgo -go go-1.23.5 -out "$build_prefix" -ldflags "$ldflags" -tags netgo --targets=linux/amd64,linux/arm64,windows/amd64,darwin/amd64,darwin/arm64 ../
 
       - name: Rename & SHA-256
         run: |
