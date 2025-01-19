@@ -1,4 +1,9 @@
 #!/bin/bash
+
+## from env
+libc="${CC:-$(go env CC)}"
+EXTERNAL_LDFLAGS="${EXTERNAL_LDFLAGS:-}"
+
 flag=$(pwd)
 export NUXT_BASE_PATH="/api"
 
@@ -27,15 +32,22 @@ cp -R ../tbsign_go_fe/.output/public/ assets/dist
 commit_hash=$(git rev-parse HEAD)
 builtAt="$(date -Iseconds)"
 goRuntime=$(go version | sed 's/go version go[0-9]*\.[0-9]*\.[0-9]* //')
-tc_ldd=$(ldd --version | head -n 1)
-ldflags="\
+
+CURRENT_LDFLAGS="\
 -X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$builtAt' \
 -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$goRuntime' \
 -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
 -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash' \
--X 'github.com/BANKA2017/tbsign_go/share.BuildLibc=$tc_ldd' \
+-X 'github.com/BANKA2017/tbsign_go/share.BuildLibc=$libc' \
 "
-CGO_ENABLED=1 go build -ldflags "$ldflags"
+
+if [ -n "$EXTERNAL_LDFLAGS" ]; then
+    LDFLAGS="$CURRENT_LDFLAGS $EXTERNAL_LDFLAGS"
+else
+    LDFLAGS="$CURRENT_LDFLAGS"
+fi
+
+CGO_ENABLED=1 CC="$libc" go build -ldflags "$LDFLAGS" -tags netgo
 mv tbsign_go $flag
 cd $flag
 
