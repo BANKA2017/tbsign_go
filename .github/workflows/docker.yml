@@ -8,42 +8,92 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  NUXT_BASE_PATH: "/api"
+  CGO_ENABLED: "1"
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-arm64-binary:
-    name: Build ARM64 Binary
-    runs-on: ubuntu-24.04-arm
-    steps:
-      - name: Checkout
-        uses: actions/checkout@master
-
-      - name: Build arm64-musl package
-        run: |
-          docker run --rm -v $(pwd):/app/tbsign -e PUBLISH_TYPE=docker -e EXTERNAL_LDFLAGS="-linkmode external -extldflags -static" -w /app/tbsign alpine:3 sh -c "apk add --no-cache --upgrade nodejs npm go git gcc musl-dev && npm install -g corepack && corepack enable && chmod +x build.sh && sh ./build.sh"
-
-      - name: Upload package
-        uses: actions/upload-artifact@v4
-        with:
-          name: "tbsign_go.musl.arm64"
-          path: tbsign_go
-
-  build-amd64-binary:
-    name: Build AMD64 Binary
+  build-frontend:
+    name: Build Frontend
     runs-on: ubuntu-24.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@master
+      - name: Clone repo
+        run: git clone https://github.com/BANKA2017/tbsign_go_fe
 
-      - name: Build amd64-musl package
+      - uses: actions/setup-node@v4
+        name: Setup Node
+        with:
+          node-version: 22
+          cache: "yarn"
+          cache-dependency-path: tbsign_go_fe/yarn.lock
+
+      - name: Frontend
         run: |
-          docker run --rm -v $(pwd):/app/tbsign -e PUBLISH_TYPE=docker -e EXTERNAL_LDFLAGS="-linkmode external -extldflags -static" -w /app/tbsign alpine:3 sh -c "apk add --no-cache --upgrade nodejs npm go git gcc musl-dev && npm install -g corepack && corepack enable && chmod +x build.sh && sh ./build.sh"
+          cd tbsign_go_fe
+          fe_commit_hash=$(git rev-parse HEAD)
+          export NUXT_COMMIT_HASH=$fe_commit_hash
+          echo "fe_commit_hash=${fe_commit_hash}" >> "$GITHUB_ENV"
+          yarn install
+          yarn run postinstall
+          yarn run generate
 
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: "tbsign_go.musl.amd64"
+          name: "tbsign_go.fe"
+          path: tbsign_go_fe/.output/public/
+
+  build-binary:
+    name: Build Binary for ${{ matrix.arch }}
+    strategy:
+      matrix:
+        arch:
+          - name: arm64
+            runs-on: ubuntu-24.04-arm
+            compiler: /usr/bin/aarch64-linux-musl-gcc
+          - name: amd64
+            runs-on: ubuntu-24.04
+            compiler: /usr/bin/x86_64-linux-musl-gcc
+    runs-on: ${{ matrix.arch.runs-on }}
+    needs: build-frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+      - uses: actions/download-artifact@v4
+        with:
+          name: tbsign_go.fe
+          path: assets/dist
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.5"
+          cache-dependency-path: "go.sum"
+      - name: Install musl libc
+        run: sudo apt install -y musl-dev
+      - name: Backend
+        run: |
+          commit_hash=$(git rev-parse HEAD)
+          short_commit_hash=${commit_hash:0:7}
+          short_fe_commit_hash=${fe_commit_hash:0:7}
+          build_prefix="tbsign_go.$(date +'%+4Y%m%d').$short_commit_hash.$short_fe_commit_hash"
+          echo "build_prefix=${build_prefix}" >> "$GITHUB_ENV"
+          builtAt="$(date -Iseconds)"
+          goRuntime=$(go version | sed 's/go version go[0-9]*\.[0-9]*\.[0-9]* //')
+          PUBLISH_TYPE=docker
+          ldflags="\
+          -X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$builtAt' \
+          -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$goRuntime' \
+          -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
+          -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash' \
+          -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE' \
+          -linkmode external -extldflags -static
+          "
+          CC=${{ matrix.arch.compiler }} go build -ldflags "$ldflags" -tags netgo
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: "tbsign_go.musl.${{ matrix.arch.name }}"
           path: tbsign_go
 
   combine-docker:
@@ -56,8 +106,7 @@ jobs:
       id-token: write
 
     needs:
-      - build-arm64-binary
-      - build-amd64-binary
+      - build-binary
     steps:
       - name: Checkout
         uses: actions/checkout@master
