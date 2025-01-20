@@ -72,6 +72,7 @@ jobs:
         run: sudo apt install -y musl-dev
       - name: Backend
         run: |
+          fe_commit_hash=${{ needs.build-frontend.outputs.fe_commit_hash }}
           commit_hash=$(git rev-parse HEAD)
           short_commit_hash=${commit_hash:0:7}
           short_fe_commit_hash=${fe_commit_hash:0:7}

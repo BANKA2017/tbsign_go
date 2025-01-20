@@ -62,6 +62,7 @@ jobs:
         run: |
           go install src.techknowlogick.com/xgo@v1.8.1-0.20250116210223-976b12fc778d
           docker pull techknowlogick/xgo:go-1.23.5
+          echo "fe_commit_hash=${{ needs.build-frontend.outputs.fe_commit_hash }}" >> "$GITHUB_ENV"
       - uses: actions/setup-go@v5
         with:
           go-version: "1.23.5"
@@ -145,6 +146,7 @@ jobs:
         run: sudo apt install -y musl-dev
       - name: Backend
         run: |
+          fe_commit_hash=${{ needs.build-frontend.outputs.fe_commit_hash }}
           commit_hash=$(git rev-parse HEAD)
           short_commit_hash=${commit_hash:0:7}
           short_fe_commit_hash=${fe_commit_hash:0:7}
