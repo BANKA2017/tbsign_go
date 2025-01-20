@@ -118,7 +118,7 @@ jobs:
           generate_release_notes: true
 
   build-binary:
-    name: Build Binary for ${{ matrix.arch }}
+    name: Build Binary for ${{ matrix.arch.name }}
     strategy:
       matrix:
         arch:

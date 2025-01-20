@@ -45,7 +45,7 @@ jobs:
           path: tbsign_go_fe/.output/public/
 
   build-binary:
-    name: Build Binary for ${{ matrix.arch }}
+    name: Build Binary for ${{ matrix.arch.name }}
     strategy:
       matrix:
         arch:
