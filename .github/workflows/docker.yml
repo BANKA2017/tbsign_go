@@ -17,6 +17,8 @@ jobs:
   build-frontend:
     name: Build Frontend
     runs-on: ubuntu-24.04
+    outputs:
+      fe_commit_hash: ${{ steps.build-fe.outputs.fe_commit_hash }}
     steps:
       - name: Clone repo
         run: git clone https://github.com/BANKA2017/tbsign_go_fe
@@ -29,11 +31,12 @@ jobs:
           cache-dependency-path: tbsign_go_fe/yarn.lock
 
       - name: Frontend
+        id: build-fe
         run: |
           cd tbsign_go_fe
           fe_commit_hash=$(git rev-parse HEAD)
           export NUXT_COMMIT_HASH=$fe_commit_hash
-          echo "fe_commit_hash=${fe_commit_hash}" >> "$GITHUB_ENV"
+          echo "fe_commit_hash=${fe_commit_hash}" >> "$GITHUB_OUTPUT"
           yarn install
           yarn run postinstall
           yarn run generate
