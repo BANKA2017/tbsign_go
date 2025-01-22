@@ -86,13 +86,17 @@ func (pluginInfo *PluginInfo) SetDBInfo(info *model.TcPlugin) error {
 func (pluginInfo *PluginInfo) Switch() bool {
 	pluginInfo.RWMutex.Lock()
 	defer pluginInfo.RWMutex.Unlock()
-	pluginInfo.Info.Status = !pluginInfo.Info.Status
+	if pluginInfo.Info.Status == 0 {
+		pluginInfo.Info.Status = 1
+	} else {
+		pluginInfo.Info.Status = 0
+	}
 	_function.GormDB.W.Model(&model.TcPlugin{}).Where("name = ?", pluginInfo.Name).Update("status", pluginInfo.Info.Status)
-	return pluginInfo.Info.Status
+	return _function.TinyInt2Bool(pluginInfo.Info.Status)
 }
 
 func (pluginInfo *PluginInfo) GetSwitch() bool {
-	return pluginInfo.Info.Status
+	return _function.TinyInt2Bool(pluginInfo.Info.Status)
 }
 
 func (pluginInfo *PluginInfo) CheckActive() bool {
@@ -146,7 +150,7 @@ func InitPluginList() {
 		delete(pluginNameSet, key)
 		PluginList[key].(PluginHooks).SetDBInfo(&model.TcPlugin{
 			Name:    key,
-			Status:  false,
+			Status:  0,
 			Ver:     "-1",
 			Options: "",
 		})
@@ -159,7 +163,7 @@ func UpdatePluginInfo(name string, version string, status bool, options string) 
 	err := _function.GormDB.W.Model(&model.TcPlugin{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcPlugin{
 		Name:    name,
 		Ver:     version,
-		Status:  status,
+		Status:  _function.BoolToTinyInt(status),
 		Options: options,
 	}).Error
 
@@ -171,7 +175,7 @@ func UpdatePluginInfo(name string, version string, status bool, options string) 
 	info := PluginList[name].(PluginHooks).GetInfo()
 	PluginList[name].(PluginHooks).SetDBInfo(&model.TcPlugin{
 		Name:    name,
-		Status:  false,
+		Status:  0,
 		Ver:     info.Version,
 		Options: "",
 	})
@@ -189,7 +193,7 @@ func DeletePluginInfo(name string) error {
 	// memory cache
 	PluginList[name].(PluginHooks).SetDBInfo(&model.TcPlugin{
 		Name:    name,
-		Status:  false,
+		Status:  0,
 		Ver:     "-1",
 		Options: "",
 	})
@@ -215,8 +219,10 @@ func AddToSettingsFilter() {
 
 func DeleteAccount(_type string, id int32, tx *gorm.DB) error {
 	for _, p := range PluginList {
-		if err := p.RemoveAccount(_type, id, tx); err != nil {
-			return err
+		if p.(PluginHooks).GetDBInfo().Ver != "-1" {
+			if err := p.RemoveAccount(_type, id, tx); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

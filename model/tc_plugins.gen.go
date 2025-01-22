@@ -9,7 +9,7 @@ const TableNameTcPlugin = "tc_plugins"
 // TcPlugin mapped from table <tc_plugins>
 type TcPlugin struct {
 	Name    string `gorm:"column:name;primaryKey" json:"name"`
-	Status  bool   `gorm:"column:status;not null" json:"status"`
+	Status  int    `gorm:"column:status;not null" json:"status"`
 	Ver     string `gorm:"column:ver;not null" json:"ver"`
 	Options string `gorm:"column:options" json:"options"`
 }

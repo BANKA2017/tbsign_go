@@ -50,6 +50,7 @@ func main() {
 	flag.StringVar(&share.DBEndpoint, "host", "127.0.0.1:3306", "MySQL host:port")
 	flag.StringVar(&share.DBName, "db", "tbsign", "Database name")
 	flag.StringVar(&share.DBTLSOption, "db_tls", "false", "Option for CA cert (MySQL only)")
+	flag.StringVar(&share.DBMode, "db_mode", "mysql", "sqlite/mysql")
 
 	//proxy
 	flag.BoolVar(&_function.IgnoreProxy, "no_proxy", false, "Ignore the http proxy config from environment vars")
@@ -146,7 +147,6 @@ func main() {
 	}
 
 	// connect to db
-	share.DBMode = "mysql"
 	logLevel := logger.Error
 	if share.TestMode {
 		logLevel = logger.Info
@@ -252,7 +252,7 @@ func main() {
 
 			// plugins
 			for _, info := range _plugin.PluginList {
-				if info.(_plugin.PluginHooks).GetDBInfo().Status {
+				if _function.TinyInt2Bool(info.(_plugin.PluginHooks).GetDBInfo().Status) {
 					go info.Action()
 				}
 			}

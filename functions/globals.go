@@ -176,3 +176,14 @@ func RandomTokenBuilder(n int64) (string, error) {
 
 	return base64.RawURLEncoding.EncodeToString(token), nil
 }
+
+func TinyInt2Bool(t int) bool {
+	return t != 0
+}
+func BoolToTinyInt(b bool) int {
+	if b {
+		return 1
+	} else {
+		return 0
+	}
+}

@@ -48,16 +48,16 @@ func GetServerStatus(c echo.Context) error {
 
 	/// forums
 	checkinStatus := new(struct {
-		Success int64 `json:"success"`
-		Failed  int64 `json:"failed"`
-		Waiting int64 `json:"waiting"`
-		Ignore  int64 `json:"ignore"`
+		Success  int64 `json:"success"`
+		Failed   int64 `json:"failed"`
+		Waiting  int64 `json:"waiting"`
+		IsIgnore int64 `json:"ignore"`
 	})
 
 	today := strconv.Itoa(_function.Now.Local().Day())
-	_function.GormDB.R.Model(&model.TcTieba{}).Select("SUM(CASE WHEN NOT no AND status = 0 AND latest = "+today+" THEN 1 ELSE 0 END) AS success", "SUM(CASE WHEN NOT no AND status <> 0 AND latest = "+today+" THEN 1 ELSE 0 END) AS failed", "SUM(CASE WHEN NOT no AND latest <> "+today+" THEN 1 ELSE 0 END) AS waiting", "SUM(CASE WHEN no THEN 1 ELSE 0 END) AS `ignore`").Scan(checkinStatus)
+	_function.GormDB.R.Model(&model.TcTieba{}).Select("SUM(CASE WHEN NOT (no = 0) AND status = 0 AND latest = "+today+" THEN 1 ELSE 0 END) AS success", "SUM(CASE WHEN NOT (no = 0) AND status <> 0 AND latest = "+today+" THEN 1 ELSE 0 END) AS failed", "SUM(CASE WHEN NOT (no = 0) AND latest <> "+today+" THEN 1 ELSE 0 END) AS waiting", "SUM(CASE WHEN no <> 0 THEN 1 ELSE 0 END) AS is_ignore").Scan(checkinStatus)
 
-	ForumCount := checkinStatus.Success + checkinStatus.Failed + checkinStatus.Waiting + checkinStatus.Ignore
+	ForumCount := checkinStatus.Success + checkinStatus.Failed + checkinStatus.Waiting + checkinStatus.IsIgnore
 
 	onlineCount := 0
 	HttpAuthRefreshTokenMap.Range(func(key, value any) bool {
@@ -114,7 +114,7 @@ func GetPluginsList(c echo.Context) error {
 		resPluginList[name] = _function.VariablePtrWrapper(PluginListContent{
 			Name:   value.Name,
 			Ver:    value.Info.Ver,
-			Status: value.Info.Status,
+			Status: _function.TinyInt2Bool(value.Info.Status),
 
 			PluginNameCN:      value.PluginNameCN,
 			PluginNameCNShort: value.PluginNameCNShort,

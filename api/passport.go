@@ -533,6 +533,11 @@ func ResetPassword(c echo.Context) error {
 	}
 }
 
+type TcBackupExportStructTcTieba struct {
+	*model.TcTieba
+	No bool `json:"no"`
+}
+
 func ExportAccountData(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
@@ -576,8 +581,17 @@ func ExportAccountData(c echo.Context) error {
 	// _function.GormDB.W.Model(&model.TcVer4RankLog{}).Where("uid = ?", uid).Find(&tcVer4RankLog)
 	// _function.GormDB.W.Model(&model.TcKdGrowth{}).Where("uid = ?", uid).Find(&tcKdGrowth)
 
+	var tcTiebaForExport []*TcBackupExportStructTcTieba
+
+	for _, tcTiebaItem := range tcTieba {
+		tcTiebaForExport = append(tcTiebaForExport, &TcBackupExportStructTcTieba{
+			tcTiebaItem,
+			_function.TinyInt2Bool(tcTiebaItem.No),
+		})
+	}
+
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
-		"tc_tieba":   tcTieba,
+		"tc_tieba":   tcTiebaForExport,
 		"tc_baiduid": tcBaiduid,
 		// "tc_users_option":  tcUsersOption,
 		// "tc_ver4_ban_list": tcVer4BanList,
@@ -696,7 +710,7 @@ func ImportAccountData(c echo.Context) error {
 					Pid:       pid,
 					Fid:       int32(importTiebaItem.Fid),
 					Tieba:     importTiebaItem.Tieba,
-					No:        importTiebaItem.No,
+					No:        _function.BoolToTinyInt(importTiebaItem.No),
 					Status:    int32(importTiebaItem.Status),
 					Latest:    int32(importTiebaItem.Latest),
 					LastError: importTiebaItem.LastError,
@@ -752,7 +766,7 @@ func ImportAccountData(c echo.Context) error {
 					Pid:       pid,
 					Fid:       int32(importTiebaItem.Fid),
 					Tieba:     importTiebaItem.Tieba,
-					No:        importTiebaItem.No,
+					No:        _function.BoolToTinyInt(importTiebaItem.No),
 					Status:    int32(importTiebaItem.Status),
 					Latest:    int32(importTiebaItem.Latest),
 					LastError: importTiebaItem.LastError,

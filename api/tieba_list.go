@@ -45,7 +45,7 @@ func AddTieba(c echo.Context) error {
 			UID:    int32(numUID),
 			Pid:    int32(numPid),
 			Fid:    int32(fid),
-			No:     false,
+			No:     0,
 			Latest: 0,
 		},
 		Tieba:     _function.VariablePtrWrapper(fname),

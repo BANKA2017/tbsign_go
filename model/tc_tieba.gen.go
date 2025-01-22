@@ -13,7 +13,7 @@ type TcTieba struct {
 	Pid       int32  `gorm:"column:pid;not null" json:"pid"`
 	Fid       int32  `gorm:"column:fid;not null" json:"fid"`
 	Tieba     string `gorm:"column:tieba;not null" json:"tieba"`
-	No        bool   `gorm:"column:no;not null" json:"no"`
+	No        int    `gorm:"column:no;not null" json:"no"`
 	Status    int32  `gorm:"column:status;not null" json:"status"`
 	Latest    int32  `gorm:"column:latest;not null" json:"latest"`
 	LastError string `gorm:"column:last_error" json:"last_error"`
