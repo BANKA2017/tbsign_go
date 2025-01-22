@@ -198,7 +198,7 @@ func (pluginInfo *LoopBanPluginType) Install() error {
 		_function.GormDB.W.Exec("ALTER TABLE `tc_ver4_ban_list` ADD KEY `uid` (`uid`), ADD KEY `id_uid` (`id`,`uid`), ADD KEY `pid` (`pid`), ADD KEY `id_date_stime_etime_uid` (`id`,`date`,`stime`,`etime`,`uid`) USING BTREE;")
 		_function.GormDB.W.Exec("ALTER TABLE `tc_ver4_ban_userset` ADD UNIQUE KEY `uid` (`uid`);")
 	} else {
-		_function.GormDB.W.Set("gorm:table_options", "WITHOUT ROWID").Migrator().CreateTable(&model.TcVer4BanUserset{})
+		_function.GormDB.W.Migrator().CreateTable(&model.TcVer4BanUserset{})
 		_function.GormDB.W.Migrator().CreateTable(&model.TcVer4BanList{})
 
 		_function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_ver4_ban_list_uid" ON "tc_ver4_ban_list" ("uid");`)
