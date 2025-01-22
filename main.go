@@ -50,7 +50,7 @@ func main() {
 	flag.StringVar(&share.DBEndpoint, "host", "127.0.0.1:3306", "MySQL host:port")
 	flag.StringVar(&share.DBName, "db", "tbsign", "Database name")
 	flag.StringVar(&share.DBTLSOption, "db_tls", "false", "Option for CA cert (MySQL only)")
-	flag.StringVar(&share.DBMode, "db_mode", "mysql", "sqlite/mysql")
+	flag.StringVar(&share.DBMode, "db_mode", "mysql", "sqlite/mysql/pgsql")
 
 	//proxy
 	flag.BoolVar(&_function.IgnoreProxy, "no_proxy", false, "Ignore the http proxy config from environment vars")
@@ -102,6 +102,9 @@ func main() {
 	}
 	if share.DBPath == "" && os.Getenv("tc_db_path") != "" {
 		share.DBPath = os.Getenv("tc_db_path")
+	}
+	if share.DBMode == "mysql" && os.Getenv("tc_db_mode") != "" {
+		share.DBMode = os.Getenv("tc_db_mode")
 	}
 	if !share.TestMode && os.Getenv("tc_test") != "" {
 		share.TestMode = os.Getenv("tc_test") == "true"
@@ -157,7 +160,44 @@ func main() {
 		Version string
 	}{}
 
-	if share.DBPath != "" {
+	if share.DBMode == "pgsql" {
+		// pgsql
+		if share.DBUsername == "" || share.DBPassword == "" {
+			log.Fatal("global: Empty username or password")
+		}
+		// precheck table
+		_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToPgSQL(share.DBUsername, share.DBPassword, share.DBEndpoint, "", share.DBTLSOption, logLevel, "db")
+
+		if err != nil {
+			log.Fatal("db:", err)
+		}
+
+		var count struct {
+			Count int64
+		}
+
+		_function.GormDB.R.Raw("SELECT COUNT(*) AS count FROM pg_database WHERE datname = ?;", share.DBName).Scan(&count)
+		dbExists = count.Count > 0
+		if !dbExists {
+			log.Println("db:", share.DBName, "is not exists")
+			setup = true
+		}
+
+		// setup
+		if setup {
+			_plugin.SetupSystem(share.DBMode, "", share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, share.DBTLSOption, logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
+		} else {
+			_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToPgSQL(share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, share.DBTLSOption, logLevel, "db")
+			if err != nil {
+				log.Fatal("db:", err)
+			}
+		}
+
+		// version
+
+		_function.GormDB.R.Raw("SELECT version();").Scan(&versionStruct)
+		share.DBVersion = versionStruct.Version
+	} else if share.DBPath != "" {
 		// sqlite
 		share.DBMode = "sqlite"
 		if _, err := os.Stat(share.DBPath); err != nil && os.IsNotExist(err) {
@@ -177,6 +217,7 @@ func main() {
 		_function.GormDB.R.Raw("SELECT sqlite_version() AS version;").Scan(&versionStruct)
 		share.DBVersion = versionStruct.Version
 	} else {
+		share.DBMode = "mysql"
 		// mysql
 		if share.DBUsername == "" || share.DBPassword == "" {
 			log.Fatal("global: Empty username or password")

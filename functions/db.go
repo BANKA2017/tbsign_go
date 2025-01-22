@@ -14,6 +14,7 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	gorm_mysql_driver "gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -108,5 +109,18 @@ func ConnectToMySQL(username string, password string, endpoint string, dbname st
 	}), &gorm.Config{Logger: logger.Default.LogMode(logLevel)})
 
 	log.Println(servicePrefix + ": mysql connected!")
+	return dbHandle, dbHandle, err
+}
+
+// TODO tlsOption, dsn format?
+func ConnectToPgSQL(username string, password string, endpoint string, dbname string, tlsOption string, logLevel logger.LogLevel, servicePrefix string) (*gorm.DB, *gorm.DB, error) {
+	dsn := fmt.Sprintf("postgresql://%s:%s@%s/%s", username, password, endpoint, dbname)
+
+	dbHandle, err := gorm.Open(postgres.New(postgres.Config{
+		DSN:                  dsn,
+		PreferSimpleProtocol: true, // disables implicit prepared statement usage
+	}), &gorm.Config{Logger: logger.Default.LogMode(logLevel)})
+
+	log.Println(servicePrefix + ": pgsql connected!")
 	return dbHandle, dbHandle, err
 }

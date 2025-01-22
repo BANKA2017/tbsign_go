@@ -22,6 +22,7 @@ func SetupSystem(dbMode, dbPath, dbUsername, dbPassword, dbEndpoint, dbName, dbT
 
 	_tc_mysql, _ := assets.EmbeddedSQL.ReadFile("sql/tc_mysql.sql")
 	_tc_sqlite, _ := assets.EmbeddedSQL.ReadFile("sql/tc_sqlite.sql")
+	_tc_pgsql, _ := assets.EmbeddedSQL.ReadFile("sql/tc_pgsql.sql")
 
 	fmt.Println("📌现在正在安装 TbSign➡️")
 	if dbExists {
@@ -85,6 +86,11 @@ func SetupSystem(dbMode, dbPath, dbUsername, dbPassword, dbEndpoint, dbName, dbT
 			}
 			return nil
 		})
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else if dbMode == "pgsql" {
+		err := _function.GormDB.W.Exec(string(_tc_pgsql)).Error
 		if err != nil {
 			log.Fatal(err)
 		}
