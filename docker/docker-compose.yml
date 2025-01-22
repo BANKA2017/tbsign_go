@@ -23,5 +23,5 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: 11m                 # 根据实际情况填写，max-size * max-file = 占用空间
-        max-file: "20"                # 根据实际情况填写，max-size * max-file = 占用空间
+        max-size: 11m                 # 根据实际情况填写，max-size * max-file = 最大占用空间
+        max-file: "20"                # 根据实际情况填写，max-size * max-file = 最大占用空间
