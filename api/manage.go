@@ -480,7 +480,7 @@ func GetAccountsList(c echo.Context) error {
 
 	today := strconv.Itoa(_function.Now.Local().Day())
 	forumCountQuery := _function.GormDB.R.Model(&model.TcTieba{}).
-		Select("uid, COUNT(*) AS forum_count, SUM(CASE WHEN NOT (no = 0) AND status = 0 AND latest = ? THEN 1 ELSE 0 END) AS success, SUM(CASE WHEN NOT (no = 0) AND status <> 0 AND latest = ? THEN 1 ELSE 0 END) AS failed, SUM(CASE WHEN NOT (no = 0) AND latest <> ? THEN 1 ELSE 0 END) AS waiting, SUM(CASE WHEN no <> 0 THEN 1 ELSE 0 END) AS is_ignore", today, today, today).
+		Select("uid, COUNT(*) AS forum_count, SUM(CASE WHEN (no = 0) AND status = 0 AND latest = ? THEN 1 ELSE 0 END) AS success, SUM(CASE WHEN (no = 0) AND status <> 0 AND latest = ? THEN 1 ELSE 0 END) AS failed, SUM(CASE WHEN (no = 0) AND latest <> ? THEN 1 ELSE 0 END) AS waiting, SUM(CASE WHEN no <> 0 THEN 1 ELSE 0 END) AS is_ignore", today, today, today).
 		Group("uid")
 
 	if query != "" {
