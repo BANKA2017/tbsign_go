@@ -269,7 +269,9 @@ Docker 版不支持在设置页面下载更新
 docker run -d --restart unless-stopped -v ./db:/app/tbsign/db -p 8080:1323 ghcr.io/banka2017/tbsign_go:master
 ```
 
-- 默认数据库目录在 `/app/tbsign/db/tbsign_go.db`，如果使用 `SQLite` 建议将 `/app/tbsign/db` 映射到宿主机；如果使用 `MySQL` 或 `PostgreSQL` 可以忽略本条
+- 默认数据库目录在 `/app/tbsign/db/tbsign_go.db`，
+  - 如果使用 `SQLite` 建议将 `/app/tbsign/db` 映射到宿主机
+  - 如果使用 `MySQL` 或 `PostgreSQL` 请手动将环境变量 `tc_db_path` 的值设为空字符串，覆盖原镜像的默认值
 - 开放端口号为 `1323`
 
 ### 版本号
