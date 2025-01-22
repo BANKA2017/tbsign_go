@@ -686,7 +686,7 @@ func (pluginInfo *ForumSupportPluginInfoType) Action() {
 
 			log.Println("support:", forumSupportItem.Tieba, forumSupportItem.Name, message)
 			_function.GormDB.W.Model(&model.TcVer4RankLog{}).Where("id = ?", forumSupportItem.ID).Updates(model.TcVer4RankLog{
-				Log:  fmt.Sprintf("<br/>%s #%d,%s%s", _function.Now.Local().Format(time.DateOnly), response.No, message, forumSupportItem.Log),
+				Log:  fmt.Sprintf("<br/>%s #%d,%s%s", _function.Now.Format(time.DateOnly), response.No, message, forumSupportItem.Log),
 				Date: int32(_function.Now.Unix()),
 			})
 

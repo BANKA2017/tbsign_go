@@ -47,7 +47,7 @@ func ScanTiebaByPid(pid int32) {
 
 			latest := 0
 			if tiebaInfo.IsSign == 1 {
-				latest = Now.Local().Day()
+				latest = Now.Day()
 			}
 
 			tmpTcTieba := &_type.TcTieba{

@@ -137,7 +137,7 @@ func (pluginInfo *RenewManagerType) Action() {
 				break
 			}
 		}
-		renewItem.Log = fmt.Sprintf("%s: %s<br />%s", _function.Now.Local().Format(time.DateOnly), strings.Join(tmpLog, ", "), strings.Join(previousLogs, "<br />"))
+		renewItem.Log = fmt.Sprintf("%s: %s<br />%s", _function.Now.Format(time.DateOnly), strings.Join(tmpLog, ", "), strings.Join(previousLogs, "<br />"))
 
 		_function.GormDB.W.Model(&model.TcKdRenewManager{}).Where("id = ?", renewItem.ID).Updates(renewItem)
 		_function.SetOption("kd_renew_manager_id", strconv.Itoa(int(renewItem.ID)))
@@ -149,7 +149,7 @@ func (pluginInfo *RenewManagerType) Action() {
 		if renewItem.End < int32(_function.Now.Add(time.Duration(time.Hour*24*15)).Unix()) && _function.GetUserOption("kd_renew_manager_alert", strconv.Itoa(int(renewItem.UID))) != "0" {
 			endTime := time.Unix(int64(renewItem.End), 0)
 
-			msg := PluginRenewManagerAlertMessage(_function.GetCookie(renewItem.Pid).Name, renewItem.Fname, endTime.Local().Format("2006年01月02日 15:04:05"), renewItem.Fid)
+			msg := PluginRenewManagerAlertMessage(_function.GetCookie(renewItem.Pid).Name, renewItem.Fname, endTime.Format("2006年01月02日 15:04:05"), renewItem.Fid)
 
 			err = _function.SendMessage("default", renewItem.UID, msg.Title, msg.Body)
 			if err != nil {

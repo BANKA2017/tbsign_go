@@ -404,7 +404,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 				vipMatrixIDSet = _vipMatrixIDSet.([]string)
 			}
 		}
-		if isVipMatrix && vipMatrixIDSet[1] == strconv.Itoa(int(_function.Now.Local().Weekday())) && vipMatrixIDSet[2] == "0" {
+		if isVipMatrix && vipMatrixIDSet[1] == strconv.Itoa(int(_function.Now.Weekday())) && vipMatrixIDSet[2] == "0" {
 			result = append(result, WenkuTaskToSave{
 				TaskName:   "VIP 账号组自动跳过",
 				TaskID:     -100,
@@ -557,7 +557,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 
 				if isVipMatrix && task.TaskID == 1 && vipMatrixIDSet[2] == "1" {
 					since, _ := strconv.ParseInt(vipMatrixIDSet[1], 10, 64)
-					verifyDay := (int64(_function.Now.Local().Weekday()) + 7 - since) % 7
+					verifyDay := (int64(_function.Now.Weekday()) + 7 - since) % 7
 					if verifyDay == 0 {
 						verifyDay = 7
 					}
@@ -597,7 +597,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 
 			_function.GormDB.W.Model(&model.TcKdWenkuTask{}).Where("id = ?", taskUserItem.ID).Updates(model.TcKdWenkuTask{
 				Status: string(jsonResult),
-				Log:    fmt.Sprintf("%s: %s<br/>%s", _function.Now.Local().Format(time.DateOnly), tmpLog, strings.Join(previousLogs, "<br/>")),
+				Log:    fmt.Sprintf("%s: %s<br/>%s", _function.Now.Format(time.DateOnly), tmpLog, strings.Join(previousLogs, "<br/>")),
 				Date:   int32(_function.Now.Unix()),
 			})
 		}

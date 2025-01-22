@@ -173,7 +173,7 @@ func (pluginInfo *LotteryPluginPluginType) Action() {
 	}
 
 	latestDay := _function.GetOption("ver4_lottery_day")
-	nowDate := _function.Now.Local().Day()
+	nowDate := _function.Now.Day()
 	if latestDay != strconv.Itoa(nowDate) {
 		err := _function.GormDB.W.Where("date <= ?", _function.Now.Add(time.Hour*-24*30).Unix()).Delete(&model.TcVer4LotteryLog{}).Error
 		if err != nil {

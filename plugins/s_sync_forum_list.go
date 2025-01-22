@@ -57,7 +57,7 @@ func (pluginInfo *RefreshTiebaListPluginType) Action() {
 
 	// day, _ := strconv.ParseInt(_function.GetOption("ver4_ref_day"), 10, 64)
 
-	// if day != int64(_function.Now.Local().Day()) {
+	// if day != int64(_function.Now.Day()) {
 	lastdo, _ := strconv.ParseInt(_function.GetOption("ver4_ref_lastdo"), 10, 64)
 	refID := _function.GetOption("ver4_ref_id")
 
@@ -71,7 +71,7 @@ func (pluginInfo *RefreshTiebaListPluginType) Action() {
 
 		if len(accounts) == 0 {
 			_function.SetOption("ver4_ref_id", "0")
-			_function.SetOption("ver4_ref_day", strconv.Itoa(_function.Now.Local().Day()))
+			_function.SetOption("ver4_ref_day", strconv.Itoa(_function.Now.Day()))
 		} else {
 			for _, account := range accounts {
 				_function.ScanTiebaByPid(account.ID)

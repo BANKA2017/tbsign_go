@@ -14,6 +14,8 @@ import (
 	"github.com/BANKA2017/tbsign_go/model"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"golang.org/x/mod/semver"
+
+	_ "time/tzdata"
 )
 
 var Options sync.Map    //  make(map[string]string)

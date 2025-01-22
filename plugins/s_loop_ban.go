@@ -168,9 +168,9 @@ func (pluginInfo *LoopBanPluginType) Action() {
 		}
 		msg := banAccountInfo.Log
 		if response.ErrorMsg != "" {
-			msg += _function.Now.Local().Format(time.DateTime) + " 执行结果：<font color=\"red\">操作失败</font>#" + response.ErrorCode + " " + response.ErrorMsg + "<br>"
+			msg += _function.Now.Format(time.DateTime) + " 执行结果：<font color=\"red\">操作失败</font>#" + response.ErrorCode + " " + response.ErrorMsg + "<br>"
 		} else {
-			msg += _function.Now.Local().Format(time.DateTime) + " 执行结果：<font color=\"green\">操作成功</font><br>"
+			msg += _function.Now.Format(time.DateTime) + " 执行结果：<font color=\"green\">操作成功</font><br>"
 		}
 
 		_function.GormDB.W.Model(&model.TcVer4BanList{}).Where("id = ?", banAccountInfo.ID).Updates(model.TcVer4BanList{

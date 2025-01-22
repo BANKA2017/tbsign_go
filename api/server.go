@@ -54,7 +54,7 @@ func GetServerStatus(c echo.Context) error {
 		IsIgnore int64 `json:"ignore"`
 	})
 
-	today := strconv.Itoa(_function.Now.Local().Day())
+	today := strconv.Itoa(_function.Now.Day())
 	_function.GormDB.R.Model(&model.TcTieba{}).Select("SUM(CASE WHEN (no = 0) AND status = 0 AND latest = "+today+" THEN 1 ELSE 0 END) AS success", "SUM(CASE WHEN (no = 0) AND status <> 0 AND latest = "+today+" THEN 1 ELSE 0 END) AS failed", "SUM(CASE WHEN (no = 0) AND latest <> "+today+" THEN 1 ELSE 0 END) AS waiting", "SUM(CASE WHEN no <> 0 THEN 1 ELSE 0 END) AS is_ignore").Scan(checkinStatus)
 
 	ForumCount := checkinStatus.Success + checkinStatus.Failed + checkinStatus.Waiting + checkinStatus.IsIgnore

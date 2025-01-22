@@ -46,7 +46,7 @@ func Dosign(table string, retry bool) (bool, error) {
 		limit = -1
 	}
 
-	today := _function.Now.Local().Day()
+	today := _function.Now.Day()
 	if retry {
 		// 重签
 		_function.GormDB.R.Where("no = ? AND latest = ? AND status IN ?", 0, today, recheckinErrorID).Limit(int(limit)).Find(&tiebaList)
@@ -85,7 +85,7 @@ func Dosign(table string, retry bool) (bool, error) {
 			// success := false
 			ck := _function.GetCookie(pid)
 			if ck.Bduss == "" {
-				log.Println("checkin: Failed, no such account", pid, kw, fid, id, now.Local().Day())
+				log.Println("checkin: Failed, no such account", pid, kw, fid, id, now.Day())
 				return
 			}
 			response, err := _function.PostCheckinClient(ck, kw, fid)
@@ -108,12 +108,12 @@ func Dosign(table string, retry bool) (bool, error) {
 					Status:    _function.VariablePtrWrapper(int32(errorCode)),
 					LastError: _function.VariablePtrWrapper(errorMsg),
 					TcTieba: model.TcTieba{
-						Latest: int32(now.Local().Day()),
+						Latest: int32(now.Day()),
 					},
 				})
 			}
 
-			log.Println("checkin:", pid, kw, fid, id, now.Local().Day(), time.Now().UnixMilli()-now.UnixMilli())
+			log.Println("checkin:", pid, kw, fid, id, now.Day(), time.Now().UnixMilli()-now.UnixMilli())
 		}(v.Pid, v.Tieba, v.Fid, v.ID, _function.Now)
 
 		time.Sleep(time.Millisecond * time.Duration(sleep))
@@ -130,7 +130,7 @@ func Dosign(table string, retry bool) (bool, error) {
 }
 
 func DoCheckinAction() {
-	checkinToday = _function.Now.Local().Format(time.DateOnly)
+	checkinToday = _function.Now.Format(time.DateOnly)
 	// a:2:{s:3:"num";i:0;s:6:"lastdo";s:10:"2000-01-01";}
 	cornSignAgain := _function.GetOption("cron_sign_again")
 	cornSignAgainParsed, err := gophp.Unserialize([]byte(cornSignAgain))
@@ -173,7 +173,7 @@ func DoReCheckinAction() {
 
 	// all accounts are done?
 	var unDoneCount int64
-	_function.GormDB.R.Model(&model.TcTieba{}).Where("no = 0 AND latest != ?", _function.Now.Local().Day()).Count(&unDoneCount)
+	_function.GormDB.R.Model(&model.TcTieba{}).Where("no = 0 AND latest != ?", _function.Now.Day()).Count(&unDoneCount)
 
 	var failedCount int64
 	_function.GormDB.R.Model(&model.TcTieba{}).Where("no = 0 AND status IN ?", recheckinErrorID).Count(&failedCount)

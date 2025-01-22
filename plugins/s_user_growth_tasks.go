@@ -435,7 +435,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 
 			_function.GormDB.W.Model(&model.TcKdGrowth{}).Where("id = ?", taskUserItem.ID).Updates(model.TcKdGrowth{
 				Status: string(jsonResult),
-				Log:    fmt.Sprintf("%s: %s<br/>%s", _function.Now.Local().Format(time.DateOnly), tmpLog, strings.Join(previousLogs, "<br/>")),
+				Log:    fmt.Sprintf("%s: %s<br/>%s", _function.Now.Format(time.DateOnly), tmpLog, strings.Join(previousLogs, "<br/>")),
 				Date:   int32(_function.Now.Unix()),
 			})
 		}
