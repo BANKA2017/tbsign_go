@@ -92,11 +92,11 @@ func (pluginInfo *PluginInfo) Switch() bool {
 		pluginInfo.Info.Status = 0
 	}
 	_function.GormDB.W.Model(&model.TcPlugin{}).Where("name = ?", pluginInfo.Name).Update("status", pluginInfo.Info.Status)
-	return _function.TinyInt2Bool(pluginInfo.Info.Status)
+	return _function.TinyIntToBool(pluginInfo.Info.Status)
 }
 
 func (pluginInfo *PluginInfo) GetSwitch() bool {
-	return _function.TinyInt2Bool(pluginInfo.Info.Status)
+	return _function.TinyIntToBool(pluginInfo.Info.Status)
 }
 
 func (pluginInfo *PluginInfo) CheckActive() bool {

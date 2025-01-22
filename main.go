@@ -293,7 +293,7 @@ func main() {
 
 			// plugins
 			for _, info := range _plugin.PluginList {
-				if _function.TinyInt2Bool(info.(_plugin.PluginHooks).GetDBInfo().Status) {
+				if _function.TinyIntToBool(info.(_plugin.PluginHooks).GetDBInfo().Status) {
 					go info.Action()
 				}
 			}

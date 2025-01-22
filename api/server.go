@@ -114,7 +114,7 @@ func GetPluginsList(c echo.Context) error {
 		resPluginList[name] = _function.VariablePtrWrapper(PluginListContent{
 			Name:   value.Name,
 			Ver:    value.Info.Ver,
-			Status: _function.TinyInt2Bool(value.Info.Status),
+			Status: _function.TinyIntToBool(value.Info.Status),
 
 			PluginNameCN:      value.PluginNameCN,
 			PluginNameCNShort: value.PluginNameCNShort,

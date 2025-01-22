@@ -586,7 +586,7 @@ func ExportAccountData(c echo.Context) error {
 	for _, tcTiebaItem := range tcTieba {
 		tcTiebaForExport = append(tcTiebaForExport, &TcBackupExportStructTcTieba{
 			tcTiebaItem,
-			_function.TinyInt2Bool(tcTiebaItem.No),
+			_function.TinyIntToBool(tcTiebaItem.No),
 		})
 	}
 
