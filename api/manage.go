@@ -408,7 +408,7 @@ func AdminResetPassword(c echo.Context) error {
 	uid := c.Get("uid").(string)
 	targetUID := c.Param("uid")
 
-	var resetCodeResponse _function.ResetPwdStruct
+	var resetCodeResponse _function.VerifyCodeStruct
 
 	if uid == targetUID {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "您已登录，请到首页修改密码", resetCodeResponse, "tbsign"))

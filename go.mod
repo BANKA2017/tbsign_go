@@ -14,6 +14,7 @@ require (
 	golang.org/x/crypto v0.32.0
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8
 	golang.org/x/mod v0.22.0
+	golang.org/x/time v0.9.0
 	google.golang.org/protobuf v1.36.3
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/postgres v1.5.11

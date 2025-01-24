@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"log"
-	"math/rand"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -127,37 +127,40 @@ func tokenBuilder(uid int) (string, int64) {
 	return _function.AppendStrings(strconv.Itoa(uid), ":", token), expireAt
 }
 
-var resetPasswordVerifyCodeLength = 6
+var resetPasswordVerifyCodeByteLength int64 = 6
 
-func ResetMessageBuilder(uid int32, forceMode bool) *_function.ResetPwdStruct {
-	_v, ok := _function.ResetPwdList.Load(uid)
-	var v *_function.ResetPwdStruct
+var resetPasswordVerifyCodeLength = int(math.Ceil(float64(resetPasswordVerifyCodeByteLength*4) / float64(3)))
 
-	if !ok || _v == nil || _v.(*_function.ResetPwdStruct).Expire <= _function.Now.Unix() {
-		v = _function.VariablePtrWrapper(_function.ResetPwdStruct{
+func ResetMessageBuilder(uid int32, forceMode bool) *_function.VerifyCodeStruct {
+	_v, ok := _function.VerifyCodeList.LoadCode("reset_password", uid)
+	var v *_function.VerifyCodeStruct
+
+	if !ok || _v == nil || _v.Expire <= _function.Now.Unix() {
+		v = _function.VariablePtrWrapper(_function.VerifyCodeStruct{
 			Expire: _function.Now.Unix() + _function.ResetPwdExpire,
 		})
-
 	} else {
-		v = _v.(*_function.ResetPwdStruct)
+		v = _v
 	}
+
+	v.Type = "reset_password"
 
 	if forceMode || v.ResetTime < _function.ResetPwdMaxTimes {
 		// init a callback code
-		code := strconv.Itoa(int(rand.Uint32()))
-		for len(code) < resetPasswordVerifyCodeLength {
-			code = "0" + code
-		}
+		code, _ := _function.RandomTokenBuilder(resetPasswordVerifyCodeByteLength)
 
-		code = code[0:resetPasswordVerifyCodeLength]
-
-		v.Value = code
 		v.ResetTime += 1
 		v.VerifyCode = _function.RandomEmoji()
 		v.TryTime = 0
+
+		if len(code) != resetPasswordVerifyCodeLength {
+			return v
+		}
+
+		v.Value = code
 	}
 
-	_function.ResetPwdList.Store(uid, v)
+	_function.VerifyCodeList.StoreCode("reset_password", uid, v)
 
 	return v
 }
@@ -165,11 +168,14 @@ func ResetMessageBuilder(uid int32, forceMode bool) *_function.ResetPwdStruct {
 func SendResetMessage(uid int32, pushType string, forceMode bool) (string, error) {
 
 	v := ResetMessageBuilder(uid, forceMode)
+	if len(v.Value) != resetPasswordVerifyCodeLength {
+		return "", errors.New("验证码生成失败，请重试")
+	}
 
 	if !forceMode && (v.ResetTime >= _function.ResetPwdMaxTimes || v.TryTime >= _function.ResetPwdMaxTimes) {
 		if len(v.Value) == resetPasswordVerifyCodeLength {
 			v.Value, _ = _function.RandomTokenBuilder(48)
-			_function.ResetPwdList.Store(uid, v)
+			_function.VerifyCodeList.StoreCode("reset_password", uid, v)
 		}
 		return "", errors.New("已超过最大验证次数，请稍后再试")
 	}

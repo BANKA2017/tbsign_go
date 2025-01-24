@@ -458,7 +458,7 @@ func UpdateSettings(c echo.Context) error {
 }
 
 func ResetPassword(c echo.Context) error {
-	email := strings.TrimSpace(c.FormValue("email"))
+	_account := strings.TrimSpace(c.FormValue("account"))
 	verifyCode := strings.TrimSpace(c.FormValue("code"))
 	newPwd := strings.TrimSpace(c.FormValue("password"))
 
@@ -468,16 +468,15 @@ func ResetPassword(c echo.Context) error {
 		"verify_emoji": "",
 	}
 
-	if !_function.VerifyEmail(email) {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "邮箱不合法", resMessage, "tbsign"))
-	}
-
 	// find account
 	var accountInfo model.TcUser
-	_function.GormDB.R.Where("email = ?", email).Find(&accountInfo)
-	if accountInfo.ID == 0 {
+	_function.GormDB.R.Where("name = ? OR email = ?", _account, _account).Find(&accountInfo)
+	if accountInfo.ID == 0 && verifyCode != "" {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
+	} else if accountInfo.ID == 0 {
 		// defense scan
 		// TODO Implement a delay of several seconds to prevent a side-channel attack.
+		resMessage["verify_emoji"] = _function.RandomEmoji()
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resMessage, "tbsign"))
 	}
 
@@ -485,17 +484,17 @@ func ResetPassword(c echo.Context) error {
 		if len(verifyCode) != resetPasswordVerifyCodeLength {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
 		}
-		_v, ok := _function.ResetPwdList.Load(accountInfo.ID)
+		_v, ok := _function.VerifyCodeList.LoadCode("reset_password", accountInfo.ID)
 
 		if !ok || _v == nil {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
 		}
 
-		if __v, ok := _v.(*_function.ResetPwdStruct); ok && __v.TryTime <= _function.ResetPwdMaxTimes {
-			__v.TryTime += 1
-			_function.ResetPwdList.Store(accountInfo.ID, __v)
+		if _v.TryTime <= _function.ResetPwdMaxTimes {
+			_v.TryTime += 1
+			_function.VerifyCodeList.StoreCode("reset_password", accountInfo.ID, _v)
 
-			if __v.Value == verifyCode {
+			if _v.Value == verifyCode {
 				if newPwd == "" {
 					return c.JSON(http.StatusOK, _function.ApiTemplate(404, "密码不能为空", resMessage, "tbsign"))
 				} else {
@@ -507,7 +506,7 @@ func ResetPassword(c echo.Context) error {
 
 					_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", accountInfo.ID).Update("pw", string(hash))
 
-					_function.ResetPwdList.Delete(accountInfo.ID)
+					_function.VerifyCodeList.DeleteCode("reset_password", accountInfo.ID)
 					HttpAuthRefreshTokenMap.Delete(int(accountInfo.ID))
 					return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resMessage, "tbsign"))
 				}
@@ -521,15 +520,18 @@ func ResetPassword(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
 	} else {
 		VerifyCode, err := SendResetMessage(accountInfo.ID, "", false)
-
-		if err != nil && err.Error() == "已超过最大验证次数，请稍后再试" {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(429, "已超过最大验证次数，请稍后再试", resMessage, "tbsign"))
-		} else if err != nil && err.Error() == "消息发送失败" {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(500, "消息发送失败", resMessage, "tbsign"))
-		} else {
-			resMessage["verify_emoji"] = VerifyCode
-			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resMessage, "tbsign"))
+		if err != nil {
+			switch err.Error() {
+			case "已超过最大验证次数，请稍后再试":
+				return c.JSON(http.StatusOK, _function.ApiTemplate(429, "已超过最大验证次数，请稍后再试", resMessage, "tbsign"))
+			case "消息发送失败":
+				return c.JSON(http.StatusOK, _function.ApiTemplate(500, "消息发送失败", resMessage, "tbsign"))
+			case "验证码生成失败，请重试":
+				return c.JSON(http.StatusOK, _function.ApiTemplate(500, "验证码生成失败，请重试", resMessage, "tbsign"))
+			}
 		}
+		resMessage["verify_emoji"] = VerifyCode
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resMessage, "tbsign"))
 	}
 }
 

@@ -306,13 +306,8 @@ func main() {
 				return true
 			})
 
-			// clean pwd list
-			_function.ResetPwdList.Range(func(uid, value any) bool {
-				if value.(*_function.ResetPwdStruct).Expire < _function.Now.Unix() {
-					_function.ResetPwdList.Delete(uid)
-				}
-				return true
-			})
+			// clean verify code list
+			_function.VerifyCodeList.RemoveExpired()
 		case <-fourHoursInterval.C:
 			_function.InitOptions()
 			_plugin.InitPluginList()

@@ -3,6 +3,7 @@ package _api
 import (
 	"io/fs"
 	"net/http"
+	"time"
 
 	"github.com/BANKA2017/tbsign_go/assets"
 	_function "github.com/BANKA2017/tbsign_go/functions"
@@ -68,7 +69,7 @@ func Api(address string, args ...any) {
 	api.PUT("/passport/update/password", UpdatePassword)
 	//api.GET("/passport/settings", GetSettings)
 	//api.PUT("/passport/settings", UpdateSettings)
-	api.POST("/passport/reset/password", ResetPassword)
+	api.POST("/passport/reset/password", ResetPassword, RateLimit(2, time.Second))
 
 	// tieba account
 	api.GET("/account", GetTiebaAccountList)

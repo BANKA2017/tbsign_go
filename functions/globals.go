@@ -22,18 +22,8 @@ var Options sync.Map    //  make(map[string]string)
 var CookieList sync.Map //= make(map[int32]_type.TypeCookie)
 var FidList sync.Map    //= make(map[string]int64)
 
-type ResetPwdStruct struct {
-	VerifyCode string `json:"verify_code"`
-	Expire     int64  `json:"expire"`
-	Value      string `json:"value"`
-	ResetTime  int64  `json:"time"`
-	TryTime    int64  `json:"try_time"`
-}
-
 const ResetPwdMaxTimes = 5
-const ResetPwdExpire = 60 * 30
-
-var ResetPwdList sync.Map //= make(map[int32]*ResetPwdStruct)
+const ResetPwdExpire = 60 * 5 // 5 mins
 
 // Tieba works in GMT+8
 var LocalTime, _ = time.LoadLocation("Asia/Shanghai")

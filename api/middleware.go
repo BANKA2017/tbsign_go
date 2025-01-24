@@ -4,11 +4,14 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/BANKA2017/tbsign_go/share"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"golang.org/x/time/rate"
 )
 
 func SetHeaders(next echo.HandlerFunc) echo.HandlerFunc {
@@ -92,4 +95,25 @@ func PluginPathPrecheck(next echo.HandlerFunc) echo.HandlerFunc {
 
 		return next(c)
 	}
+}
+
+func RateLimit(_rate int, expiersIn time.Duration) echo.MiddlewareFunc {
+	config := middleware.RateLimiterConfig{
+		Skipper: middleware.DefaultSkipper,
+		Store: middleware.NewRateLimiterMemoryStoreWithConfig(
+			middleware.RateLimiterMemoryStoreConfig{Rate: rate.Limit(_rate), Burst: 0, ExpiresIn: expiersIn},
+		),
+		IdentifierExtractor: func(ctx echo.Context) (string, error) {
+			id := ctx.RealIP()
+			return id, nil
+		},
+		ErrorHandler: func(context echo.Context, err error) error {
+			return context.JSON(http.StatusServiceUnavailable, _function.ApiTemplate(503, "服务不可用", _function.EchoEmptyObject, "tbsign"))
+		},
+		DenyHandler: func(context echo.Context, identifier string, err error) error {
+			return context.JSON(http.StatusTooManyRequests, _function.ApiTemplate(429, "请求过多", _function.EchoEmptyObject, "tbsign"))
+		},
+	}
+
+	return middleware.RateLimiterWithConfig(config)
 }
