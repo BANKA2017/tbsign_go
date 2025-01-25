@@ -101,10 +101,11 @@ type HttpAuthRefreshTokenMapItemStruct struct {
 var HttpAuthRefreshTokenMap sync.Map // int -> HttpAuthRefreshTokenMapItemStruct
 
 func tokenBuilder(uid int) (string, int64) {
-	token, err := _function.RandomTokenBuilder(48)
+	_token, err := _function.RandomTokenBuilder(48)
 	if err != nil {
 		return "", 0
 	}
+	token := strings.ReplaceAll(base64.RawURLEncoding.EncodeToString(_token), "=", "")
 
 	// expire
 	strCookieExpire := _function.GetOption("cktime")
@@ -147,7 +148,8 @@ func ResetMessageBuilder(uid int32, forceMode bool) *_function.VerifyCodeStruct 
 
 	if forceMode || v.ResetTime < _function.ResetPwdMaxTimes {
 		// init a callback code
-		code, _ := _function.RandomTokenBuilder(resetPasswordVerifyCodeByteLength)
+		_code, _ := _function.RandomTokenBuilder(resetPasswordVerifyCodeByteLength)
+		code := base64.RawURLEncoding.EncodeToString(_code)
 
 		v.ResetTime += 1
 		v.VerifyCode = _function.RandomEmoji()
@@ -174,7 +176,8 @@ func SendResetMessage(uid int32, pushType string, forceMode bool) (string, error
 
 	if !forceMode && (v.ResetTime >= _function.ResetPwdMaxTimes || v.TryTime >= _function.ResetPwdMaxTimes) {
 		if len(v.Value) == resetPasswordVerifyCodeLength {
-			v.Value, _ = _function.RandomTokenBuilder(48)
+			tmpValue, _ := _function.RandomTokenBuilder(48)
+			v.Value = base64.RawURLEncoding.EncodeToString(tmpValue)
 			_function.VerifyCodeList.StoreCode("reset_password", uid, v)
 		}
 		return "", errors.New("已超过最大验证次数，请稍后再试")

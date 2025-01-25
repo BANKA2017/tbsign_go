@@ -1,6 +1,7 @@
 package _api
 
 import (
+	"encoding/base64"
 	"log"
 	"net/http"
 	"strconv"
@@ -583,8 +584,17 @@ func ExportAccountData(c echo.Context) error {
 	// _function.GormDB.W.Model(&model.TcVer4RankLog{}).Where("uid = ?", uid).Find(&tcVer4RankLog)
 	// _function.GormDB.W.Model(&model.TcKdGrowth{}).Where("uid = ?", uid).Find(&tcKdGrowth)
 
-	var tcTiebaForExport []*TcBackupExportStructTcTieba
+	if len(share.DataEncryptKeyByte) > 0 {
+		for _, tcBaiduidItem := range tcBaiduid {
+			decryptedBDUSS, _ := _function.AES256GCMDecrypt(tcBaiduidItem.Bduss, share.DataEncryptKeyByte)
+			tcBaiduidItem.Bduss = string(decryptedBDUSS)
 
+			decryptedStoken, _ := _function.AES256GCMDecrypt(tcBaiduidItem.Stoken, share.DataEncryptKeyByte)
+			tcBaiduidItem.Stoken = string(decryptedStoken)
+		}
+	}
+
+	var tcTiebaForExport []*TcBackupExportStructTcTieba
 	for _, tcTiebaItem := range tcTieba {
 		tcTiebaForExport = append(tcTiebaForExport, &TcBackupExportStructTcTieba{
 			tcTiebaItem,
@@ -686,6 +696,14 @@ func ImportAccountData(c echo.Context) error {
 			}
 		}
 		if !exists {
+			if len(share.DataEncryptKeyByte) > 0 {
+				encryptedBDUSS, _ := _function.AES256GCMEncrypt(importBaiduidItem.Bduss, share.DataEncryptKeyByte)
+				importBaiduidItem.Bduss = strings.ReplaceAll(base64.URLEncoding.EncodeToString(encryptedBDUSS), "=", "")
+
+				encryptedStoken, _ := _function.AES256GCMEncrypt(importBaiduidItem.Stoken, share.DataEncryptKeyByte)
+				importBaiduidItem.Stoken = strings.ReplaceAll(base64.URLEncoding.EncodeToString(encryptedStoken), "=", "")
+			}
+
 			newTcBaiduID = append(newTcBaiduID, model.TcBaiduid{
 				UID:      int32(numUID),
 				Bduss:    importBaiduidItem.Bduss,

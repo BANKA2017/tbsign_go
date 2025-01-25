@@ -11,27 +11,29 @@
 
 ## flags
 
-| flag           | default          | description                                                                                              |
-| :------------- | :--------------- | :------------------------------------------------------------------------------------------------------- |
-| username       |                  | 数据库账号                                                                                               |
-| pwd            |                  | 数据库密码                                                                                               |
-| ~~endpoint~~   | `127.0.0.1:3306` | 数据库 `host:port` （已废弃）                                                                            |
-| host           | `127.0.0.1:3306` | 数据库 `host:port`                                                                                       |
-| db             | `tbsign`         | 数据库名称                                                                                               |
-| db_tls         | `false`          | CA 证书的选项（仅用于 MySQL），请看 [CA 证书](#ca-证书) 部分                                             |
-| db_path        |                  | SQLite 文件目录                                                                                          |
-| db_mode        | `mysql`          | 用于显式指定数据库类型，只用于 PostgreSQL (仅当值为 `pgsql` 时有效，请看 [PostgreSQL](#postgresql) 部分) |
-| test           | `false`          | 测试模式，此模式下不会运行计划任务                                                                       |
-| api            | `false`          | 是否启动 api                                                                                             |
-| fe             | `false`          | 是否启动自带前端，仅当 `api` 为 `true` 时可为 `true`                                                     |
-| address        | `:1323`          | 后端运行地址                                                                                             |
-| setup          | `false`          | 强制安装程序（可能会覆盖现有配置）                                                                       |
-| auto_install   | `false`          | 自动安装（仅当数据库不存在时安装）                                                                       |
-| admin_name     |                  | 管理员账号，仅当 `auto_install` 为 `true` 时会用到                                                       |
-| admin_email    |                  | 管理员邮箱，仅当 `auto_install` 为 `true` 时会用到                                                       |
-| admin_password |                  | 管理员密码，仅当 `auto_install` 为 `true` 时会用到                                                       |
-| no_proxy       | `false`          | 忽略环境变量中的代理配置                                                                                 |
-| allow_backup   | `false`          | 允许用户批量导出/导入账号和贴吧列表，建议阅读 readme.md 的 [备份](#备份) 部分                            |
+| flag                | default          | description                                                                                              |
+| :------------------ | :--------------- | :------------------------------------------------------------------------------------------------------- |
+| username            |                  | 数据库账号                                                                                               |
+| pwd                 |                  | 数据库密码                                                                                               |
+| ~~endpoint~~        | `127.0.0.1:3306` | 数据库 `host:port` （已废弃）                                                                            |
+| host                | `127.0.0.1:3306` | 数据库 `host:port`                                                                                       |
+| db                  | `tbsign`         | 数据库名称                                                                                               |
+| db_tls              | `false`          | CA 证书的选项（仅用于 MySQL），请看 [CA 证书](#ca-证书) 部分                                             |
+| db_path             |                  | SQLite 文件目录                                                                                          |
+| db_mode             | `mysql`          | 用于显式指定数据库类型，只用于 PostgreSQL (仅当值为 `pgsql` 时有效，请看 [PostgreSQL](#postgresql) 部分) |
+| test                | `false`          | 测试模式，此模式下不会运行计划任务                                                                       |
+| api                 | `false`          | 是否启动 api                                                                                             |
+| fe                  | `false`          | 是否启动自带前端，仅当 `api` 为 `true` 时可为 `true`                                                     |
+| address             | `:1323`          | 后端运行地址                                                                                             |
+| setup               | `false`          | 强制安装程序（可能会覆盖现有配置）                                                                       |
+| auto_install        | `false`          | 自动安装（仅当数据库不存在时安装）                                                                       |
+| admin_name          |                  | 管理员账号，仅当 `auto_install` 为 `true` 时会用到                                                       |
+| admin_email         |                  | 管理员邮箱，仅当 `auto_install` 为 `true` 时会用到                                                       |
+| admin_password      |                  | 管理员密码，仅当 `auto_install` 为 `true` 时会用到                                                       |
+| no_proxy            | `false`          | 忽略环境变量中的代理配置                                                                                 |
+| allow_backup        | `false`          | 允许用户批量导出/导入账号和贴吧列表，建议阅读 readme.md 的 [备份](#备份) 部分                            |
+| data_encrypt_key    |                  | 加密部分用户数据的密钥，使用 `base64url` 格式填写，建议阅读 readme.md 的 [加密](#加密) 部分              |
+| data_encrypt_action |                  | `encrypt` 或者 `decrypt`，用于加密/解密用户数据，处理完成后会自动退出，默认应当留空                      |
 
 示例
 
@@ -47,25 +49,26 @@ air -- --db_path=tbsign.db --test=true --api=true
 
 不支持 `.env` 文件，请直接设置环境变量，使用顺序是 `flags` > `env` > `default`
 
-| flag              | description                                                                                              |
-| :---------------- | :------------------------------------------------------------------------------------------------------- |
-| tc_username       | 数据库账号                                                                                               |
-| tc_pwd            | 数据库密码                                                                                               |
-| ~~tc_endpoint~~   | 数据库 `host:port` （已废弃）                                                                            |
-| tc_host           | 数据库 `host:port`                                                                                       |
-| tc_db             | 数据库名称                                                                                               |
-| tc_db_tls         | CA 证书的选项（仅用于 MySQL），请看 [CA 证书](#ca-证书) 部分                                             |
-| tc_db_path        | SQLite 文件目录                                                                                          |
-| tc_db_mode        | 用于显式指定数据库类型，只用于 PostgreSQL (仅当值为 `pgsql` 时有效，请看 [PostgreSQL](#postgresql) 部分) |
-| tc_test           | 测试模式，此模式下不会运行计划任务                                                                       |
-| tc_api            | 是否启动后端 api                                                                                         |
-| tc_fe             | 是否启动自带前端，仅当 `tc_api` 为 `true` 时可为 `true`                                                  |
-| tc_address        | 后端运行地址                                                                                             |
-| tc_auto_install   | 自动安装（仅当数据库不存在时安装）                                                                       |
-| tc_admin_name     | 管理员账号，仅当 `tc_auto_install` 为 `true` 时会用到                                                    |
-| tc_admin_email    | 管理员邮箱，仅当 `tc_auto_install` 为 `true` 时会用到                                                    |
-| tc_admin_password | 管理员密码，仅当 `tc_auto_install` 为 `true` 时会用到                                                    |
-| tc_allow_backup   | 允许用户批量导出/导入账号和贴吧列表，建议阅读 readme.md 的 [备份](#备份) 部分                            |
+| flag                | description                                                                                              |
+| :------------------ | :------------------------------------------------------------------------------------------------------- |
+| tc_username         | 数据库账号                                                                                               |
+| tc_pwd              | 数据库密码                                                                                               |
+| ~~tc_endpoint~~     | 数据库 `host:port` （已废弃）                                                                            |
+| tc_host             | 数据库 `host:port`                                                                                       |
+| tc_db               | 数据库名称                                                                                               |
+| tc_db_tls           | CA 证书的选项（仅用于 MySQL），请看 [CA 证书](#ca-证书) 部分                                             |
+| tc_db_path          | SQLite 文件目录                                                                                          |
+| tc_db_mode          | 用于显式指定数据库类型，只用于 PostgreSQL (仅当值为 `pgsql` 时有效，请看 [PostgreSQL](#postgresql) 部分) |
+| tc_test             | 测试模式，此模式下不会运行计划任务                                                                       |
+| tc_api              | 是否启动后端 api                                                                                         |
+| tc_fe               | 是否启动自带前端，仅当 `tc_api` 为 `true` 时可为 `true`                                                  |
+| tc_address          | 后端运行地址                                                                                             |
+| tc_auto_install     | 自动安装（仅当数据库不存在时安装）                                                                       |
+| tc_admin_name       | 管理员账号，仅当 `tc_auto_install` 为 `true` 时会用到                                                    |
+| tc_admin_email      | 管理员邮箱，仅当 `tc_auto_install` 为 `true` 时会用到                                                    |
+| tc_admin_password   | 管理员密码，仅当 `tc_auto_install` 为 `true` 时会用到                                                    |
+| tc_allow_backup     | 允许用户批量导出/导入账号和贴吧列表，建议阅读 readme.md 的 [备份](#备份) 部分                            |
+| tc_data_encrypt_key | 加密部分用户数据的密钥，使用 `base64url` 格式填写，建议阅读 readme.md 的 [加密](#加密) 部分              |
 
 ## 数据库
 
@@ -330,6 +333,23 @@ docker run -d --restart unless-stopped -v ./db:/app/tbsign/db -p 8080:1323 ghcr.
   - `no` 用于表示是否**忽略**签到
   - `status` 和 `last_error` 用于表示上一次签到的情况
   - `latest` 表示最后签到的日期，每月第一天是 `1`
+
+## 加密
+
+支持 数据加密 是实验性的功能，不会被砍掉，但前期可能会有严重的 bug 和漏洞，仅供尝鲜
+
+为了保护用户数据，支持使用 `aes-256-gcm` 加密部分用户数据，目前已经支持
+
+- [x] BDUSS
+- [x] Stoken
+
+
+加密后的数据格式前 12 位为 `iv`，其余部分为密文
+
+请在加解密数据前备份数据库，以免发生意外
+
+
+未来可能会支持加密更多的数据，届时可能需要先解密再加密
 
 ## 已知问题
 

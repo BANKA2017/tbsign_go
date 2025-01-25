@@ -2,7 +2,6 @@ package _function
 
 import (
 	crypto_rand "crypto/rand"
-	"encoding/base64"
 	"log"
 	"math/rand/v2"
 	"net/url"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/BANKA2017/tbsign_go/assets"
 	"github.com/BANKA2017/tbsign_go/model"
+	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"golang.org/x/mod/semver"
 
@@ -40,6 +40,14 @@ func GetCookie(pid int32, bduss_only ...bool) _type.TypeCookie {
 		var _cookie _type.TypeCookie
 		var cookieDB model.TcBaiduid
 		GormDB.R.Model(&model.TcBaiduid{}).Where("id = ?", pid).Take(&cookieDB)
+
+		if len(share.DataEncryptKeyByte) > 0 {
+			decryptedBDUSS, _ := AES256GCMDecrypt(cookieDB.Bduss, share.DataEncryptKeyByte)
+			cookieDB.Bduss = string(decryptedBDUSS)
+
+			decryptedStoken, _ := AES256GCMDecrypt(cookieDB.Stoken, share.DataEncryptKeyByte)
+			cookieDB.Stoken = string(decryptedStoken)
+		}
 
 		_cookie.ID = cookieDB.ID
 		_cookie.Name = cookieDB.Name
@@ -158,15 +166,11 @@ func RandomEmoji() string {
 	return strings.Join(resStr, "")
 }
 
-func RandomTokenBuilder(n int64) (string, error) {
+func RandomTokenBuilder(n int64) ([]byte, error) {
 	token := make([]byte, n)
 
 	_, err := crypto_rand.Read(token)
-	if err != nil {
-		return "", err
-	}
-
-	return base64.RawURLEncoding.EncodeToString(token), nil
+	return token, err
 }
 
 func TinyIntToBool(t int) bool {

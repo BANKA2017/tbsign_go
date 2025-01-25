@@ -2,10 +2,12 @@ package main
 
 import (
 	_ "embed"
+	"encoding/base64"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	_api "github.com/BANKA2017/tbsign_go/api"
@@ -22,6 +24,8 @@ var autoInstall bool
 var _adminName string
 var _adminEmail string
 var _adminPassword string
+
+var EncryptDataAction string
 
 var err error
 
@@ -66,6 +70,12 @@ func main() {
 	flag.StringVar(&_adminName, "admin_name", "", "Name of admin")
 	flag.StringVar(&_adminEmail, "admin_email", "", "Email of admin")
 	flag.StringVar(&_adminPassword, "admin_password", "", "Password of admin")
+
+	// --experimental-*
+	// encrypt
+	flag.StringVar(&EncryptDataAction, "data_encrypt_action", "", "Encrypt/Decrypt data in database")
+	flag.StringVar(&share.DataEncryptKeyStr, "data_encrypt_key", "", "The key to encrypt some user data (base64url)")
+	// flag.BoolVar(&share.DisableEmail, "disable-email", false, "disable email")
 
 	// others
 	flag.BoolVar(&share.TestMode, "test", false, "Not send any requests to tieba servers")
@@ -121,6 +131,19 @@ func main() {
 
 	if !share.EnableBackup && os.Getenv("tc_allow_backup") != "" {
 		share.EnableBackup = os.Getenv("tc_allow_backup") == "true"
+	}
+
+	if share.DataEncryptKeyStr == "" && os.Getenv("tc_data_encrypt_key") != "" {
+		share.DataEncryptKeyStr = os.Getenv("tc_data_encrypt_key")
+	}
+	if share.DataEncryptKeyStr != "" {
+		share.DataEncryptKeyByte, err = base64.RawURLEncoding.DecodeString(share.DataEncryptKeyStr)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if len(share.DataEncryptKeyByte) != 32 {
+			log.Fatal("ERROR: 密钥长度无效")
+		}
 	}
 
 	if share.Address == ":1323" && os.Getenv("tc_address") != "" {
@@ -255,11 +278,40 @@ func main() {
 		share.DBVersion = versionStruct.Version
 	}
 
-	// log.Println(share.DBVersion)
-
 	// init
 	_function.InitOptions()
+	share.IsPureGO = _function.GetOption("go_ver") == "1"
 	_plugin.InitPluginList()
+
+	// encrypt/decrypt init
+	if share.IsPureGO && EncryptDataAction != "" {
+		if len(share.DataEncryptKeyByte) != 32 {
+			log.Fatal("ERROR: 无效密钥，无法加密/解密")
+		} else if strings.EqualFold(EncryptDataAction, "encrypt") && len(share.DataEncryptKeyByte) > 0 {
+			err := _plugin.EncryptBaiduIDData()
+			if err != nil {
+				log.Fatal(err)
+			}
+			log.Println("INFO: 加密完成")
+			os.Exit(0)
+		} else if strings.EqualFold(EncryptDataAction, "decrypt") && len(share.DataEncryptKeyByte) > 0 {
+			err := _plugin.DecryptBaiduIDData()
+			if err != nil {
+				log.Fatal(err)
+			}
+			log.Println("INFO: 解密完成")
+			os.Exit(0)
+		}
+	} else if len(share.DataEncryptKeyByte) == 32 && !share.IsPureGO {
+		log.Println("WARNING: 兼容模式下不支持加密，已恢复使用明文")
+		// DO NOT USE ENCRYPT IN COMPAT MODE!!!
+		share.DataEncryptKeyByte = []byte{}
+		share.DataEncryptKeyStr = ""
+	} else if len(share.DataEncryptKeyByte) != 32 {
+		log.Fatal("ERROR: 无效密钥，无法加密/解密")
+	}
+
+	// log.Println(share.DBVersion)
 
 	/// client
 	/// DO NOT EXEC _function.InitClient BEFORE READING FLAGS AND ENV!!!!!

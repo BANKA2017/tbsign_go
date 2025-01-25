@@ -10,6 +10,7 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
+	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
@@ -73,6 +74,14 @@ func GetBDUSS(c echo.Context) error {
 	var tiebaAccounts []*model.TcBaiduid
 	_function.GormDB.R.Where("uid = ? AND portrait = ?", uid, baiduAccountInfo.User.Portrait).Limit(1).Find(&tiebaAccounts)
 
+	if len(share.DataEncryptKeyByte) > 0 {
+		encryptedBDUSS, _ := _function.AES256GCMEncrypt(bduss, share.DataEncryptKeyByte)
+		bduss = string(encryptedBDUSS)
+
+		encryptedStoken, _ := _function.AES256GCMEncrypt(stoken, share.DataEncryptKeyByte)
+		stoken = string(encryptedStoken)
+	}
+
 	if len(tiebaAccounts) > 0 {
 		if tiebaAccounts[0].Bduss != bduss || tiebaAccounts[0].Stoken != stoken {
 			newData := model.TcBaiduid{
@@ -130,6 +139,14 @@ func AddTiebaAccount(c echo.Context) error {
 	// pre-check
 	var tiebaAccounts []*model.TcBaiduid
 	_function.GormDB.R.Where("uid = ? AND portrait = ?", uid, baiduAccountInfo.User.Portrait).Limit(1).Find(&tiebaAccounts)
+
+	if len(share.DataEncryptKeyByte) > 0 {
+		encryptedBDUSS, _ := _function.AES256GCMEncrypt(bduss, share.DataEncryptKeyByte)
+		bduss = string(encryptedBDUSS)
+
+		encryptedStoken, _ := _function.AES256GCMEncrypt(stoken, share.DataEncryptKeyByte)
+		stoken = string(encryptedStoken)
+	}
 
 	if len(tiebaAccounts) > 0 {
 		if tiebaAccounts[0].Bduss != bduss || tiebaAccounts[0].Stoken != stoken {
@@ -255,21 +272,22 @@ func GetTiebaAccountItem(c echo.Context) error {
 func CheckTiebaAccount(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
+	numUID, _ := strconv.ParseInt(uid, 10, 64)
+
 	pid := c.Param("pid")
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	var tiebaAccount model.TcBaiduid
-	_function.GormDB.R.Where("id = ? AND uid = ?", pid, uid).Order("id ASC").Find(&tiebaAccount)
+	cookie := _function.GetCookie(int32(numPid), true)
 
-	if tiebaAccount.ID != 0 && tiebaAccount.ID != int32(numPid) {
+	if cookie.ID == 0 || cookie.UID != int32(numUID) || (cookie.ID != 0 && cookie.ID != int32(numPid)) {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// get tieba account info
-	baiduAccountInfo, err := _function.GetBaiduUserInfo(_type.TypeCookie{Bduss: tiebaAccount.Bduss})
+	baiduAccountInfo, err := _function.GetBaiduUserInfo(_type.TypeCookie{Bduss: cookie.Bduss})
 
 	//log.Println(tiebaAccount, baiduAccountInfo)
 

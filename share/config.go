@@ -20,3 +20,10 @@ var EnableBackup bool
 var Address string
 
 var StartTime = time.Now()
+
+var IsPureGO bool
+
+// --experimental-*
+var DataEncryptKeyStr string
+var DataEncryptKeyByte []byte
+var DisableEmail bool
