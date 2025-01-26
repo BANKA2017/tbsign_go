@@ -307,7 +307,7 @@ func main() {
 		// DO NOT USE ENCRYPT IN COMPAT MODE!!!
 		share.DataEncryptKeyByte = []byte{}
 		share.DataEncryptKeyStr = ""
-	} else if len(share.DataEncryptKeyByte) != 32 {
+	} else if len(share.DataEncryptKeyByte) != 0 && len(share.DataEncryptKeyByte) != 32 {
 		log.Fatal("ERROR: 无效密钥，无法加密/解密")
 	}
 
