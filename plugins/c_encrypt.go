@@ -2,6 +2,7 @@ package _plugin
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -76,7 +77,7 @@ func EncryptBaiduIDData() error {
 		}
 		offset += 100
 	}
-	return _function.SetOption("go_encrypt", time.Now().Format(time.DateTime))
+	return _function.SetOption("go_encrypt", strconv.Itoa(int(time.Now().Unix())))
 }
 
 func DecryptBaiduIDData() error {
