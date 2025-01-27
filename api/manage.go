@@ -142,7 +142,7 @@ func UpdateAdminSettings(c echo.Context) error {
 						} else {
 							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
 						}
-					case "go_ntfy_addr", "go_bark_addr":
+					case "go_ntfy_addr", "go_bark_addr", "go_pushdeer_addr":
 						if _function.VerifyURL(v1[0]) {
 							settings[vName] = v1[0]
 						} else {

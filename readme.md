@@ -344,6 +344,7 @@ docker run -d --restart unless-stopped -v ./db:/app/tbsign/db -p 8080:1323 ghcr.
 - [x] Stoken
 - [x] Bark key
 - [x] Ntfy topic
+- [x] PushDeer key
 
 
 加密后的数据格式前 12 位为 `iv`，其余部分为密文

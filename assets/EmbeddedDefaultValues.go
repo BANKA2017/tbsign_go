@@ -35,6 +35,7 @@ var DefaultOptions = map[string]string{
 	"go_forum_sync_policy":    "add_only",
 	"go_ntfy_addr":            "https://ntfy.sh",
 	"go_bark_addr":            "https://api.day.app",
+	"go_pushdeer_addr":        "https://api2.pushdeer.com",
 	"go_export_personal_data": "0",
 	"go_import_personal_data": "0",
 	"go_encrypt":              "0",

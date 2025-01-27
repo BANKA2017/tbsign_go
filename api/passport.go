@@ -29,9 +29,10 @@ type userInfoStruct struct {
 	Role   string `json:"role"`
 
 	// push
-	NtfyTopic string `json:"ntfy_topic"`
-	BarkKey   string `json:"bark_key"`
-	PushType  string `json:"push_type"`
+	NtfyTopic   string `json:"ntfy_topic"`
+	BarkKey     string `json:"bark_key"`
+	PushDeerKey string `json:"pushdeer_key"`
+	PushType    string `json:"push_type"`
 }
 type userInfoWithSettingsStruct struct {
 	userInfoStruct
@@ -225,6 +226,7 @@ func UpdateAccountInfo(c echo.Context) error {
 	email := strings.TrimSpace(c.FormValue("email"))
 	barkKey := strings.TrimSpace(c.FormValue("bark_key"))
 	ntfyTopic := strings.TrimSpace(c.FormValue("ntfy_topic"))
+	pushdeerKey := strings.TrimSpace(c.FormValue("pushdeer_key"))
 	pushType := strings.TrimSpace(c.FormValue("push_type"))
 
 	password := strings.TrimSpace(c.FormValue("password"))
@@ -289,6 +291,11 @@ func UpdateAccountInfo(c echo.Context) error {
 	if localPushBarkKey != barkKey {
 		_function.SetUserOption("go_bark_key", barkKey, uid, nil, share.DataEncryptKeyByte)
 		localPushBarkKey = barkKey
+	}
+	localPushPushdeerKey := _function.GetUserOption("go_pushdeer_key", uid, share.DataEncryptKeyByte)
+	if localPushPushdeerKey != pushdeerKey {
+		_function.SetUserOption("go_pushdeer_key", pushdeerKey, uid, nil, share.DataEncryptKeyByte)
+		localPushPushdeerKey = pushdeerKey
 	}
 	localPushType := _function.GetUserOption("go_message_type", uid)
 	if localPushType != pushType && slices.Contains(_function.MessageTypeList, pushType) {
@@ -383,15 +390,18 @@ func GetAccountInfo(c echo.Context) error {
 			Avatar: _function.GetGravatarLink(accountInfo[0].Email),
 			Role:   accountInfo[0].Role,
 
-			NtfyTopic: _function.GetUserOption("go_ntfy_topic", uid, share.DataEncryptKeyByte),
-			BarkKey:   _function.GetUserOption("go_bark_key", uid, share.DataEncryptKeyByte),
-			PushType:  _function.GetUserOption("go_message_type", uid),
+			NtfyTopic:   _function.GetUserOption("go_ntfy_topic", uid, share.DataEncryptKeyByte),
+			BarkKey:     _function.GetUserOption("go_bark_key", uid, share.DataEncryptKeyByte),
+			PushDeerKey: _function.GetUserOption("go_pushdeer_key", uid, share.DataEncryptKeyByte),
+
+			PushType: _function.GetUserOption("go_message_type", uid),
 		},
 		make(map[string]string),
 	}
 	resp.SystemSettings["forum_sync_policy"] = _function.GetOption("go_forum_sync_policy")
 	resp.SystemSettings["bark_addr"] = _function.GetOption("go_bark_addr")
 	resp.SystemSettings["ntfy_addr"] = _function.GetOption("go_ntfy_addr")
+	resp.SystemSettings["pushdeer_addr"] = _function.GetOption("go_pushdeer_addr")
 	resp.SystemSettings["allow_export_personal_data"] = _function.GetOption("go_export_personal_data")
 	resp.SystemSettings["allow_import_personal_data"] = _function.GetOption("go_import_personal_data")
 

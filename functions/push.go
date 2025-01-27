@@ -19,7 +19,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var MessageTypeList = []string{"email", "ntfy", "bark"}
+var MessageTypeList = []string{"email", "ntfy", "bark", "pushdeer"}
 
 func VerifyEmail(email string) bool {
 	if email == "" {
@@ -52,6 +52,9 @@ func SendMessage(_type string, uid int32, _subject, _body string) error {
 	case "bark":
 		barkKey := GetUserOption("go_bark_key", strconv.Itoa(int(uid)), share.DataEncryptKeyByte)
 		return SendBark(barkKey, _subject, _body)
+	case "pushdeer":
+		barkKey := GetUserOption("go_pushdeer_key", strconv.Itoa(int(uid)), share.DataEncryptKeyByte)
+		return SendPushdeer(barkKey, _subject, _body)
 	default:
 		accountInfo := new(model.TcUser)
 		GormDB.R.Where("id = ?", uid).Find(accountInfo)
@@ -139,6 +142,45 @@ func SendBark(_to, title, body string) error {
 		return nil
 	} else {
 		return fmt.Errorf("bark: %s", resp.Message)
+	}
+}
+
+type PushdeerResponseStruct struct {
+	Code  int    `json:"code,omitempty"`
+	Error string `json:"error,omitempty"`
+}
+
+func SendPushdeer(_to, title, body string) error {
+	if _to == "" {
+		return errors.New("pushdeer: key is empty")
+	}
+	// get custom address
+	pushdeerAddr := GetOption("go_pushdeer_addr")
+	if pushdeerAddr == "" {
+		pushdeerAddr = "https://api2.pushdeer.com"
+	}
+
+	_body := url.Values{}
+
+	_body.Set("text", title)
+	_body.Set("desp", strings.ReplaceAll(body, "<br />", "\n"))
+	_body.Set("pushkey", _to)
+
+	res, err := Fetch(AppendStrings(pushdeerAddr, "/message/push"), "POST", []byte(_body.Encode()), map[string]string{}, DefaultCient)
+	if err != nil {
+		return err
+	}
+
+	resp := new(PushdeerResponseStruct)
+	err = JsonDecode(res, resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Error == "" {
+		return nil
+	} else {
+		return fmt.Errorf("pushdeer: %s", resp.Error)
 	}
 }
 
