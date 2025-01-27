@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/BANKA2017/tbsign_go/model"
+	"github.com/BANKA2017/tbsign_go/share"
 	"github.com/emersion/go-smtp"
 	"golang.org/x/exp/slices"
 
@@ -46,10 +47,10 @@ func SendMessage(_type string, uid int32, _subject, _body string) error {
 
 	switch _type {
 	case "ntfy":
-		ntfyTopic := GetUserOption("go_ntfy_topic", strconv.Itoa(int(uid)))
+		ntfyTopic := GetUserOption("go_ntfy_topic", strconv.Itoa(int(uid)), share.DataEncryptKeyByte)
 		return SendNtfy(ntfyTopic, _subject, _body)
 	case "bark":
-		barkKey := GetUserOption("go_bark_key", strconv.Itoa(int(uid)))
+		barkKey := GetUserOption("go_bark_key", strconv.Itoa(int(uid)), share.DataEncryptKeyByte)
 		return SendBark(barkKey, _subject, _body)
 	default:
 		accountInfo := new(model.TcUser)

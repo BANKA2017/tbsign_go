@@ -1,7 +1,6 @@
 package _api
 
 import (
-	"encoding/base64"
 	"log"
 	"net/http"
 	"strconv"
@@ -281,14 +280,14 @@ func UpdateAccountInfo(c echo.Context) error {
 	}
 
 	// push
-	localPushNtfyTopic := _function.GetUserOption("go_ntfy_topic", uid)
+	localPushNtfyTopic := _function.GetUserOption("go_ntfy_topic", uid, share.DataEncryptKeyByte)
 	if localPushNtfyTopic != ntfyTopic {
-		_function.SetUserOption("go_ntfy_topic", ntfyTopic, uid)
+		_function.SetUserOption("go_ntfy_topic", ntfyTopic, uid, nil, share.DataEncryptKeyByte)
 		localPushNtfyTopic = ntfyTopic
 	}
-	localPushBarkKey := _function.GetUserOption("go_bark_key", uid)
+	localPushBarkKey := _function.GetUserOption("go_bark_key", uid, share.DataEncryptKeyByte)
 	if localPushBarkKey != barkKey {
-		_function.SetUserOption("go_bark_key", barkKey, uid)
+		_function.SetUserOption("go_bark_key", barkKey, uid, nil, share.DataEncryptKeyByte)
 		localPushBarkKey = barkKey
 	}
 	localPushType := _function.GetUserOption("go_message_type", uid)
@@ -384,8 +383,8 @@ func GetAccountInfo(c echo.Context) error {
 			Avatar: _function.GetGravatarLink(accountInfo[0].Email),
 			Role:   accountInfo[0].Role,
 
-			NtfyTopic: _function.GetUserOption("go_ntfy_topic", uid),
-			BarkKey:   _function.GetUserOption("go_bark_key", uid),
+			NtfyTopic: _function.GetUserOption("go_ntfy_topic", uid, share.DataEncryptKeyByte),
+			BarkKey:   _function.GetUserOption("go_bark_key", uid, share.DataEncryptKeyByte),
 			PushType:  _function.GetUserOption("go_message_type", uid),
 		},
 		make(map[string]string),
@@ -698,10 +697,10 @@ func ImportAccountData(c echo.Context) error {
 		if !exists {
 			if len(share.DataEncryptKeyByte) > 0 {
 				encryptedBDUSS, _ := _function.AES256GCMEncrypt(importBaiduidItem.Bduss, share.DataEncryptKeyByte)
-				importBaiduidItem.Bduss = strings.ReplaceAll(base64.URLEncoding.EncodeToString(encryptedBDUSS), "=", "")
+				importBaiduidItem.Bduss = _function.Base64URLEncode(encryptedBDUSS)
 
 				encryptedStoken, _ := _function.AES256GCMEncrypt(importBaiduidItem.Stoken, share.DataEncryptKeyByte)
-				importBaiduidItem.Stoken = strings.ReplaceAll(base64.URLEncoding.EncodeToString(encryptedStoken), "=", "")
+				importBaiduidItem.Stoken = _function.Base64URLEncode(encryptedStoken)
 			}
 
 			newTcBaiduID = append(newTcBaiduID, model.TcBaiduid{

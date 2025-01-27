@@ -3,8 +3,6 @@ package _function
 import (
 	"crypto/aes"
 	"crypto/cipher"
-	"encoding/base64"
-	"strings"
 )
 
 // GCM Encryption/Decryption
@@ -42,7 +40,7 @@ func AES256GCMDecrypt[T string | []byte](ciphertext T, key []byte) ([]byte, erro
 
 	switch any(ciphertext).(type) {
 	case string:
-		strByte, err = base64.RawURLEncoding.DecodeString(strings.ReplaceAll(any(ciphertext).(string), "=", ""))
+		strByte, err = Base64URLDecode(any(ciphertext).(string))
 		if err != nil {
 			return nil, err
 		}

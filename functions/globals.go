@@ -2,6 +2,7 @@ package _function
 
 import (
 	crypto_rand "crypto/rand"
+	"encoding/base64"
 	"log"
 	"math/rand/v2"
 	"net/url"
@@ -186,4 +187,12 @@ func When[T any](c bool, d1, d2 T) T {
 	} else {
 		return d2
 	}
+}
+
+func Base64URLEncode(originalBuffer []byte) string {
+	return base64.RawURLEncoding.EncodeToString(originalBuffer)
+}
+
+func Base64URLDecode(originalBuffer string) ([]byte, error) {
+	return base64.RawURLEncoding.DecodeString(strings.ReplaceAll(originalBuffer, "=", ""))
 }

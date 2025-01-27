@@ -22,6 +22,7 @@ var Address string
 var StartTime = time.Now()
 
 var IsPureGO bool
+var IsEncrypt bool
 
 // --experimental-*
 var DataEncryptKeyStr string

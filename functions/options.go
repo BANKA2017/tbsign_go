@@ -70,12 +70,33 @@ func DeleteOption(keyName string, ext ...any) error {
 	return err
 }
 
-func GetUserOption(keyName string, uid string) string {
+var CanEncryptUserOption = []string{"go_bark_key", "go_ntfy_topic"}
+
+// ext: []any{[]byte}
+//
+//	encryptKey
+func GetUserOption(keyName string, uid string, ext ...any) string {
 	var tmpUserOption model.TcUsersOption
 	GormDB.R.Model(&model.TcUsersOption{}).Where("uid = ? AND name = ?", uid, keyName).Take(&tmpUserOption)
+	if len(ext) > 0 {
+		for index := range ext {
+			switch index {
+			case 0:
+				if encrypt, ok := ext[index].([]byte); ok && len(encrypt) == 32 && tmpUserOption.Value != "" {
+					newEncryptedValue, err := AES256GCMDecrypt(tmpUserOption.Value, encrypt)
+					if err == nil && newEncryptedValue != nil {
+						tmpUserOption.Value = string(newEncryptedValue)
+					}
+				}
+			}
+		}
+	}
 	return tmpUserOption.Value
 }
 
+// ext: []any{*gorm.DB, []byte}
+//
+//	dbHandle, encryptKey
 func SetUserOption[T ~string | ~bool | ~int](keyName string, value T, uid string, ext ...any) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	newValue := ""
@@ -94,8 +115,20 @@ func SetUserOption[T ~string | ~bool | ~int](keyName string, value T, uid string
 
 	_sql := GormDB.W
 	if len(ext) > 0 {
-		if tx, ok := ext[0].(*gorm.DB); ok {
-			_sql = tx
+		for index := range ext {
+			switch index {
+			case 0:
+				if tx, ok := ext[index].(*gorm.DB); ok && tx != nil {
+					_sql = tx
+				}
+			case 1:
+				if encrypt, ok := ext[index].([]byte); ok && len(encrypt) == 32 {
+					newEncryptedValue, err := AES256GCMEncrypt(newValue, encrypt)
+					if err == nil && newEncryptedValue != nil {
+						newValue = Base64URLEncode(newEncryptedValue)
+					}
+				}
+			}
 		}
 	}
 	return _sql.Model(&model.TcUsersOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcUsersOption{UID: int32(numUID), Name: keyName, Value: newValue}).Error

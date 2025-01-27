@@ -1,7 +1,6 @@
 package _api
 
 import (
-	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"log"
@@ -90,7 +89,7 @@ func verifyAuthorization(authorization string) (string, string) {
 }
 
 func sessionTokenBuilder(uid int32, password string) string {
-	return base64.RawURLEncoding.EncodeToString([]byte(strconv.Itoa(int(uid)) + ":" + hex.EncodeToString(_function.GenHMAC256([]byte(password), []byte(strconv.Itoa(int(uid))+password)))))
+	return _function.Base64URLEncode([]byte(strconv.Itoa(int(uid)) + ":" + hex.EncodeToString(_function.GenHMAC256([]byte(password), []byte(strconv.Itoa(int(uid))+password)))))
 }
 
 type HttpAuthRefreshTokenMapItemStruct struct {
@@ -105,7 +104,7 @@ func tokenBuilder(uid int) (string, int64) {
 	if err != nil {
 		return "", 0
 	}
-	token := strings.ReplaceAll(base64.RawURLEncoding.EncodeToString(_token), "=", "")
+	token := _function.Base64URLEncode(_token)
 
 	// expire
 	strCookieExpire := _function.GetOption("cktime")
@@ -149,7 +148,7 @@ func ResetMessageBuilder(uid int32, forceMode bool) *_function.VerifyCodeStruct 
 	if forceMode || v.ResetTime < _function.ResetPwdMaxTimes {
 		// init a callback code
 		_code, _ := _function.RandomTokenBuilder(resetPasswordVerifyCodeByteLength)
-		code := base64.RawURLEncoding.EncodeToString(_code)
+		code := _function.Base64URLEncode(_code)
 
 		v.ResetTime += 1
 		v.VerifyCode = _function.RandomEmoji()
@@ -177,7 +176,7 @@ func SendResetMessage(uid int32, pushType string, forceMode bool) (string, error
 	if !forceMode && (v.ResetTime >= _function.ResetPwdMaxTimes || v.TryTime >= _function.ResetPwdMaxTimes) {
 		if len(v.Value) == resetPasswordVerifyCodeLength {
 			tmpValue, _ := _function.RandomTokenBuilder(48)
-			v.Value = base64.RawURLEncoding.EncodeToString(tmpValue)
+			v.Value = _function.Base64URLEncode(tmpValue)
 			_function.VerifyCodeList.StoreCode("reset_password", uid, v)
 		}
 		return "", errors.New("已超过最大验证次数，请稍后再试")

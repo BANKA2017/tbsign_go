@@ -2,7 +2,6 @@ package main
 
 import (
 	_ "embed"
-	"encoding/base64"
 	"flag"
 	"fmt"
 	"log"
@@ -137,7 +136,7 @@ func main() {
 		share.DataEncryptKeyStr = os.Getenv("tc_data_encrypt_key")
 	}
 	if share.DataEncryptKeyStr != "" {
-		share.DataEncryptKeyByte, err = base64.RawURLEncoding.DecodeString(share.DataEncryptKeyStr)
+		share.DataEncryptKeyByte, err = _function.Base64URLDecode(share.DataEncryptKeyStr)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -281,6 +280,7 @@ func main() {
 	// init
 	_function.InitOptions()
 	share.IsPureGO = _function.GetOption("go_ver") == "1"
+	share.IsEncrypt = _function.GetOption("go_encrypt") != "0"
 	_plugin.InitPluginList()
 
 	// encrypt/decrypt init
@@ -303,12 +303,21 @@ func main() {
 			os.Exit(0)
 		}
 	} else if len(share.DataEncryptKeyByte) == 32 && !share.IsPureGO {
-		log.Println("WARNING: 兼容模式下不支持加密，已恢复使用明文")
 		// DO NOT USE ENCRYPT IN COMPAT MODE!!!
 		share.DataEncryptKeyByte = []byte{}
 		share.DataEncryptKeyStr = ""
-	} else if len(share.DataEncryptKeyByte) != 0 && len(share.DataEncryptKeyByte) != 32 {
-		log.Fatal("ERROR: 无效密钥，无法加密/解密")
+
+		log.Println("WARNING: 兼容模式下不支持加密，已恢复使用明文")
+	}
+
+	if share.IsEncrypt && len(share.DataEncryptKeyByte) != 32 {
+		log.Fatal("ERROR: 无效密钥，无法加密/解密数据")
+	}
+	if !share.IsEncrypt && len(share.DataEncryptKeyByte) > 0 {
+		share.DataEncryptKeyByte = []byte{}
+		share.DataEncryptKeyStr = ""
+
+		log.Println("WARNING: 数据未加密，已恢复使用明文")
 	}
 
 	// log.Println(share.DBVersion)

@@ -81,7 +81,7 @@ func GetServerStatus(c echo.Context) error {
 		"cron_sign_again": _function.GetOption("cron_sign_again"),
 		"compat":          _function.GetOption("core_version"),
 		"pure_go":         share.IsPureGO,
-		"encrypt":         len(share.DataEncryptKeyByte) == 32,
+		"encrypt":         share.IsEncrypt,
 		"uid_count":       fmt.Sprintf("%d [online:%d]", UIDCount, onlineCount),
 		"pid_count":       PIDCount,
 		"forum_count":     ForumCount,
