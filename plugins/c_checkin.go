@@ -30,7 +30,7 @@ var cornSignAgainInterface map[string]any
 var tableList = []string{"tieba"}
 var checkinToday string
 
-func Dosign(table string, retry bool) (bool, error) {
+func Dosign(_ string, retry bool) (bool, error) {
 	//signMode := _function.GetOption("sign_mode")// client mode only
 	hasFailed := false
 	signHour, _ := strconv.ParseInt(_function.GetOption("sign_hour"), 10, 64)
@@ -149,6 +149,7 @@ func DoCheckinAction() {
 		// update lastdo
 		cornSignAgainInterface["num"] = 0
 		cornSignAgainInterface["lastdo"] = checkinToday
+		RecheckInStatus.UnixTimestamp = 0
 		cornSignAgainEncoded, err := gophp.Serialize(cornSignAgainInterface)
 		if err != nil {
 			log.Println("checkin: encode php serialize failed", err)
@@ -166,38 +167,61 @@ func DoCheckinAction() {
 
 }
 
+var RecheckInStatus struct {
+	UnixTimestamp int64
+	NowInterval   int
+}
+
 func DoReCheckinAction() {
 	retryMax, _ := strconv.ParseInt(_function.GetOption("retry_max"), 10, 64)
 
+	if RecheckInStatus.UnixTimestamp > 0 && _function.Now.Add(time.Minute*-1*time.Duration(RecheckInStatus.NowInterval)).Unix() < RecheckInStatus.UnixTimestamp {
+		return
+	}
+
 	retryNum := cornSignAgainInterface["num"].(int)
 
+	if retryMax >= 0 && retryNum >= int(retryMax) {
+		return
+	}
+
 	// all accounts are done?
-	var unDoneCount int64
-	_function.GormDB.R.Model(&model.TcTieba{}).Where("no = 0 AND latest != ?", _function.Now.Day()).Count(&unDoneCount)
+	var checkinStatus = struct {
+		UnDoneCount int
+		FailedCount int
+	}{}
 
-	var failedCount int64
-	_function.GormDB.R.Model(&model.TcTieba{}).Where("no = 0 AND status IN ?", recheckinErrorID).Count(&failedCount)
+	_function.GormDB.R.Model(&model.TcTieba{}).Select("COUNT(CASE WHEN latest != ? THEN 1 END) AS un_done_count, COUNT(CASE WHEN status IN (?) THEN 1 END) as failed_count", _function.Now.Day(), recheckinErrorID).Where("no = 0").Scan(&checkinStatus)
 
-	if unDoneCount == 0 && failedCount > 0 && (retryMax == 0 || int64(retryNum) < retryMax && retryMax > 0) {
-		for retryMax == 0 || int64(retryNum) <= retryMax {
-			retryAgain := false
-			for _, table := range tableList {
-				hasFailed, _ := Dosign(table, true)
-				if hasFailed {
-					retryAgain = true
-				}
-			}
-			retryNum++
-			cornSignAgainInterface["num"] = retryNum
-			cornSignAgainEncoded, err := gophp.Serialize(cornSignAgainInterface)
-			if err != nil {
-				log.Println("sign_retry: encode failed")
-				return
-			}
-			_function.SetOption("cron_sign_again", string(cornSignAgainEncoded))
-			if !retryAgain {
-				break
+	if checkinStatus.UnDoneCount == 0 && checkinStatus.FailedCount > 0 {
+		RecheckInStatus.UnixTimestamp = _function.Now.Unix()
+		ReCheckInCaps, _ := strconv.ParseInt(_function.GetOption("go_re_check_in_max_interval"), 10, 64)
+		if ReCheckInCaps < 1 {
+			ReCheckInCaps = 1
+			_function.SetOption("go_re_check_in_max_interval", "1")
+		}
+		if RecheckInStatus.NowInterval < int(ReCheckInCaps) {
+			if RecheckInStatus.NowInterval > int(ReCheckInCaps)>>2 {
+				RecheckInStatus.NowInterval = int(ReCheckInCaps)
+			} else {
+				RecheckInStatus.NowInterval <<= 2
 			}
 		}
+		//for retryMax == 0 || int64(retryNum) <= retryMax {
+		for _, table := range tableList {
+			_, err := Dosign(table, true)
+			if err != nil {
+				log.Println(err)
+			}
+		}
+		retryNum++
+		cornSignAgainInterface["num"] = retryNum
+		cornSignAgainEncoded, err := gophp.Serialize(cornSignAgainInterface)
+		if err != nil {
+			log.Println("sign_retry: encode failed")
+			return
+		}
+		_function.SetOption("cron_sign_again", string(cornSignAgainEncoded))
+		//}
 	}
 }

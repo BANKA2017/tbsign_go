@@ -117,6 +117,15 @@ func UpdateAdminSettings(c echo.Context) error {
 							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
 							log.Println(vName, numValue, err)
 						}
+					case "go_re_check_in_max_interval":
+						numValue, err := strconv.ParseInt(v1[0], 10, 64)
+						if err == nil && numValue >= 1 {
+							settings[vName] = v1[0]
+							_function.SetOption(vName, v1[0])
+						} else {
+							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
+							log.Println(vName, numValue, err)
+						}
 					case "sign_hour":
 						numValue, err := strconv.ParseInt(v1[0], 10, 64)
 						if err != nil {
