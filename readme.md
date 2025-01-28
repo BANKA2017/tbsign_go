@@ -353,6 +353,12 @@ docker run -d --restart unless-stopped -v ./db:/app/tbsign/db -p 8080:1323 ghcr.
 
 未来可能会支持加密更多的数据，升级前需要先将数据解密，避免出错，升级完成后重新加密
 
+## 重签
+
+重签使用 [截断二进制指数退避](https://en.wikipedia.org/wiki/Exponential_backoff)，默认最大退避间隔为 1 分钟（跟原版一样）
+
+可以通过修改 `go_recheck_in_max_interval`（系统管理 -> 签到 -> 最大重签间隔 (分钟)）调整间隔，最小间隔为 1 分钟，如果间隔设置得过大可能会导致极端情况下无法完成全部重签任务
+
 ## 已知问题
 
 - [x] 不支持限制单次签到贴吧总数，会一次性全部签完

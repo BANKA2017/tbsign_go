@@ -3,7 +3,6 @@ package _plugin
 import (
 	"log"
 	"strconv"
-	"sync"
 	"time"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
@@ -11,8 +10,6 @@ import (
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/leeqvip/gophp"
 )
-
-var wg sync.WaitGroup
 
 const AgainErrorId = "160002"
 
@@ -29,6 +26,46 @@ var recheckinErrorID = []int64{340011, 2280007, 110001, 1989004, 255, 1, 340006}
 var cornSignAgainInterface map[string]any
 var tableList = []string{"tieba"}
 var checkinToday string
+
+func DosignWorker(tasks <-chan *model.TcTieba, _errors chan<- error, sleep int64) {
+	for task := range tasks {
+		// success := false
+		now := _function.Now
+		ck := _function.GetCookie(task.Pid)
+		if ck.Bduss == "" {
+			log.Println("checkin: Failed, no such account", task.Pid, task.Tieba, task.Fid, task.ID, now.Day())
+			_errors <- nil
+			continue
+		}
+		response, err := _function.PostCheckinClient(ck, task.Tieba, task.Fid)
+
+		if err != nil {
+			log.Println(err)
+		} else if response.ErrorCode != "" {
+			var errorCode int64 = 0
+			errorMsg := "NULL"
+			if !(response.ErrorCode == "0" || response.ErrorCode == AgainErrorId) {
+				errorCode, _ = strconv.ParseInt(response.ErrorCode, 10, 64)
+				errorMsg = response.ErrorMsg
+			} else if response.ErrorCode == AgainErrorId {
+				errorMsg = ""
+			}
+
+			// TODO better sql update
+			_function.GormDB.W.Model(&model.TcTieba{}).Where("id = ?", task.ID).Updates(&_type.TcTieba{
+				Status:    _function.VariablePtrWrapper(int32(errorCode)),
+				LastError: _function.VariablePtrWrapper(errorMsg),
+				TcTieba: model.TcTieba{
+					Latest: int32(now.Day()),
+				},
+			})
+		}
+
+		log.Println("checkin:", task.Pid, task.Tieba, task.Fid, task.ID, now.Day(), time.Now().UnixMilli()-now.UnixMilli())
+		_errors <- err
+		time.Sleep(time.Millisecond * time.Duration(sleep))
+	}
+}
 
 func Dosign(_ string, retry bool) (bool, error) {
 	//signMode := _function.GetOption("sign_mode")// client mode only
@@ -73,58 +110,30 @@ func Dosign(_ string, retry bool) (bool, error) {
 		sleep = 100
 	}
 
-	var forceWaitCount = 50
-	for _, v := range tiebaList {
-		// we will not auto update fid
-		if v.Fid == 0 {
-			continue
-		}
-		wg.Add(1)
-		go func(pid int32, kw string, fid int32, id int32, now time.Time) {
-			defer wg.Done()
-			// success := false
-			ck := _function.GetCookie(pid)
-			if ck.Bduss == "" {
-				log.Println("checkin: Failed, no such account", pid, kw, fid, id, now.Day())
-				return
-			}
-			response, err := _function.PostCheckinClient(ck, kw, fid)
+	tasksChan := make(chan *model.TcTieba, len(tiebaList))
+	errorsChan := make(chan error, len(tiebaList))
+	defer close(tasksChan)
+	defer close(errorsChan)
 
-			if err != nil {
-				log.Println(err)
-				hasFailed = true
-			} else if response.ErrorCode != "" {
-				var errorCode int64 = 0
-				errorMsg := "NULL"
-				if !(response.ErrorCode == "0" || response.ErrorCode == AgainErrorId) {
-					errorCode, _ = strconv.ParseInt(response.ErrorCode, 10, 64)
-					errorMsg = response.ErrorMsg
-				} else if response.ErrorCode == AgainErrorId {
-					errorMsg = ""
-				}
+	threadCount, _ := strconv.ParseInt(_function.GetOption("sign_multith"), 10, 64)
+	if threadCount <= 0 {
+		threadCount = 10
+	}
 
-				// TODO better sql update
-				_function.GormDB.W.Model(&model.TcTieba{}).Where("id = ?", id).Updates(&_type.TcTieba{
-					Status:    _function.VariablePtrWrapper(int32(errorCode)),
-					LastError: _function.VariablePtrWrapper(errorMsg),
-					TcTieba: model.TcTieba{
-						Latest: int32(now.Day()),
-					},
-				})
-			}
+	for i := 0; i < int(threadCount); i++ {
+		go DosignWorker(tasksChan, errorsChan, sleep)
+	}
 
-			log.Println("checkin:", pid, kw, fid, id, now.Day(), time.Now().UnixMilli()-now.UnixMilli())
-		}(v.Pid, v.Tieba, v.Fid, v.ID, _function.Now)
+	for _, task := range tiebaList {
+		tasksChan <- task
+	}
 
-		time.Sleep(time.Millisecond * time.Duration(sleep))
-
-		forceWaitCount--
-		if forceWaitCount <= 0 {
-			forceWaitCount = 50
-			wg.Wait()
+	for i := 0; i < len(tiebaList); i++ {
+		if <-errorsChan != nil {
+			hasFailed = true
 		}
 	}
-	wg.Wait()
+
 	log.Println("checkin: done!")
 	return hasFailed, nil
 }

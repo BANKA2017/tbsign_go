@@ -108,7 +108,7 @@ func UpdateAdminSettings(c echo.Context) error {
 						} else {
 							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
 						}
-					case "cron_limit", "retry_max", "sign_sleep", "mail_port", "cktime":
+					case "cron_limit", "retry_max", "sign_sleep", "sign_multith", "mail_port", "cktime":
 						numValue, err := strconv.ParseInt(v1[0], 10, 64)
 						if err == nil && numValue >= 0 {
 							settings[vName] = v1[0]

@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-var SettingsKeys = []string{"ann", "system_url", "stop_reg", "enable_reg", "yr_reg", "cktime", "sign_mode", "sign_hour", "cron_limit", "sign_sleep", "retry_max", "mail_name", "mail_yourname", "mail_host", "mail_port", "mail_secure", "mail_auth", "mail_smtpname", "mail_smtppw", "go_forum_sync_policy", "go_ntfy_addr", "go_bark_addr", "go_pushdeer_addr", "go_export_personal_data", "go_import_personal_data", "go_re_check_in_max_interval"} // "system_name", "system_keywords", "system_description"
+var SettingsKeys = []string{"ann", "system_url", "stop_reg", "enable_reg", "yr_reg", "cktime", "sign_mode", "sign_hour", "cron_limit", "sign_sleep", "retry_max", "mail_name", "mail_yourname", "mail_host", "mail_port", "mail_secure", "mail_auth", "mail_smtpname", "mail_smtppw", "go_forum_sync_policy", "go_ntfy_addr", "go_bark_addr", "go_pushdeer_addr", "go_export_personal_data", "go_import_personal_data", "go_re_check_in_max_interval", "sign_multith"} // "system_name", "system_keywords", "system_description"
 
 var SettingsFilter = SettingsKeys
 
