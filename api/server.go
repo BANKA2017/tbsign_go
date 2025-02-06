@@ -12,6 +12,7 @@ import (
 	"github.com/BANKA2017/tbsign_go/model"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/BANKA2017/tbsign_go/share"
+	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/labstack/echo/v4"
 )
 
@@ -47,15 +48,10 @@ func GetServerStatus(c echo.Context) error {
 	_function.GormDB.R.Model(&model.TcBaiduid{}).Count(&PIDCount)
 
 	/// forums
-	checkinStatus := new(struct {
-		Success  int64 `json:"success"`
-		Failed   int64 `json:"failed"`
-		Waiting  int64 `json:"waiting"`
-		IsIgnore int64 `json:"ignore"`
-	})
+	checkinStatus := new(_type.StatusStruct)
 
 	today := strconv.Itoa(_function.Now.Day())
-	_function.GormDB.R.Model(&model.TcTieba{}).Select("SUM(CASE WHEN (no = 0) AND status = 0 AND latest = "+today+" THEN 1 ELSE 0 END) AS success", "SUM(CASE WHEN (no = 0) AND status <> 0 AND latest = "+today+" THEN 1 ELSE 0 END) AS failed", "SUM(CASE WHEN (no = 0) AND latest <> "+today+" THEN 1 ELSE 0 END) AS waiting", "SUM(CASE WHEN no <> 0 THEN 1 ELSE 0 END) AS is_ignore").Scan(checkinStatus)
+	_function.GormDB.R.Model(&model.TcTieba{}).Select("SUM(CASE WHEN (no = 0) AND status = 0 AND latest = ? THEN 1 ELSE 0 END) AS success, SUM(CASE WHEN (no = 0) AND status <> 0 AND latest = ? THEN 1 ELSE 0 END) AS failed, SUM(CASE WHEN (no = 0) AND latest <> ? THEN 1 ELSE 0 END) AS waiting, SUM(CASE WHEN no <> 0 THEN 1 ELSE 0 END) AS is_ignore", today, today, today).Scan(checkinStatus)
 
 	ForumCount := checkinStatus.Success + checkinStatus.Failed + checkinStatus.Waiting + checkinStatus.IsIgnore
 

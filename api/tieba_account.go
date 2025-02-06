@@ -240,7 +240,13 @@ func GetTiebaAccountList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	var tiebaAccounts []*model.TcBaiduid
-	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
+	var tiebaAccountsBatchQueryList []*model.TcBaiduid
+	// _function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
+
+	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").FindInBatches(&tiebaAccountsBatchQueryList, 1000, func(tx *gorm.DB, batch int) error {
+		tiebaAccounts = append(tiebaAccounts, tiebaAccountsBatchQueryList...)
+		return nil
+	})
 
 	for k := range tiebaAccounts {
 		tiebaAccounts[k].Bduss = ""

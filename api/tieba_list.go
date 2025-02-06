@@ -8,6 +8,7 @@ import (
 	"github.com/BANKA2017/tbsign_go/model"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 func AddTieba(c echo.Context) error {
@@ -157,6 +158,13 @@ func GetTiebaList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	var tiebaList []*model.TcTieba
-	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaList)
+	var tiebaListBatchQueryList []*model.TcTieba
+	// _function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaList)
+
+	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").FindInBatches(&tiebaListBatchQueryList, 1000, func(tx *gorm.DB, batch int) error {
+		tiebaList = append(tiebaList, tiebaListBatchQueryList...)
+		return nil
+	})
+
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaList, "tbsign"))
 }

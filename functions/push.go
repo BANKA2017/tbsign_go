@@ -248,6 +248,7 @@ func PushMessageTemplateResetPassword(verifyMessage, code string) PushMessageTem
 			"请确认以下 emoji 的排列顺序与网页展示的一致:<br />" + verifyMessage,
 	}
 }
+
 func PushMessageTestTemplate() PushMessageTemplateStruct {
 	return PushMessageTemplateStruct{
 		Title: "TbSign 测试消息",
