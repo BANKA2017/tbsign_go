@@ -33,6 +33,7 @@ type userInfoStruct struct {
 	BarkKey     string `json:"bark_key"`
 	PushDeerKey string `json:"pushdeer_key"`
 	PushType    string `json:"push_type"`
+	DailyReport string `json:"daily_report"`
 }
 type userInfoWithSettingsStruct struct {
 	userInfoStruct
@@ -228,6 +229,7 @@ func UpdateAccountInfo(c echo.Context) error {
 	ntfyTopic := strings.TrimSpace(c.FormValue("ntfy_topic"))
 	pushdeerKey := strings.TrimSpace(c.FormValue("pushdeer_key"))
 	pushType := strings.TrimSpace(c.FormValue("push_type"))
+	dailyReport := strings.TrimSpace(c.FormValue("daily_report")) == "1"
 
 	password := strings.TrimSpace(c.FormValue("password"))
 
@@ -303,16 +305,29 @@ func UpdateAccountInfo(c echo.Context) error {
 		localPushType = pushType
 	}
 
+	localDailyReport := _function.GetUserOption("go_daily_report", uid) == "1"
+	if localDailyReport != dailyReport {
+		_function.SetUserOption("go_daily_report", !localDailyReport, uid)
+		localDailyReport = dailyReport
+
+		if localDailyReport {
+			_function.SetUserOption("go_daily_report_status", "0", uid)
+		} else {
+			_function.DeleteUserOption("go_daily_report_status", uid)
+		}
+	}
+
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 
 	var resp = userInfoStruct{
-		UID:       int32(numUID),
-		Name:      username,
-		Email:     email,
-		Avatar:    _function.GetGravatarLink(email),
-		NtfyTopic: localPushNtfyTopic,
-		BarkKey:   localPushBarkKey,
-		PushType:  localPushType,
+		UID:         int32(numUID),
+		Name:        username,
+		Email:       email,
+		Avatar:      _function.GetGravatarLink(email),
+		NtfyTopic:   localPushNtfyTopic,
+		BarkKey:     localPushBarkKey,
+		PushType:    localPushType,
+		DailyReport: _function.When(localDailyReport, "1", "0"),
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
@@ -394,7 +409,8 @@ func GetAccountInfo(c echo.Context) error {
 			BarkKey:     _function.GetUserOption("go_bark_key", uid, share.DataEncryptKeyByte),
 			PushDeerKey: _function.GetUserOption("go_pushdeer_key", uid, share.DataEncryptKeyByte),
 
-			PushType: _function.GetUserOption("go_message_type", uid),
+			PushType:    _function.GetUserOption("go_message_type", uid),
+			DailyReport: _function.GetUserOption("go_daily_report", uid),
 		},
 		make(map[string]string),
 	}
@@ -404,6 +420,7 @@ func GetAccountInfo(c echo.Context) error {
 	resp.SystemSettings["pushdeer_addr"] = _function.GetOption("go_pushdeer_addr")
 	resp.SystemSettings["allow_export_personal_data"] = _function.GetOption("go_export_personal_data")
 	resp.SystemSettings["allow_import_personal_data"] = _function.GetOption("go_import_personal_data")
+	resp.SystemSettings["go_daily_report_hour"] = _function.GetOption("go_daily_report_hour")
 
 	if !share.EnableBackup {
 		resp.SystemSettings["allow_export_personal_data"] = "0"

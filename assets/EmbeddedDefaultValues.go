@@ -40,4 +40,5 @@ var DefaultOptions = map[string]string{
 	"go_import_personal_data":     "0",
 	"go_encrypt":                  "0",
 	"go_re_check_in_max_interval": "1",
+	"go_daily_report_hour":        "-1",
 }

@@ -126,7 +126,7 @@ func UpdateAdminSettings(c echo.Context) error {
 							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
 							log.Println(vName, numValue, err)
 						}
-					case "sign_hour":
+					case "sign_hour", "go_daily_report_hour":
 						numValue, err := strconv.ParseInt(v1[0], 10, 64)
 						if err != nil {
 							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")

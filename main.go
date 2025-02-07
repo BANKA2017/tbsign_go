@@ -324,8 +324,8 @@ func main() {
 
 	/// client
 	/// DO NOT EXEC _function.InitClient BEFORE READING FLAGS AND ENV!!!!!
-	_function.DefaultCient = _function.InitClient(300)
-	_function.TBClient = _function.InitClient(10)
+	_function.DefaultCient = _function.InitClient(300 * time.Second)
+	_function.TBClient = _function.InitClient(10 * time.Second)
 
 	if share.EnableApi {
 		go _api.Api(share.Address)
@@ -369,6 +369,9 @@ func main() {
 
 			// clean verify code list
 			_function.VerifyCodeList.RemoveExpired()
+
+			// daily report
+			_plugin.DailyReportAction()
 		case <-fourHoursInterval.C:
 			_function.InitOptions()
 			_plugin.InitPluginList()
@@ -382,8 +385,6 @@ func main() {
 				_function.FidList.Delete(key)
 				return true
 			})
-		case <-_function.AccountLoginFailedChannel:
-			// do nothing now
 		}
 	}
 }

@@ -8,8 +8,6 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-var AccountLoginFailedChannel = make(chan _type.TypeCookie, 100)
-
 func ScanTiebaByPid(pid int32) {
 	account := GetCookie(pid)
 

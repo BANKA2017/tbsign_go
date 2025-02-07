@@ -30,7 +30,7 @@ var IgnoreProxy bool
 var DefaultCient *http.Client
 var TBClient *http.Client
 
-func InitClient(timeout int) *http.Client {
+func InitClient(timeout time.Duration) *http.Client {
 	transport := http.DefaultTransport
 
 	if IgnoreProxy {
@@ -38,14 +38,14 @@ func InitClient(timeout int) *http.Client {
 	}
 
 	return &http.Client{
-		Timeout:   time.Second * time.Duration(timeout),
+		Timeout:   timeout,
 		Transport: transport,
 	}
 }
 
 var EmptyHeaders = map[string]string{}
 
-const BrowserUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
+const BrowserUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
 
 const ClientVersion = "12.58.1.0"
 const ClientUserAgent = "tieba/" + ClientVersion
@@ -100,7 +100,7 @@ func Fetch(_url string, _method string, _body []byte, _headers map[string]string
 		log.Printf("\n---TEST MODE FETCH---\nurl: %s\nmethod: %s\nbody: %v\nheaders: %v\n------\nres code: %d\nres headers: %v\nres str: %s\n---TEST MODE FETCH---\n\n", _url, _method, _body, _headers, resp.StatusCode, resp.Header, strResponse)
 	}
 
-	return response[:], err
+	return response, err
 }
 
 type MultipartBodyBinaryFileType struct {
