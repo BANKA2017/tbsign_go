@@ -31,7 +31,7 @@ var DefaultOptions = map[string]string{
 	"system_url":                  "",
 	"tb_max":                      "0",
 	"yr_reg":                      "",
-	"go_ver":                      "1",
+	"go_ver":                      "0",
 	"go_forum_sync_policy":        "add_only",
 	"go_ntfy_addr":                "https://ntfy.sh",
 	"go_bark_addr":                "https://api.day.app",

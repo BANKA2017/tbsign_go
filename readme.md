@@ -88,7 +88,7 @@ MySQL 要求支持 [MySQL 窗口函数](https://dev.mysql.com/doc/refman/8.0/en/
 
 有的云服务，要求用户使用 TLS 连接到它们的数据库；有的用户对内网环境有特殊的安全需求，此时可能需要用到证书文件
 
-可用于 `db_tls` 的值包括 `true`, `false`, `skip-verify`, `preferred` 以及证书文件的路径，更多信息请参考 [go-sql-driver/mysql#tls](https://github.com/go-sql-driver/mysql?tab=readme-ov-file#tls) 
+可用于 `db_tls` 的值包括 `true`, `false`, `skip-verify`, `preferred` 以及证书文件的路径，更多信息请参考 [go-sql-driver/mysql#tls](https://github.com/go-sql-driver/mysql?tab=readme-ov-file#tls)
 
 例如下面的第二项是 Debian/Ubuntu 的目录；如果证书尚未被导入到系统，系统管理员可能就需要这样填写证书的实际目录
 
@@ -161,9 +161,9 @@ go run main.go --db_tls=/etc/ssl/certs/ca-certificates.crt
 
 ### 嵌入式前端
 
-此类部署需要用到其他仓库，并且需要手动或自动添加文件，如果不知道是怎么回事，请忽略本节，使用前后分离部署
+此类部署需要用到其他仓库，并且需要手动或自动添加文件，如果不知道是怎么回事，请忽略本节，使用前后分离部署，或直接使用 build.sh 打包
 
-- 使用嵌入式前端前，请设置环境变量 
+- 使用嵌入式前端前，请设置环境变量
 
   ```env
   NUXT_BASE_PATH="/api"
@@ -262,7 +262,8 @@ docker run --rm -v $(pwd):/app/tbsign -e EXTERNAL_LDFLAGS="-linkmode external -e
 
 ➡️ [ghcr.io/banka2017/tbsign_go](https://github.com/BANKA2017/tbsign_go/pkgs/container/tbsign_go)
 
-Dockerfile 在 `~/docker`，官方发布的镜像只会支持 `linux/arm64` 和 `linux/amd64`
+- Dockerfile 在 `~/docker`，官方发布的镜像只会支持 `linux/arm64` 和 `linux/amd64`
+- docker-compose.yml 文件位于 `~/docker/docker-compose.yml`
 
 Docker 版不支持在设置页面下载更新
 

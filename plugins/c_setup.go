@@ -104,6 +104,9 @@ func SetupSystem(dbMode, dbPath, dbUsername, dbPassword, dbEndpoint, dbName, dbT
 	fmt.Println("⌛正在导入默认设置...")
 	err = _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
 		for key, value := range assets.DefaultOptions {
+			if key == "go_ver" {
+				value = "1"
+			}
 			fmt.Printf("%s: %s\n", key, value)
 			err := _function.SetOption(key, value, tx)
 			if err != nil {
