@@ -30,12 +30,12 @@ cd tbsign_go
 rm -r assets/dist
 cp -R ../tbsign_go_fe/.output/public/ assets/dist
 commit_hash=$(git rev-parse HEAD)
-builtAt="$(date -Iseconds)"
-goRuntime=$(go version | sed 's/go version go[0-9]*\.[0-9]*\.[0-9]* //')
+build_at="$(date -Iseconds)"
+go_runtime=$(go version | sed 's/go version go[0-9]*\.[0-9]*\.[0-9]* //')
 
 CURRENT_LDFLAGS="\
--X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$builtAt' \
--X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$goRuntime' \
+-X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$build_at' \
+-X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime' \
 -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
 -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash' \
 -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE' \

@@ -76,16 +76,19 @@ jobs:
           mkdir build
           cd build
           commit_hash=$(git rev-parse HEAD)
+          echo "commit_hash=${commit_hash}" >> "$GITHUB_ENV"
           short_commit_hash=${commit_hash:0:7}
           short_fe_commit_hash=${fe_commit_hash:0:7}
           build_prefix="tbsign_go.$(date +'%+4Y%m%d').$short_commit_hash.$short_fe_commit_hash"
           echo "build_prefix=${build_prefix}" >> "$GITHUB_ENV"
-          builtAt="$(date -Iseconds)"
-          goRuntime=$(go version | sed 's/go version go[0-9]*\.[0-9]*\.[0-9]* //')
+          build_at="$(date -Iseconds)"
+          echo "build_at=${build_at}" >> "$GITHUB_ENV"
+          go_runtime=$(go version | sed 's/go version go[0-9]*\.[0-9]*\.[0-9]* //')
+          echo "go_runtime=${go_runtime}" >> "$GITHUB_ENV"
           PUBLISH_TYPE=binary
           ldflags="\
-          -X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$builtAt' \
-          -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$goRuntime' \
+          -X 'github.com/BANKA2017/tbsign_go/share.build_at=$build_at' \
+          -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE' \
@@ -96,18 +99,23 @@ jobs:
         run: |
           mv "build/${build_prefix}-windows-4.0-amd64.exe" "build/${build_prefix}.windows-amd64.exe"
           echo "$(sha256sum build/${build_prefix}.windows-amd64.exe | awk '{print $1}')" >> "build/${build_prefix}.windows-amd64.exe.sha256"
+          echo "windows_amd64_sha256=$(cat build/${build_prefix}.windows-amd64.exe.sha256)" >> "$GITHUB_ENV"
 
           mv "build/${build_prefix}-linux-arm64" "build/${build_prefix}.linux-arm64"
           echo "$(sha256sum build/${build_prefix}.linux-arm64 | awk '{print $1}')" >> "build/${build_prefix}.linux-arm64.sha256"
+          echo "linux_arm64_sha256=$(cat build/${build_prefix}.linux-arm64.sha256)" >> "$GITHUB_ENV"
 
           mv "build/${build_prefix}-linux-amd64" "build/${build_prefix}.linux-amd64"
           echo "$(sha256sum build/${build_prefix}.linux-amd64 | awk '{print $1}')" >> "build/${build_prefix}.linux-amd64.sha256"
+          echo "linux_amd64_sha256=$(cat build/${build_prefix}.linux-amd64.sha256)" >> "$GITHUB_ENV"
 
           mv "build/${build_prefix}-darwin-10.12-arm64" "build/${build_prefix}.darwin-arm64"
           echo "$(sha256sum build/${build_prefix}.darwin-arm64 | awk '{print $1}')" >> "build/${build_prefix}.darwin-arm64.sha256"
+          echo "darwin_arm64_sha256=$(cat build/${build_prefix}.darwin-arm64.sha256)" >> "$GITHUB_ENV"
 
           mv "build/${build_prefix}-darwin-10.12-amd64" "build/${build_prefix}.darwin-amd64"
           echo "$(sha256sum build/${build_prefix}.darwin-amd64 | awk '{print $1}')" >> "build/${build_prefix}.darwin-amd64.sha256"
+          echo "darwin_amd64_sha256=$(cat build/${build_prefix}.darwin-amd64.sha256)" >> "$GITHUB_ENV"
 
       # - name: Upload package
       #   uses: actions/upload-artifact@v4
@@ -121,7 +129,21 @@ jobs:
           prerelease: true
           fail_on_unmatched_files: true
           tag_name: ${{ env.build_prefix }}
-          generate_release_notes: true
+          body: |
+            ```yaml
+            build_runtime: ${{ env.go_runtime }}
+            build_at: ${{ env.build_at }}
+            commit_hash: ${{ env.commit_hash }}
+            frontend_hash: ${{ env.fe_commit_hash }}
+            publish_type: binary
+            version: ${{ env.build_prefix }}
+            sha256:
+              linux_arm64: ${{ env.linux_arm64_sha256 }}
+              linux_amd64: ${{ env.linux_amd64_sha256 }}
+              darwin_arm64: ${{ env.darwin_arm64_sha256 }}
+              darwin_amd64: ${{ env.darwin_amd64_sha256 }}
+              windows_amd64: ${{ env.windows_amd64_sha256 }}
+            ```
 
   build-binary:
     name: Build Binary for ${{ matrix.arch.name }}
@@ -157,12 +179,12 @@ jobs:
           short_fe_commit_hash=${fe_commit_hash:0:7}
           build_prefix="tbsign_go.$(date +'%+4Y%m%d').$short_commit_hash.$short_fe_commit_hash"
           echo "build_prefix=${build_prefix}" >> "$GITHUB_ENV"
-          builtAt="$(date -Iseconds)"
-          goRuntime=$(go version | sed 's/go version go[0-9]*\.[0-9]*\.[0-9]* //')
+          build_at="$(date -Iseconds)"
+          go_runtime=$(go version | sed 's/go version go[0-9]*\.[0-9]*\.[0-9]* //')
           PUBLISH_TYPE=docker
           ldflags="\
-          -X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$builtAt' \
-          -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$goRuntime' \
+          -X 'github.com/BANKA2017/tbsign_go/share.build_at=$build_at' \
+          -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE' \
