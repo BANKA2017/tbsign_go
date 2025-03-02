@@ -87,7 +87,7 @@ jobs:
           echo "go_runtime=${go_runtime}" >> "$GITHUB_ENV"
           PUBLISH_TYPE=binary
           ldflags="\
-          -X 'github.com/BANKA2017/tbsign_go/share.build_at=$build_at' \
+          -X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$build_at' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash' \
@@ -183,7 +183,7 @@ jobs:
           go_runtime=$(go version | sed 's/go version go[0-9]*\.[0-9]*\.[0-9]* //')
           PUBLISH_TYPE=docker
           ldflags="\
-          -X 'github.com/BANKA2017/tbsign_go/share.build_at=$build_at' \
+          -X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$build_at' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash' \
