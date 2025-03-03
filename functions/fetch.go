@@ -2,12 +2,16 @@ package _function
 
 import (
 	"bytes"
+	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
 	"log"
 	"mime"
 	"mime/multipart"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -20,18 +24,61 @@ import (
 	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/BANKA2017/tbsign_go/assets"
 	tbpb "github.com/BANKA2017/tbsign_go/proto"
 	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
 )
+
+func init() {
+	var err error
+	CACertPool, err = x509.SystemCertPool()
+	if err != nil || CACertPool == nil {
+		log.Println("Unable to load system CA Cert Pool:", err)
+		CACertPool = x509.NewCertPool()
+
+		// fall back
+		caFile, err := assets.EmbeddedCACert.ReadFile("ca/cacert.pem")
+		if err != nil {
+			panic("Unable to load embedded CA Cert file")
+		} else {
+			CACertPool.AppendCertsFromPEM(caFile)
+			log.Println("Appended embedded CA Cert file")
+		}
+	}
+}
 
 var IgnoreProxy bool
 
 var DefaultCient *http.Client
 var TBClient *http.Client
 
+var CACertPool *x509.CertPool
+
 func InitClient(timeout time.Duration) *http.Client {
 	transport := http.DefaultTransport
+	transport.(*http.Transport).TLSClientConfig = &tls.Config{
+		RootCAs: CACertPool,
+	}
+
+	if share.DNSAddress != "" {
+		dialer := &net.Dialer{
+			Resolver: &net.Resolver{
+				PreferGo: true,
+				Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+					d := net.Dialer{
+						Timeout: timeout,
+					}
+					// https://pkg.go.dev/net#Dial
+					return d.DialContext(ctx, "udp", share.DNSAddress)
+				},
+			},
+		}
+
+		transport.(*http.Transport).DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+			return dialer.DialContext(ctx, network, addr)
+		}
+	}
 
 	if IgnoreProxy {
 		transport.(*http.Transport).Proxy = nil

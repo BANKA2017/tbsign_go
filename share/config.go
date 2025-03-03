@@ -28,3 +28,4 @@ var IsEncrypt bool
 var DataEncryptKeyStr string
 var DataEncryptKeyByte []byte
 var DisableEmail bool
+var DNSAddress string

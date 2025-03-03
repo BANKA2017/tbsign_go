@@ -34,6 +34,7 @@
 | allow_backup        | `false`          | 允许用户批量导出/导入账号和贴吧列表，建议阅读 readme.md 的 [备份](#备份) 部分                            |
 | data_encrypt_key    |                  | 加密部分用户数据的密钥，使用 `base64url` 格式填写，建议阅读 readme.md 的 [加密](#加密) 部分              |
 | data_encrypt_action |                  | `encrypt` 或者 `decrypt`，用于加密/解密用户数据，处理完成后会自动退出，默认应当留空                      |
+| dns_addr            |                  | 手动设置 DNS 地址，特殊情况下使用，默认应当留空，建议阅读 readme.md 的 [网络](#网络) 部分                |
 
 示例
 
@@ -69,6 +70,13 @@ air -- --db_path=tbsign.db --test=true --api=true
 | tc_admin_password   | 管理员密码，仅当 `tc_auto_install` 为 `true` 时会用到                                                    |
 | tc_allow_backup     | 允许用户批量导出/导入账号和贴吧列表，建议阅读 readme.md 的 [备份](#备份) 部分                            |
 | tc_data_encrypt_key | 加密部分用户数据的密钥，使用 `base64url` 格式填写，建议阅读 readme.md 的 [加密](#加密) 部分              |
+| tc_dns_addr         | 手动设置 DNS 地址，特殊情况下使用，默认应当留空，建议阅读 readme.md 的 [网络](#网络) 部分                |
+
+## 网络
+
+- 内嵌由 [curl](https://curl.se/docs/caextract.html) 提供的 Mozilla Root Store，当系统证书库不可用时会调用
+  - 仓库自身不带 CA 库，请自行下载并放置在 `assets/ca/`，参考指令：`curl --remote-name --time-cond assets/ca/cacert.pem https://curl.se/ca/cacert.pem`
+- 可以手动设置 DNS 服务器地址，支持的文本格式请参考 <https://pkg.go.dev/net#Dial>，示例：`8.8.8.8:53`
 
 ## 数据库
 
@@ -90,10 +98,11 @@ MySQL 要求支持 [MySQL 窗口函数](https://dev.mysql.com/doc/refman/8.0/en/
 
 可用于 `db_tls` 的值包括 `true`, `false`, `skip-verify`, `preferred` 以及证书文件的路径，更多信息请参考 [go-sql-driver/mysql#tls](https://github.com/go-sql-driver/mysql?tab=readme-ov-file#tls)
 
-例如下面的第二项是 Debian/Ubuntu 的目录；如果证书尚未被导入到系统，系统管理员可能就需要这样填写证书的实际目录
+例如下面的第二项是 Debian/Ubuntu 的目录；如果证书尚未被导入到系统并且软件内嵌的 Mozilla Root Store 也不包含该证书，部署时可能就需要这样填写证书的实际目录
 
 ```shell
 go run main.go --db_tls=true
+# or...
 go run main.go --db_tls=/etc/ssl/certs/ca-certificates.crt
 ```
 

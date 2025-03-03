@@ -28,7 +28,7 @@ var EncryptDataAction string
 
 var err error
 
-func main() {
+func init() {
 	fmt.Println("TbSign➡️\n--- info ---")
 	fmt.Println("build_at:", share.BuiltAt)
 	fmt.Println("commit_hash:", share.BuildGitCommitHash)
@@ -40,7 +40,9 @@ func main() {
 	} else {
 		fmt.Println("version: dev\n------------")
 	}
+}
 
+func main() {
 	// sqlite
 	flag.StringVar(&share.DBPath, "db_path", "", "Database path")
 
@@ -75,6 +77,7 @@ func main() {
 	flag.StringVar(&EncryptDataAction, "data_encrypt_action", "", "Encrypt/Decrypt data in database")
 	flag.StringVar(&share.DataEncryptKeyStr, "data_encrypt_key", "", "The key to encrypt some user data (base64url)")
 	// flag.BoolVar(&share.DisableEmail, "disable-email", false, "disable email")
+	flag.StringVar(&share.DNSAddress, "dns_addr", "", "DNS Address")
 
 	// others
 	flag.BoolVar(&share.TestMode, "test", false, "Not send any requests to tieba servers")
@@ -143,6 +146,10 @@ func main() {
 		if len(share.DataEncryptKeyByte) != 32 {
 			log.Fatal("ERROR: 密钥长度无效")
 		}
+	}
+
+	if share.DNSAddress == "" && os.Getenv("tc_dns_addr") != "" {
+		share.DNSAddress = os.Getenv("tc_dns_addr")
 	}
 
 	if share.Address == ":1323" && os.Getenv("tc_address") != "" {

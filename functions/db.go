@@ -2,7 +2,6 @@ package _function
 
 import (
 	"crypto/tls"
-	"crypto/x509"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -80,7 +79,7 @@ func ConnectToMySQL(username string, password string, endpoint string, dbname st
 			if _, err := os.Stat(tlsOption); err != nil {
 				log.Println("db: 无法读取证书文件", tlsOption, "，将回退至不使用 TLS 连接")
 			} else {
-				rootCertPool := x509.NewCertPool()
+				rootCertPool := CACertPool.Clone()
 				pem, err := os.ReadFile(tlsOption)
 				if err != nil {
 					return nil, nil, err
