@@ -33,18 +33,20 @@ import (
 func init() {
 	var err error
 	CACertPool, err = x509.SystemCertPool()
-	if err != nil || CACertPool == nil {
+	if err != nil {
 		log.Println("Unable to load system CA Cert Pool:", err)
-		CACertPool = x509.NewCertPool()
 
-		// fall back
-		caFile, err := assets.EmbeddedCACert.ReadFile("ca/cacert.pem")
-		if err != nil {
-			panic("Unable to load embedded CA Cert file")
-		} else {
-			CACertPool.AppendCertsFromPEM(caFile)
-			log.Println("Appended embedded CA Cert file")
-		}
+	}
+
+	if CACertPool == nil {
+		CACertPool = x509.NewCertPool()
+	}
+
+	caFile, err := assets.EmbeddedCACert.ReadFile("ca/cacert.pem")
+	if err != nil {
+		log.Println("Unable to load embedded CA Cert file")
+	} else {
+		CACertPool.AppendCertsFromPEM(caFile)
 	}
 }
 
