@@ -240,8 +240,8 @@ func (pluginInfo *LoopBanPluginType) RemoveAccount(_type string, id int32, tx *g
 	return nil
 }
 
-func (pluginInfo *LoopBanPluginType) Ext() ([]any, error) {
-	return []any{}, nil
+func (pluginInfo *LoopBanPluginType) Report(int32, *gorm.DB) (string, error) {
+	return "", nil
 }
 
 // OptionValidator

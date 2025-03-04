@@ -1,6 +1,7 @@
 package _plugin
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -142,20 +143,6 @@ func (pluginInfo *RenewManagerType) Action() {
 		_function.GormDB.W.Model(&model.TcKdRenewManager{}).Where("id = ?", renewItem.ID).Updates(renewItem)
 		_function.SetOption("kd_renew_manager_id", strconv.Itoa(int(renewItem.ID)))
 
-		// push
-		// TODO
-		/// now > 10days, end_time < 25 days
-
-		if renewItem.End < int32(_function.Now.Add(time.Duration(time.Hour*24*15)).Unix()) && _function.GetUserOption("kd_renew_manager_alert", strconv.Itoa(int(renewItem.UID))) != "0" {
-			endTime := time.Unix(int64(renewItem.End), 0)
-
-			msg := PluginRenewManagerAlertMessage(_function.GetCookie(renewItem.Pid).Name, renewItem.Fname, endTime.Format("2006年01月02日 15:04:05"), renewItem.Fid)
-
-			err = _function.SendMessage("default", renewItem.UID, msg.Title, msg.Body)
-			if err != nil {
-				log.Println("renew_manager:", err)
-			}
-		}
 	}
 	_function.SetOption("kd_renew_manager_id", "0")
 
@@ -210,11 +197,31 @@ func (pluginInfo *RenewManagerType) RemoveAccount(_type string, id int32, tx *go
 	return _sql.Where(_function.AppendStrings(_type, " = ?"), id).Delete(&model.TcKdRenewManager{}).Error
 }
 
-func (pluginInfo *RenewManagerType) Ext() ([]any, error) {
-	return []any{}, nil
+func (pluginInfo *RenewManagerType) Report(uid int32, tx *gorm.DB) (string, error) {
+	if uid <= 0 {
+		return "", errors.New("invalid uid")
+	}
+	if _function.GetUserOption("kd_renew_manager_alert", strconv.Itoa(int(uid))) != "0" {
+		return "", nil
+	}
+
+	renewStatus := []*model.TcKdRenewManager{}
+	if err := _function.GormDB.W.Model(&model.TcKdRenewManager{}).Where("uid = ?", uid).Find(&renewStatus).Error; err != nil {
+		return "", err
+	}
+
+	message := "---\n插件：" + pluginInfo.PluginNameCN + "\n"
+
+	for _, status := range renewStatus {
+		message += fmt.Sprintf("%s吧 (fid:%d) @%s [%s/%s]\n", status.Fname, status.Fid, _function.GetCookie(status.Pid).Name, time.Unix(int64(status.Date), 0), time.Unix(int64(status.End), 0))
+	}
+
+	message += "---"
+
+	return message, nil
 }
 
-func PluginRenewManagerAlertMessage(name, fname, end string, fid int32) _function.PushMessageTemplateStruct {
+func _PluginRenewManagerAlertMessage(name, fname, end string, fid int32) _function.PushMessageTemplateStruct {
 	return _function.PushMessageTemplateStruct{
 		Title: fmt.Sprintf("吧主考核提醒 - %s吧", fname),
 		Body:  fmt.Sprintf("@%s 您的吧主账号在 %s吧 (fid:%d) 的考核任务将于 %s 截止，目前剩余不到 15 天。<br /><br />由于 TbSign 已超过 15 天 未能完成考核，请您尽快前往 [吧主考核页面](%s%d) 完成相关任务。", name, fname, fid, end, managerTasksPageLink, fid),

@@ -695,8 +695,8 @@ func (pluginInfo *WenkuTasksPluginType) RemoveAccount(_type string, id int32, tx
 	return _sql.Where(_function.AppendStrings(_type, " = ?"), id).Delete(&model.TcKdWenkuTask{}).Error
 }
 
-func (pluginInfo *WenkuTasksPluginType) Ext() ([]any, error) {
-	return []any{}, nil
+func (pluginInfo *WenkuTasksPluginType) Report(int32, *gorm.DB) (string, error) {
+	return "", nil
 }
 
 // endpoints

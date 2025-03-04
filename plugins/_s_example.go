@@ -103,8 +103,8 @@ func (pluginInfo *ExamplePluginType) RemoveAccount(_type string, id int32, tx *g
 	return nil
 }
 
-func (pluginInfo *ExamplePluginType) Ext() ([]any, error) {
-	return []any{}, nil
+func (pluginInfo *ExamplePluginType) Report(int32, *gorm.DB) (string, error) {
+	return "", nil
 }
 
 // OptionValidator

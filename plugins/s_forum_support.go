@@ -764,8 +764,8 @@ func (pluginInfo *ForumSupportPluginInfoType) RemoveAccount(_type string, id int
 	return _sql.Where(_function.AppendStrings(_type, " = ?"), id).Delete(&model.TcVer4RankLog{}).Error
 }
 
-func (pluginInfo *ForumSupportPluginInfoType) Ext() ([]any, error) {
-	return []any{}, nil
+func (pluginInfo *ForumSupportPluginInfoType) Report(int32, *gorm.DB) (string, error) {
+	return "", nil
 }
 
 // endpoints

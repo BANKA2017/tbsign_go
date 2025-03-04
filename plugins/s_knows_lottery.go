@@ -228,8 +228,8 @@ func (pluginInfo *LotteryPluginPluginType) RemoveAccount(_type string, id int32,
 	return _sql.Where(_function.AppendStrings(_type, " = ?"), id).Delete(&model.TcVer4LotteryLog{}).Error
 }
 
-func (pluginInfo *LotteryPluginPluginType) Ext() ([]any, error) {
-	return []any{}, nil
+func (pluginInfo *LotteryPluginPluginType) Report(int32, *gorm.DB) (string, error) {
+	return "", nil
 }
 
 // endpoint

@@ -107,8 +107,8 @@ func (pluginInfo *RefreshTiebaListPluginType) RemoveAccount(_type string, id int
 	return nil
 }
 
-func (pluginInfo *RefreshTiebaListPluginType) Ext() ([]any, error) {
-	return []any{}, nil
+func (pluginInfo *RefreshTiebaListPluginType) Report(int32, *gorm.DB) (string, error) {
+	return "", nil
 }
 
 // endpoint

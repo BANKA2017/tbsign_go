@@ -87,7 +87,22 @@ func DailyReportAction() {
 					log.Println(err, data.UID)
 					continue
 				}
+				// check-in
 				messageObject := PushMessageTemplateDailyReport(int32(data.UID), data.Name, dailyStatus) //_function.PushMessageTestTemplate()
+
+				// plugins
+				for _, _pluginInfo := range PluginList {
+					if _pluginInfo.(PluginHooks).GetSwitch() {
+						// TDOO disable endpoint before install?
+						message, err := _pluginInfo.Report(data.UID, nil)
+						if err != nil || message == "" {
+
+						} else {
+							messageObject.Body += "<br />" + message
+						}
+					}
+				}
+
 				err = _function.SendMessage(data.GoMessageType, data.UID, messageObject.Title, messageObject.Body)
 				if err != nil {
 					log.Println(err, data.UID)

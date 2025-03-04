@@ -65,7 +65,7 @@ type PluginActionHooks interface {
 	RemoveAccount(string, int32, *gorm.DB) error
 	// ExportAccount(int32) any
 	// for future
-	Ext() ([]any, error)
+	Report(int32, *gorm.DB) (string, error)
 }
 
 func (pluginInfo *PluginInfo) GetInfo() *PluginInfo {

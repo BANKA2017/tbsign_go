@@ -491,8 +491,8 @@ func (pluginInfo *UserGrowthTasksPluginType) RemoveAccount(_type string, id int3
 	return _sql.Where(_function.AppendStrings(_type, " = ?"), id).Delete(&model.TcKdGrowth{}).Error
 }
 
-func (pluginInfo *UserGrowthTasksPluginType) Ext() ([]any, error) {
-	return []any{}, nil
+func (pluginInfo *UserGrowthTasksPluginType) Report(int32, *gorm.DB) (string, error) {
+	return "", nil
 }
 
 // endpoints
