@@ -75,7 +75,7 @@ air -- --db_path=tbsign.db --test=true --api=true
 ## 网络
 
 - 内嵌由 [curl](https://curl.se/docs/caextract.html) 提供的 Mozilla Root Store，当系统证书库不可用时会调用
-  - 仓库自身不带 CA 库，请自行下载并放置在 `assets/ca/cacert.pem`，参考指令：`curl --remote-name --time-cond assets/ca/cacert.pem https://curl.se/ca/cacert.pem`
+  - 仓库自身不带 CA 库，请自行下载并放置在 `assets/ca/cacert.pem`，参考指令：`curl -o assets/ca/cacert.pem https://curl.se/ca/cacert.pem`
 - 可以手动设置 DNS 服务器地址，支持的文本格式请参考 <https://pkg.go.dev/net#Dial>，示例：`8.8.8.8:53`
 
 ## 数据库

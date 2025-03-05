@@ -11,7 +11,7 @@ mkdir tbsign_build
 cd tbsign_build
 git clone --depth=1 https://github.com/BANKA2017/tbsign_go_fe tbsign_go_fe
 git clone --depth=1 https://github.com/BANKA2017/tbsign_go tbsign_go
-curl --remote-name --time-cond tbsign_go/assets/ca/cacert.pem https://curl.se/ca/cacert.pem
+curl -o assets/ca/cacert.pem https://curl.se/ca/cacert.pem
 
 # fe
 echo "build: frontend"
