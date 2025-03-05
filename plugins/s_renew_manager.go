@@ -32,7 +32,7 @@ var RenewManager = _function.VariablePtrWrapper(RenewManagerType{
 		PluginNameCN:      "吧主考核",
 		PluginNameCNShort: "吧主考核",
 		PluginNameFE:      "renew_manager",
-		Version:           "0.1",
+		Version:           "0.2",
 		Options: map[string]string{
 			"kd_renew_manager_id":           "0",
 			"kd_renew_manager_action_limit": "50",
@@ -51,8 +51,8 @@ var RenewManager = _function.VariablePtrWrapper(RenewManagerType{
 		Endpoints: []PluginEndpintStruct{
 			{Method: "GET", Path: "switch", Function: PluginRenewManagerGetSwitch},
 			{Method: "POST", Path: "switch", Function: PluginRenewManagerSwitch},
-			{Method: "GET", Path: "alert/switch", Function: PluginRenewManagerGetAlertSwitch},
-			{Method: "POST", Path: "alert/switch", Function: PluginRenewManagerAlertSwitch},
+			{Method: "GET", Path: "settings", Function: PluginRenewManagerGetSettings},
+			{Method: "POST", Path: "settings", Function: PluginRenewManagerUpdateSettings},
 			{Method: "GET", Path: "list", Function: PluginRenewManagerGetList},
 			{Method: "PATCH", Path: "list", Function: PluginRenewManagerAddAccount},
 			{Method: "DELETE", Path: "list/:id", Function: PluginRenewManagerDelAccount},
@@ -74,8 +74,8 @@ func (pluginInfo *RenewManagerType) Action() {
 	if err != nil {
 		id = 0
 	}
-
-	otime := _function.Now.Add(time.Hour * -24).Unix()
+	now := _function.Now
+	otime := now.Add(time.Hour * -24).Unix()
 
 	limit := _function.GetOption("kd_renew_manager_action_limit")
 	numLimit, _ := strconv.ParseInt(limit, 10, 64)
@@ -83,7 +83,24 @@ func (pluginInfo *RenewManagerType) Action() {
 	subQuery := _function.GormDB.R.Model(&model.TcUsersOption{}).Select("uid").Where("name = 'kd_renew_manager_open' AND value = '1'")
 	_function.GormDB.R.Model(&model.TcKdRenewManager{}).Where("id > ? AND date < ? AND uid IN (?)", id, otime, subQuery).Order("id ASC").Limit(int(numLimit)).Find(&localRenewList)
 
+	intervalMap := map[int32]int32{}
+
 	for _, renewItem := range localRenewList {
+		if _, ok := intervalMap[renewItem.UID]; !ok {
+			strInterval := _function.GetUserOption("kd_renew_manager_interval", strconv.Itoa(int(renewItem.UID)))
+			interval, _ := strconv.ParseInt(strInterval, 10, 64)
+			if interval <= 0 {
+				interval = 1
+			} else if interval >= 30 {
+				interval = 29
+			}
+			intervalMap[renewItem.UID] = int32(interval)
+		}
+
+		if now.Add(time.Hour * -24 * time.Duration(intervalMap[renewItem.UID])).Before(time.Unix(int64(renewItem.Date), 0)) {
+			continue
+		}
+
 		renewItem.Date = int32(_function.Now.Unix())
 		tmpLog := []string{}
 
@@ -182,6 +199,7 @@ func (pluginInfo *RenewManagerType) Delete() error {
 	// user options
 	_function.GormDB.W.Where("name = ?", "kd_renew_manager_open").Delete(&model.TcUsersOption{})
 	_function.GormDB.W.Where("name = ?", "kd_renew_manager_alert").Delete(&model.TcUsersOption{})
+	_function.GormDB.W.Where("name = ?", "kd_renew_manager_interval").Delete(&model.TcUsersOption{})
 
 	return nil
 }
@@ -201,7 +219,10 @@ func (pluginInfo *RenewManagerType) Report(uid int32, tx *gorm.DB) (string, erro
 	if uid <= 0 {
 		return "", errors.New("invalid uid")
 	}
-	if _function.GetUserOption("kd_renew_manager_alert", strconv.Itoa(int(uid))) != "0" {
+
+	isActive := _function.GetUserOption("kd_renew_manager_alert", strconv.Itoa(int(uid)))
+
+	if isActive == "0" || isActive == "" {
 		return "", nil
 	}
 
@@ -210,13 +231,13 @@ func (pluginInfo *RenewManagerType) Report(uid int32, tx *gorm.DB) (string, erro
 		return "", err
 	}
 
-	message := "---\n插件：" + pluginInfo.PluginNameCN + "\n"
+	message := "---\n插件：" + pluginInfo.PluginNameCN + "\n\n"
 
 	for _, status := range renewStatus {
-		message += fmt.Sprintf("%s吧 (fid:%d) @%s [%s/%s]\n", status.Fname, status.Fid, _function.GetCookie(status.Pid).Name, time.Unix(int64(status.Date), 0), time.Unix(int64(status.End), 0))
+		message += fmt.Sprintf("- %s吧 (fid:%d) @%s [ %s/%s ]\n", status.Fname, status.Fid, _function.GetCookie(status.Pid).Name, time.Unix(int64(status.Date), 0).Format("01-02"), time.Unix(int64(status.End), 0).Format("01-02"))
 	}
 
-	message += "---"
+	message += "\n格式说明：[ 上次执行/截止日期 ]\n---"
 
 	return message, nil
 }
@@ -383,27 +404,60 @@ func PluginRenewManagerSwitch(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", !status, "tbsign"))
 }
 
-func PluginRenewManagerGetAlertSwitch(c echo.Context) error {
+type PluginRenewManagerUpdateSettingsResponseStruct struct {
+	ReportSwitch   bool `json:"report_switch"`
+	ActionInterval int  `json:"action_interval"`
+}
+
+func PluginRenewManagerGetSettings(c echo.Context) error {
 	uid := c.Get("uid").(string)
 	status := _function.GetUserOption("kd_renew_manager_alert", uid)
 	if status == "" {
 		status = "0"
 		_function.SetUserOption("kd_renew_manager_alert", status, uid)
 	}
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", status != "0", "tbsign"))
+	interval := _function.GetUserOption("kd_renew_manager_interval", uid)
+	numInterval, _ := strconv.ParseInt(interval, 10, 64)
+	if numInterval == 0 {
+		numInterval = 1 // day
+		_function.SetUserOption("kd_renew_manager_interval", int(numInterval), uid)
+	}
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", PluginRenewManagerUpdateSettingsResponseStruct{
+		ReportSwitch:   status != "0",
+		ActionInterval: int(numInterval),
+	}, "tbsign"))
 }
 
-func PluginRenewManagerAlertSwitch(c echo.Context) error {
+func PluginRenewManagerUpdateSettings(c echo.Context) error {
 	uid := c.Get("uid").(string)
-	status := _function.GetUserOption("kd_renew_manager_alert", uid) != "0"
 
-	err := _function.SetUserOption("kd_renew_manager_alert", !status, uid)
+	reportStatus := c.FormValue("report_switch") != "0" && c.FormValue("report_switch") != ""
+	interval, _ := strconv.ParseInt(strings.TrimSpace(c.FormValue("action_interval")), 10, 64)
+
+	if interval >= 30 {
+		interval = 29
+	} else if interval <= 0 {
+		interval = 1
+	}
+
+	err := _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
+		if err := _function.SetUserOption("kd_renew_manager_alert", reportStatus, uid, tx); err != nil {
+			return err
+		}
+		if err := _function.SetUserOption("kd_renew_manager_interval", int(interval), uid, tx); err != nil {
+			return err
+		}
+		return nil
+	})
 
 	if err != nil {
 		log.Println("renew_manager:", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法启用吧主考核提醒功能", status, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "设置保存失败", PluginRenewManagerUpdateSettingsResponseStruct{}, "tbsign"))
 	}
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", !status, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", PluginRenewManagerUpdateSettingsResponseStruct{
+		ReportSwitch:   reportStatus,
+		ActionInterval: int(interval),
+	}, "tbsign"))
 }
 
 func PluginRenewManagerGetList(c echo.Context) error {

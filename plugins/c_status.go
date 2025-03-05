@@ -88,7 +88,7 @@ func DailyReportAction() {
 					continue
 				}
 				// check-in
-				messageObject := PushMessageTemplateDailyReport(int32(data.UID), data.Name, dailyStatus) //_function.PushMessageTestTemplate()
+				messageObject := PushMessageTemplateDailyReport(data.Name, dailyStatus) //_function.PushMessageTestTemplate()
 
 				// plugins
 				for _, _pluginInfo := range PluginList {
@@ -98,10 +98,12 @@ func DailyReportAction() {
 						if err != nil || message == "" {
 
 						} else {
-							messageObject.Body += "<br />" + message
+							messageObject.Body += "<br />" + strings.ReplaceAll(message, "\n", "<br />")
 						}
 					}
 				}
+
+				messageObject.Body += "<br /><br />UID: " + strconv.Itoa(int(data.UID))
 
 				err = _function.SendMessage(data.GoMessageType, data.UID, messageObject.Title, messageObject.Body)
 				if err != nil {
@@ -138,7 +140,7 @@ func GetForumCheckInStatus(uid []int32) ([]*AccountStatusStruct, error) {
 	return Status, err
 }
 
-func PushMessageTemplateDailyReport(uid int32, username string, accountStatus []*AccountStatusStruct) _function.PushMessageTemplateStruct {
+func PushMessageTemplateDailyReport(username string, accountStatus []*AccountStatusStruct) _function.PushMessageTemplateStruct {
 	now := _function.Now.Format(time.DateOnly)
 
 	msg := []string{}
@@ -150,7 +152,7 @@ func PushMessageTemplateDailyReport(uid int32, username string, accountStatus []
 	return _function.PushMessageTemplateStruct{
 		Title: now + " 签到报告",
 		Body: fmt.Sprintf(
-			"贴吧云签到账号 [ %s ] %s 签到情况:<br /><br />"+strings.Join(msg, "<br />")+"<br /><br />格式说明：成功 / 失败 / 等待 / 忽略<br /><br />UID: %d",
-			username, now, uid),
+			"贴吧云签到账号 [ %s ] %s 签到情况:<br /><br />"+strings.Join(msg, "<br />")+"<br /><br />格式说明：成功 / 失败 / 等待 / 忽略",
+			username, now),
 	}
 }
