@@ -132,7 +132,10 @@ func Api(address string, args ...any) {
 	// frontend
 	if share.EnableFrontend {
 		fe, _ := fs.Sub(assets.EmbeddedFrontent, "dist")
-		e.GET("/*", echo.WrapHandler(http.FileServer(http.FS(fe))))
+		e.GET("/*", echo.WrapHandler(http.FileServer(&_function.StaticFSWrapper{
+			FileSystem:   http.FS(fe),
+			FixedModTime: share.BuildAtTime,
+		})))
 	}
 
 	e.Logger.Fatal(e.Start(address))

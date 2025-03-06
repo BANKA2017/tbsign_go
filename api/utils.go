@@ -88,7 +88,7 @@ func verifyAuthorization(authorization string) (string, string) {
 	}
 }
 
-func sessionTokenBuilder(uid int32, password string) string {
+func legacyTokenBuilder(uid int32, password string) string {
 	return _function.Base64URLEncode([]byte(strconv.Itoa(int(uid)) + ":" + hex.EncodeToString(_function.GenHMAC256([]byte(password), []byte(strconv.Itoa(int(uid))+password)))))
 }
 
