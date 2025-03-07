@@ -62,7 +62,7 @@ var RenewManager = _function.VariablePtrWrapper(RenewManagerType{
 	},
 })
 
-var managerTasksPageLink = []byte{104, 116, 116, 112, 115, 58, 47, 47, 116, 105, 101, 98, 97, 46, 98, 97, 105, 100, 117, 46, 99, 111, 109, 47, 109, 111, 47, 113, 47, 98, 97, 119, 117, 47, 116, 97, 115, 107, 105, 110, 102, 111, 118, 105, 101, 119, 63, 116, 98, 105, 111, 115, 119, 107, 61, 49, 38, 102, 105, 100, 61}
+// var managerTasksPageLink = []byte{104, 116, 116, 112, 115, 58, 47, 47, 116, 105, 101, 98, 97, 46, 98, 97, 105, 100, 117, 46, 99, 111, 109, 47, 109, 111, 47, 113, 47, 98, 97, 119, 117, 47, 116, 97, 115, 107, 105, 110, 102, 111, 118, 105, 101, 119, 63, 116, 98, 105, 111, 115, 119, 107, 61, 49, 38, 102, 105, 100, 61}
 
 func (pluginInfo *RenewManagerType) Action() {
 	if !pluginInfo.PluginInfo.CheckActive() {
@@ -83,7 +83,7 @@ func (pluginInfo *RenewManagerType) Action() {
 	subQuery := _function.GormDB.R.Model(&model.TcUsersOption{}).Select("uid").Where("name = 'kd_renew_manager_open' AND value = '1'")
 	_function.GormDB.R.Model(&model.TcKdRenewManager{}).Where("id > ? AND date < ? AND uid IN (?)", id, otime, subQuery).Order("id ASC").Limit(int(numLimit)).Find(&localRenewList)
 
-	intervalMap := map[int32]int32{}
+	intervalMap := map[int32]time.Time{}
 
 	for _, renewItem := range localRenewList {
 		if _, ok := intervalMap[renewItem.UID]; !ok {
@@ -94,46 +94,32 @@ func (pluginInfo *RenewManagerType) Action() {
 			} else if interval >= 30 {
 				interval = 29
 			}
-			intervalMap[renewItem.UID] = int32(interval)
+			intervalMap[renewItem.UID] = now.Add(time.Hour * -24 * time.Duration(interval))
 		}
 
-		if now.Add(time.Hour * -24 * time.Duration(intervalMap[renewItem.UID])).Before(time.Unix(int64(renewItem.Date), 0)) {
+		if intervalMap[renewItem.UID].Before(time.Unix(int64(renewItem.Date), 0)) {
 			continue
 		}
 
-		renewItem.Date = int32(_function.Now.Unix())
 		tmpLog := []string{}
 
-		// send cancel top package
-		res, err := PluginRenewManagerCancelTop(_function.GetCookie(renewItem.Pid), renewItem.Fname, renewItem.Tid)
-
-		if err != nil {
-			log.Println("renew_manager (cancel_top):", res, err)
-			renewItem.Status = "failed"
-			tmpLog = append(tmpLog, "cacnel_top: failed")
-		} else {
-			if res.No != 0 {
-				log.Println("renew_manager (cancel_top):", res.ErrCode, res.Error)
-				renewItem.Status = "failed"
-				tmpLog = append(tmpLog, fmt.Sprintf("cacnel_top: %d#%s", res.ErrCode, res.Error))
-			} else {
-				renewItem.Status = "success"
-				tmpLog = append(tmpLog, "cacnel_top: done")
-			}
-		}
-
 		// sync tasks
+		var extInterval int32 = 0
 		res2, err := _function.GetManagerTasks(_function.GetCookie(renewItem.Pid), int64(renewItem.Fid))
 		if err != nil {
 			log.Println("renew_manager (sync_tasks):", err)
 			tmpLog = append(tmpLog, "sync: failed")
 		} else {
-			renewItem.End = int32(res2.Data.BawuTask.EndTime)
 			if res2.No != 0 {
 				log.Println("renew_manager (sync):", res2.ErrCode, res2.Error)
 				tmpLog = append(tmpLog, fmt.Sprintf("sync: %d#%s", res2.ErrCode, res2.Error))
 			} else {
 				tmpLog = append(tmpLog, "sync: done")
+
+				if renewItem.End < int32(res2.Data.BawuTask.EndTime) {
+					extInterval = int32(res2.Data.BawuTask.EndTime) - renewItem.End
+					renewItem.End = int32(res2.Data.BawuTask.EndTime)
+				}
 			}
 
 			// done?
@@ -144,6 +130,34 @@ func (pluginInfo *RenewManagerType) Action() {
 			// 		break
 			// 	}
 			// }
+		}
+
+		if !intervalMap[renewItem.UID].Add(time.Duration(extInterval) * time.Second).Before(time.Unix(int64(renewItem.Date), 0)) {
+			// send cancel top package
+			res, err := PluginRenewManagerCancelTop(_function.GetCookie(renewItem.Pid), renewItem.Fname, renewItem.Tid)
+
+			if err != nil {
+				log.Println("renew_manager (cancel_top):", res, err)
+				renewItem.Status = "failed"
+				tmpLog = append(tmpLog, "cacnel_top: failed")
+			} else {
+				if res.No != 0 {
+					log.Println("renew_manager (cancel_top):", res.ErrCode, res.Error)
+					renewItem.Status = "failed"
+					tmpLog = append(tmpLog, fmt.Sprintf("cacnel_top: %d#%s", res.ErrCode, res.Error))
+				} else {
+					renewItem.Status = "success"
+					tmpLog = append(tmpLog, "cacnel_top: done")
+				}
+			}
+
+			// new Date
+			renewItem.Date = int32(_function.Now.Unix())
+		} else {
+			tmpLog = append(tmpLog, "cacnel_top: skip")
+
+			// new Date
+			renewItem.Date += extInterval
 		}
 
 		// previous logs
@@ -242,12 +256,12 @@ func (pluginInfo *RenewManagerType) Report(uid int32, tx *gorm.DB) (string, erro
 	return message, nil
 }
 
-func _PluginRenewManagerAlertMessage(name, fname, end string, fid int32) _function.PushMessageTemplateStruct {
-	return _function.PushMessageTemplateStruct{
-		Title: fmt.Sprintf("吧主考核提醒 - %s吧", fname),
-		Body:  fmt.Sprintf("@%s 您的吧主账号在 %s吧 (fid:%d) 的考核任务将于 %s 截止，目前剩余不到 15 天。<br /><br />由于 TbSign 已超过 15 天 未能完成考核，请您尽快前往 [吧主考核页面](%s%d) 完成相关任务。", name, fname, fid, end, managerTasksPageLink, fid),
-	}
-}
+// func _PluginRenewManagerAlertMessage(name, fname, end string, fid int32) _function.PushMessageTemplateStruct {
+// 	return _function.PushMessageTemplateStruct{
+// 		Title: fmt.Sprintf("吧主考核提醒 - %s吧", fname),
+// 		Body:  fmt.Sprintf("@%s 您的吧主账号在 %s吧 (fid:%d) 的考核任务将于 %s 截止，目前剩余不到 15 天。<br /><br />由于 TbSign 已超过 15 天 未能完成考核，请您尽快前往 [吧主考核页面](%s%d) 完成相关任务。", name, fname, fid, end, managerTasksPageLink, fid),
+// 	}
+// }
 
 type PluginRenewManagerCancelTopResponse struct {
 	No      int `json:"no,omitempty"`
