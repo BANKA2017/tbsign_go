@@ -240,6 +240,14 @@ func (pluginInfo *RenewManagerType) Report(uid int32, tx *gorm.DB) (string, erro
 		return "", nil
 	}
 
+	interval := _function.GetUserOption("kd_renew_manager_interval", strconv.Itoa(int(uid)))
+
+	numInterval, _ := strconv.ParseInt(interval, 10, 64)
+
+	if numInterval <= 0 {
+		numInterval = 1
+	}
+
 	renewStatus := []*model.TcKdRenewManager{}
 	if err := _function.GormDB.W.Model(&model.TcKdRenewManager{}).Where("uid = ?", uid).Find(&renewStatus).Error; err != nil {
 		return "", err
@@ -248,10 +256,11 @@ func (pluginInfo *RenewManagerType) Report(uid int32, tx *gorm.DB) (string, erro
 	message := "---\n插件：" + pluginInfo.PluginNameCN + "\n\n"
 
 	for _, status := range renewStatus {
-		message += fmt.Sprintf("- %s吧 (fid:%d) @%s [ %s/%s ]\n", status.Fname, status.Fid, _function.GetCookie(status.Pid).Name, time.Unix(int64(status.Date), 0).Format("01-02"), time.Unix(int64(status.End), 0).Format("01-02"))
+		// - xxx吧 (fid:12121121) @yyyyy [ LATEST:01-01/NEXT:01-03/END:02-01 ]
+		message += fmt.Sprintf("- %s吧 (fid:%d) @%s [ %s/%s/%s ]\n", status.Fname, status.Fid, _function.GetCookie(status.Pid).Name, time.Unix(int64(status.Date), 0).Format("01-02"), time.Unix(int64(status.Date), 0).Add(time.Hour*24*time.Duration(numInterval)).Format("01-02"), time.Unix(int64(status.End), 0).Format("01-02"))
 	}
 
-	message += "\n格式说明：[ 上次执行/截止日期 ]\n---"
+	message += "\n格式说明：[ 上次执行/下次检查/截止日期 ]\n---"
 
 	return message, nil
 }
