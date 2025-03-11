@@ -157,6 +157,16 @@ func UpdateAdminSettings(c echo.Context) error {
 						} else {
 							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
 						}
+					case "bduss_num": //, "tb_max":
+						numValue, err := strconv.ParseInt(v1[0], 10, 64)
+						if err != nil || numValue < -1 {
+							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
+							log.Println(vName, err)
+							continue
+						}
+
+						settings[vName] = strconv.Itoa(int(numValue))
+						_function.SetOption(vName, settings[vName])
 					default:
 						if PluginOptionValidatorAny, ok := _plugin.PluginOptionValidatorMap.Load(vName); ok {
 							if PluginOptionValidator, ok := PluginOptionValidatorAny.(func(value string) bool); ok && PluginOptionValidator(v1[0]) {

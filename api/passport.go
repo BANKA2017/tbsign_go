@@ -421,6 +421,7 @@ func GetAccountInfo(c echo.Context) error {
 	resp.SystemSettings["allow_export_personal_data"] = _function.GetOption("go_export_personal_data")
 	resp.SystemSettings["allow_import_personal_data"] = _function.GetOption("go_import_personal_data")
 	resp.SystemSettings["go_daily_report_hour"] = _function.GetOption("go_daily_report_hour")
+	resp.SystemSettings["bduss_num"] = _function.GetOption("bduss_num")
 
 	if !share.EnableBackup {
 		resp.SystemSettings["allow_export_personal_data"] = "0"
@@ -663,6 +664,7 @@ type TcBackupUploadStruct struct {
 
 func ImportAccountData(c echo.Context) error {
 	uid := c.Get("uid").(string)
+	isAdmin := strings.EqualFold(c.Get("role").(string), "admin")
 
 	// isPureGoMode
 	if _function.GetOption("go_ver") != "1" {
@@ -709,6 +711,19 @@ func ImportAccountData(c echo.Context) error {
 	var newTcTieba []model.TcTieba
 	var newTcTiebaWithoutAccount []TcBackupUploadStructTcTieba
 
+	var accountNumberOverflow bool
+
+	// bduss-num
+	bdussNUM := _function.GetOption("bduss_num")
+	numBDUSSLimit, err := strconv.ParseInt(bdussNUM, 10, 64)
+	if err != nil || numBDUSSLimit < -1 {
+		numBDUSSLimit = -1
+	}
+
+	if isAdmin {
+		numBDUSSLimit = 0
+	}
+
 	// newAccount
 	for _, importBaiduidItem := range decodedData.TcBaiduid {
 		exists := false
@@ -722,6 +737,10 @@ func ImportAccountData(c echo.Context) error {
 			}
 		}
 		if !exists {
+			if accountNumberOverflow || numBDUSSLimit == -1 || (numBDUSSLimit > 0 && (len(tcBaiduid)+len(newTcBaiduID)) > int(numBDUSSLimit)) {
+				accountNumberOverflow = true
+				continue
+			}
 			if len(share.DataEncryptKeyByte) > 0 {
 				encryptedBDUSS, _ := _function.AES256GCMEncrypt(importBaiduidItem.Bduss, share.DataEncryptKeyByte)
 				importBaiduidItem.Bduss = _function.Base64URLEncode(encryptedBDUSS)
@@ -790,6 +809,7 @@ func ImportAccountData(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "备份数据导入失败", _function.EchoEmptyObject, "tbsign"))
 	}
 
+	var newTcTiebaWithoutAccountToInsert []model.TcTieba
 	if len(newTcTiebaWithoutAccount) > 0 {
 		_function.GormDB.W.Model(&model.TcBaiduid{}).Where("uid = ? AND portrait IN (?)", uid, newTcBaiduPortrait).Find(&newTcBaiduID)
 
@@ -804,7 +824,6 @@ func ImportAccountData(c echo.Context) error {
 			}
 		}
 
-		var newTcTiebaWithoutAccountToInsert []model.TcTieba
 		for _, importTiebaItem := range newTcTiebaWithoutAccount {
 			if pid, ok := labelPidKV[importTiebaItem.Label]; ok {
 				newTcTiebaWithoutAccountToInsert = append(newTcTiebaWithoutAccountToInsert, model.TcTieba{
@@ -828,8 +847,8 @@ func ImportAccountData(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]int{
-		"tc_tieba":   len(decodedData.TcTieba) - len(tcTieba),
-		"tc_baiduid": len(decodedData.TcBaiduid) - len(tcBaiduid),
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, _function.When(accountNumberOverflow, "导入账号总数量已超出上限，部分账号未导入", "OK"), map[string]int{
+		"tc_tieba":   len(newTcTiebaWithoutAccountToInsert) + len(newTcTieba),
+		"tc_baiduid": len(newTcBaiduID),
 	}, "tbsign"))
 }

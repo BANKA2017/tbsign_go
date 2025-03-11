@@ -122,6 +122,7 @@ func GetBDUSS(c echo.Context) error {
 
 func AddTiebaAccount(c echo.Context) error {
 	uid := c.Get("uid").(string)
+	isAdmin := strings.EqualFold(c.Get("role").(string), "admin")
 
 	bduss := strings.TrimSpace(c.FormValue("bduss"))
 	stoken := strings.TrimSpace(c.FormValue("stoken"))
@@ -169,6 +170,24 @@ func AddTiebaAccount(c echo.Context) error {
 			tiebaAccounts[0].Stoken = ""
 
 			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "贴吧账号已存在", tiebaAccounts[0], "tbsign"))
+		}
+	}
+
+	// bduss-num
+	if !isAdmin {
+		bdussNUM := _function.GetOption("bduss_num")
+		numBDUSSLimit, err := strconv.ParseInt(bdussNUM, 10, 64)
+		if err != nil || numBDUSSLimit <= -1 {
+			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无法添加更多账号", _function.EchoEmptyObject, "tbsign"))
+		}
+
+		if numBDUSSLimit > 0 {
+			var tiebaAccountsCount int64
+			_function.GormDB.R.Model(&model.TcBaiduid{}).Where("uid = ?", uid).Count(&tiebaAccountsCount)
+
+			if tiebaAccountsCount >= numBDUSSLimit {
+				return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无法添加更多账号", _function.EchoEmptyObject, "tbsign"))
+			}
 		}
 	}
 
