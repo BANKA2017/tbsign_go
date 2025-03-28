@@ -37,11 +37,13 @@ func ScanTiebaByPid(pid int32) {
 		}
 		var tiebaList = []*_type.TcTieba{}
 		for _, tiebaInfo := range response.LikeForum {
-			if tiebaInfo.ForumID == 0 {
+			if tiebaInfo.ForumID == 0 || tiebaInfo.IsForbidden == 1 {
 				continue
 			}
 			//log.Println(tiebaInfo)
 			//合并或被封禁的贴吧会怎样?
+			/// - 被封的现在有 is_forbidden
+			/// - 被合并的暂时没有办法直接判断
 
 			latest := 0
 			if tiebaInfo.IsSign == 1 {

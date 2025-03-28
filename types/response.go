@@ -250,7 +250,8 @@ type ForumGuideResponse struct {
 		// HotNum      int    `json:"hot_num"`
 		// SortValue   int    `json:"sort_value"`
 		// LevelName   string `json:"level_name"`
-		ForumName string `json:"forum_name"`
+		ForumName   string `json:"forum_name"`
+		IsForbidden int    `json:"is_forbidden,omitempty"`
 		// MemberCount int    `json:"member_count"`
 		IsSign int `json:"is_sign"`
 		// ThreadNum       int    `json:"thread_num"`
