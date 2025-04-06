@@ -9,11 +9,13 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
 
+	"github.com/BANKA2017/tbsign_go/assets"
 	"github.com/BANKA2017/tbsign_go/share"
 	"golang.org/x/exp/slices"
 )
@@ -80,6 +82,11 @@ func Upgrade(version string) error {
 	//get releases "https://api.github.com/repos/banka2017/tbsign_go/releases?per_page=5"
 
 	binPath := "https://github.com/BANKA2017/tbsign_go/releases/download/tbsign_go." + version + "/tbsign_go." + version + "." + _os + "-" + _arch
+
+	if _os == "windows" {
+		binPath += ".exe"
+	}
+
 	sha256Path := "https://github.com/BANKA2017/tbsign_go/releases/download/tbsign_go." + version + "/tbsign_go." + version + "." + _os + "-" + _arch + ".sha256"
 
 	execPath, err := os.Executable()
@@ -94,7 +101,7 @@ func Upgrade(version string) error {
 
 	// get binary
 	binary, err := Fetch(binPath, "GET", nil, map[string]string{
-		"User-Agent": BrowserUserAgent,
+		"User-Agent": "tbsign_go/upgrader",
 	}, DefaultCient)
 	if err != nil {
 		return err
@@ -127,7 +134,7 @@ func Upgrade(version string) error {
 	s, _ := file.Stat()
 
 	sha256Str, err := Fetch(sha256Path, "GET", nil, map[string]string{
-		"User-Agent": BrowserUserAgent,
+		"User-Agent": "tbsign_go/upgrader",
 	}, DefaultCient)
 	if err != nil {
 		return err
@@ -136,10 +143,27 @@ func Upgrade(version string) error {
 	log.Println(s.Size(), strings.TrimSpace(hashString), strings.TrimSpace(string(sha256Str)))
 
 	if strings.TrimSpace(hashString) == strings.TrimSpace(string(sha256Str)) {
-		os.Chmod(tmpFile, 0755)
-		err = os.Rename(tmpFile, execPath)
-		if err != nil {
-			return err
+		if _os != "windows" {
+			os.Chmod(tmpFile, 0755)
+			err = os.Rename(tmpFile, execPath)
+			if err != nil {
+				return err
+			}
+		} else {
+
+			win_upgrade_script_template, _ := assets.EmbeddedUpgradeFiles.ReadFile("upgrade/win_upgrade_script_template.ps1")
+
+			psScript := fmt.Sprintf(string(win_upgrade_script_template), execPath, tmpFile)
+
+			psFile := filepath.Join(os.TempDir(), "win_upgrade_script.ps1")
+			if err := os.WriteFile(psFile, []byte(psScript), 0644); err != nil {
+				return err
+			}
+
+			cmd := exec.Command("powershell", "-ExecutionPolicy", "Bypass", "-File", psFile)
+			if err := cmd.Start(); err != nil {
+				return err
+			}
 		}
 
 		fmt.Println("更新完成！")

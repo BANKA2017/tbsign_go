@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
@@ -93,11 +94,14 @@ func UpgradeSystem(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
 	}
 
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{}, "tbsign"))
+	return ShutdownSystem(c)
 }
 
 func ShutdownSystem(c echo.Context) error {
-	os.Exit(1)
+	go func() {
+		<-time.After(time.Second)
+		os.Exit(1)
+	}()
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{}, "tbsign"))
 }
 
