@@ -153,7 +153,6 @@ func Upgrade(version string) error {
 				return err
 			}
 		} else {
-
 			win_upgrade_script_template, _ := assets.EmbeddedUpgradeFiles.ReadFile("upgrade/win_upgrade_script_template.ps1")
 
 			psScript := fmt.Sprintf(string(win_upgrade_script_template), execPath, tmpFile)
