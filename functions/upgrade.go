@@ -88,6 +88,9 @@ func Upgrade(version string) error {
 	}
 
 	sha256Path := "https://github.com/BANKA2017/tbsign_go/releases/download/tbsign_go." + version + "/tbsign_go." + version + "." + _os + "-" + _arch + ".sha256"
+	if _os == "windows" {
+		sha256Path = strings.ReplaceAll(sha256Path, ".sha256", ".exe.sha256")
+	}
 
 	execPath, err := os.Executable()
 	if err != nil {
