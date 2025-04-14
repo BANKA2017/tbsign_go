@@ -4,7 +4,7 @@ import "strings"
 
 // from chatgpt
 func RemoveLeadingZeros(data []byte) []byte {
-	for i := 0; i < len(data); i++ {
+	for i := range data {
 		if data[i] != 0 {
 			return data[i:]
 		}

@@ -120,7 +120,7 @@ func Dosign(_ string, retry bool) (bool, error) {
 		threadCount = 10
 	}
 
-	for i := 0; i < int(threadCount); i++ {
+	for range threadCount {
 		go DosignWorker(tasksChan, errorsChan, sleep)
 	}
 
@@ -128,7 +128,7 @@ func Dosign(_ string, retry bool) (bool, error) {
 		tasksChan <- task
 	}
 
-	for i := 0; i < len(tiebaList); i++ {
+	for range tiebaList {
 		if <-errorsChan != nil {
 			hasFailed = true
 		}
