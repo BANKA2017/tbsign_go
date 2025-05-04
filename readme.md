@@ -296,6 +296,23 @@ docker run -d --restart unless-stopped -v ./db:/app/tbsign/db -p 8080:1323 ghcr.
 
 其它系统请自行编译运行
 
+## 更新
+
+### 发布类型
+
+由 `share.BuildPublishType` 的值决定，具体情况如下表
+
+| 类型         | 发布方式                                                                             | 支持更新自身文件 |
+| :----------- | :----------------------------------------------------------------------------------- | :--------------- |
+| `source`     | 通过源码直接编译的默认值                                                             | ❌                |
+| `binary`     | 通过 [GitHub Releases](https://github.com/BANKA2017/tbsign_go/releases) 发布         | ✅                |
+| `docker`     | 通过 [ghcr.io](https://github.com/BANKA2017/tbsign_go/pkgs/container/tbsign_go) 发布 | ❌                |
+| 其他自定义值 | 由第三方打包者自行决定                                                               | ⚠️ 由打包者决定   |
+
+### 发布地址
+
+由 `_function.ReleaseFilesPath` 决定，第三方打包者可以自行修改
+
 ## 备份
 
 从 [tbsign_go.20241203.f7b5434.881b23b](https://github.com/BANKA2017/tbsign_go/tree/tbsign_go.20241203.f7b5434.881b23b) 版本起，支持用户导出/导入部分账号数据。

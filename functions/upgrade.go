@@ -61,17 +61,19 @@ func IsBinaryType() bool {
 	return strings.ToLower(share.BuildPublishType) == "binary"
 }
 
+var ReleaseFilesPath = "https://github.com/BANKA2017/tbsign_go/releases/download"
+
 // version = "20240707.c7990c7.6a6db54"
 func Upgrade(version string) error {
 	_os := runtime.GOOS
 	_arch := runtime.GOARCH
 
-	if !IsOfficialSupport() {
-		return fmt.Errorf("❌ 不支持的版本(%s/%s)，请下载源码后参考 build.sh 编译运行", runtime.GOOS, runtime.GOARCH)
-	} else if share.BuiltAt == "Now" {
+	if share.BuiltAt == "Now" {
 		return errors.New("❌ 不支持的版本 (开发版)，请参考 build.sh 编译运行")
 	} else if !IsBinaryType() {
 		return fmt.Errorf("❌ 不支持直接下载更新的版本(%s)", share.BuildPublishType)
+	} else if !IsOfficialSupport() {
+		return fmt.Errorf("❌ 不支持的版本(%s/%s)，请下载源码后参考 build.sh 编译运行", runtime.GOOS, runtime.GOARCH)
 	}
 
 	// pre check version
@@ -81,13 +83,13 @@ func Upgrade(version string) error {
 
 	//get releases "https://api.github.com/repos/banka2017/tbsign_go/releases?per_page=5"
 
-	binPath := "https://github.com/BANKA2017/tbsign_go/releases/download/tbsign_go." + version + "/tbsign_go." + version + "." + _os + "-" + _arch
+	binPath := ReleaseFilesPath + "/tbsign_go." + version + "/tbsign_go." + version + "." + _os + "-" + _arch
 
 	if _os == "windows" {
 		binPath += ".exe"
 	}
 
-	sha256Path := "https://github.com/BANKA2017/tbsign_go/releases/download/tbsign_go." + version + "/tbsign_go." + version + "." + _os + "-" + _arch + ".sha256"
+	sha256Path := ReleaseFilesPath + "/tbsign_go." + version + "/tbsign_go." + version + "." + _os + "-" + _arch + ".sha256"
 	if _os == "windows" {
 		sha256Path = strings.ReplaceAll(sha256Path, ".sha256", ".exe.sha256")
 	}
@@ -157,7 +159,7 @@ func Upgrade(version string) error {
 
 			psScript := fmt.Sprintf(string(win_upgrade_script_template), execPath, tmpFile)
 
-			psFile := filepath.Join(os.TempDir(), "win_upgrade_script.ps1")
+			psFile := filepath.Join(os.TempDir(), "tc_win_upgrade_script.ps1")
 			if err := os.WriteFile(psFile, []byte(psScript), 0644); err != nil {
 				return err
 			}
