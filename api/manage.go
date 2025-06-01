@@ -13,7 +13,6 @@ import (
 	"github.com/BANKA2017/tbsign_go/model"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/labstack/echo/v4"
-	"github.com/leeqvip/gophp"
 	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
 )
@@ -55,6 +54,25 @@ func GetAdminSettings(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", settings, "tbsign"))
 }
 
+func encodeSignMode(val []string) string {
+	// a:1:{i:0;s:1:"1";}
+	var sb strings.Builder
+	sb.WriteString(`a:`)
+	sb.WriteString(strconv.Itoa(len(val)))
+	sb.WriteString(`:{`)
+
+	for i := range val {
+		sb.WriteString("i:")
+		sb.WriteString(strconv.Itoa(i))
+		sb.WriteString(`;s:1:"`)
+		sb.WriteString(val[i])
+		sb.WriteString(`";`)
+	}
+
+	sb.WriteRune('}')
+	return sb.String()
+}
+
 func UpdateAdminSettings(c echo.Context) error {
 	c.Request().ParseForm()
 
@@ -72,6 +90,10 @@ func UpdateAdminSettings(c echo.Context) error {
 					switch vName {
 					case "sign_mode":
 						signMode := strings.Split(v1[0], ",")
+
+						if len(signMode) == 0 {
+							signMode = append(signMode, "1")
+						}
 						check := true
 						for _, signModeItem := range signMode {
 							if !slices.Contains([]string{"1", "2", "3"}, signModeItem) {
@@ -84,12 +106,7 @@ func UpdateAdminSettings(c echo.Context) error {
 							continue
 						}
 
-						signModeEncoded, err := gophp.Serialize(signMode)
-						if err != nil {
-							errStr = append(errStr, "sign_mode: encode php serialize failed")
-							log.Println("sign_mode: encode php serialize failed", err)
-							continue
-						}
+						signModeEncoded := encodeSignMode(signMode)
 						if string(signModeEncoded) != vValue {
 							settings[vName] = v1[0]
 							_function.SetOption(vName, string(signModeEncoded))

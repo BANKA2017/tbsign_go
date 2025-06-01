@@ -59,8 +59,8 @@ type ForumInfo struct {
 }
 
 type ForumList struct {
-	NonGconforum []ForumInfo `json:"non-gconforum,omitempty"`
-	Gconforum    []ForumInfo `json:"gconforum,omitempty"`
+	NonGconforum []*ForumInfo `json:"non-gconforum,omitempty"`
+	Gconforum    []*ForumInfo `json:"gconforum,omitempty"`
 }
 
 type ForumListResponse[T any] struct {
@@ -76,7 +76,7 @@ type ForumListResponse[T any] struct {
 type WebForumListResponse struct {
 	Data struct {
 		LikeForum struct {
-			List []struct {
+			List []*struct {
 				Avatar       string `json:"avatar,omitempty"`
 				ForumID      int    `json:"forum_id,omitempty"`
 				ForumName    string `json:"forum_name,omitempty"`
@@ -246,7 +246,7 @@ type ForumGuideResponse struct {
 	ErrorCode        int    `json:"error_code"`
 	IsLogin          int    `json:"is_login"`
 	LikeForumHasMore bool   `json:"like_forum_has_more"`
-	LikeForum        []struct {
+	LikeForum        []*struct {
 		// HotNum      int    `json:"hot_num"`
 		// SortValue   int    `json:"sort_value"`
 		// LevelName   string `json:"level_name"`

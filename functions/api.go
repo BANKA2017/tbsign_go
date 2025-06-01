@@ -7,11 +7,11 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-var EchoEmptyObject = make(map[string]any, 0)
+var EchoEmptyObject = make(map[string]struct{}, 0)
 var EchoEmptyArray = make([]string, 0)
 
-func ApiTemplate[T any](code int, message string, data T, version string) _type.ApiTemplate {
-	return _type.ApiTemplate{
+func ApiTemplate[T any](code int, message string, data T, version string) _type.ApiTemplate[T] {
+	return _type.ApiTemplate[T]{
 		Code:    code,
 		Message: message,
 		Data:    data,

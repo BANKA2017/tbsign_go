@@ -107,7 +107,7 @@ func ShutdownSystem(c echo.Context) error {
 
 func GetPluginsList(c echo.Context) error {
 	isAdmin := c.Get("role").(string) == "admin"
-	var resPluginList = make(map[string]*PluginListContent)
+	var resPluginList = make(map[string]*PluginListContent, len(_plugin.PluginList))
 
 	for name, info := range _plugin.PluginList {
 		value := info.(_plugin.PluginHooks).GetInfo()
@@ -122,7 +122,7 @@ func GetPluginsList(c echo.Context) error {
 			PluginNameFE:      value.PluginNameFE,
 		})
 		if isAdmin {
-			settingOptions := []PluginListSettingOption{}
+			settingOptions := make([]PluginListSettingOption, 0, len(value.SettingOptions))
 
 			for _, settingOptionsItem := range value.SettingOptions {
 				settingOptions = append(settingOptions, PluginListSettingOption{

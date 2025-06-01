@@ -55,7 +55,7 @@ func GetBDUSS(c echo.Context) error {
 	}
 	bduss := res2.Data.Session.Bduss
 
-	stokenKV := make(map[string]string)
+	stokenKV := make(map[string]string, len(stokenArray))
 	for _, v := range stokenArray {
 		tmpSplit := strings.Split(v, "#")
 		stokenKV[tmpSplit[0]] = tmpSplit[1]

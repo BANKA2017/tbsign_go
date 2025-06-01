@@ -3,12 +3,13 @@ package _plugin
 import (
 	"log"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	_type "github.com/BANKA2017/tbsign_go/types"
-	"github.com/leeqvip/gophp"
 )
 
 const AgainErrorId = "160002"
@@ -23,7 +24,6 @@ var recheckinErrorID = []int64{340011, 2280007, 110001, 1989004, 255, 1, 340006}
 // 特殊的重复签到错误代码！！！签到过快=已签到
 // again_error_id_3 := "1102"
 
-var cornSignAgainInterface map[string]any
 var tableList = []string{"tieba"}
 var checkinToday string
 
@@ -138,32 +138,60 @@ func Dosign(_ string, retry bool) (bool, error) {
 	return hasFailed, nil
 }
 
+var cornSignAgainInterface CornSignAgainType
+
+const StandardCornSignAgainLength = len(`a:2:{s:6:"lastdo";s:10:"2000-01-01";s:3:"num";i:0;}`)
+
+type CornSignAgainType struct {
+	Num    int
+	LastDo string
+
+	mu sync.Mutex
+}
+
+func (st *CornSignAgainType) Decode(str string) *CornSignAgainType {
+	st.mu.Lock()
+	defer st.mu.Unlock()
+
+	if len(str) < StandardCornSignAgainLength {
+		st.LastDo = "2000-01-01"
+		return st
+	}
+
+	var valStart, valEnd = 0, 0
+
+	// overflow?
+	numStart := strings.Index(str, `s:3:"num";i:`)
+	valStart = numStart + len(`s:3:"num";i:`)
+	valEnd = strings.Index(str[valStart:], ";")
+	num, _ := strconv.Atoi(str[valStart : valStart+valEnd])
+
+	lastdoStart := strings.Index(str, `s:6:"lastdo";s:10:"`)
+	valStart = lastdoStart + len(`s:6:"lastdo";s:10:"`)
+	lastdo := str[valStart : valStart+10]
+
+	st.Num = num
+	st.LastDo = lastdo
+
+	return st
+}
+
+func (st *CornSignAgainType) Encode() string {
+	return _function.AppendStrings(`a:2:{s:6:"lastdo";s:10:"`, st.LastDo, `";s:3:"num";i:`, strconv.Itoa(st.Num), `;}`)
+}
+
 func DoCheckinAction() {
 	checkinToday = _function.Now.Format(time.DateOnly)
 	// a:2:{s:3:"num";i:0;s:6:"lastdo";s:10:"2000-01-01";}
 	cornSignAgain := _function.GetOption("cron_sign_again")
-	cornSignAgainParsed, err := gophp.Unserialize([]byte(cornSignAgain))
-	if err != nil {
-		log.Println("checkin:", err)
-		return
-	}
+	cornSignAgainInterface.Decode(cornSignAgain)
 
-	var ok bool
-	if cornSignAgainInterface, ok = cornSignAgainParsed.(map[string]any); !ok {
-		log.Println("checkin: parse config failed (lastdo)")
-		return
-	}
-
-	if checkinToday != cornSignAgainInterface["lastdo"].(string) {
+	if checkinToday != cornSignAgainInterface.LastDo {
 		// update lastdo
-		cornSignAgainInterface["num"] = 0
-		cornSignAgainInterface["lastdo"] = checkinToday
+		cornSignAgainInterface.Num = 0
+		cornSignAgainInterface.LastDo = checkinToday
 		RecheckInStatus.UnixTimestamp = 0
-		cornSignAgainEncoded, err := gophp.Serialize(cornSignAgainInterface)
-		if err != nil {
-			log.Println("checkin: encode php serialize failed", err)
-			return
-		}
+		cornSignAgainEncoded := cornSignAgainInterface.Encode()
 
 		_function.SetOption("cron_sign_again", string(cornSignAgainEncoded))
 
@@ -188,7 +216,7 @@ func DoReCheckinAction() {
 		return
 	}
 
-	retryNum := cornSignAgainInterface["num"].(int)
+	retryNum := cornSignAgainInterface.Num
 
 	if retryMax >= 0 && retryNum >= int(retryMax) {
 		return
@@ -224,12 +252,9 @@ func DoReCheckinAction() {
 			}
 		}
 		retryNum++
-		cornSignAgainInterface["num"] = retryNum
-		cornSignAgainEncoded, err := gophp.Serialize(cornSignAgainInterface)
-		if err != nil {
-			log.Println("sign_retry: encode failed")
-			return
-		}
+		cornSignAgainInterface.Num = retryNum
+		cornSignAgainEncoded := cornSignAgainInterface.Encode()
+
 		_function.SetOption("cron_sign_again", string(cornSignAgainEncoded))
 		//}
 	}

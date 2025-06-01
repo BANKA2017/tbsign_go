@@ -17,6 +17,7 @@ import (
 	"golang.org/x/mod/semver"
 
 	_ "time/tzdata"
+	"maps"
 )
 
 var Options sync.Map    //  make(map[string]string)
@@ -104,9 +105,7 @@ func InitOptions() {
 	// sync options
 	defaultOptionsCopy := make(map[string]string)
 	if len(tmpOptions) != len(assets.DefaultOptions) {
-		for k, v := range assets.DefaultOptions {
-			defaultOptionsCopy[k] = v
-		}
+		maps.Copy(defaultOptionsCopy, assets.DefaultOptions)
 	}
 
 	for _, v := range tmpOptions {

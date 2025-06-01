@@ -1,9 +1,9 @@
 package _type
 
-type ApiTemplate struct {
+type ApiTemplate[T any] struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
-	Data    any    `json:"data"`
+	Data    T      `json:"data"`
 	Version string `json:"version"`
 }
 

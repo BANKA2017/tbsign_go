@@ -2,7 +2,6 @@ package _function
 
 import (
 	"errors"
-	"fmt"
 	"mime"
 	"net/url"
 	"regexp"
@@ -100,7 +99,7 @@ func SendNtfy(_to, title, body string) error {
 	if resp.ID != "" {
 		return nil
 	} else {
-		return fmt.Errorf("ntfy: %s", string(res))
+		return errors.New("ntfy: " + string(res))
 	}
 }
 
@@ -141,7 +140,7 @@ func SendBark(_to, title, body string) error {
 	if resp.Code == 200 {
 		return nil
 	} else {
-		return fmt.Errorf("bark: %s", resp.Message)
+		return errors.New("bark: " + resp.Message)
 	}
 }
 
@@ -180,7 +179,7 @@ func SendPushdeer(_to, title, body string) error {
 	if resp.Error == "" {
 		return nil
 	} else {
-		return fmt.Errorf("pushdeer: %s", resp.Error)
+		return errors.New("pushdeer: " + resp.Error)
 	}
 }
 

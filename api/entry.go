@@ -12,7 +12,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func Api(address string, args ...any) {
+func Api(address string) {
 	// api
 	e := echo.New()
 	//e.Use(middleware.Logger())
@@ -31,10 +31,6 @@ func Api(address string, args ...any) {
 	api.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			_variable := make(map[string]any)
-			for i := 0; i < len(args); i += 2 {
-				_variable[args[i].(string)] = args[i+1]
-			}
-
 			// ext
 			_variable["dbmode"] = share.DBMode
 			_variable["dbversion"] = share.DBVersion
