@@ -71,7 +71,7 @@ jobs:
           curl -o assets/ca/cacert.pem https://curl.se/ca/cacert.pem
           rm assets/ca/.gitkeep
       - name: Packaging frontend
-        run: tar -czf tcfe.tar.gz -C .assets/dist/ .
+        run: tar -czf tcfe.tar.gz -C assets/dist/ .
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24.2"
