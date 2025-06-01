@@ -46,6 +46,8 @@ jobs:
         with:
           name: "tbsign_go.fe"
           path: tbsign_go_fe/.output/public/
+          include-hidden-files: true
+          compression-level: 9
 
   build-binary:
     name: Build Binary for ${{ matrix.arch.name }}

@@ -138,22 +138,22 @@ func Dosign(_ string, retry bool) (bool, error) {
 	return hasFailed, nil
 }
 
-var cornSignAgainInterface CornSignAgainType
+var cronSignAgainInterface CronSignAgainType
 
-const StandardCornSignAgainLength = len(`a:2:{s:6:"lastdo";s:10:"2000-01-01";s:3:"num";i:0;}`)
+const StandardCronSignAgainLength = len(`a:2:{s:6:"lastdo";s:10:"2000-01-01";s:3:"num";i:0;}`)
 
-type CornSignAgainType struct {
+type CronSignAgainType struct {
 	Num    int
 	LastDo string
 
 	mu sync.Mutex
 }
 
-func (st *CornSignAgainType) Decode(str string) *CornSignAgainType {
+func (st *CronSignAgainType) Decode(str string) *CronSignAgainType {
 	st.mu.Lock()
 	defer st.mu.Unlock()
 
-	if len(str) < StandardCornSignAgainLength {
+	if len(str) < StandardCronSignAgainLength {
 		st.LastDo = "2000-01-01"
 		return st
 	}
@@ -176,26 +176,26 @@ func (st *CornSignAgainType) Decode(str string) *CornSignAgainType {
 	return st
 }
 
-func (st *CornSignAgainType) Encode() string {
+func (st *CronSignAgainType) Encode() string {
 	return _function.AppendStrings(`a:2:{s:6:"lastdo";s:10:"`, st.LastDo, `";s:3:"num";i:`, strconv.Itoa(st.Num), `;}`)
 }
 
 func DoCheckinAction() {
 	checkinToday = _function.Now.Format(time.DateOnly)
 	// a:2:{s:3:"num";i:0;s:6:"lastdo";s:10:"2000-01-01";}
-	cornSignAgain := _function.GetOption("cron_sign_again")
-	cornSignAgainInterface.Decode(cornSignAgain)
+	cronSignAgain := _function.GetOption("cron_sign_again")
+	cronSignAgainInterface.Decode(cronSignAgain)
 
-	if checkinToday != cornSignAgainInterface.LastDo {
+	if checkinToday != cronSignAgainInterface.LastDo {
 		// update lastdo
-		cornSignAgainInterface.Num = 0
-		cornSignAgainInterface.LastDo = checkinToday
+		cronSignAgainInterface.Num = 0
+		cronSignAgainInterface.LastDo = checkinToday
 		RecheckInStatus.UnixTimestamp = 0
-		cornSignAgainEncoded := cornSignAgainInterface.Encode()
+		cronSignAgainEncoded := cronSignAgainInterface.Encode()
 
-		_function.SetOption("cron_sign_again", string(cornSignAgainEncoded))
+		_function.SetOption("cron_sign_again", string(cronSignAgainEncoded))
 
-		//log.Println(string(cornSignAgainEncoded))
+		//log.Println(string(cronSignAgainEncoded))
 	}
 
 	for _, table := range tableList {
@@ -216,7 +216,7 @@ func DoReCheckinAction() {
 		return
 	}
 
-	retryNum := cornSignAgainInterface.Num
+	retryNum := cronSignAgainInterface.Num
 
 	if retryMax >= 0 && retryNum >= int(retryMax) {
 		return
@@ -252,10 +252,10 @@ func DoReCheckinAction() {
 			}
 		}
 		retryNum++
-		cornSignAgainInterface.Num = retryNum
-		cornSignAgainEncoded := cornSignAgainInterface.Encode()
+		cronSignAgainInterface.Num = retryNum
+		cronSignAgainEncoded := cronSignAgainInterface.Encode()
 
-		_function.SetOption("cron_sign_again", string(cornSignAgainEncoded))
+		_function.SetOption("cron_sign_again", string(cronSignAgainEncoded))
 		//}
 	}
 }

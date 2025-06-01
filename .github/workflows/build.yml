@@ -46,6 +46,8 @@ jobs:
         with:
           name: "tbsign_go.fe"
           path: tbsign_go_fe/.output/public/
+          include-hidden-files: true
+          compression-level: 9
 
   build:
     runs-on: ubuntu-24.04
@@ -68,6 +70,8 @@ jobs:
           echo "fe_commit_hash=${{ needs.build-frontend.outputs.fe_commit_hash }}" >> "$GITHUB_ENV"
           curl -o assets/ca/cacert.pem https://curl.se/ca/cacert.pem
           rm assets/ca/.gitkeep
+      - name: Packaging frontend
+        run: tar -czf tcfe.tar.gz -C .assets/dist/ .
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24.2"
@@ -119,6 +123,10 @@ jobs:
           echo "$(sha256sum build/${build_prefix}.darwin-amd64 | awk '{print $1}')" >> "build/${build_prefix}.darwin-amd64.sha256"
           echo "darwin_amd64_sha256=$(cat build/${build_prefix}.darwin-amd64.sha256)" >> "$GITHUB_ENV"
 
+          mv "tcfe.tar.gz" "build/${build_prefix}.fe.tar.gz"
+          echo "$(sha256sum build/${build_prefix}.fe.tar.gz | awk '{print $1}')" >> "build/${build_prefix}.fe.tar.gz.sha256"
+          echo "fe_sha256=$(cat build/${build_prefix}.fe.tar.gz.sha256)" >> "$GITHUB_ENV"
+
       # - name: Upload package
       #   uses: actions/upload-artifact@v4
       #   with:
@@ -145,6 +153,7 @@ jobs:
               darwin_arm64: ${{ env.darwin_arm64_sha256 }}
               darwin_amd64: ${{ env.darwin_amd64_sha256 }}
               windows_amd64: ${{ env.windows_amd64_sha256 }}
+              frontend: ${{ env.fe_sha256 }}
             ```
 
   build-binary:
