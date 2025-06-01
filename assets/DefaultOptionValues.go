@@ -2,6 +2,7 @@ package assets
 
 var DefaultOptions = map[string]string{
 	"ann":                         "欢迎使用 TbSign➡️",
+	"icp":                         "",
 	"bduss_num":                   "0",
 	"core_version":                "5.01",
 	"cron_limit":                  "20",

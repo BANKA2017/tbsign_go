@@ -128,6 +128,9 @@ func Api(address string) {
 	// frontend
 	if share.EnableFrontend {
 		fe, _ := fs.Sub(assets.EmbeddedFrontent, "dist")
+		e.GET("/.well-known/icp/icp.txt", func(c echo.Context) error {
+			return c.String(http.StatusOK, _function.GetOption("icp"))
+		})
 		e.GET("/*", echo.WrapHandler(http.FileServer(&_function.StaticFSWrapper{
 			FileSystem:   http.FS(fe),
 			FixedModTime: share.BuildAtTime,
