@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
@@ -216,14 +215,14 @@ func ClaimWenku7DaySignVIP(cookie _type.TypeCookie) (*ClaimWenku7DaySignVIPRespo
 }
 
 type WenkuTasksPluginVipMatrixIDSet struct {
-	MatrixIDMap *sync.Map
-	WeekDayList *sync.Map
+	MatrixIDMap map[string][4]string
+	WeekDayList map[string]struct{}
 	LastDay     string
 }
 
 func (m *WenkuTasksPluginVipMatrixIDSet) Init() {
-	m.MatrixIDMap = new(sync.Map)
-	m.WeekDayList = new(sync.Map)
+	m.MatrixIDMap = make(map[string][4]string, 0)
+	m.WeekDayList = make(map[string]struct{}, 0)
 }
 
 func (m *WenkuTasksPluginVipMatrixIDSet) Import(str string, uid string) error {
@@ -235,18 +234,18 @@ func (m *WenkuTasksPluginVipMatrixIDSet) Import(str string, uid string) error {
 		return nil
 	}
 
-	idArray := []string{}
-	for _, id := range idList {
-		idArray = append(idArray, strconv.Itoa(int(id.ID)))
+	idArray := make([]string, len(idList))
+	for i := range idList {
+		idArray[i] = strconv.Itoa(int(idList[i].ID))
 	}
 
 	if len(str) > 1 && strings.HasPrefix(str, "|") && strings.HasSuffix(str, "|") {
 		for _, v := range strings.Split(str[1:len(str)-1], "|") {
 			idSet := strings.Split(v, ",")
 			if slices.Contains(idArray, idSet[0]) {
-				m.MatrixIDMap.Store(idSet[0], idSet)
-				if _, ok := m.WeekDayList.Load(idSet[1]); !ok {
-					m.WeekDayList.Store(idSet[1], nil)
+				m.MatrixIDMap[idSet[0]] = any(idSet).([4]string)
+				if _, ok := m.WeekDayList[idSet[1]]; !ok {
+					m.WeekDayList[idSet[1]] = struct{}{}
 				}
 				m.LastDay = idSet[1]
 			}
@@ -258,13 +257,12 @@ func (m *WenkuTasksPluginVipMatrixIDSet) Import(str string, uid string) error {
 
 func (m *WenkuTasksPluginVipMatrixIDSet) Export(uid string) string {
 	tmpStr := []string{}
-	m.MatrixIDMap.Range(func(key, value any) bool {
-		arrayValue := value.([]string)
+
+	for _, arrayValue := range m.MatrixIDMap {
 		if uid == "*" || len(arrayValue) == 4 && arrayValue[3] == uid || len(arrayValue) == 3 {
 			tmpStr = append(tmpStr, strings.Join(arrayValue[0:3], ","))
 		}
-		return true
-	})
+	}
 
 	if len(tmpStr) == 0 {
 		return "|"
@@ -276,7 +274,7 @@ func (m *WenkuTasksPluginVipMatrixIDSet) Export(uid string) string {
 // !!! use this func for ONLY ONE UID !!!
 func (m *WenkuTasksPluginVipMatrixIDSet) AddID(id int32, uid string) error {
 	strID := strconv.Itoa(int(id))
-	if _, ok := m.MatrixIDMap.Load(strID); ok {
+	if _, ok := m.MatrixIDMap[strID]; ok {
 		return nil
 	}
 	weekDayList := []string{"0", "1", "2", "3", "4", "5", "6"}
@@ -284,9 +282,9 @@ func (m *WenkuTasksPluginVipMatrixIDSet) AddID(id int32, uid string) error {
 	strCurrentDay := "-1"
 
 	for i, d := range weekDayList {
-		if _, ok := m.WeekDayList.Load(d); !ok {
+		if _, ok := m.WeekDayList[d]; !ok {
 			currentDay = int64(i)
-			m.WeekDayList.Store(d, 0)
+			m.WeekDayList[d] = struct{}{}
 			m.LastDay = d
 			strCurrentDay = d
 			break
@@ -304,7 +302,7 @@ func (m *WenkuTasksPluginVipMatrixIDSet) AddID(id int32, uid string) error {
 		m.LastDay = strCurrentDay
 	}
 
-	m.MatrixIDMap.Store(strID, []string{strID, strCurrentDay, "0", uid})
+	m.MatrixIDMap[strID] = [4]string{strID, strCurrentDay, "0", uid}
 
 	return nil
 }
@@ -313,25 +311,17 @@ func (m *WenkuTasksPluginVipMatrixIDSet) AddID(id int32, uid string) error {
 func (m *WenkuTasksPluginVipMatrixIDSet) DelID(id int32) error {
 	strID := strconv.Itoa(int(id))
 
-	if data, ok := m.MatrixIDMap.Load(strID); ok {
-		m.MatrixIDMap.Delete(strID)
-		m.WeekDayList.Delete(data.([]string)[1])
+	if data, ok := m.MatrixIDMap[strID]; ok {
+		delete(m.MatrixIDMap, strID)
+		delete(m.WeekDayList, data[1])
 	}
 
 	return nil
 }
 
 func (m *WenkuTasksPluginVipMatrixIDSet) Clean() {
-	m.MatrixIDMap.Range(func(key, value any) bool {
-		m.MatrixIDMap.Delete(key)
-		return true
-	})
-
-	m.WeekDayList.Range(func(key, value any) bool {
-		m.WeekDayList.Delete(key)
-		return true
-	})
-
+	m.MatrixIDMap = make(map[string][4]string, 0)
+	m.WeekDayList = make(map[string]struct{}, 0)
 	m.LastDay = ""
 }
 
@@ -388,20 +378,20 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 		tasksIDList := make(map[int]bool)
 
 		// vip matrix
-		var vipMatrixIDSet []string
+		var vipMatrixIDSet [4]string
 		isVipMatrix := _function.GetUserOption("kd_wenku_tasks_vip_matrix", strUID) == "1"
 		if isVipMatrix {
-			if vipMatrixIDSetUnknow, ok := wenkuTasksPluginVipMatrixIDSetMap.MatrixIDMap.Load(strconv.Itoa(int(taskUserItem.ID))); ok {
-				vipMatrixIDSet = vipMatrixIDSetUnknow.([]string)
+			if vipMatrixIDSetUnknow, ok := wenkuTasksPluginVipMatrixIDSetMap.MatrixIDMap[strconv.Itoa(int(taskUserItem.ID))]; ok {
+				vipMatrixIDSet = vipMatrixIDSetUnknow
 			} else {
 				wenkuTasksPluginVipMatrixIDSetMap.Import(_function.GetUserOption("kd_wenku_tasks_vip_matrix_id_set", strUID), strUID)
-				_vipMatrixIDSet, ok := wenkuTasksPluginVipMatrixIDSetMap.MatrixIDMap.Load(strconv.Itoa(int(taskUserItem.ID)))
+				_vipMatrixIDSet, ok := wenkuTasksPluginVipMatrixIDSetMap.MatrixIDMap[strconv.Itoa(int(taskUserItem.ID))]
 				if !ok {
 					wenkuTasksPluginVipMatrixIDSetMap.AddID(int32(taskUserItem.ID), strUID)
 					_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", wenkuTasksPluginVipMatrixIDSetMap.Export(strUID), strUID)
-					_vipMatrixIDSet, _ = wenkuTasksPluginVipMatrixIDSetMap.MatrixIDMap.Load(strconv.Itoa(int(taskUserItem.ID)))
+					_vipMatrixIDSet = wenkuTasksPluginVipMatrixIDSetMap.MatrixIDMap[strconv.Itoa(int(taskUserItem.ID))]
 				}
-				vipMatrixIDSet = _vipMatrixIDSet.([]string)
+				vipMatrixIDSet = _vipMatrixIDSet
 			}
 		}
 		if isVipMatrix && vipMatrixIDSet[1] == strconv.Itoa(int(_function.Now.Weekday())) && vipMatrixIDSet[2] == "0" {
@@ -412,7 +402,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 				Msg:        "跳过",
 			})
 			vipMatrixIDSet[2] = "1"
-			wenkuTasksPluginVipMatrixIDSetMap.MatrixIDMap.Store(vipMatrixIDSet[0], vipMatrixIDSet)
+			wenkuTasksPluginVipMatrixIDSetMap.MatrixIDMap[vipMatrixIDSet[0]] = vipMatrixIDSet
 
 			_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", wenkuTasksPluginVipMatrixIDSetMap.Export(strUID), strUID)
 		} else {
@@ -564,7 +554,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 
 					if task.TaskStatus != 3 || task.TaskExtra.SignDay != int(verifyDay) {
 						vipMatrixIDSet[2] = "0"
-						wenkuTasksPluginVipMatrixIDSetMap.MatrixIDMap.Store(vipMatrixIDSet[0], vipMatrixIDSet)
+						wenkuTasksPluginVipMatrixIDSetMap.MatrixIDMap[vipMatrixIDSet[0]] = vipMatrixIDSet
 
 						_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", wenkuTasksPluginVipMatrixIDSetMap.Export(strUID), strUID)
 					}

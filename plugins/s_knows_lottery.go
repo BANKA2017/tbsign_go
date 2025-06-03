@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
-	"sync"
 	"time"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
@@ -88,7 +87,7 @@ func GetLottery(cookie _type.TypeCookie, token string) (*GetLotteryResponse, err
 	return resp, err
 }
 
-var notCompleteActionPid sync.Map
+var notCompleteActionPid = make(map[int32]struct{}, 0)
 
 func (pluginInfo *LotteryPluginPluginType) Action() {
 	if !pluginInfo.PluginInfo.CheckActive() {
@@ -136,32 +135,32 @@ func (pluginInfo *LotteryPluginPluginType) Action() {
 				log.Println(err)
 			}
 
-			_, hasNotCompleted := notCompleteActionPid.Load(account.ID)
+			_, hasNotCompleted := notCompleteActionPid[account.ID]
 
 			resp, err := GetLottery(cookie, token)
 			if err != nil && (resp == nil || resp.Data == nil) {
 				dataToInsert.Result = "无法解析物品信息"
 				if hasNotCompleted {
-					notCompleteActionPid.Delete(account.ID)
+					delete(notCompleteActionPid, account.ID)
 				}
 				log.Println(err, resp)
 			} else if err != nil && resp.Errno == 0 && len(resp.Data.PrizeList) == 0 {
 				if hasNotCompleted {
 					dataToInsert.Result = "未完成抽奖"
-					notCompleteActionPid.Delete(account.ID)
+					delete(notCompleteActionPid, account.ID)
 				} else {
 					log.Printf("knows_lottery: %d:%s[ %s ] 第一次未完成抽奖\n", account.ID, account.Name, account.Portrait)
-					notCompleteActionPid.Store(account.ID, nil)
+					notCompleteActionPid[account.ID] = struct{}{}
 				}
 			} else if resp.Errno != 0 {
 				dataToInsert.Result = resp.Errmsg
 				if hasNotCompleted {
-					notCompleteActionPid.Delete(account.ID)
+					delete(notCompleteActionPid, account.ID)
 				}
 			} else {
 				dataToInsert.Prize = resp.Data.PrizeList[0].GoodsName
 				if hasNotCompleted {
-					notCompleteActionPid.Delete(account.ID)
+					delete(notCompleteActionPid, account.ID)
 				}
 			}
 
