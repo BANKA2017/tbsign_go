@@ -365,16 +365,10 @@ func main() {
 			}
 
 			// session list
-			now := time.Now().Unix()
-			_api.HttpAuthRefreshTokenMap.Range(func(key, value any) bool {
-				if value.(*_api.HttpAuthRefreshTokenMapItemStruct).ExpireAt <= now {
-					_api.HttpAuthRefreshTokenMap.Delete(key)
-				}
-				return true
-			})
+			_api.HttpAuthRefreshTokenMap.RemoveExpired()
 
 			// clean verify code list
-			_function.VerifyCodeList.RemoveExpired()
+			_function.VerifyCodeList.List.RemoveExpired()
 
 			// daily report
 			_plugin.DailyReportAction()
@@ -383,14 +377,8 @@ func main() {
 			_plugin.InitPluginList()
 
 			// clean cookie/fid cache
-			_function.CookieList.Range(func(key, value any) bool {
-				_function.CookieList.Delete(key)
-				return true
-			})
-			_function.FidList.Range(func(key, value any) bool {
-				_function.FidList.Delete(key)
-				return true
-			})
+			_function.CookieList.RemoveExpired()
+			_function.FidList.RemoveExpired()
 		}
 	}
 }

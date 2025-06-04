@@ -12,7 +12,7 @@ import (
 )
 
 var PluginList = make(map[string]PluginActionHooks)
-var PluginOptionValidatorMap = sync.Map{}
+var PluginOptionValidatorMap _function.KV[string, func(value string) bool]
 
 func RegisterPlugin(name string, plugin PluginActionHooks) {
 	PluginList[name] = plugin
@@ -143,7 +143,7 @@ func InitPluginList() {
 
 		// option validator
 		for optionKey, optionValidator := range PluginList[pluginStatus.Name].(PluginHooks).GetInfo().SettingOptions {
-			PluginOptionValidatorMap.Store(optionKey, optionValidator.Validate)
+			PluginOptionValidatorMap.Store(optionKey, optionValidator.Validate, -1)
 		}
 	}
 	for key := range pluginNameSet {
@@ -182,7 +182,7 @@ func UpdatePluginInfo(name string, version string, status bool, options string) 
 
 	// option validator
 	for optionKey, optionValidator := range PluginList[name].(PluginHooks).GetInfo().SettingOptions {
-		PluginOptionValidatorMap.Store(optionKey, optionValidator.Validate)
+		PluginOptionValidatorMap.Store(optionKey, optionValidator.Validate, -1)
 	}
 	AddToSettingsFilter()
 

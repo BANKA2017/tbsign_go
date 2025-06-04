@@ -7,7 +7,6 @@ import (
 	"math/rand/v2"
 	"net/url"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/BANKA2017/tbsign_go/assets"
@@ -16,13 +15,13 @@ import (
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"golang.org/x/mod/semver"
 
-	_ "time/tzdata"
 	"maps"
+	_ "time/tzdata"
 )
 
-var Options sync.Map    //  make(map[string]string)
-var CookieList sync.Map //= make(map[int32]_type.TypeCookie)
-var FidList sync.Map    //= make(map[string]int64)
+var Options KV[string, string]             //  make(map[string]string)
+var CookieList KV[int32, _type.TypeCookie] //= make(map[int32]_type.TypeCookie)
+var FidList KV[string, int64]              //= make(map[string]int64)
 
 const ResetPwdMaxTimes = 5
 const ResetPwdExpire = 60 * 5 // 5 mins
@@ -38,7 +37,7 @@ func UpdateNow() {
 
 func GetCookie(pid int32, bduss_only ...bool) _type.TypeCookie {
 	cookie, ok := CookieList.Load(pid)
-	if !ok || cookie == nil {
+	if !ok || cookie.Bduss == "" {
 		var _cookie _type.TypeCookie
 		var cookieDB model.TcBaiduid
 		GormDB.R.Model(&model.TcBaiduid{}).Where("id = ?", pid).Take(&cookieDB)
@@ -69,16 +68,16 @@ func GetCookie(pid int32, bduss_only ...bool) _type.TypeCookie {
 		_cookie.Tbs = tbsResponse.Tbs
 		_cookie.Stoken = cookieDB.Stoken
 		_cookie.Bduss = cookieDB.Bduss
-		CookieList.Store(pid, _cookie)
+		CookieList.Store(pid, _cookie, 60*60*4)
 		return _cookie
 	}
 
-	return cookie.(_type.TypeCookie)
+	return cookie
 }
 
 func GetFid(name string) int64 {
 	fid, ok := FidList.Load(name)
-	if !ok || fid == nil {
+	if !ok || fid == 0 {
 		// find in db
 		var tiebaInfo model.TcTieba
 		GormDB.R.Model(&model.TcTieba{}).Where("tieba = ? AND fid IS NOT NULL AND fid != ''", name).Take(&tiebaInfo)
@@ -90,10 +89,10 @@ func GetFid(name string) int64 {
 			}
 			_fid = int64(forumNameInfo.Data.Fid)
 		}
-		FidList.Store(name, _fid)
+		FidList.Store(name, _fid, 60*60*4)
 		return _fid
 	}
-	return fid.(int64)
+	return fid
 }
 
 func InitOptions() {
@@ -109,7 +108,7 @@ func InitOptions() {
 	}
 
 	for _, v := range tmpOptions {
-		Options.Store(v.Name, v.Value)
+		Options.Store(v.Name, v.Value, -1)
 		delete(defaultOptionsCopy, v.Name)
 	}
 

@@ -16,7 +16,7 @@ var SettingsFilter = SettingsKeys
 func GetOption(keyName string) string {
 	v, ok := Options.Load(keyName)
 	if ok {
-		return v.(string)
+		return v
 	} else {
 		return ""
 	}
@@ -51,7 +51,7 @@ func SetOption[T ~string | ~bool | ~int](keyName string, value T, ext ...any) er
 	err := _sql.Model(&model.TcOption{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcOption{Name: keyName, Value: newValue}).Error
 
 	if err == nil {
-		Options.Store(keyName, newValue)
+		Options.Store(keyName, newValue, -1)
 	}
 	return err
 }

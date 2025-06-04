@@ -185,8 +185,8 @@ func UpdateAdminSettings(c echo.Context) error {
 						settings[vName] = strconv.Itoa(int(numValue))
 						_function.SetOption(vName, settings[vName])
 					default:
-						if PluginOptionValidatorAny, ok := _plugin.PluginOptionValidatorMap.Load(vName); ok {
-							if PluginOptionValidator, ok := PluginOptionValidatorAny.(func(value string) bool); ok && PluginOptionValidator(v1[0]) {
+						if PluginOptionValidator, ok := _plugin.PluginOptionValidatorMap.Load(vName); ok {
+							if PluginOptionValidator(v1[0]) {
 								settings[vName] = v1[0]
 								_function.SetOption(vName, v1[0])
 							} else {

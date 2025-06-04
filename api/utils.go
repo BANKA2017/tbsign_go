@@ -1,14 +1,12 @@
 package _api
 
 import (
-	"encoding/hex"
 	"errors"
 	"log"
 	"math"
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
@@ -71,8 +69,7 @@ func verifyAuthorization(authorization string) (string, string) {
 		}
 
 		if storeToken, ok := HttpAuthRefreshTokenMap.Load(int(uid)); ok {
-			tokenContent, ok := storeToken.(*HttpAuthRefreshTokenMapItemStruct)
-			if !ok || tokenContent.ExpireAt <= time.Now().Unix() || tokenContent.Content != token[1] {
+			if !ok || storeToken != token[1] {
 				return "0", "guest"
 			}
 			var accountInfo []*model.TcUser
@@ -88,16 +85,16 @@ func verifyAuthorization(authorization string) (string, string) {
 	}
 }
 
-func legacyTokenBuilder(uid int32, password string) string {
-	return _function.Base64URLEncode([]byte(strconv.Itoa(int(uid)) + ":" + hex.EncodeToString(_function.GenHMAC256([]byte(password), []byte(strconv.Itoa(int(uid))+password)))))
-}
+// func legacyTokenBuilder(uid int32, password string) string {
+// 	return _function.Base64URLEncode([]byte(strconv.Itoa(int(uid)) + ":" + hex.EncodeToString(_function.GenHMAC256([]byte(password), []byte(strconv.Itoa(int(uid))+password)))))
+// }
 
 type HttpAuthRefreshTokenMapItemStruct struct {
 	Content  string
 	ExpireAt int64
 }
 
-var HttpAuthRefreshTokenMap sync.Map // int -> HttpAuthRefreshTokenMapItemStruct
+var HttpAuthRefreshTokenMap _function.KV[int, string]
 
 func tokenBuilder(uid int) (string, int64) {
 	_token, err := _function.RandomTokenBuilder(48)
@@ -117,14 +114,9 @@ func tokenBuilder(uid int) (string, int64) {
 		numberCookieExpire = 30
 	}
 
-	expireAt := time.Now().Add(time.Duration(numberCookieExpire) * time.Second).Unix()
+	HttpAuthRefreshTokenMap.Store(int(uid), token, numberCookieExpire)
 
-	HttpAuthRefreshTokenMap.Store(int(uid), &HttpAuthRefreshTokenMapItemStruct{
-		Content:  token,
-		ExpireAt: expireAt,
-	})
-
-	return _function.AppendStrings(strconv.Itoa(uid), ":", token), expireAt
+	return _function.AppendStrings(strconv.Itoa(uid), ":", token), time.Now().Add(time.Duration(numberCookieExpire) * time.Second).Unix()
 }
 
 var resetPasswordVerifyCodeByteLength int64 = 6
@@ -135,10 +127,8 @@ func ResetMessageBuilder(uid int32, forceMode bool) *_function.VerifyCodeStruct 
 	_v, ok := _function.VerifyCodeList.LoadCode("reset_password", uid)
 	var v *_function.VerifyCodeStruct
 
-	if !ok || _v == nil || _v.Expire <= _function.Now.Unix() {
-		v = _function.VariablePtrWrapper(_function.VerifyCodeStruct{
-			Expire: _function.Now.Unix() + _function.ResetPwdExpire,
-		})
+	if !ok || _v == nil {
+		v = &_function.VerifyCodeStruct{}
 	} else {
 		v = _v
 	}
