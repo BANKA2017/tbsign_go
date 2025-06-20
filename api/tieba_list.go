@@ -119,13 +119,13 @@ func IgnoreTieba(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 fid", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	_function.GormDB.W.Model(&model.TcTieba{}).Where("uid = ? AND pid = ? AND fid = ?", numUID, numPid, numFid).Update("no", method != "DELETE")
+	_function.GormDB.W.Model(&model.TcTieba{}).Where("uid = ? AND pid = ? AND fid = ?", numUID, numPid, numFid).Update("no", method != http.MethodDelete)
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
 		"uid": numUID,
 		"pid": numPid,
 		"fid": numFid,
-		"no":  method != "DELETE",
+		"no":  method != http.MethodDelete,
 	}, "tbsign"))
 }
 

@@ -177,7 +177,7 @@ func (st *CronSignAgainType) Decode(str string) *CronSignAgainType {
 }
 
 func (st *CronSignAgainType) Encode() string {
-	return _function.AppendStrings(`a:2:{s:6:"lastdo";s:10:"`, st.LastDo, `";s:3:"num";i:`, strconv.Itoa(st.Num), `;}`)
+	return `a:2:{s:6:"lastdo";s:10:"` + st.LastDo + `";s:3:"num";i:` + strconv.Itoa(st.Num) + `;}`
 }
 
 func DoCheckinAction() {

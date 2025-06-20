@@ -41,8 +41,8 @@ var RefreshTiebaListPlugin = _function.VariablePtrWrapper(RefreshTiebaListPlugin
 			},
 		},
 		Endpoints: []PluginEndpintStruct{
-			{Method: "GET", Path: "list", Function: PluginRefreshTiebaListGetAccountList},
-			{Method: "POST", Path: "sync", Function: PluginRefreshTiebaListRefreshTiebaList},
+			{Method: http.MethodGet, Path: "list", Function: PluginRefreshTiebaListGetAccountList},
+			{Method: http.MethodPost, Path: "sync", Function: PluginRefreshTiebaListRefreshTiebaList},
 		},
 	},
 })

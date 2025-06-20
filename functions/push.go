@@ -3,6 +3,7 @@ package _function
 import (
 	"errors"
 	"mime"
+	"net/http"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -80,7 +81,7 @@ func SendNtfy(_to, title, body string) error {
 		ntfyAddr = "https://ntfy.sh"
 	}
 
-	res, err := Fetch(AppendStrings(ntfyAddr, "/", _to), "POST", []byte(strings.ReplaceAll(body, "<br />", "\n")), map[string]string{
+	res, err := Fetch(ntfyAddr+"/"+_to, http.MethodPost, []byte(strings.ReplaceAll(body, "<br />", "\n")), map[string]string{
 		"Title":        title,
 		"Content-Type": "text/plain",
 		"Tags":         "tbsign",
@@ -126,7 +127,7 @@ func SendBark(_to, title, body string) error {
 	_body.Set("device_key", _to)
 	_body.Set("group", "tbsign")
 
-	res, err := Fetch(AppendStrings(barkAddr, "/push"), "POST", []byte(_body.Encode()), map[string]string{}, DefaultCient)
+	res, err := Fetch(barkAddr+"/push", http.MethodPost, []byte(_body.Encode()), map[string]string{}, DefaultCient)
 	if err != nil {
 		return err
 	}
@@ -165,7 +166,7 @@ func SendPushdeer(_to, title, body string) error {
 	_body.Set("desp", strings.ReplaceAll(body, "<br />", "\n"))
 	_body.Set("pushkey", _to)
 
-	res, err := Fetch(AppendStrings(pushdeerAddr, "/message/push"), "POST", []byte(_body.Encode()), map[string]string{}, DefaultCient)
+	res, err := Fetch(pushdeerAddr+"/message/push", http.MethodPost, []byte(_body.Encode()), map[string]string{}, DefaultCient)
 	if err != nil {
 		return err
 	}

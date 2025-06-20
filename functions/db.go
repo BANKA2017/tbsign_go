@@ -74,7 +74,7 @@ func ConnectToMySQL(username string, password string, endpoint string, dbname st
 	if tlsOption != "" {
 		lowerTLSOption := strings.ToLower(tlsOption)
 		if slices.Contains([]string{"true", "false", "skip-verify", "preferred"}, lowerTLSOption) {
-			dsn = AppendStrings(dsn, "&tls=", lowerTLSOption)
+			dsn += "&tls=" + lowerTLSOption
 		} else {
 			if _, err := os.Stat(tlsOption); err != nil {
 				log.Println("db: 无法读取证书文件", tlsOption, "，将回退至不使用 TLS 连接")
@@ -96,7 +96,7 @@ func ConnectToMySQL(username string, password string, endpoint string, dbname st
 					ServerName: parsedURL.Hostname(),
 					RootCAs:    rootCertPool,
 				})
-				dsn = AppendStrings(dsn, "&tls=custom")
+				dsn += "&tls=custom"
 			}
 		}
 	}

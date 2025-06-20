@@ -48,13 +48,13 @@ var UserGrowthTasksPlugin = _function.VariablePtrWrapper(UserGrowthTasksPluginTy
 			},
 		},
 		Endpoints: []PluginEndpintStruct{
-			{Method: "GET", Path: "settings", Function: PluginGrowthTasksGetSettings},
-			{Method: "PUT", Path: "settings", Function: PluginGrowthTasksSetSettings},
-			{Method: "GET", Path: "list", Function: PluginGrowthTasksGetList},
-			{Method: "PATCH", Path: "list", Function: PluginGrowthTasksAddAccount},
-			{Method: "DELETE", Path: "list/:id", Function: PluginGrowthTasksDelAccount},
-			{Method: "POST", Path: "list/empty", Function: PluginGrowthTasksDelAllAccounts},
-			{Method: "GET", Path: "status/:pid", Function: PluginGrowthTasksGetTasksStatus},
+			{Method: http.MethodGet, Path: "settings", Function: PluginGrowthTasksGetSettings},
+			{Method: http.MethodPut, Path: "settings", Function: PluginGrowthTasksSetSettings},
+			{Method: http.MethodGet, Path: "list", Function: PluginGrowthTasksGetList},
+			{Method: http.MethodPatch, Path: "list", Function: PluginGrowthTasksAddAccount},
+			{Method: http.MethodDelete, Path: "list/:id", Function: PluginGrowthTasksDelAccount},
+			{Method: http.MethodPost, Path: "list/empty", Function: PluginGrowthTasksDelAllAccounts},
+			{Method: http.MethodGet, Path: "status/:pid", Function: PluginGrowthTasksGetTasksStatus},
 		},
 	},
 })
@@ -154,7 +154,7 @@ func PostGrowthTaskByWeb(cookie _type.TypeCookie, task string) (*UserGrowthTasks
 		"Cookie": "BDUSS=" + cookie.Bduss,
 	}
 
-	response, err := _function.TBFetch("https://tieba.baidu.com/mo/q/usergrowth/commitUGTaskInfo", "POST", []byte(_body.Encode()), headersMap)
+	response, err := _function.TBFetch("https://tieba.baidu.com/mo/q/usergrowth/commitUGTaskInfo", http.MethodPost, []byte(_body.Encode()), headersMap)
 
 	if err != nil {
 		return nil, err
@@ -181,7 +181,7 @@ func PostGrowthTaskByClient(cookie _type.TypeCookie, task string) (*UserGrowthTa
 		}
 	}
 
-	response, err := _function.TBFetch("https://tiebac.baidu.com/c/c/user/commitUGTaskInfo", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), _function.EmptyHeaders)
+	response, err := _function.TBFetch("https://tiebac.baidu.com/c/c/user/commitUGTaskInfo", http.MethodPost, []byte(_body.Encode()+"&sign="+form["sign"]), _function.EmptyHeaders)
 
 	if err != nil {
 		return nil, err
@@ -203,7 +203,7 @@ func PostCollectStamp(cookie _type.TypeCookie, task_id int) (*UserGrowthTaskColl
 		"tbs":      {cookie.Tbs},
 		"cuid":     {"-"},
 	}
-	response, err := _function.TBFetch("https://tieba.baidu.com/mo/q/icon/collectStamp", "POST", []byte(_body.Encode()), headersMap)
+	response, err := _function.TBFetch("https://tieba.baidu.com/mo/q/icon/collectStamp", http.MethodPost, []byte(_body.Encode()), headersMap)
 
 	if err != nil {
 		return nil, err
@@ -219,7 +219,7 @@ func GetUserGrowthTasksList(cookie _type.TypeCookie) (*UserGrowthTasksListRespon
 		"Cookie": "BDUSS=" + cookie.Bduss,
 	}
 
-	response, err := _function.TBFetch("https://tieba.baidu.com/mo/q/usergrowth/showUserGrowth", "GET", nil, headersMap)
+	response, err := _function.TBFetch("https://tieba.baidu.com/mo/q/usergrowth/showUserGrowth", http.MethodGet, nil, headersMap)
 
 	if err != nil {
 		return nil, err
@@ -488,7 +488,7 @@ func (pluginInfo *UserGrowthTasksPluginType) RemoveAccount(_type string, id int3
 	if tx != nil {
 		_sql = tx
 	}
-	return _sql.Where(_function.AppendStrings(_type, " = ?"), id).Delete(&model.TcKdGrowth{}).Error
+	return _sql.Where(_type+" = ?", id).Delete(&model.TcKdGrowth{}).Error
 }
 
 func (pluginInfo *UserGrowthTasksPluginType) Report(int32, *gorm.DB) (string, error) {

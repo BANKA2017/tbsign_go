@@ -17,12 +17,12 @@ import (
 func SetHeaders(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		if !share.EnableFrontend {
-			c.Response().Header().Add("Access-Control-Allow-Origin", "*")
+			c.Response().Header().Set("Access-Control-Allow-Origin", "*")
+			c.Response().Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,PATCH,OPTIONS")
+			c.Response().Header().Set("Access-Control-Allow-Headers", "Authorization")
 		}
-		c.Response().Header().Add("X-Powered-By", "TbSignGo->")
-		c.Response().Header().Add("Access-Control-Allow-Methods", "*")
-		c.Response().Header().Add("Access-Control-Allow-Credentials", "true")
-		c.Response().Header().Add("Access-Control-Allow-Headers", "Authorization")
+		// c.Response().Header().Add("X-Powered-By", "TbSignGo->")
+		// c.Response().Header().Add("Access-Control-Allow-Credentials", "true")
 		return next(c)
 	}
 }

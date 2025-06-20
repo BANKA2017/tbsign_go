@@ -57,19 +57,14 @@ func GetAdminSettings(c echo.Context) error {
 func encodeSignMode(val []string) string {
 	// a:1:{i:0;s:1:"1";}
 	var sb strings.Builder
-	sb.WriteString(`a:`)
-	sb.WriteString(strconv.Itoa(len(val)))
-	sb.WriteString(`:{`)
+	sb.Grow(6 + len(val)*12)
+	sb.WriteString(`a:` + strconv.Itoa(len(val)) + `:{`)
 
 	for i := range val {
-		sb.WriteString("i:")
-		sb.WriteString(strconv.Itoa(i))
-		sb.WriteString(`;s:1:"`)
-		sb.WriteString(val[i])
-		sb.WriteString(`";`)
+		sb.WriteString("i:" + strconv.Itoa(i) + `;s:1:"` + val[i] + `";`)
 	}
 
-	sb.WriteRune('}')
+	sb.WriteByte('}')
 	return sb.String()
 }
 
@@ -522,7 +517,7 @@ func GetAccountsList(c echo.Context) error {
 	if query != "" {
 		accountsQuery := _function.GormDB.R.Model(&model.TcUser{}).
 			Select("*").
-			Where("name LIKE ? OR email LIKE ?", _function.AppendStrings("%", query, "%"), _function.AppendStrings("%", query, "%")).
+			Where("name LIKE ? OR email LIKE ?", "%"+query+"%", "%"+query+"%").
 			Order("id").
 			Limit(int(numCount)).
 			Offset(int((numPage - 1) * numCount))

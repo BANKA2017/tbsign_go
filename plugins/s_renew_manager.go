@@ -49,15 +49,15 @@ var RenewManager = _function.VariablePtrWrapper(RenewManagerType{
 		},
 		Test: false,
 		Endpoints: []PluginEndpintStruct{
-			{Method: "GET", Path: "switch", Function: PluginRenewManagerGetSwitch},
-			{Method: "POST", Path: "switch", Function: PluginRenewManagerSwitch},
-			{Method: "GET", Path: "settings", Function: PluginRenewManagerGetSettings},
-			{Method: "POST", Path: "settings", Function: PluginRenewManagerUpdateSettings},
-			{Method: "GET", Path: "list", Function: PluginRenewManagerGetList},
-			{Method: "PATCH", Path: "list", Function: PluginRenewManagerAddAccount},
-			{Method: "DELETE", Path: "list/:id", Function: PluginRenewManagerDelAccount},
-			{Method: "POST", Path: "list/empty", Function: PluginRenewManagerDelAllAccounts},
-			{Method: "GET", Path: "check/:pid/status/:fname", Function: PluginRenewManagerPreCheckStatus},
+			{Method: http.MethodGet, Path: "switch", Function: PluginRenewManagerGetSwitch},
+			{Method: http.MethodPost, Path: "switch", Function: PluginRenewManagerSwitch},
+			{Method: http.MethodGet, Path: "settings", Function: PluginRenewManagerGetSettings},
+			{Method: http.MethodPost, Path: "settings", Function: PluginRenewManagerUpdateSettings},
+			{Method: http.MethodGet, Path: "list", Function: PluginRenewManagerGetList},
+			{Method: http.MethodPatch, Path: "list", Function: PluginRenewManagerAddAccount},
+			{Method: http.MethodDelete, Path: "list/:id", Function: PluginRenewManagerDelAccount},
+			{Method: http.MethodPost, Path: "list/empty", Function: PluginRenewManagerDelAllAccounts},
+			{Method: http.MethodGet, Path: "check/:pid/status/:fname", Function: PluginRenewManagerPreCheckStatus},
 		},
 	},
 })
@@ -226,7 +226,7 @@ func (pluginInfo *RenewManagerType) RemoveAccount(_type string, id int32, tx *go
 	if tx != nil {
 		_sql = tx
 	}
-	return _sql.Where(_function.AppendStrings(_type, " = ?"), id).Delete(&model.TcKdRenewManager{}).Error
+	return _sql.Where(_type+" = ?", id).Delete(&model.TcKdRenewManager{}).Error
 }
 
 func (pluginInfo *RenewManagerType) Report(uid int32, tx *gorm.DB) (string, error) {
@@ -312,7 +312,7 @@ func PluginRenewManagerCancelTop(cookie _type.TypeCookie, fname string, tid stri
 	body.Set("fid", strconv.Itoa(int(_function.GetFid(fname))))
 	body.Set("tid", tid)
 
-	res, err := _function.TBFetch("https://tieba.baidu.com/f/commit/thread/top/cancel", "POST", []byte(body.Encode()), headersMap)
+	res, err := _function.TBFetch("https://tieba.baidu.com/f/commit/thread/top/cancel", http.MethodPost, []byte(body.Encode()), headersMap)
 
 	if err != nil {
 		return nil, err
@@ -388,7 +388,7 @@ func PluginRenewManagerGetThreadInfo(cookie _type.TypeCookie, tid int64, fid int
 	query.Set("sub_type", "1")
 	query.Set("tbs", cookie.Tbs)
 
-	res, err := _function.TBFetch(_function.AppendStrings(managerGetThreadInfoLink, query.Encode()), "GET", nil, headersMap)
+	res, err := _function.TBFetch(managerGetThreadInfoLink+query.Encode(), http.MethodGet, nil, headersMap)
 
 	if err != nil {
 		return nil, err

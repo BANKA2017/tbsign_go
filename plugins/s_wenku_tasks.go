@@ -48,14 +48,14 @@ var WenkuTasksPlugin = _function.VariablePtrWrapper(WenkuTasksPluginType{
 			},
 		},
 		Endpoints: []PluginEndpintStruct{
-			{Method: "GET", Path: "settings", Function: PluginWenkuTasksGetSettings},
-			{Method: "PUT", Path: "settings", Function: PluginWenkuTasksSetSettings},
-			{Method: "GET", Path: "list", Function: PluginWenkuTasksGetList},
-			{Method: "PATCH", Path: "list", Function: PluginWenkuTasksAddAccount},
-			{Method: "DELETE", Path: "list/:id", Function: PluginWenkuTasksDelAccount},
-			{Method: "POST", Path: "list/empty", Function: PluginWenkuTasksDelAllAccounts},
-			{Method: "GET", Path: "status/:pid", Function: PluginWenkuTasksGetTasksStatus},
-			{Method: "POST", Path: "claim/:pid", Function: PluginWenkuTasksClaim7DaySignVIP},
+			{Method: http.MethodGet, Path: "settings", Function: PluginWenkuTasksGetSettings},
+			{Method: http.MethodPut, Path: "settings", Function: PluginWenkuTasksSetSettings},
+			{Method: http.MethodGet, Path: "list", Function: PluginWenkuTasksGetList},
+			{Method: http.MethodPatch, Path: "list", Function: PluginWenkuTasksAddAccount},
+			{Method: http.MethodDelete, Path: "list/:id", Function: PluginWenkuTasksDelAccount},
+			{Method: http.MethodPost, Path: "list/empty", Function: PluginWenkuTasksDelAllAccounts},
+			{Method: http.MethodGet, Path: "status/:pid", Function: PluginWenkuTasksGetTasksStatus},
+			{Method: http.MethodPost, Path: "claim/:pid", Function: PluginWenkuTasksClaim7DaySignVIP},
 		},
 	},
 })
@@ -63,7 +63,7 @@ var WenkuTasksPlugin = _function.VariablePtrWrapper(WenkuTasksPluginType{
 const IOSVersion = "18.1.1"
 const WenkuSemver = "9.1.40"
 
-var WenkuUserAgent = _function.AppendStrings("%E7%99%BE%E5%BA%A6%E6%96%87%E5%BA%93/", WenkuSemver, ".5 CFNetwork/1568.200.51 Darwin/24.1.0")
+var WenkuUserAgent = "%E7%99%BE%E5%BA%A6%E6%96%87%E5%BA%93/" + WenkuSemver + ".5 CFNetwork/1568.200.51 Darwin/24.1.0"
 
 var wenkuPassTasks = []int{4}
 
@@ -153,7 +153,7 @@ func GetWenkuTaskList(cookie _type.TypeCookie, _type string) (*GetWenkuTaskListR
 		"User-Agent": WenkuUserAgent,
 	}
 
-	response, err := _function.TBFetch(fmt.Sprintf(wenkuTasksLink, _type), "GET", []byte{}, headersMap)
+	response, err := _function.TBFetch(fmt.Sprintf(wenkuTasksLink, _type), http.MethodGet, []byte{}, headersMap)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +167,7 @@ func GetWenkuTaskList(cookie _type.TypeCookie, _type string) (*GetWenkuTaskListR
 
 // isClaim = false -> do task
 func UpdateWenkuTask(cookie _type.TypeCookie, taskID int, minVersion string, isClaim bool) (*UpdateWenkuTaskResponse, error) {
-	naUncheckStr := _function.AppendStrings("&extra=%7B%0A%20%20%22app_ver%22%20%3A%20%22", minVersion, "%22%0A%7D")
+	naUncheckStr := "&extra=%7B%0A%20%20%22app_ver%22%20%3A%20%22" + minVersion + "%22%0A%7D"
 	if isClaim {
 		naUncheckStr = "&na_uncheck=1"
 	}
@@ -183,7 +183,7 @@ func UpdateWenkuTask(cookie _type.TypeCookie, taskID int, minVersion string, isC
 		"User-Agent": strings.Replace(WenkuUserAgent, WenkuSemver, minVersion, 1),
 	}
 
-	response, err := _function.TBFetch(fmt.Sprintf(updateWenkuTaskLink, taskID, IOSVersion, minVersion, naUncheckStr), "GET", []byte{}, headersMap)
+	response, err := _function.TBFetch(fmt.Sprintf(updateWenkuTaskLink, taskID, IOSVersion, minVersion, naUncheckStr), http.MethodGet, []byte{}, headersMap)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +202,7 @@ func ClaimWenku7DaySignVIP(cookie _type.TypeCookie) (*ClaimWenku7DaySignVIPRespo
 		"Referrer":   string([]byte{104, 116, 116, 112, 115, 58, 47, 47, 116, 97, 110, 98, 105, 46, 98, 97, 105, 100, 117, 46, 99, 111, 109, 47, 104, 53, 97, 112, 112, 116, 111, 112, 105, 99, 47, 98, 114, 111, 119, 115, 101, 47, 108, 111, 116, 116, 101, 114, 121, 118, 105, 112, 50, 48, 50, 50, 49, 49}),
 	}
 
-	response, err := _function.TBFetch(fmt.Sprintf(claimWenku7DaySignVIPLink, _function.Now.UnixMilli()), "GET", []byte{}, headersMap)
+	response, err := _function.TBFetch(fmt.Sprintf(claimWenku7DaySignVIPLink, _function.Now.UnixMilli()), http.MethodGet, []byte{}, headersMap)
 	if err != nil {
 		return nil, err
 	}
@@ -268,7 +268,7 @@ func (m *WenkuTasksPluginVipMatrixIDSet) Export(uid string) string {
 		return "|"
 	}
 
-	return _function.AppendStrings("|", strings.Join(tmpStr, "|"), "|")
+	return "|" + strings.Join(tmpStr, "|") + "|"
 }
 
 // !!! use this func for ONLY ONE UID !!!
@@ -682,7 +682,7 @@ func (pluginInfo *WenkuTasksPluginType) RemoveAccount(_type string, id int32, tx
 		}
 	}
 
-	return _sql.Where(_function.AppendStrings(_type, " = ?"), id).Delete(&model.TcKdWenkuTask{}).Error
+	return _sql.Where(_type+" = ?", id).Delete(&model.TcKdWenkuTask{}).Error
 }
 
 func (pluginInfo *WenkuTasksPluginType) Report(int32, *gorm.DB) (string, error) {

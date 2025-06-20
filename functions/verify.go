@@ -19,13 +19,13 @@ type VerifyCodeListType struct {
 var VerifyCodeList VerifyCodeListType //= make(map[int32]*ResetPwdStruct)
 
 func (list *VerifyCodeListType) StoreCode(_type string, uid int32, data *VerifyCodeStruct) {
-	list.List.Store(AppendStrings(_type, ":", strconv.Itoa(int(uid))), data, ResetPwdExpire)
+	list.List.Store(_type+":"+strconv.Itoa(int(uid)), data, ResetPwdExpire)
 }
 
 func (list *VerifyCodeListType) LoadCode(_type string, uid int32) (*VerifyCodeStruct, bool) {
-	return list.List.Load(AppendStrings(_type, ":", strconv.Itoa(int(uid))))
+	return list.List.Load(_type + ":" + strconv.Itoa(int(uid)))
 }
 
 func (list *VerifyCodeListType) DeleteCode(_type string, uid int32) {
-	list.List.Delete(AppendStrings(_type, ":", strconv.Itoa(int(uid))))
+	list.List.Delete(_type + ":" + strconv.Itoa(int(uid)))
 }

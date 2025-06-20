@@ -14,7 +14,7 @@ func ScanTiebaByPid(pid int32) {
 	var localTiebaList []*model.TcTieba
 	GormDB.R.Model(&model.TcTieba{}).Where("pid = ?", account.ID).Find(&localTiebaList)
 
-	localTiebaFidList := []int{}
+	localTiebaFidList := make([]int, len(localTiebaList))
 
 	for _, v := range localTiebaList {
 		localTiebaFidList = append(localTiebaFidList, int(v.Fid))

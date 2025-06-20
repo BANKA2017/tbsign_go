@@ -72,14 +72,14 @@ var LoopBanPlugin = _function.VariablePtrWrapper(LoopBanPluginType{
 			},
 		},
 		Endpoints: []PluginEndpintStruct{
-			{Method: "GET", Path: "switch", Function: PluginLoopBanGetSwitch},
-			{Method: "POST", Path: "switch", Function: PluginLoopBanSwitch},
-			{Method: "GET", Path: "reason", Function: PluginLoopBanGetReason},
-			{Method: "PUT", Path: "reason", Function: PluginLoopBanSetReason},
-			{Method: "GET", Path: "list", Function: PluginLoopBanGetList},
-			{Method: "PATCH", Path: "list", Function: PluginLoopBanAddAccounts},
-			{Method: "DELETE", Path: "list/:id", Function: PluginLoopBanDelAccount},
-			{Method: "POST", Path: "list/empty", Function: PluginLoopBanDelAllAccounts},
+			{Method: http.MethodGet, Path: "switch", Function: PluginLoopBanGetSwitch},
+			{Method: http.MethodPost, Path: "switch", Function: PluginLoopBanSwitch},
+			{Method: http.MethodGet, Path: "reason", Function: PluginLoopBanGetReason},
+			{Method: http.MethodPut, Path: "reason", Function: PluginLoopBanSetReason},
+			{Method: http.MethodGet, Path: "list", Function: PluginLoopBanGetList},
+			{Method: http.MethodPatch, Path: "list", Function: PluginLoopBanAddAccounts},
+			{Method: http.MethodDelete, Path: "list/:id", Function: PluginLoopBanDelAccount},
+			{Method: http.MethodPost, Path: "list/empty", Function: PluginLoopBanDelAllAccounts},
 		},
 	},
 })
@@ -111,7 +111,7 @@ func PostClientBan(cookie _type.TypeCookie, fid int32, portrait string, day int3
 			_body.Set(k, v)
 		}
 	}
-	banResponse, err := _function.TBFetch("http://c.tieba.baidu.com/c/c/bawu/commitprison", "POST", []byte(_body.Encode()+"&sign="+form["sign"]), _function.EmptyHeaders)
+	banResponse, err := _function.TBFetch("http://c.tieba.baidu.com/c/c/bawu/commitprison", http.MethodPost, []byte(_body.Encode()+"&sign="+form["sign"]), _function.EmptyHeaders)
 
 	if err != nil {
 		return nil, err
@@ -231,7 +231,7 @@ func (pluginInfo *LoopBanPluginType) RemoveAccount(_type string, id int32, tx *g
 		_sql = tx
 	}
 
-	if err := _sql.Where(_function.AppendStrings(_type, " = ?"), id).Delete(&model.TcVer4BanList{}).Error; err != nil {
+	if err := _sql.Where(_type+" = ?", id).Delete(&model.TcVer4BanList{}).Error; err != nil {
 		return err
 	}
 	if _type == "uid" {

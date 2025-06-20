@@ -89,10 +89,10 @@ func verifyAuthorization(authorization string) (string, string) {
 // 	return _function.Base64URLEncode([]byte(strconv.Itoa(int(uid)) + ":" + hex.EncodeToString(_function.GenHMAC256([]byte(password), []byte(strconv.Itoa(int(uid))+password)))))
 // }
 
-type HttpAuthRefreshTokenMapItemStruct struct {
-	Content  string
-	ExpireAt int64
-}
+// type HttpAuthRefreshTokenMapItemStruct struct {
+// 	Content  string
+// 	ExpireAt int64
+// }
 
 var HttpAuthRefreshTokenMap _function.KV[int, string]
 
@@ -116,7 +116,7 @@ func tokenBuilder(uid int) (string, int64) {
 
 	HttpAuthRefreshTokenMap.Store(int(uid), token, numberCookieExpire)
 
-	return _function.AppendStrings(strconv.Itoa(uid), ":", token), time.Now().Add(time.Duration(numberCookieExpire) * time.Second).Unix()
+	return strconv.Itoa(uid) + ":" + token, time.Now().Add(time.Duration(numberCookieExpire) * time.Second).Unix()
 }
 
 var resetPasswordVerifyCodeByteLength int64 = 6

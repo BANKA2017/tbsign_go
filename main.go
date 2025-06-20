@@ -87,10 +87,6 @@ func main() {
 		share.DBEndpoint = tmpHost
 	}
 
-	if setup {
-		log.Println("WARNING: 覆盖安装已启用，会覆盖现有数据，请做好备份")
-	}
-
 	// from env
 	if share.DBUsername == "" {
 		share.DBUsername = os.Getenv("tc_username")
@@ -166,6 +162,10 @@ func main() {
 	}
 	if _adminPassword == "" && os.Getenv("tc_admin_password") != "" {
 		_adminPassword = os.Getenv("tc_admin_password")
+	}
+
+	if setup {
+		log.Println("WARNING: 覆盖安装已启用，会覆盖现有数据，请做好备份")
 	}
 
 	if setup && autoInstall {

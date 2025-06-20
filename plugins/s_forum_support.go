@@ -609,11 +609,11 @@ var ForumSupportPluginInfo = _function.VariablePtrWrapper(ForumSupportPluginInfo
 			},
 		},
 		Endpoints: []PluginEndpintStruct{
-			{Method: "GET", Path: "switch", Function: PluginForumSupportGetSwitch},
-			{Method: "POST", Path: "switch", Function: PluginForumSupportSwitch},
-			{Method: "GET", Path: "list", Function: PluginForumSupportGetCharactersList},
-			{Method: "GET", Path: "settings", Function: PluginForumSupportGetSettings},
-			{Method: "PUT", Path: "settings", Function: PluginForumSupportUpdateSettings},
+			{Method: http.MethodGet, Path: "switch", Function: PluginForumSupportGetSwitch},
+			{Method: http.MethodPost, Path: "switch", Function: PluginForumSupportSwitch},
+			{Method: http.MethodGet, Path: "list", Function: PluginForumSupportGetCharactersList},
+			{Method: http.MethodGet, Path: "settings", Function: PluginForumSupportGetSettings},
+			{Method: http.MethodPut, Path: "settings", Function: PluginForumSupportUpdateSettings},
 		},
 	},
 })
@@ -628,7 +628,7 @@ func PostForumSupport(cookie _type.TypeCookie, fid int32, nid string) (*TypeForu
 		"Cookie": "BDUSS=" + cookie.Bduss,
 	}
 
-	supportResponse, err := _function.TBFetch("http://tieba.baidu.com/celebrity/submit/support", "POST", []byte(_body.Encode()), headersMap)
+	supportResponse, err := _function.TBFetch("http://tieba.baidu.com/celebrity/submit/support", http.MethodPost, []byte(_body.Encode()), headersMap)
 
 	if err != nil {
 		return nil, err
@@ -761,7 +761,7 @@ func (pluginInfo *ForumSupportPluginInfoType) RemoveAccount(_type string, id int
 	if tx != nil {
 		_sql = tx
 	}
-	return _sql.Where(_function.AppendStrings(_type, " = ?"), id).Delete(&model.TcVer4RankLog{}).Error
+	return _sql.Where(_type+" = ?", id).Delete(&model.TcVer4RankLog{}).Error
 }
 
 func (pluginInfo *ForumSupportPluginInfoType) Report(int32, *gorm.DB) (string, error) {

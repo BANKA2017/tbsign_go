@@ -2,3 +2,9 @@
 /tmp
 /assets/dist/
 /assets/ca/cacert.pem
+
+**/*.db
+**/*.db-shm
+**/*.db-wal
+
+bom.json

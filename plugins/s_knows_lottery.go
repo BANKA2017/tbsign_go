@@ -2,7 +2,6 @@ package _plugin
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"regexp"
@@ -37,9 +36,9 @@ var LotteryPluginPlugin = _function.VariablePtrWrapper(LotteryPluginPluginType{
 			"ver4_lottery_day": "0",
 		},
 		Endpoints: []PluginEndpintStruct{
-			{Method: "GET", Path: "switch", Function: PluginKnowsLotteryGetSwitch},
-			{Method: "POST", Path: "switch", Function: PluginKnowsLotterySwitch},
-			{Method: "GET", Path: "log", Function: PluginKnowsLotteryGetLogs},
+			{Method: http.MethodGet, Path: "switch", Function: PluginKnowsLotteryGetSwitch},
+			{Method: http.MethodPost, Path: "switch", Function: PluginKnowsLotterySwitch},
+			{Method: http.MethodGet, Path: "log", Function: PluginKnowsLotteryGetLogs},
 		},
 	},
 })
@@ -58,7 +57,7 @@ func GetLotteryToken(cookie _type.TypeCookie) (string, error) {
 	headersMap := map[string]string{
 		"Cookie": "BDUSS=" + cookie.Bduss,
 	}
-	resp, err := _function.TBFetch("https://zhidao.baidu.com/shop/lottery", "GET", []byte{}, headersMap)
+	resp, err := _function.TBFetch("https://zhidao.baidu.com/shop/lottery", http.MethodGet, []byte{}, headersMap)
 	if err != nil {
 		return "", err
 	}
@@ -75,7 +74,7 @@ func GetLottery(cookie _type.TypeCookie, token string) (*GetLotteryResponse, err
 		"x-ik-ssl": "1",
 		"Referer":  "https://zhidao.baidu.com/shop/lottery",
 	}
-	response, err := _function.TBFetch(fmt.Sprintf("https://zhidao.baidu.com/shop/submit/lottery?type=0&token=%s&_=%d", token, _function.Now.UnixMilli()), "GET", []byte{}, headersMap)
+	response, err := _function.TBFetch("https://zhidao.baidu.com/shop/submit/lottery?type=0&token="+token+"&_="+strconv.Itoa(int(_function.Now.UnixMilli())), http.MethodGet, []byte{}, headersMap)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +223,7 @@ func (pluginInfo *LotteryPluginPluginType) RemoveAccount(_type string, id int32,
 	if tx != nil {
 		_sql = tx
 	}
-	return _sql.Where(_function.AppendStrings(_type, " = ?"), id).Delete(&model.TcVer4LotteryLog{}).Error
+	return _sql.Where(_type+" = ?", id).Delete(&model.TcVer4LotteryLog{}).Error
 }
 
 func (pluginInfo *LotteryPluginPluginType) Report(int32, *gorm.DB) (string, error) {

@@ -55,7 +55,7 @@ var ExamplePlugin = _function.VariablePtrWrapper(ExamplePluginType{
 		},
 		Test: true,
 		Endpoints: []PluginEndpintStruct{
-			{Method: "GET", Path: "example", Function: pluginApiSample},
+			{Method: http.MethodGet, Path: "example", Function: pluginApiSample},
 		},
 	},
 })

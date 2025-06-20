@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -105,7 +106,7 @@ func Upgrade(version string) error {
 	tmpFile := filepath.Join(execDir, "__tmp__tbsign.tmp")
 
 	// get binary
-	binary, err := Fetch(binPath, "GET", nil, map[string]string{
+	binary, err := Fetch(binPath, http.MethodGet, nil, map[string]string{
 		"User-Agent": "tbsign_go/upgrader",
 	}, DefaultCient)
 	if err != nil {
@@ -138,7 +139,7 @@ func Upgrade(version string) error {
 	hashString := hex.EncodeToString(hashBytes)
 	s, _ := file.Stat()
 
-	sha256Str, err := Fetch(sha256Path, "GET", nil, map[string]string{
+	sha256Str, err := Fetch(sha256Path, http.MethodGet, nil, map[string]string{
 		"User-Agent": "tbsign_go/upgrader",
 	}, DefaultCient)
 	if err != nil {
