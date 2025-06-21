@@ -62,6 +62,22 @@ func (list *KV[K, T]) Delete(key K) {
 	list.KV.Delete(key)
 }
 
+func (list *KV[K, T]) DeleteAll() {
+	list.KV.Range(func(key, value any) bool {
+		list.KV.Delete(key)
+		return true
+	})
+}
+
+func (list *KV[K, T]) Length() int {
+	length := 0
+	list.KV.Range(func(key, value any) bool {
+		length++
+		return true
+	})
+	return length
+}
+
 func (list *KV[K, T]) Range(f func(key K, value T) bool) {
 	list.KV.Range(func(k, v any) bool {
 		typedKey, ok1 := k.(K)

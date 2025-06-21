@@ -57,10 +57,7 @@ func GetServerStatus(c echo.Context) error {
 	ForumCount := checkinStatus.Success + checkinStatus.Failed + checkinStatus.Waiting + checkinStatus.IsIgnore
 
 	onlineCount := 0
-	HttpAuthRefreshTokenMap.Range(func(key, value any) bool {
-		onlineCount++
-		return true
-	})
+	HttpAuthRefreshTokenMap.Length()
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
 		"goroutine":  runtime.NumGoroutine(),

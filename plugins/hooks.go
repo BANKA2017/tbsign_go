@@ -209,8 +209,8 @@ func DeletePluginInfo(name string) error {
 
 func AddToSettingsFilter() {
 	tmpSettingsFilter := _function.SettingsKeys
-	PluginOptionValidatorMap.Range(func(key, value any) bool {
-		tmpSettingsFilter = append(tmpSettingsFilter, key.(string))
+	PluginOptionValidatorMap.Range(func(key string, value func(value string) bool) bool {
+		tmpSettingsFilter = append(tmpSettingsFilter, key)
 		return true
 	})
 
