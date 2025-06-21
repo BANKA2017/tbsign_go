@@ -62,13 +62,20 @@ func (list *KV[K, T]) Delete(key K) {
 	list.KV.Delete(key)
 }
 
-func (list *KV[K, T]) Range(f func(key any, value any) bool) {
-	list.KV.Range(f)
+func (list *KV[K, T]) Range(f func(key K, value T) bool) {
+	list.KV.Range(func(k, v any) bool {
+		typedKey, ok1 := k.(K)
+		typedVal, ok2 := v.(*KVStruct[T])
+		if !ok1 || !ok2 {
+			return true
+		}
+		return f(typedKey, typedVal.Value)
+	})
 }
 
 func (list *KV[K, T]) RemoveExpired() {
 	now := time.Now().Unix()
-	list.Range(func(key, value any) bool {
+	list.KV.Range(func(key, value any) bool {
 		expireAt := value.(*KVStruct[T]).ExpireAt
 		if expireAt > -1 && expireAt < now {
 			list.Delete(key.(K))
