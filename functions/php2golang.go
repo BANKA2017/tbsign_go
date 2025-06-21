@@ -11,6 +11,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"regexp"
+	"strings"
 )
 
 func HtmlSpecialchars(html string) string {
@@ -27,18 +28,14 @@ func HtmlSpecialchars(html string) string {
 }
 
 func Addslashes(str string) string {
-	var tmpRune []rune
-	strRune := []rune(str)
-	for _, ch := range strRune {
-		switch ch {
-		case []rune{'\\'}[0], []rune{'"'}[0], []rune{'\''}[0]:
-			tmpRune = append(tmpRune, []rune{'\\'}[0])
-			tmpRune = append(tmpRune, ch)
-		default:
-			tmpRune = append(tmpRune, ch)
+	var b strings.Builder
+	for _, ch := range str {
+		if ch == '\\' || ch == '"' || ch == '\'' {
+			b.WriteRune('\\')
 		}
+		b.WriteRune(ch)
 	}
-	return string(tmpRune)
+	return b.String()
 }
 
 func Md5(str string) string {
