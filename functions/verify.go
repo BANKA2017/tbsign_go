@@ -10,6 +10,7 @@ type VerifyCodeStruct struct {
 	ResetTime  int64  `json:"time"`
 	TryTime    int64  `json:"try_time"`
 	Type       string `json:"type"`
+	Expire     int64  `json:"expire"`
 }
 
 type VerifyCodeListType struct {
@@ -23,7 +24,16 @@ func (list *VerifyCodeListType) StoreCode(_type string, uid int32, data *VerifyC
 }
 
 func (list *VerifyCodeListType) LoadCode(_type string, uid int32) (*VerifyCodeStruct, bool) {
-	return list.List.Load(_type + ":" + strconv.Itoa(int(uid)))
+	key := _type + ":" + strconv.Itoa(int(uid))
+	v, s := list.List.Load(key)
+	if s {
+		ttl, s := list.List.TTL(key)
+		if ttl > 0 && v.Expire != int64(ttl) {
+			v.Expire = int64(ttl)
+		}
+		return v, s
+	}
+	return nil, false
 }
 
 func (list *VerifyCodeListType) DeleteCode(_type string, uid int32) {

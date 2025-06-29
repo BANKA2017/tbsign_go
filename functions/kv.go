@@ -40,6 +40,19 @@ func (list *KV[K, T]) Load(key K) (T, bool) {
 	return vStructed.Value, true
 }
 
+// Unix timestamp
+func (list *KV[K, T]) TTL(key K) (int, bool) {
+	v, ok := list.KV.Load(key)
+
+	if !ok {
+		return 0, false
+	}
+
+	vStructed := v.(*KVStruct[T])
+
+	return int(vStructed.ExpireAt), true
+}
+
 func (list *KV[K, T]) LoadAndDelete(key K) (T, bool) {
 	v, ok := list.KV.LoadAndDelete(key)
 

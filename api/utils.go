@@ -128,7 +128,9 @@ func ResetMessageBuilder(uid int32, forceMode bool) *_function.VerifyCodeStruct 
 	var v *_function.VerifyCodeStruct
 
 	if !ok || _v == nil {
-		v = &_function.VerifyCodeStruct{}
+		v = &_function.VerifyCodeStruct{
+			Expire: _function.Now.Add(time.Second * time.Duration(_function.ResetPwdExpire)).Unix(),
+		}
 	} else {
 		v = _v
 	}
