@@ -204,9 +204,10 @@ func SendEmail(_to, title, body string) error {
 	}
 
 	var client sasl.Client
-	if smtp_auth == "1" {
+	switch smtp_auth {
+	case "1":
 		client = sasl.NewLoginClient(smtp_username, smtp_password)
-	} else if smtp_auth == "2" {
+	case "2":
 		// TODO well... might works?
 		// https://learn.microsoft.com/en-us/exchange/client-developer/legacy-protocols/how-to-authenticate-an-imap-pop-smtp-application-by-using-oauth
 		numSMTPPort, _ := strconv.ParseInt(smtp_port, 10, 64)
@@ -216,7 +217,7 @@ func SendEmail(_to, title, body string) error {
 			Host:     smtp_host,
 			Port:     int(numSMTPPort),
 		})
-	} else {
+	default:
 		client = sasl.NewAnonymousClient(uuid.New().String())
 	}
 	to := []string{_to}

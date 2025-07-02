@@ -186,9 +186,10 @@ func Login(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(401, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	if accountInfo[0].Role == "banned" {
+	switch accountInfo[0].Role {
+	case "banned":
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号已封禁", _function.EchoEmptyObject, "tbsign"))
-	} else if accountInfo[0].Role == "deleted" {
+	case "deleted":
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号已删除", _function.EchoEmptyObject, "tbsign"))
 	}
 
