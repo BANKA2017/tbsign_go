@@ -278,6 +278,8 @@ func RemoveTiebaAccount(c echo.Context) error {
 func GetTiebaAccountList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
+	arrayMode := IsArrayMode(c)
+
 	var tiebaAccounts []*model.TcBaiduid
 	var tiebaAccountsBatchQueryList []*model.TcBaiduid
 	// _function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
@@ -292,7 +294,23 @@ func GetTiebaAccountList(c echo.Context) error {
 		tiebaAccounts[k].Stoken = ""
 	}
 
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaAccounts, "tbsign"))
+	if arrayMode {
+		listArray := make([][4]any, len(tiebaAccounts))
+		for i, accountInfo := range tiebaAccounts {
+			listArray[i] = [4]any{
+				accountInfo.ID,
+				accountInfo.UID,
+				// accountInfo.Bduss,
+				// accountInfo.Stoken,
+				accountInfo.Name,
+				accountInfo.Portrait,
+			}
+		}
+
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", listArray, "tbsign"))
+	} else {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaAccounts, "tbsign"))
+	}
 }
 
 func GetTiebaAccountItem(c echo.Context) error {

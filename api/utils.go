@@ -195,3 +195,8 @@ func SendResetMessage(uid int32, pushType string, forceMode bool) (string, error
 		return v.VerifyCode, nil
 	}
 }
+
+func IsArrayMode(c echo.Context) bool {
+	arrayModeValue := c.QueryParam("array_mode")
+	return arrayModeValue != "" && arrayModeValue != "0" && arrayModeValue != "false"
+}

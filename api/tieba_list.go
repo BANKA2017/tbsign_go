@@ -141,6 +141,8 @@ func CleanTiebaList(c echo.Context) error {
 func RefreshTiebaList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
+	arrayMode := IsArrayMode(c)
+
 	var tiebaAccounts []*model.TcBaiduid
 	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
 
@@ -151,15 +153,18 @@ func RefreshTiebaList(c echo.Context) error {
 
 	var tiebaList []*model.TcTieba
 	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaList)
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaList, "tbsign"))
+
+	if arrayMode {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", ForumListObj2Arr(tiebaList), "tbsign"))
+	} else {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaList, "tbsign"))
+	}
 }
 
 func GetTiebaList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	arrayModeValue := c.QueryParam("array_mode")
-
-	arrayMode := arrayModeValue != "" && arrayModeValue != "0" && arrayModeValue != "false"
+	arrayMode := IsArrayMode(c)
 
 	var tiebaList []*model.TcTieba
 	var tiebaListBatchQueryList []*model.TcTieba
@@ -171,22 +176,26 @@ func GetTiebaList(c echo.Context) error {
 	})
 
 	if arrayMode {
-		listArray := make([][]any, len(tiebaList))
-		for i, forumInfo := range tiebaList {
-			listArray[i] = []any{
-				forumInfo.ID,
-				forumInfo.UID,
-				forumInfo.Pid,
-				forumInfo.Fid,
-				forumInfo.Tieba,
-				forumInfo.No,
-				forumInfo.Status,
-				forumInfo.Latest,
-				forumInfo.LastError,
-			}
-		}
-		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", listArray, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", ForumListObj2Arr(tiebaList), "tbsign"))
 	} else {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaList, "tbsign"))
 	}
+}
+
+func ForumListObj2Arr(tiebaList []*model.TcTieba) [][9]any {
+	listArray := make([][9]any, len(tiebaList))
+	for i, forumInfo := range tiebaList {
+		listArray[i] = [9]any{
+			forumInfo.ID,
+			forumInfo.UID,
+			forumInfo.Pid,
+			forumInfo.Fid,
+			forumInfo.Tieba,
+			forumInfo.No,
+			forumInfo.Status,
+			forumInfo.Latest,
+			forumInfo.LastError,
+		}
+	}
+	return listArray
 }
