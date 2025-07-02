@@ -235,10 +235,10 @@ func (pluginInfo *LotteryPluginPluginType) Report(int32, *gorm.DB) (string, erro
 func PluginKnowsLotteryGetLogs(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	var log []*model.TcVer4LotteryLog
-	_function.GormDB.R.Model(&model.TcVer4LotteryLog{}).Where("uid = ?", uid).Order("id DESC").Find(&log)
+	var _log []*model.TcVer4LotteryLog
+	_function.GormDB.R.Model(&model.TcVer4LotteryLog{}).Where("uid = ?", uid).Order("id DESC").Find(&_log)
 
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", log, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", _log, "tbsign"))
 }
 
 func PluginKnowsLotteryGetSwitch(c echo.Context) error {

@@ -157,6 +157,10 @@ func RefreshTiebaList(c echo.Context) error {
 func GetTiebaList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
+	arrayModeValue := c.QueryParam("array_mode")
+
+	arrayMode := arrayModeValue != "" && arrayModeValue != "0" && arrayModeValue != "false"
+
 	var tiebaList []*model.TcTieba
 	var tiebaListBatchQueryList []*model.TcTieba
 	// _function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaList)
@@ -166,5 +170,23 @@ func GetTiebaList(c echo.Context) error {
 		return nil
 	})
 
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaList, "tbsign"))
+	if arrayMode {
+		listArray := make([][]any, len(tiebaList))
+		for i, forumInfo := range tiebaList {
+			listArray[i] = []any{
+				forumInfo.ID,
+				forumInfo.UID,
+				forumInfo.Pid,
+				forumInfo.Fid,
+				forumInfo.Tieba,
+				forumInfo.No,
+				forumInfo.Status,
+				forumInfo.Latest,
+				forumInfo.LastError,
+			}
+		}
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", listArray, "tbsign"))
+	} else {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaList, "tbsign"))
+	}
 }

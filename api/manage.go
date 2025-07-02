@@ -471,9 +471,9 @@ func AdminResetPassword(c echo.Context) error {
 }
 
 func GetAccountsList(c echo.Context) error {
-	page := c.QueryParams().Get("page")
-	count := c.QueryParams().Get("count")
-	query := strings.TrimSpace(c.QueryParams().Get("q"))
+	page := c.QueryParam("page")
+	count := c.QueryParam("count")
+	query := strings.TrimSpace(c.QueryParam("q"))
 
 	if page == "" {
 		page = "1"
@@ -632,7 +632,7 @@ func PluginUninstall(c echo.Context) error {
 func SendTestMessage(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	messageType := c.QueryParams().Get("type")
+	messageType := c.QueryParam("type")
 	if !slices.Contains(_function.MessageTypeList, messageType) {
 		messageType = "email"
 	}

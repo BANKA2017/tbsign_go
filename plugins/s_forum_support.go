@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
@@ -685,8 +686,19 @@ func (pluginInfo *ForumSupportPluginInfoType) Action() {
 			}
 
 			log.Println("support:", forumSupportItem.Tieba, forumSupportItem.Name, message)
+
+			// previous logs
+			previousLogs := []string{}
+			for i, s := range strings.Split(forumSupportItem.Log, "<br/>") {
+				if i <= 30 {
+					previousLogs = append(previousLogs, s)
+				} else {
+					break
+				}
+			}
+
 			_function.GormDB.W.Model(&model.TcVer4RankLog{}).Where("id = ?", forumSupportItem.ID).Updates(model.TcVer4RankLog{
-				Log:  fmt.Sprintf("<br/>%s #%d,%s%s", _function.Now.Format(time.DateOnly), response.No, message, forumSupportItem.Log),
+				Log:  fmt.Sprintf("<br/>%s #%d,%s%s", _function.Now.Format(time.DateOnly), response.No, message, strings.Join(previousLogs, "<br/>")),
 				Date: int32(_function.Now.Unix()),
 			})
 

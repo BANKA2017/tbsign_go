@@ -426,7 +426,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 			// previous logs
 			previousLogs := []string{}
 			for i, s := range strings.Split(taskUserItem.Log, "<br/>") {
-				if i <= 28 {
+				if i <= 30 {
 					previousLogs = append(previousLogs, s)
 				} else {
 					break

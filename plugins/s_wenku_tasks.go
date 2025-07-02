@@ -33,8 +33,9 @@ var WenkuTasksPlugin = _function.VariablePtrWrapper(WenkuTasksPluginType{
 		PluginNameFE:      "wenku_tasks",
 		Version:           "0.1",
 		Options: map[string]string{
-			"kd_wenku_tasks_offset":       "0",
-			"kd_wenku_tasks_vip_matrix":   "0",
+			"kd_wenku_tasks_offset":     "0",
+			"kd_wenku_tasks_vip_matrix": "0",
+			// "kd_wenku_tasks_vip_matrix_id_set": "|",
 			"kd_wenku_tasks_action_limit": "50",
 		},
 		SettingOptions: map[string]PluinSettingOption{
@@ -260,6 +261,7 @@ func (m *WenkuTasksPluginVipMatrixIDSet) Export(uid string) string {
 
 	for _, arrayValue := range m.MatrixIDMap {
 		if uid == "*" || len(arrayValue) == 4 && arrayValue[3] == uid || len(arrayValue) == 3 {
+			// log.Println(arrayValue)
 			tmpStr = append(tmpStr, strings.Join(arrayValue[0:3], ","))
 		}
 	}
@@ -272,37 +274,41 @@ func (m *WenkuTasksPluginVipMatrixIDSet) Export(uid string) string {
 }
 
 // !!! use this func for ONLY ONE UID !!!
-func (m *WenkuTasksPluginVipMatrixIDSet) AddID(id int32, uid string) error {
+func (m *WenkuTasksPluginVipMatrixIDSet) AddID(id int32, uid string, day int64, autoBreak bool) error {
 	strID := strconv.Itoa(int(id))
 	if _, ok := m.MatrixIDMap[strID]; ok {
 		return nil
 	}
+	// time.Weekday -> Sunday is 0
 	weekDayList := []string{"0", "1", "2", "3", "4", "5", "6"}
-	var currentDay int64 = -1
-	strCurrentDay := "-1"
-
-	for i, d := range weekDayList {
-		if _, ok := m.WeekDayList[d]; !ok {
-			currentDay = int64(i)
-			m.WeekDayList[d] = struct{}{}
-			m.LastDay = d
-			strCurrentDay = d
-			break
-		}
-	}
+	var currentDay int64 = day
+	strCurrentDay := strconv.Itoa(int(currentDay))
 
 	if currentDay == -1 {
-		tmpLastDay, _ := strconv.ParseInt(m.LastDay, 10, 64)
-		if tmpLastDay != 6 {
-			currentDay = tmpLastDay + 1
-		} else {
-			currentDay = 0
+		autoBreak = true
+		for i, d := range weekDayList {
+			if _, ok := m.WeekDayList[d]; !ok {
+				currentDay = int64(i)
+				m.WeekDayList[d] = struct{}{}
+				m.LastDay = d
+				strCurrentDay = d
+				break
+			}
 		}
-		strCurrentDay = strconv.Itoa(int(currentDay))
-		m.LastDay = strCurrentDay
+
+		if currentDay == -1 {
+			tmpLastDay, _ := strconv.ParseInt(m.LastDay, 10, 64)
+			if tmpLastDay != 6 {
+				currentDay = tmpLastDay + 1
+			} else {
+				currentDay = 0
+			}
+			strCurrentDay = strconv.Itoa(int(currentDay))
+			m.LastDay = strCurrentDay
+		}
 	}
 
-	m.MatrixIDMap[strID] = [4]string{strID, strCurrentDay, "0", uid}
+	m.MatrixIDMap[strID] = [4]string{strID, strCurrentDay, _function.When(autoBreak, "0", "1"), uid}
 
 	return nil
 }
@@ -387,7 +393,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 				wenkuTasksPluginVipMatrixIDSetMap.Import(_function.GetUserOption("kd_wenku_tasks_vip_matrix_id_set", strUID), strUID)
 				_vipMatrixIDSet, ok := wenkuTasksPluginVipMatrixIDSetMap.MatrixIDMap[strconv.Itoa(int(taskUserItem.ID))]
 				if !ok {
-					wenkuTasksPluginVipMatrixIDSetMap.AddID(int32(taskUserItem.ID), strUID)
+					wenkuTasksPluginVipMatrixIDSetMap.AddID(int32(taskUserItem.ID), strUID, -1, true)
 					_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", wenkuTasksPluginVipMatrixIDSetMap.Export(strUID), strUID)
 					_vipMatrixIDSet = wenkuTasksPluginVipMatrixIDSetMap.MatrixIDMap[strconv.Itoa(int(taskUserItem.ID))]
 				}
@@ -578,7 +584,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 			// previous logs
 			previousLogs := []string{}
 			for i, s := range strings.Split(taskUserItem.Log, "<br/>") {
-				if i <= 28 {
+				if i <= 30 {
 					previousLogs = append(previousLogs, s)
 				} else {
 					break
@@ -648,7 +654,8 @@ func (pluginInfo *WenkuTasksPluginType) RemoveAccount(_type string, id int32, tx
 
 	var err error
 
-	if _type == "pid" {
+	switch _type {
+	case "pid":
 		// get uid
 		account := new(model.TcBaiduid)
 		_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id = ?", id).Take(account)
@@ -672,7 +679,7 @@ func (pluginInfo *WenkuTasksPluginType) RemoveAccount(_type string, id int32, tx
 				return err
 			}
 		}
-	} else if _type == "uid" {
+	case "uid":
 		uid := strconv.Itoa(int(id))
 		if !slices.Contains([]string{"", "0"}, _function.GetUserOption("kd_wenku_tasks_vip_matrix", uid)) {
 			err = _function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", "|", uid, tx)
@@ -707,9 +714,16 @@ func PluginWenkuTasksGetSettings(c echo.Context) error {
 		_function.SetUserOption("kd_wenku_tasks_vip_matrix", vipMatrix, uid)
 	}
 
+	// vipMatrixSet := _function.GetUserOption("kd_wenku_tasks_vip_matrix_id_set", uid)
+	// if vipMatrixSet == "" {
+	// 	vipMatrixSet = "|"
+	// 	_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", vipMatrixSet, uid)
+	// }
+
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
 		"checkin_only": checkinOnly,
 		"vip_matrix":   vipMatrix,
+		// "vip_matrix_set": vipMatrixSet,
 	}, "tbsign"))
 }
 
@@ -733,7 +747,7 @@ func PluginWenkuTasksSetSettings(c echo.Context) error {
 		vipMatrixSet.Init()
 
 		for _, task := range uidTasksList {
-			vipMatrixSet.AddID(int32(task.ID), uid)
+			vipMatrixSet.AddID(int32(task.ID), uid, -1, true)
 		}
 
 		_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", vipMatrixSet.Export(uid), uid)
@@ -765,6 +779,10 @@ func PluginWenkuTasksAddAccount(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
+	day := c.FormValue("day")
+	autoBreakValue := c.FormValue("auto_break")
+	autoBreak := autoBreakValue != "" && autoBreakValue != "0" && autoBreakValue != "false"
+
 	// pre check
 	var count int64
 	_function.GormDB.R.Model(&model.TcKdWenkuTask{}).Where("uid = ? AND pid = ?", uid, numPid).Count(&count)
@@ -781,13 +799,16 @@ func PluginWenkuTasksAddAccount(c echo.Context) error {
 
 		// vip matrix
 		if !slices.Contains([]string{"", "0"}, _function.GetUserOption("kd_wenku_tasks_vip_matrix", uid)) {
+			numDay, err := strconv.ParseInt(day, 10, 64)
+			if err != nil || numDay < -1 || numDay > 6 {
+				return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效兑换日", _function.EchoEmptyObject, "tbsign"))
+			}
 
 			var vipMatrixSet WenkuTasksPluginVipMatrixIDSet
 			vipMatrixSet.Init()
 			vipMatrixSet.Import(_function.GetUserOption("kd_wenku_tasks_vip_matrix_id_set", uid), uid)
-			vipMatrixSet.AddID(int32(dataToInsert.ID), uid)
+			vipMatrixSet.AddID(int32(dataToInsert.ID), uid, numDay, autoBreak)
 			_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", vipMatrixSet.Export(uid), uid)
-
 		}
 
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", dataToInsert, "tbsign"))

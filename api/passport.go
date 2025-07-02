@@ -490,7 +490,7 @@ func ResetPassword(c echo.Context) error {
 	verifyCode := strings.TrimSpace(c.FormValue("code"))
 	newPwd := strings.TrimSpace(c.FormValue("password"))
 
-	// pushType := strings.TrimSpace(c.QueryParams().Get("push_type"))
+	// pushType := strings.TrimSpace(c.QueryParam("push_type"))
 
 	resMessage := map[string]string{
 		"verify_emoji": "",
