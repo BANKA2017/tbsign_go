@@ -45,6 +45,9 @@ func ScanTiebaByPid(pid int32) {
 			/// - 被封的现在有 is_forbidden
 			/// - 被合并的暂时没有办法直接判断
 
+			/// latest 的数字等于日期，正常从 1 开始
+			/// 0 从未签到过/已重置，-1 已忽略，-2 一键签到中
+
 			latest := 0
 			if tiebaInfo.IsSign == 1 {
 				latest = Now.Day()

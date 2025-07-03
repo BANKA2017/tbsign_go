@@ -262,3 +262,83 @@ type ForumGuideResponse struct {
 		// TopSortValue    int    `json:"top_sort_value"`
 	} `json:"like_forum"`
 }
+
+type BatchCheckinForumListResponse struct {
+	ErrorCode string `json:"error_code"` // "0" means no problem
+	ErrorMsg  string `json:"error_msg"`
+
+	// Error struct {
+	// 	Errno   string `json:"errno"`
+	// 	Errmsg  string `json:"errmsg"`
+	// 	Usermsg string `json:"usermsg"`
+	// } `json:"error"`
+	ForumInfo []*struct {
+		ForumID   string `json:"forum_id"`
+		ForumName string `json:"forum_name"`
+		// UserLevel     string `json:"user_level"`
+		// UserExp       string `json:"user_exp"`
+		// NeedExp       string `json:"need_exp"`
+		IsSignIn string `json:"is_sign_in"`
+		// ContSignNum   string `json:"cont_sign_num"`
+		// Avatar        string `json:"avatar"`
+		// UserLevelName string `json:"user_level_name"`
+	} `json:"forum_info"`
+	// User struct {
+	// 	PayMemberInfo struct {
+	// 		PropsID string `json:"props_id"`
+	// 		EndTime string `json:"end_time"`
+	// 		PicURL  string `json:"pic_url"`
+	// 	} `json:"pay_member_info"`
+	// 	VipInfo struct {
+	// 		CrownText      string `json:"crown_text"`
+	// 		SignButtonText string `json:"sign_button_text"`
+	// 		VipIconURL     string `json:"vip_icon_url"`
+	// 	} `json:"vipInfo"`
+	// 	TiebaUID   string `json:"tieba_uid"`
+	// 	UnsignInfo []struct {
+	// 		Level string `json:"level"`
+	// 		Num   string `json:"num"`
+	// 	} `json:"unsign_info"`
+	// } `json:"user"`
+	CanUse string `json:"can_use"`
+	// ButtonContent string `json:"button_content"`
+	// Content       string `json:"content"`
+	// ShowDialog    string `json:"show_dialog"`
+	// SignNotice    string `json:"sign_notice"`
+	// Title         string `json:"title"`
+	// TextPre       string `json:"text_pre"`
+	// TextColor     string `json:"text_color"`
+	// TextMid       string `json:"text_mid"`
+	// TextSuf       string `json:"text_suf"`
+	// NumNotice     string `json:"num_notice"`
+	Level         string `json:"level"`
+	SignMaxNum    string `json:"sign_max_num"`
+	Valid         string `json:"valid"`
+	MsignStepNum  string `json:"msign_step_num"`
+	SignNew       string `json:"sign_new"`
+	SignMaxNumNew string `json:"sign_max_num_new"`
+	// TodayExp      string `json:"today_exp"`
+	// Banner        struct {
+	// 	CoverPic string `json:"cover_pic"`
+	// 	JumpURL  string `json:"jump_url"`
+	// } `json:"banner"`
+	// AntiInfo    []any `json:"anti_info"`
+	// MemberGuide struct {
+	// 	Status       string `json:"status"`
+	// 	MemberStatus string `json:"member_status"`
+	// } `json:"member_guide"`
+	// ServerTime string `json:"server_time"`
+	// Time       int    `json:"time"`
+	// Ctime      int    `json:"ctime"`
+	// Logid      int64  `json:"logid"`
+
+	// Info      struct {
+	// 	CheckUserLogin int `json:"checkUserLogin"`
+	// 	Needlogin      int `json:"needlogin"`
+	// } `json:"info"`
+}
+
+type BatchCheckinActionResponse struct {
+	ErrorCode string `json:"error_code"`
+	ErrorMsg  string `json:"error_msg"`
+}

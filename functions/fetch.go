@@ -91,7 +91,7 @@ func InitClient(timeout time.Duration) *http.Client {
 	}
 }
 
-var EmptyHeaders = map[string]string{}
+var EmptyHeaders = make(map[string]string)
 
 const BrowserUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
 
@@ -242,12 +242,8 @@ func PostCheckinClient(cookie _type.TypeCookie, kw string, fid int32) (*_type.Cl
 			_body.Set(k, v)
 		}
 	}
-	headersMap := map[string]string{
-		"Cookie": "BDUSS=" + cookie.Bduss,
-	}
 
-	//log.Println(_body.Encode() + "&sign=" + form["sign"])
-	signResponse, err := TBFetch("https://tiebac.baidu.com/c/c/forum/sign", http.MethodPost, []byte(_body.Encode()+"&sign="+form["sign"]), headersMap)
+	signResponse, err := TBFetch("https://tiebac.baidu.com/c/c/forum/sign", http.MethodPost, []byte(_body.Encode()+"&sign="+form["sign"]), EmptyHeaders)
 
 	if err != nil {
 		return nil, err
@@ -290,10 +286,7 @@ func GetForumList(cookie _type.TypeCookie, uid string, page int64) (*_type.Forum
 		}
 	}
 
-	headersMap := map[string]string{
-		"Cookie": "BDUSS=" + cookie.Bduss + ";STOKEN=" + cookie.Stoken,
-	}
-	forumListResponse, err := TBFetch("https://tiebac.baidu.com/c/f/forum/like", http.MethodPost, []byte(_body.Encode()+"&sign="+form["sign"]), headersMap)
+	forumListResponse, err := TBFetch("https://tiebac.baidu.com/c/f/forum/like", http.MethodPost, []byte(_body.Encode()+"&sign="+form["sign"]), EmptyHeaders)
 
 	if err != nil {
 		return nil, err
@@ -343,7 +336,6 @@ func GetForumList2(cookie _type.TypeCookie, page int64) (*_type.ForumGuideRespon
 	}
 
 	headersMap := map[string]string{
-		//"Cookie":      "BDUSS=" + cookie.Bduss + ";STOKEN=" + cookie.Stoken,
 		"Subapp-Type": "hybrid",
 	}
 
@@ -358,7 +350,7 @@ func GetForumList2(cookie _type.TypeCookie, page int64) (*_type.ForumGuideRespon
 	return &forumListDecode, err
 }
 
-func GetOneKeySignList(cookie _type.TypeCookie) (any, error) {
+func PostClientBatchCheckinForumList(cookie _type.TypeCookie) (*_type.BatchCheckinForumListResponse, error) {
 	var form = make(map[string]string)
 	form["BDUSS"] = cookie.Bduss
 	form["stoken"] = cookie.Stoken
@@ -372,19 +364,46 @@ func GetOneKeySignList(cookie _type.TypeCookie) (any, error) {
 		}
 	}
 
-	headersMap := map[string]string{
-		"Cookie": "BDUSS=" + cookie.Bduss + ";STOKEN=" + cookie.Stoken,
-	}
-	forumListResponse, err := TBFetch("https://tieba.baidu.com/c/f/forum/getforumlist", http.MethodPost, []byte(_body.Encode()+"&sign="+form["sign"]), headersMap)
+	forumListResponse, err := TBFetch("https://tieba.baidu.com/c/f/forum/getforumlist", http.MethodPost, []byte(_body.Encode()+"&sign="+form["sign"]), EmptyHeaders)
 
 	if err != nil {
 		return nil, err
 	}
 
-	//var forumListDecode _type.ForumListResponse
-	//err = JsonDecode(forumListResponse, &forumListDecode)
-	return string(forumListResponse), err
+	var forumListDecode = new(_type.BatchCheckinForumListResponse)
+	err = JsonDecode(forumListResponse, forumListDecode)
+	return forumListDecode, err
+}
 
+func PostClientBatchCheckin(cookie _type.TypeCookie, fid []string) (*_type.BatchCheckinActionResponse, error) {
+	var form = make(map[string]string)
+	form["BDUSS"] = cookie.Bduss
+	form["stoken"] = cookie.Stoken
+	form["tbs"] = cookie.Tbs
+
+	if len(fid) > 50 {
+		fid = fid[:50]
+	}
+
+	form["forum_ids"] = strings.Join(fid, ",")
+
+	AddSign(&form, "2")
+	_body := url.Values{}
+	for k, v := range form {
+		if k != "sign" {
+			_body.Set(k, v)
+		}
+	}
+
+	batchCheckinResponse, err := TBFetch("https://tiebac.baidu.com/c/c/forum/msign", http.MethodPost, []byte(_body.Encode()+"&sign="+form["sign"]), EmptyHeaders)
+
+	if err != nil {
+		return nil, err
+	}
+
+	batchCheckinDecode := new(_type.BatchCheckinActionResponse)
+	err = JsonDecode(batchCheckinResponse, batchCheckinDecode)
+	return batchCheckinDecode, err
 }
 
 func GetForumNameShare(name string) (*_type.ForumNameShareResponse, error) {
@@ -413,12 +432,8 @@ func GetBaiduUserInfo(cookie _type.TypeCookie) (*_type.BaiduUserInfoResponse, er
 			_body.Set(k, v)
 		}
 	}
-	headersMap := map[string]string{
-		"Cookie": "BDUSS=" + cookie.Bduss,
-	}
 
-	//log.Println(_body.Encode() + "&sign=" + form["sign"])
-	accountInfo, err := TBFetch("http://c.tieba.baidu.com/c/s/login", http.MethodPost, []byte(_body.Encode()+"&sign="+form["sign"]), headersMap)
+	accountInfo, err := TBFetch("http://c.tieba.baidu.com/c/s/login", http.MethodPost, []byte(_body.Encode()+"&sign="+form["sign"]), EmptyHeaders)
 
 	if err != nil {
 		return nil, err
