@@ -61,6 +61,10 @@ var UserGrowthTasksPlugin = _function.VariablePtrWrapper(UserGrowthTasksPluginTy
 
 var UserGrowthTasksBreakList = []string{"open_push_switch"}
 
+const UserGrowthTasksPluginClientVersion = "12.84.3.0"
+const UserGrowthTasksPluginClientUserAgent = "tieba/" + UserGrowthTasksPluginClientVersion
+const UserGrowthTasksPluginClientWidgetUserAgent = "TiebaWidgets/" + UserGrowthTasksPluginClientVersion + " CFNetwork/3826.500.131 Darwin/24.5.0"
+
 type UserGrowthTasksWebResponse struct {
 	No    int    `json:"no"`
 	Error string `json:"error"`
@@ -151,7 +155,8 @@ func PostGrowthTaskByWeb(cookie _type.TypeCookie, task string) (*UserGrowthTasks
 	_body.Set("cuid", "-")
 
 	headersMap := map[string]string{
-		"Cookie": "BDUSS=" + cookie.Bduss,
+		"Cookie":     "BDUSS=" + cookie.Bduss,
+		"User-Agent": UserGrowthTasksPluginClientUserAgent,
 	}
 
 	response, err := _function.TBFetch("https://tieba.baidu.com/mo/q/usergrowth/commitUGTaskInfo", http.MethodPost, []byte(_body.Encode()), headersMap)
@@ -166,14 +171,16 @@ func PostGrowthTaskByWeb(cookie _type.TypeCookie, task string) (*UserGrowthTasks
 }
 
 // share_thread page_sign
+// seems tieba removed this endpoint
 func PostGrowthTaskByClient(cookie _type.TypeCookie, task string) (*UserGrowthTasksClientResponse, error) {
 	form := map[string]string{
-		"BDUSS":    cookie.Bduss,
-		"act_type": task,
-		"cuid":     "-",
-		"tbs":      cookie.Tbs,
+		"BDUSS":           cookie.Bduss,
+		"act_type":        task,
+		"cuid":            "-",
+		"tbs":             cookie.Tbs,
+		"_client_version": UserGrowthTasksPluginClientVersion,
 	}
-	_function.AddSign(&form, "4")
+	_function.AddSign(form, "2")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
@@ -192,9 +199,30 @@ func PostGrowthTaskByClient(cookie _type.TypeCookie, task string) (*UserGrowthTa
 	return resp, err
 }
 
+func PostUserTaskInfoWidget(cookie _type.TypeCookie) (any, error) {
+	_body := url.Values{
+		"BDUSS":           {cookie.Bduss},
+		"push_switch":     {"1"},
+		"cuid":            {"-"},
+		"_client_version": {UserGrowthTasksPluginClientVersion},
+		"_client_type":    {"2"},
+	}
+
+	taskInfoResponse, err := _function.TBFetch("https://tiebac.baidu.com/c/f/widget/getUserTaskInfo", http.MethodPost, []byte(_body.Encode()), map[string]string{
+		"User-Agent": UserGrowthTasksPluginClientWidgetUserAgent,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return string(taskInfoResponse), err
+}
+
 func PostCollectStamp(cookie _type.TypeCookie, task_id int) (*UserGrowthTaskCollectStampResponse, error) {
 	headersMap := map[string]string{
-		"Cookie": "BDUSS=" + cookie.Bduss,
+		"Cookie":     "BDUSS=" + cookie.Bduss,
+		"User-Agent": UserGrowthTasksPluginClientUserAgent,
 	}
 	_body := url.Values{
 		"type":     {"3"}, // why 3?
@@ -219,7 +247,7 @@ func GetUserGrowthTasksList(cookie _type.TypeCookie) (*UserGrowthTasksListRespon
 		"Cookie": "BDUSS=" + cookie.Bduss,
 	}
 
-	response, err := _function.TBFetch("https://tieba.baidu.com/mo/q/usergrowth/showUserGrowth", http.MethodGet, nil, headersMap)
+	response, err := _function.TBFetch("https://tieba.baidu.com/mo/q/usergrowth/showUserGrowth?client_type=2&client_version="+UserGrowthTasksPluginClientVersion, http.MethodGet, nil, headersMap)
 
 	if err != nil {
 		return nil, err

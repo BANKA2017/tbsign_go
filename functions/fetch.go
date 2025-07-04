@@ -97,6 +97,7 @@ const BrowserUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 
 const ClientVersion = "12.58.1.0"
 const ClientUserAgent = "tieba/" + ClientVersion
+const ClientWidgetUserAgent = "TiebaWidgets/" + ClientVersion + " CFNetwork/3826.500.131 Darwin/24.5.0"
 
 func TBFetch(_url string, _method string, _body []byte, _headers map[string]string) ([]byte, error) {
 	return Fetch(_url, _method, _body, _headers, TBClient)
@@ -180,15 +181,22 @@ func MultipartBodyBuilder(_body map[string][]byte, files ...MultipartBodyBinaryF
 	return body.Bytes(), writer.FormDataContentType(), nil
 }
 
-func AddSign(form *map[string]string, client_type string) {
+func AddSign(form map[string]string, client_type string) {
+	if form == nil {
+		form = make(map[string]string)
+	}
+
 	if client_type == "" {
 		client_type = "4"
 	}
-	(*form)["_client_version"] = ClientVersion
-	(*form)["_client_type"] = client_type
+	form["_client_type"] = client_type
+
+	if v := form["_client_version"]; v == "" {
+		form["_client_version"] = ClientVersion
+	}
 
 	var formKeys []string
-	for k := range *form {
+	for k := range form {
 		formKeys = append(formKeys, k)
 	}
 
@@ -197,10 +205,10 @@ func AddSign(form *map[string]string, client_type string) {
 	var payload strings.Builder
 
 	for _, v := range formKeys {
-		payload.WriteString(v + "=" + (*form)[v])
+		payload.WriteString(v + "=" + form[v])
 	}
 	//log.Println("payload", payload)
-	(*form)["sign"] = strings.ToUpper(Md5(payload.String() + "tiebaclient!!!"))
+	form["sign"] = strings.ToUpper(Md5(payload.String() + "tiebaclient!!!"))
 }
 
 func GetTbs(bduss string) (*_type.TbsResponse, error) {
@@ -236,7 +244,7 @@ func PostCheckinClient(cookie _type.TypeCookie, kw string, fid int32) (*_type.Cl
 	form["kw"] = kw
 	form["tbs"] = cookie.Tbs
 	form["from_widget"] = "1"
-	AddSign(&form, "2")
+	AddSign(form, "2")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
@@ -260,7 +268,7 @@ func PostForumInfoWidget(cookie _type.TypeCookie, fid int32) (any, error) {
 	form["BDUSS"] = cookie.Bduss
 	form["forum_id"] = strconv.Itoa(int(fid))
 
-	AddSign(&form, "2")
+	AddSign(form, "2")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
@@ -268,7 +276,9 @@ func PostForumInfoWidget(cookie _type.TypeCookie, fid int32) (any, error) {
 		}
 	}
 
-	forumListResponse, err := TBFetch("https://tiebac.baidu.com/c/f/widget/getForumInfo", http.MethodPost, []byte(_body.Encode()), EmptyHeaders)
+	forumListResponse, err := TBFetch("https://tiebac.baidu.com/c/f/widget/getForumInfo", http.MethodPost, []byte(_body.Encode()), map[string]string{
+		"User-Agent": ClientWidgetUserAgent,
+	})
 
 	if err != nil {
 		return nil, err
@@ -301,7 +311,7 @@ func GetForumList(cookie _type.TypeCookie, uid string, page int64) (*_type.Forum
 	form["page_size"] = "200"
 	form["tbs"] = cookie.Tbs
 
-	AddSign(&form, "2")
+	AddSign(form, "2")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
@@ -350,7 +360,7 @@ func GetForumList2(cookie _type.TypeCookie, page int64) (*_type.ForumGuideRespon
 	form["tbs"] = cookie.Tbs
 	//form["top_forum_num"] = "0"
 
-	AddSign(&form, "4")
+	AddSign(form, "4")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
@@ -379,7 +389,7 @@ func PostClientBatchCheckinForumList(cookie _type.TypeCookie) (*_type.BatchCheck
 	form["stoken"] = cookie.Stoken
 	form["tbs"] = cookie.Tbs
 
-	AddSign(&form, "2")
+	AddSign(form, "2")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
@@ -410,7 +420,7 @@ func PostClientBatchCheckin(cookie _type.TypeCookie, fid []string) (*_type.Batch
 
 	form["forum_ids"] = strings.Join(fid, ",")
 
-	AddSign(&form, "2")
+	AddSign(form, "2")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
@@ -448,7 +458,7 @@ func GetForumNameShare(name string) (*_type.ForumNameShareResponse, error) {
 func GetBaiduUserInfo(cookie _type.TypeCookie) (*_type.BaiduUserInfoResponse, error) {
 	var form = make(map[string]string)
 	form["bdusstoken"] = cookie.Bduss + "|null" //why '|null' ?
-	AddSign(&form, "4")
+	AddSign(form, "4")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
@@ -537,7 +547,7 @@ func PostSync(cookie _type.TypeCookie) (any, error) {
 		"BDUSS": cookie.Bduss,
 		"cuid":  "-", // TODO cuid
 	}
-	AddSign(&form, "4")
+	AddSign(form, "4")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
