@@ -17,6 +17,9 @@ const AgainErrorId = "160002"
 // 1#用户未登录或登录失败，请更换账号或重试
 // 340006#贴吧目录出问题啦，请到贴吧签到吧反馈
 // 2280007#签到服务忙，请重新签到
+// 340011#你签得太快了，先看看贴子再来签吧:)
+// 2280015#您的账号现已被封禁，不能进行签到
+// 2280001#您尚在黑名单中，不能操作。
 var recheckinErrorID = []int64{340011, 2280007, 110001, 1989004, 255, 1, 340006}
 
 // 重复签到错误代码
@@ -28,12 +31,13 @@ var tableList = []string{"tieba"}
 var checkinToday string
 
 func DosignWorker(tasks <-chan *model.TcTieba, _errors chan<- error, sleep int64) {
+	today := _function.Now.Day()
 	for task := range tasks {
 		// success := false
 		now := _function.Now
 		ck := _function.GetCookie(task.Pid)
 		if ck.Bduss == "" {
-			log.Println("checkin: Failed, no such account", task.Pid, task.Tieba, task.Fid, task.ID, now.Day())
+			log.Println("checkin: Failed, no such account", task.Pid, task.Tieba, task.Fid, task.ID, today)
 			_errors <- nil
 			continue
 		}
@@ -56,12 +60,12 @@ func DosignWorker(tasks <-chan *model.TcTieba, _errors chan<- error, sleep int64
 				Status:    _function.VariablePtrWrapper(int32(errorCode)),
 				LastError: _function.VariablePtrWrapper(errorMsg),
 				TcTieba: model.TcTieba{
-					Latest: int32(now.Day()),
+					Latest: int32(today),
 				},
 			})
 		}
 
-		log.Println("checkin:", task.Pid, task.Tieba, task.Fid, task.ID, now.Day(), time.Now().UnixMilli()-now.UnixMilli())
+		log.Println("checkin:", task.Pid, task.Tieba, task.Fid, task.ID, today, time.Now().UnixMilli()-now.UnixMilli())
 		_errors <- err
 		time.Sleep(time.Millisecond * time.Duration(sleep))
 	}
@@ -180,6 +184,15 @@ func (st *CronSignAgainType) Encode() string {
 	return `a:2:{s:6:"lastdo";s:10:"` + st.LastDo + `";s:3:"num";i:` + strconv.Itoa(st.Num) + `;}`
 }
 
+// 关于一键签到
+// 会员 100 个吧，非会员 50 个 7 级以上 （文案里面还出现过超会 200 个吧和最多签 400 个吧……它开心就好）
+// 每天一次机会，forum_ids 传什么都行，反正也不看，是直接按照等级倒序排下来的
+
+// show_dialog == "1" && sign_notice != "" 时，按了会跳消息，不请求签到接口，强行签到过快// show_dialog: "0"|"1"
+// 签到前 valid == "1" && today_exp == "0"，签到后 valid == "0"，today_exp 的值也会大于 "0"
+
+func DoBatchCheckinAction() {}
+
 func DoCheckinAction() {
 	checkinToday = _function.Now.Format(time.DateOnly)
 	// a:2:{s:3:"num";i:0;s:6:"lastdo";s:10:"2000-01-01";}
@@ -201,7 +214,6 @@ func DoCheckinAction() {
 	for _, table := range tableList {
 		Dosign(table, false)
 	}
-
 }
 
 var RecheckInStatus struct {

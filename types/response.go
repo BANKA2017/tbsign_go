@@ -300,11 +300,11 @@ type BatchCheckinForumListResponse struct {
 	// 		Num   string `json:"num"`
 	// 	} `json:"unsign_info"`
 	// } `json:"user"`
-	CanUse string `json:"can_use"`
+	// CanUse string `json:"can_use"`
 	// ButtonContent string `json:"button_content"`
 	// Content       string `json:"content"`
-	// ShowDialog    string `json:"show_dialog"`
-	// SignNotice    string `json:"sign_notice"`
+	ShowDialog string `json:"show_dialog"`
+	SignNotice string `json:"sign_notice"`
 	// Title         string `json:"title"`
 	// TextPre       string `json:"text_pre"`
 	// TextColor     string `json:"text_color"`
@@ -317,7 +317,7 @@ type BatchCheckinForumListResponse struct {
 	MsignStepNum  string `json:"msign_step_num"`
 	SignNew       string `json:"sign_new"`
 	SignMaxNumNew string `json:"sign_max_num_new"`
-	// TodayExp      string `json:"today_exp"`
+	TodayExp      string `json:"today_exp"`
 	// Banner        struct {
 	// 	CoverPic string `json:"cover_pic"`
 	// 	JumpURL  string `json:"jump_url"`
@@ -338,7 +338,36 @@ type BatchCheckinForumListResponse struct {
 	// } `json:"info"`
 }
 
+// Info 可以是 array，也可以是 empty string
+
+type BatchCheckinActionResponseForumListItem struct {
+	ForumID      string `json:"forum_id"`
+	ForumName    string `json:"forum_name"`
+	Signed       string `json:"signed"`
+	IsOn         string `json:"is_on"`
+	IsFilter     string `json:"is_filter"`
+	SignDayCount string `json:"sign_day_count"`
+	CurScore     string `json:"cur_score"`
+	Error        struct {
+		ErrNo   string `json:"err_no"`  // "2280001"
+		Usermsg string `json:"usermsg"` // "this user is in the blacklist of this forum"
+		Errmsg  string `json:"errmsg"`  // "您尚在黑名单中，不能操作。"
+	} `json:"error"`
+}
+
 type BatchCheckinActionResponse struct {
-	ErrorCode string `json:"error_code"`
+	Info json.RawMessage `json:"info"`
+
+	ShowDialog    string `json:"show_dialog"`
+	SignNotice    string `json:"sign_notice"`
+	IsTimeout     string `json:"is_timeout"`
+	TimeoutNotice string `json:"timeout_notice"`
+	Error         struct {
+		Errno   string `json:"errno"` // 同上，不过这个是总的
+		Errmsg  string `json:"errmsg"`
+		Usermsg string `json:"usermsg"`
+	} `json:"error"`
+
+	ErrorCode string `json:"error_code"` // shoule be "0" without system error
 	ErrorMsg  string `json:"error_msg"`
 }

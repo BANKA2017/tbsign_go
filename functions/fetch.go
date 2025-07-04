@@ -235,6 +235,7 @@ func PostCheckinClient(cookie _type.TypeCookie, kw string, fid int32) (*_type.Cl
 	form["fid"] = strconv.Itoa(int(fid))
 	form["kw"] = kw
 	form["tbs"] = cookie.Tbs
+	form["from_widget"] = "1"
 	AddSign(&form, "2")
 	_body := url.Values{}
 	for k, v := range form {
@@ -252,6 +253,28 @@ func PostCheckinClient(cookie _type.TypeCookie, kw string, fid int32) (*_type.Cl
 	var signDecode _type.ClientSignResponse
 	err = JsonDecode(signResponse, &signDecode)
 	return &signDecode, err
+}
+
+func PostForumInfoWidget(cookie _type.TypeCookie, fid int32) (any, error) {
+	var form = make(map[string]string)
+	form["BDUSS"] = cookie.Bduss
+	form["forum_id"] = strconv.Itoa(int(fid))
+
+	AddSign(&form, "2")
+	_body := url.Values{}
+	for k, v := range form {
+		if k != "sign" {
+			_body.Set(k, v)
+		}
+	}
+
+	forumListResponse, err := TBFetch("https://tiebac.baidu.com/c/f/widget/getForumInfo", http.MethodPost, []byte(_body.Encode()), EmptyHeaders)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return string(forumListResponse), err
 }
 
 func GetWebForumList(cookie _type.TypeCookie, page int64) (*_type.WebForumListResponse, error) {
