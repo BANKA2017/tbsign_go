@@ -177,7 +177,7 @@ go run main.go --db_tls=/etc/ssl/certs/ca-certificates.crt
   NUXT_BASE_PATH="/api"
   ```
 
-- 在前端仓库的目录执行 `yarn run generate` 后将 `/dist` 目录整个拷贝到 `/assets` 内（即 `/assets/dist`）
+- 在前端仓库的目录执行 `yarn run generate` 后将 `.output/public` 目录的文件拷贝到 `/assets/dist` 内
 - 照常 `go build`
 
 嵌入式前端启用后，API 路径自动添加前缀 `/api`，同时 response header 不再含有 `Access-Control-Allow-Origin`
