@@ -7,6 +7,7 @@ import (
 
 type KV[K, T any] struct {
 	KV sync.Map
+	// SF singleflight.Group
 }
 
 type KVStruct[T any] struct {

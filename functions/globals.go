@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand/v2"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"golang.org/x/mod/semver"
+	"golang.org/x/sync/singleflight"
 
 	"maps"
 	_ "time/tzdata"
@@ -35,62 +37,78 @@ func UpdateNow() {
 	Now = time.Now().In(LocalTime)
 }
 
-func GetCookie(pid int32, bduss_only ...bool) _type.TypeCookie {
+var syncCookieTasks singleflight.Group
+
+// ext [bduss_only, force_sync]
+func GetCookie(pid int32, ext ...bool) _type.TypeCookie {
 	cookie, ok := CookieList.Load(pid)
-	if !ok || cookie.Bduss == "" {
-		var _cookie _type.TypeCookie
-		var cookieDB model.TcBaiduid
-		GormDB.R.Model(&model.TcBaiduid{}).Where("id = ?", pid).Take(&cookieDB)
+	bdussOnly := len(ext) >= 1 && ext[0]
+	forceSync := len(ext) >= 2 && ext[1]
 
-		if len(share.DataEncryptKeyByte) > 0 {
-			decryptedBDUSS, _ := AES256GCMDecrypt(cookieDB.Bduss, share.DataEncryptKeyByte)
-			cookieDB.Bduss = string(decryptedBDUSS)
+	if !ok || forceSync {
+		_cookie, _, _ := syncCookieTasks.Do(strconv.Itoa(int(pid))+When(forceSync, "1", "0"), func() (any, error) {
+			var _cookie _type.TypeCookie
+			var cookieDB model.TcBaiduid
+			GormDB.R.Model(&model.TcBaiduid{}).Where("id = ?", pid).Take(&cookieDB)
 
-			decryptedStoken, _ := AES256GCMDecrypt(cookieDB.Stoken, share.DataEncryptKeyByte)
-			cookieDB.Stoken = string(decryptedStoken)
-		}
+			if len(share.DataEncryptKeyByte) > 0 {
+				decryptedBDUSS, _ := AES256GCMDecrypt(cookieDB.Bduss, share.DataEncryptKeyByte)
+				cookieDB.Bduss = string(decryptedBDUSS)
 
-		_cookie.ID = cookieDB.ID
-		_cookie.Name = cookieDB.Name
-		_cookie.Portrait = cookieDB.Portrait
-		_cookie.UID = cookieDB.UID
+				decryptedStoken, _ := AES256GCMDecrypt(cookieDB.Stoken, share.DataEncryptKeyByte)
+				cookieDB.Stoken = string(decryptedStoken)
+			}
 
-		if len(bduss_only) > 0 && bduss_only[0] {
-			_cookie.Bduss = cookieDB.Bduss
+			_cookie.ID = cookieDB.ID
+			_cookie.Name = cookieDB.Name
+			_cookie.Portrait = cookieDB.Portrait
+			_cookie.UID = cookieDB.UID
+
+			if bdussOnly {
+				_cookie.Bduss = cookieDB.Bduss
+				_cookie.Stoken = cookieDB.Stoken
+				_cookie.IsLogin = true
+				return _cookie, nil
+			}
+
+			tbsResponse, err := GetTbs(cookieDB.Bduss)
+			if err != nil {
+				return _cookie, nil
+			}
+			_cookie.IsLogin = tbsResponse.IsLogin != 0
+			_cookie.Tbs = tbsResponse.Tbs
 			_cookie.Stoken = cookieDB.Stoken
-			return _cookie
-		}
-
-		tbsResponse, err := GetTbs(cookieDB.Bduss)
-		if err != nil || tbsResponse.IsLogin == 0 {
-			return _cookie
-		}
-		_cookie.Tbs = tbsResponse.Tbs
-		_cookie.Stoken = cookieDB.Stoken
-		_cookie.Bduss = cookieDB.Bduss
-		CookieList.Store(pid, _cookie, 60*60*4)
-		return _cookie
+			_cookie.Bduss = cookieDB.Bduss
+			CookieList.Store(pid, _cookie, 60*60*4)
+			return _cookie, nil
+		})
+		return _cookie.(_type.TypeCookie)
 	}
 
 	return cookie
 }
 
+var syncFidTasks singleflight.Group
+
 func GetFid(name string) int64 {
 	fid, ok := FidList.Load(name)
 	if !ok || fid == 0 {
-		// find in db
-		var tiebaInfo model.TcTieba
-		GormDB.R.Model(&model.TcTieba{}).Where("tieba = ? AND fid IS NOT NULL AND fid != ''", name).Take(&tiebaInfo)
-		_fid := int64(tiebaInfo.Fid)
-		if _fid == 0 {
-			forumNameInfo, err := GetForumNameShare(name)
-			if err != nil {
-				log.Println("fid:", err)
+		_fid, _, _ := syncFidTasks.Do(name, func() (any, error) {
+			// find in db
+			var tiebaInfo model.TcTieba
+			GormDB.R.Model(&model.TcTieba{}).Where("tieba = ? AND fid IS NOT NULL AND fid != ''", name).Take(&tiebaInfo)
+			_fid := int64(tiebaInfo.Fid)
+			if _fid == 0 {
+				forumNameInfo, err := GetForumNameShare(name)
+				if err != nil {
+					log.Println("fid:", err)
+				}
+				_fid = int64(forumNameInfo.Data.Fid)
 			}
-			_fid = int64(forumNameInfo.Data.Fid)
-		}
-		FidList.Store(name, _fid, 60*60*4)
-		return _fid
+			FidList.Store(name, _fid, 60*60*4)
+			return _fid, nil
+		})
+		return _fid.(int64)
 	}
 	return fid
 }

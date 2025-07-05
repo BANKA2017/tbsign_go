@@ -146,7 +146,7 @@ func Fetch(_url string, _method string, _body []byte, _headers map[string]string
 			}
 		}
 
-		log.Printf("\n---TEST MODE FETCH---\nurl: %s\nmethod: %s\nbody: %v\nheaders: %v\n------\nres code: %d\nres headers: %v\nres str: %s\n---TEST MODE FETCH---\n\n", _url, _method, _body, _headers, resp.StatusCode, resp.Header, strResponse)
+		log.Printf("\n---TEST MODE FETCH-vvv\nurl: %s\nmethod: %s\nbody: %v\nheaders: %v\n------\nres code: %d\nres headers: %v\nres str: %s\n---TEST MODE FETCH-^^^\n\n", _url, _method, _body, _headers, resp.StatusCode, resp.Header, strResponse)
 	}
 
 	return response, err

@@ -11,6 +11,11 @@ import (
 func ScanTiebaByPid(pid int32) {
 	account := GetCookie(pid)
 
+	// if !account.IsLogin {
+	// 	log.Println("scanTiebaByPid:", errors.New("account "+strconv.Itoa(int(pid))+" login status failed"))
+	// 	return
+	// }
+
 	var localTiebaList []*model.TcTieba
 	GormDB.R.Model(&model.TcTieba{}).Where("pid = ?", account.ID).Find(&localTiebaList)
 

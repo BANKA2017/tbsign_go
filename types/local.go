@@ -6,9 +6,10 @@ type TypeLastDo struct {
 }
 
 type TypeCookie struct {
-	Bduss  string
-	Stoken string
-	Tbs    string
+	Bduss   string
+	Stoken  string
+	Tbs     string
+	IsLogin bool
 
 	ID       int32
 	UID      int32

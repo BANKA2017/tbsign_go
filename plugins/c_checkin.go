@@ -1,7 +1,9 @@
 package _plugin
 
 import (
+	"errors"
 	"log"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -17,10 +19,16 @@ const AgainErrorId = "160002"
 // 1#用户未登录或登录失败，请更换账号或重试
 // 340006#贴吧目录出问题啦，请到贴吧签到吧反馈
 // 2280007#签到服务忙，请重新签到
+// 110001#未知错误
+// 110000#user not login/请先登录
 // 340011#你签得太快了，先看看贴子再来签吧:)
 // 2280015#您的账号现已被封禁，不能进行签到
 // 2280001#您尚在黑名单中，不能操作。
 var recheckinErrorID = []int64{340011, 2280007, 110001, 1989004, 255, 1, 340006}
+
+var tcPrivateErrorID = map[int]string{
+	110000: "请先登录",
+}
 
 // 重复签到错误代码
 // again_error_id_2 := "1101"
@@ -30,15 +38,32 @@ var recheckinErrorID = []int64{340011, 2280007, 110001, 1989004, 255, 1, 340006}
 var tableList = []string{"tieba"}
 var checkinToday string
 
-func DosignWorker(tasks <-chan *model.TcTieba, _errors chan<- error, sleep int64) {
+func DosignWorker(tasks <-chan *model.TcTieba, _errors chan<- error, badBdussPid chan<- int32, sleep int64) {
+	badBdussPidList := map[int32]struct{}{}
 	today := _function.Now.Day()
 	for task := range tasks {
+		if _, ok := badBdussPidList[task.Pid]; ok {
+			_errors <- nil
+			continue
+		}
+
 		// success := false
 		now := _function.Now
 		ck := _function.GetCookie(task.Pid)
 		if ck.Bduss == "" {
 			log.Println("checkin: Failed, no such account", task.Pid, task.Tieba, task.Fid, task.ID, today)
 			_errors <- nil
+			continue
+		} else if !ck.IsLogin {
+			badBdussPidList[task.Pid] = struct{}{}
+			log.Println("checkin: Failed, account login status failed", task.Pid, task.Tieba, task.Fid, task.ID, today)
+			_errors <- errors.New("account " + strconv.Itoa(int(task.Pid)) + " login status failed")
+
+			// tc err && today
+			if !(task.Status == 110000 && task.Latest == int32(today)) {
+				badBdussPid <- task.Pid
+			}
+
 			continue
 		}
 		response, err := _function.PostCheckinClient(ck, task.Tieba, task.Fid)
@@ -116,8 +141,10 @@ func Dosign(_ string, retry bool) (bool, error) {
 
 	tasksChan := make(chan *model.TcTieba, len(tiebaList))
 	errorsChan := make(chan error, len(tiebaList))
+	badBdussPidChan := make(chan int32, len(tiebaList))
 	defer close(tasksChan)
 	defer close(errorsChan)
+	defer close(badBdussPidChan)
 
 	threadCount, _ := strconv.ParseInt(_function.GetOption("sign_multith"), 10, 64)
 	if threadCount <= 0 {
@@ -125,7 +152,7 @@ func Dosign(_ string, retry bool) (bool, error) {
 	}
 
 	for range threadCount {
-		go DosignWorker(tasksChan, errorsChan, sleep)
+		go DosignWorker(tasksChan, errorsChan, badBdussPidChan, sleep)
 	}
 
 	for _, task := range tiebaList {
@@ -136,6 +163,24 @@ func Dosign(_ string, retry bool) (bool, error) {
 		if <-errorsChan != nil {
 			hasFailed = true
 		}
+	}
+
+	badBdussPidChanLen := len(badBdussPidChan)
+	if badBdussPidChanLen > 0 {
+		badBdussPidArr := []int32{}
+
+		for range badBdussPidChanLen {
+			badPid := <-badBdussPidChan
+			if !slices.Contains(badBdussPidArr, badPid) {
+				badBdussPidArr = append(badBdussPidArr, badPid)
+			}
+		}
+
+		_function.GormDB.W.Model(&model.TcTieba{}).Select("status", "last_error", "latest").Where("pid IN (?)", badBdussPidArr).Updates(&model.TcTieba{
+			Latest:    int32(today),
+			Status:    110000,
+			LastError: tcPrivateErrorID[110000],
+		})
 	}
 
 	log.Println("checkin: done!")

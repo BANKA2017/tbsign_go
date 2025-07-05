@@ -28,7 +28,6 @@ type DailyReportStruct struct {
 var DailyReportLock int32
 
 const dailyReportLimit = 100
-const isLogoutPercent = 0.95
 
 func DailyReportAction() {
 	if !atomic.CompareAndSwapInt32(&DailyReportLock, 0, 1) {
@@ -135,7 +134,7 @@ func GetForumCheckInStatus(uid []int32) ([]*AccountStatusStruct, error) {
 
 	today := strconv.Itoa(_function.Now.Day())
 
-	err := _function.GormDB.R.Select("tc_baiduid.id, tc_baiduid.name, tc_baiduid.portrait, tc_tieba.is_logout, tc_tieba.success, tc_tieba.failed, tc_tieba.waiting, tc_tieba.is_ignore").Table("(?) AS tc_baiduid", _function.GormDB.R.Model(&model.TcBaiduid{}).Select("id, uid, name, portrait")).Joins("INNER JOIN (?) AS tc_tieba ON tc_tieba.pid=tc_baiduid.id", _function.GormDB.R.Model(&model.TcTieba{}).Select(`pid, CASE WHEN COALESCE(CAST(SUM(CASE WHEN no = 0 AND latest = ? and status = 1 THEN 1 ELSE 0 END) AS FLOAT)/COALESCE(SUM(CASE WHEN no = 0 AND latest = ? THEN 1 ELSE 0 END), NULL), 0) > ? then 1 ELSE 0 end AS is_logout, SUM(CASE WHEN (no = 0) AND status = 0 AND latest = ? THEN 1 ELSE 0 END) AS success, SUM(CASE WHEN (no = 0) AND status <> 0 AND latest = ? THEN 1 ELSE 0 END) AS failed, SUM(CASE WHEN (no = 0) AND latest <> ? THEN 1 ELSE 0 END) AS waiting, SUM(CASE WHEN no <> 0 THEN 1 ELSE 0 END) AS is_ignore`, today, today, isLogoutPercent, today, today, today).Group("pid")).Where("uid IN (?)", uid).Order("tc_baiduid.id ASC").Scan(&Status).Error
+	err := _function.GormDB.R.Select("tc_baiduid.id, tc_baiduid.name, tc_baiduid.portrait, tc_tieba.is_logout, tc_tieba.success, tc_tieba.failed, tc_tieba.waiting, tc_tieba.is_ignore").Table("(?) AS tc_baiduid", _function.GormDB.R.Model(&model.TcBaiduid{}).Select("id, uid, name, portrait")).Joins("INNER JOIN (?) AS tc_tieba ON tc_tieba.pid=tc_baiduid.id", _function.GormDB.R.Model(&model.TcTieba{}).Select(`pid, MAX(CASE WHEN no = 0 AND latest = ? AND status = 110000 THEN 1 ELSE 0 END) AS is_logout, SUM(CASE WHEN (no = 0) AND status = 0 AND latest = ? THEN 1 ELSE 0 END) AS success, SUM(CASE WHEN (no = 0) AND status <> 0 AND latest = ? THEN 1 ELSE 0 END) AS failed, SUM(CASE WHEN (no = 0) AND latest <> ? THEN 1 ELSE 0 END) AS waiting, SUM(CASE WHEN no <> 0 THEN 1 ELSE 0 END) AS is_ignore`, today, today, today, today).Group("pid")).Where("uid IN (?)", uid).Order("tc_baiduid.id ASC").Scan(&Status).Error
 
 	return Status, err
 }

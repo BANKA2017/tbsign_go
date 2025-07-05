@@ -78,10 +78,10 @@ func GetBDUSS(c echo.Context) error {
 
 	if len(share.DataEncryptKeyByte) > 0 {
 		encryptedBDUSS, _ := _function.AES256GCMEncrypt(bduss, share.DataEncryptKeyByte)
-		bduss = string(encryptedBDUSS)
+		bduss = _function.Base64URLEncode(encryptedBDUSS)
 
 		encryptedStoken, _ := _function.AES256GCMEncrypt(stoken, share.DataEncryptKeyByte)
-		stoken = string(encryptedStoken)
+		stoken = _function.Base64URLEncode(encryptedStoken)
 	}
 
 	if len(tiebaAccounts) > 0 {
@@ -97,6 +97,14 @@ func GetBDUSS(c echo.Context) error {
 			newData.UID = tiebaAccounts[0].UID
 			newData.Bduss = ""
 			newData.Stoken = ""
+
+			_function.CookieList.Delete(tiebaAccounts[0].ID)
+			_function.GormDB.W.Model(&model.TcTieba{}).Select("status", "latest", "last_error").Where("pid = ? AND status = ?", tiebaAccounts[0].ID, 110000).Updates(model.TcTieba{
+				Status:    0,
+				Latest:    0,
+				LastError: "等待重签",
+			})
+
 			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "已更新 BDUSS", newData, "tbsign"))
 		} else if tiebaAccounts[0].Bduss == bduss && tiebaAccounts[0].Stoken == stoken {
 			tiebaAccounts[0].Bduss = ""
@@ -163,10 +171,10 @@ func AddTiebaAccount(c echo.Context) error {
 
 	if len(share.DataEncryptKeyByte) > 0 {
 		encryptedBDUSS, _ := _function.AES256GCMEncrypt(bduss, share.DataEncryptKeyByte)
-		bduss = string(encryptedBDUSS)
+		bduss = _function.Base64URLEncode(encryptedBDUSS)
 
 		encryptedStoken, _ := _function.AES256GCMEncrypt(stoken, share.DataEncryptKeyByte)
-		stoken = string(encryptedStoken)
+		stoken = _function.Base64URLEncode(encryptedStoken)
 	}
 
 	if len(tiebaAccounts) > 0 {
@@ -183,6 +191,13 @@ func AddTiebaAccount(c echo.Context) error {
 
 			newData.Bduss = ""
 			newData.Stoken = ""
+
+			_function.CookieList.Delete(tiebaAccounts[0].ID)
+			_function.GormDB.W.Model(&model.TcTieba{}).Select("status", "latest", "last_error").Where("pid = ? AND status = ?", tiebaAccounts[0].ID, 110000).Updates(model.TcTieba{
+				Status:    0,
+				Latest:    0,
+				LastError: "等待重签",
+			})
 
 			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "已更新 BDUSS", newData, "tbsign"))
 		} else if tiebaAccounts[0].Bduss == bduss && tiebaAccounts[0].Stoken == stoken {
@@ -343,23 +358,13 @@ func CheckTiebaAccount(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	cookie := _function.GetCookie(int32(numPid), true)
+	cookie := _function.GetCookie(int32(numPid), false, true)
 
 	if cookie.ID == 0 || cookie.UID != int32(numUID) || (cookie.ID != 0 && cookie.ID != int32(numPid)) {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	// get tieba account info
-	baiduAccountInfo, err := _function.GetBaiduUserInfo(_type.TypeCookie{Bduss: cookie.Bduss})
-
-	//log.Println(tiebaAccount, baiduAccountInfo)
-
-	if err != nil || baiduAccountInfo.User.Portrait == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", false, "tbsign"))
-	} else {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
-	}
-
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", cookie.IsLogin, "tbsign"))
 }
 
 func CheckIsManager(c echo.Context) error {
