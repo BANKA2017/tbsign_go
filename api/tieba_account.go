@@ -99,7 +99,7 @@ func GetBDUSS(c echo.Context) error {
 			newData.Stoken = ""
 
 			_function.CookieList.Delete(tiebaAccounts[0].ID)
-			_function.GormDB.W.Model(&model.TcTieba{}).Select("status", "latest", "last_error").Where("pid = ? AND status = ?", tiebaAccounts[0].ID, 110000).Updates(model.TcTieba{
+			_function.GormDB.W.Model(&model.TcTieba{}).Select("status", "latest", "last_error").Where("pid = ? AND status = ?", tiebaAccounts[0].ID, 110000).Updates(&model.TcTieba{
 				Status:    0,
 				Latest:    0,
 				LastError: "等待重签",
@@ -193,7 +193,7 @@ func AddTiebaAccount(c echo.Context) error {
 			newData.Stoken = ""
 
 			_function.CookieList.Delete(tiebaAccounts[0].ID)
-			_function.GormDB.W.Model(&model.TcTieba{}).Select("status", "latest", "last_error").Where("pid = ? AND status = ?", tiebaAccounts[0].ID, 110000).Updates(model.TcTieba{
+			_function.GormDB.W.Model(&model.TcTieba{}).Select("status", "latest", "last_error").Where("pid = ? AND status = ?", tiebaAccounts[0].ID, 110000).Updates(&model.TcTieba{
 				Status:    0,
 				Latest:    0,
 				LastError: "等待重签",
