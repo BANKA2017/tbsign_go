@@ -674,18 +674,19 @@ func (pluginInfo *ForumSupportPluginInfoType) Action() {
 			message := ""
 			if err != nil {
 				message = "助攻失败，发生了一些未知错误~"
-			}
-			switch response.No {
-			case 0:
-				message = "助攻成功啦~明天记得继续呦~"
-			case 340027:
-				message = "很抱歉，封禁用户无法助攻"
-			case 3110004:
-				message = "你还未关注当前吧哦, 快去关注吧~"
-			case 2280006:
-				message = "今日已助攻过了，或者度受抽风了~"
-			default:
-				message = "抽风了~"
+			} else {
+				switch response.No {
+				case 0:
+					message = "助攻成功啦~明天记得继续呦~"
+				case 340027:
+					message = "很抱歉，封禁用户无法助攻"
+				case 3110004:
+					message = "你还未关注当前吧哦, 快去关注吧~"
+				case 2280006:
+					message = "今日已助攻过了，或者度受抽风了~"
+				default:
+					message = "抽风了~"
+				}
 			}
 
 			log.Println("support:", forumSupportItem.Tieba, forumSupportItem.Name, message)
