@@ -336,7 +336,8 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 						}
 						if taskTypeList.TaskType == "icon_task" && slices.Contains([]string{"0", ""}, _function.GetUserOption("kd_growth_break_icon_tasks", strconv.Itoa(int(taskUserItem.UID)))) {
 							for _, iconTaskItem := range taskTypeList.TaskList {
-								if iconTaskItem.SortStatus == 0 {
+								switch iconTaskItem.SortStatus {
+								case 0:
 									postCollectStampRES, err := PostCollectStamp(cookie, iconTaskItem.ID)
 									if err != nil {
 										result = append(result, UserGrowthTaskToSave{
@@ -363,7 +364,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 										}
 									}
 									doCollectStampTasks = true
-								} else if iconTaskItem.SortStatus == 1 {
+								case 1:
 									doCollectStampTasks = true
 								}
 							}

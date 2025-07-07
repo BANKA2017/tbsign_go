@@ -457,7 +457,7 @@ func GetForumNameShare(name string) (*_type.ForumNameShareResponse, error) {
 
 func GetBaiduUserInfo(cookie _type.TypeCookie) (*_type.BaiduUserInfoResponse, error) {
 	var form = make(map[string]string)
-	form["bdusstoken"] = cookie.Bduss + "|null" //why '|null' ?
+	form["bdusstoken"] = cookie.Bduss
 	AddSign(form, "4")
 	_body := url.Values{}
 	for k, v := range form {
@@ -466,7 +466,7 @@ func GetBaiduUserInfo(cookie _type.TypeCookie) (*_type.BaiduUserInfoResponse, er
 		}
 	}
 
-	accountInfo, err := TBFetch("http://c.tieba.baidu.com/c/s/login", http.MethodPost, []byte(_body.Encode()+"&sign="+form["sign"]), EmptyHeaders)
+	accountInfo, err := TBFetch("https://tiebac.baidu.com/c/s/login", http.MethodPost, []byte(_body.Encode()+"&sign="+form["sign"]), EmptyHeaders)
 
 	if err != nil {
 		return nil, err

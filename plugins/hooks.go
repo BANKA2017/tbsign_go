@@ -43,7 +43,7 @@ type PluginInfo struct {
 	Info           model.TcPlugin
 	Test           bool
 	Endpoints      []PluginEndpintStruct
-	sync.RWMutex
+	sync.Mutex
 }
 
 type PluginHooks interface {
@@ -77,15 +77,15 @@ func (pluginInfo *PluginInfo) GetDBInfo() model.TcPlugin {
 }
 
 func (pluginInfo *PluginInfo) SetDBInfo(info *model.TcPlugin) error {
-	pluginInfo.RWMutex.Lock()
-	defer pluginInfo.RWMutex.Unlock()
+	pluginInfo.Mutex.Lock()
+	defer pluginInfo.Mutex.Unlock()
 	pluginInfo.Info = *info
 	return nil
 }
 
 func (pluginInfo *PluginInfo) Switch() bool {
-	pluginInfo.RWMutex.Lock()
-	defer pluginInfo.RWMutex.Unlock()
+	pluginInfo.Mutex.Lock()
+	defer pluginInfo.Mutex.Unlock()
 	if pluginInfo.Info.Status == 0 {
 		pluginInfo.Info.Status = 1
 	} else {

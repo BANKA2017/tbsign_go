@@ -620,16 +620,17 @@ var ForumSupportPluginInfo = _function.VariablePtrWrapper(ForumSupportPluginInfo
 })
 
 func PostForumSupport(cookie _type.TypeCookie, fid int32, nid string) (*TypeForumSupportResponse, error) {
-	_body := url.Values{}
-	_body.Set("tbs", cookie.Tbs)
-	_body.Set("forum_id", strconv.Itoa(int(fid)))
-	_body.Set("npc_id", nid)
+	_body := url.Values{
+		"tbs":      {cookie.Tbs},
+		"forum_id": {strconv.Itoa(int(fid))},
+		"npc_id":   {nid},
+	}
 
 	headersMap := map[string]string{
 		"Cookie": "BDUSS=" + cookie.Bduss,
 	}
 
-	supportResponse, err := _function.TBFetch("http://tieba.baidu.com/celebrity/submit/support", http.MethodPost, []byte(_body.Encode()), headersMap)
+	supportResponse, err := _function.TBFetch("https://tieba.baidu.com/celebrity/submit/support", http.MethodPost, []byte(_body.Encode()), headersMap)
 
 	if err != nil {
 		return nil, err
@@ -677,12 +678,14 @@ func (pluginInfo *ForumSupportPluginInfoType) Action() {
 			switch response.No {
 			case 0:
 				message = "助攻成功啦~明天记得继续呦~"
+			case 340027:
+				message = "很抱歉，封禁用户无法助攻"
 			case 3110004:
 				message = "你还未关注当前吧哦, 快去关注吧~"
 			case 2280006:
 				message = "今日已助攻过了，或者度受抽风了~"
 			default:
-				message = "助攻失败，发生了一些未知错误~"
+				message = "抽风了~"
 			}
 
 			log.Println("support:", forumSupportItem.Tieba, forumSupportItem.Name, message)
