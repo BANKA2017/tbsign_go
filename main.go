@@ -100,7 +100,7 @@ func main() {
 	if share.DBEndpoint == "127.0.0.1:3306" && os.Getenv("tc_endpoint") != "" {
 		share.DBEndpoint = os.Getenv("tc_endpoint")
 	}
-	if share.DBName == "" && os.Getenv("tc_db") != "" {
+	if share.DBName == "tbsign" && os.Getenv("tc_db") != "" {
 		share.DBName = os.Getenv("tc_db")
 	}
 	if share.DBTLSOption == "false" && os.Getenv("tc_db_tls") != "" {
