@@ -190,7 +190,7 @@ func (pluginInfo *RenewManagerType) Install() error {
 	// index ?
 	if share.DBMode == "mysql" {
 		_function.GormDB.W.Set("gorm:table_options", "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci").Migrator().CreateTable(&model.TcKdRenewManager{})
-		_function.GormDB.W.Exec("ALTER TABLE `tc_kd_renew_manager` ADD PRIMARY KEY (`id`), ADD UNIQUE KEY `pid_fid` (`pid`,`fid`) USING BTREE, ADD KEY `id_date_uid` (`id`,`date`,`uid`), ADD KEY `uid_pid_fid` (`uid`,`pid`,`fid`);")
+		_function.GormDB.W.Exec("ALTER TABLE `tc_kd_renew_manager` ADD UNIQUE KEY `pid_fid` (`pid`,`fid`) USING BTREE, ADD KEY `id_date_uid` (`id`,`date`,`uid`), ADD KEY `uid_pid_fid` (`uid`,`pid`,`fid`);")
 	} else {
 		_function.GormDB.W.Migrator().CreateTable(&model.TcKdRenewManager{})
 
