@@ -97,12 +97,19 @@ func DosignWorker(tasks <-chan *model.TcTieba, _errors chan<- error, badBdussPid
 	}
 }
 
+var LastBreakHour = 0
+
 func Dosign(_ string, retry bool) (bool, error) {
 	//signMode := _function.GetOption("sign_mode")// client mode only
 	hasFailed := false
 	signHour, _ := strconv.ParseInt(_function.GetOption("sign_hour"), 10, 64)
-	if int64(_function.Now.Hour()) <= signHour {
-		log.Println("checkin:", strconv.FormatInt(signHour, 10)+"点时忽略签到")
+	h := _function.Now.Hour()
+	if int64(h) <= signHour {
+		if h != LastBreakHour {
+			log.Println("checkin:", strconv.FormatInt(signHour, 10)+"点时忽略签到")
+			LastBreakHour = h
+		}
+
 		return hasFailed, nil
 	}
 	limit, _ := strconv.ParseInt(_function.GetOption("cron_limit"), 10, 64)
