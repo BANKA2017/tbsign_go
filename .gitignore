@@ -2,6 +2,7 @@
 /tmp
 /assets/dist/
 /assets/ca/cacert.pem
+/.idea/
 
 **/*.db
 **/*.db-shm

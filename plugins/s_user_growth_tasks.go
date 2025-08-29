@@ -32,10 +32,11 @@ var UserGrowthTasksPlugin = _function.VariablePtrWrapper(UserGrowthTasksPluginTy
 		PluginNameCN:      "用户成长任务",
 		PluginNameCNShort: "成长任务",
 		PluginNameFE:      "user_growth_tasks",
-		Version:           "0.1",
+		Version:           "0.2",
 		Options: map[string]string{
 			"kd_growth_offset":       "0",
 			"kd_growth_action_limit": "50",
+			// "kd_growth_client_version": "12.84.3.0",
 		},
 		SettingOptions: map[string]PluinSettingOption{
 			"kd_growth_action_limit": {
@@ -46,6 +47,25 @@ var UserGrowthTasksPlugin = _function.VariablePtrWrapper(UserGrowthTasksPluginTy
 					return err == nil && numLimit >= 0
 				},
 			},
+			// "kd_growth_client_version": {
+			// 	OptionName:   "kd_growth_client_version",
+			// 	OptionNameCN: "客户端版本号",
+			// 	Validate: func(value string) bool {
+			// 		parts := strings.Split(value, ".")
+			// 		if len(parts) == 0 {
+			// 			return false
+			// 		}
+			// 		for _, p := range parts {
+			// 			if p == "" {
+			// 				return false
+			// 			}
+			// 			if _, err := strconv.Atoi(p); err != nil {
+			// 				return false
+			// 			}
+			// 		}
+			// 		return true
+			// 	},
+			// },
 		},
 		Endpoints: []PluginEndpintStruct{
 			{Method: http.MethodGet, Path: "settings", Function: PluginGrowthTasksGetSettings},
@@ -59,11 +79,9 @@ var UserGrowthTasksPlugin = _function.VariablePtrWrapper(UserGrowthTasksPluginTy
 	},
 })
 
-var UserGrowthTasksBreakList = []string{"open_push_switch"}
+var UserGrowthTasksPluginClientVersion = "12.84.3.0"
 
-const UserGrowthTasksPluginClientVersion = "12.84.3.0"
-const UserGrowthTasksPluginClientUserAgent = "tieba/" + UserGrowthTasksPluginClientVersion
-const UserGrowthTasksPluginClientWidgetUserAgent = "TiebaWidgets/" + UserGrowthTasksPluginClientVersion + " CFNetwork/3826.500.131 Darwin/24.5.0"
+var UserGrowthTasksBreakList = []string{"open_push_switch"}
 
 type UserGrowthTasksWebResponse struct {
 	No    int    `json:"no"`
@@ -156,7 +174,7 @@ func PostGrowthTaskByWeb(cookie _type.TypeCookie, task string) (*UserGrowthTasks
 
 	headersMap := map[string]string{
 		"Cookie":     "BDUSS=" + cookie.Bduss,
-		"User-Agent": UserGrowthTasksPluginClientUserAgent,
+		"User-Agent": "tieba/" + UserGrowthTasksPluginClientVersion,
 	}
 
 	response, err := _function.TBFetch("https://tieba.baidu.com/mo/q/usergrowth/commitUGTaskInfo", http.MethodPost, []byte(_body.Encode()), headersMap)
@@ -209,7 +227,7 @@ func PostUserTaskInfoWidget(cookie _type.TypeCookie) (any, error) {
 	}
 
 	taskInfoResponse, err := _function.TBFetch("https://tiebac.baidu.com/c/f/widget/getUserTaskInfo", http.MethodPost, []byte(_body.Encode()), map[string]string{
-		"User-Agent": UserGrowthTasksPluginClientWidgetUserAgent,
+		"User-Agent": "TiebaWidgets/" + UserGrowthTasksPluginClientVersion + " CFNetwork/3826.500.131 Darwin/24.5.0",
 	})
 
 	if err != nil {
@@ -222,7 +240,7 @@ func PostUserTaskInfoWidget(cookie _type.TypeCookie) (any, error) {
 func PostCollectStamp(cookie _type.TypeCookie, task_id int) (*UserGrowthTaskCollectStampResponse, error) {
 	headersMap := map[string]string{
 		"Cookie":     "BDUSS=" + cookie.Bduss,
-		"User-Agent": UserGrowthTasksPluginClientUserAgent,
+		"User-Agent": "tieba/" + UserGrowthTasksPluginClientVersion,
 	}
 	_body := url.Values{
 		"type":     {"3"}, // why 3?
@@ -275,6 +293,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 	var accountStatusList = make(map[int64]string)
 	// cookie list
 	var accountCookiesList = make(map[int64]_type.TypeCookie)
+	var extTasksList = make(map[int64]map[string]string)
 
 	// get list
 	todayBeginning := _function.LocaleTimeDiff(0) //GMT+8
@@ -302,17 +321,29 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 			_function.SetUserOption("kd_growth_sign_only", "1", strconv.Itoa(int(taskUserItem.UID)))
 		}
 
+		// cookies
 		if _, ok := accountCookiesList[taskUserItem.Pid]; !ok {
 			accountCookiesList[taskUserItem.Pid] = _function.GetCookie(int32(taskUserItem.Pid))
 		}
 		cookie := accountCookiesList[taskUserItem.Pid]
+
+		// ext tasks
+		if extTasks, ok := extTasksList[taskUserItem.UID]; !ok {
+			if err := _function.JsonDecode([]byte(_function.GetUserOption("kd_growth_ext_tasks", strconv.Itoa(int(taskUserItem.UID)))), &extTasks); err != nil {
+				extTasksList[taskUserItem.UID] = make(map[string]string)
+			} else {
+				extTasksList[taskUserItem.UID] = extTasks
+			}
+		}
+		extTasks := extTasksList[taskUserItem.UID]
+
 		var tasksList []UserGrowthTask
 		var result []UserGrowthTaskToSave
 		doCollectStampTasks := false
 
 		/// levelInfo := LevelInfo{}
 
-		if accountStatusList[taskUserItem.UID] == "1" {
+		if accountStatusList[taskUserItem.UID] != "0" {
 			tasksResponse, err := GetUserGrowthTasksList(cookie)
 			if err != nil {
 				log.Println(err)
@@ -379,6 +410,25 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 				SortStatus: 1,
 				ExpireTime: 0,
 			})
+		}
+
+		if accountStatusList[taskUserItem.UID] == "2" && len(extTasks) > 0 {
+			var tasksActTypeList []string
+			for _, task := range tasksList {
+				if !slices.Contains(tasksActTypeList, task.ActType) {
+					tasksActTypeList = append(tasksActTypeList, task.ActType)
+				}
+			}
+			for actType, taskName := range extTasks {
+				if actType != "" && taskName != "" && !slices.Contains(tasksActTypeList, actType) {
+					tasksList = append(tasksList, UserGrowthTask{
+						Name:       taskName,
+						ActType:    actType,
+						SortStatus: 1,
+						ExpireTime: 0,
+					})
+				}
+			}
 		}
 
 		for _, task := range tasksList {
@@ -505,6 +555,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Delete() error {
 	// user options
 	_function.GormDB.W.Where("name = ?", "kd_growth_sign_only").Delete(&model.TcUsersOption{})
 	_function.GormDB.W.Where("name = ?", "kd_growth_break_icon_tasks").Delete(&model.TcUsersOption{})
+	_function.GormDB.W.Where("name = ?", "kd_growth_ext_tasks").Delete(&model.TcUsersOption{})
 
 	return nil
 }
@@ -543,22 +594,58 @@ func PluginGrowthTasksGetSettings(c echo.Context) error {
 		_function.SetUserOption("kd_growth_break_icon_tasks", noIconTasks, uid)
 	}
 
+	// ext tasks
+	var extTasksMap = make(map[string]string)
+	extTasks := _function.GetUserOption("kd_growth_ext_tasks", uid)
+	if extTasks == "" {
+		extTasks = "{}"
+		_function.SetUserOption("kd_growth_ext_tasks", extTasks, uid)
+	} else {
+		err := _function.JsonDecode([]byte(extTasks), &extTasksMap)
+		if err != nil {
+			log.Println("ext tasks/read decode error: ", err)
+			extTasks = "{}"
+			_function.SetUserOption("kd_growth_ext_tasks", extTasks, uid)
+			extTasksMap = map[string]string{}
+		}
+	}
+
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
 		"sign_only":        signOnly,
 		"break_icon_tasks": noIconTasks,
+		"ext_tasks":        extTasksMap,
 	}, "tbsign"))
 }
 
 func PluginGrowthTasksSetSettings(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	signOnly := c.FormValue("sign_only") != "0"
+	signOnly := strings.TrimSpace(c.FormValue("sign_only"))
 	noIconTasks := c.FormValue("break_icon_tasks") != "0"
+	extTasks := c.FormValue("ext_tasks")
+
+	// invalid sign only value
+	if !slices.Contains([]string{"0", "1", "2"}, signOnly) {
+		signOnly = "0"
+	}
+
+	// ext tasks list
+	var extTasksMap = make(map[string]string)
+	if extTasks != "" {
+		err := _function.JsonDecode([]byte(extTasks), &extTasksMap)
+		if err != nil {
+			log.Println("ext tasks/write decode error: ", err)
+			extTasks = "{}"
+		}
+	} else {
+		extTasks = "{}"
+	}
 
 	_function.SetUserOption("kd_growth_sign_only", signOnly, uid)
 	_function.SetUserOption("kd_growth_break_icon_tasks", noIconTasks, uid)
+	_function.SetUserOption("kd_growth_ext_tasks", extTasks, uid)
 
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]bool{
 		"success": true,
 	}, "tbsign"))
 }
