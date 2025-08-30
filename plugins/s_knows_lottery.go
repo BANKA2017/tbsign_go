@@ -230,6 +230,19 @@ func (pluginInfo *LotteryPluginPluginType) Report(int32, *gorm.DB) (string, erro
 	return "", nil
 }
 
+func (pluginInfo *LotteryPluginPluginType) Reset(uid, pid, tid int32) error {
+	if uid == 0 {
+		return errors.New("invalid uid")
+	}
+
+	_sql := _function.GormDB.W.Where("uid = ?", uid)
+	if pid != 0 {
+		_sql = _sql.Where("pid = ?", pid)
+	}
+
+	return _sql.Where("date >= ?", _function.LocaleTimeDiff(10)).Delete(&model.TcVer4LotteryLog{}).Error
+}
+
 // endpoint
 
 func PluginKnowsLotteryGetLogs(c echo.Context) error {

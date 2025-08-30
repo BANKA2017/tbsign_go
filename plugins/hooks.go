@@ -66,6 +66,7 @@ type PluginActionHooks interface {
 	// ExportAccount(int32) any
 	// for future
 	Report(int32, *gorm.DB) (string, error)
+	Reset(int32, int32, int32) error
 }
 
 func (pluginInfo *PluginInfo) GetInfo() *PluginInfo {

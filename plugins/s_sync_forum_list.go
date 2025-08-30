@@ -111,6 +111,8 @@ func (pluginInfo *RefreshTiebaListPluginType) Report(int32, *gorm.DB) (string, e
 	return "", nil
 }
 
+func (pluginInfo *RefreshTiebaListPluginType) Reset(int32, int32, int32) error { return nil }
+
 // endpoint
 func PluginRefreshTiebaListGetAccountList(c echo.Context) error {
 	uid := c.Get("uid").(string)

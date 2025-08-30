@@ -1,6 +1,7 @@
 package _plugin
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -276,7 +277,7 @@ func GetUserGrowthTasksList(cookie _type.TypeCookie) (*UserGrowthTasksListRespon
 	return resp, err
 }
 
-var activeTasks = []string{"daily_task", "live_task"}
+var activeTasks = []string{"daily_task", "live_task"} // "exchange_flow_task"
 
 // TODO redo growth tasks(?)
 func (pluginInfo *UserGrowthTasksPluginType) Action() {
@@ -573,6 +574,23 @@ func (pluginInfo *UserGrowthTasksPluginType) RemoveAccount(_type string, id int3
 
 func (pluginInfo *UserGrowthTasksPluginType) Report(int32, *gorm.DB) (string, error) {
 	return "", nil
+}
+
+func (pluginInfo *UserGrowthTasksPluginType) Reset(uid, pid, tid int32) error {
+	if uid == 0 {
+		return errors.New("invalid uid")
+	}
+
+	_sql := _function.GormDB.W.Model(&model.TcKdGrowth{}).Where("uid = ?", uid)
+	if pid != 0 {
+		_sql = _sql.Where("pid = ?", pid)
+	}
+
+	if tid != 0 {
+		_sql = _sql.Where("id = ?", tid)
+	}
+
+	return _sql.Update("date", 0).Error
 }
 
 // endpoints

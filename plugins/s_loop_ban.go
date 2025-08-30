@@ -1,6 +1,7 @@
 package _plugin
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -242,6 +243,23 @@ func (pluginInfo *LoopBanPluginType) RemoveAccount(_type string, id int32, tx *g
 
 func (pluginInfo *LoopBanPluginType) Report(int32, *gorm.DB) (string, error) {
 	return "", nil
+}
+
+func (pluginInfo *LoopBanPluginType) Reset(uid, pid, tid int32) error {
+	if uid == 0 {
+		return errors.New("invalid uid")
+	}
+
+	_sql := _function.GormDB.W.Model(&model.TcVer4BanList{}).Where("uid = ?", uid)
+	if pid != 0 {
+		_sql = _sql.Where("pid = ?", pid)
+	}
+
+	if tid != 0 {
+		_sql = _sql.Where("id = ?", tid)
+	}
+
+	return _sql.Update("date", 0).Error
 }
 
 // OptionValidator

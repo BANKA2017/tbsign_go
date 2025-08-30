@@ -25,8 +25,8 @@ type ExamplePluginType struct {
 var ExamplePlugin = _function.VariablePtrWrapper(ExamplePluginType{
 	PluginInfo{
 		Name:              "kd_example", // 文件名跟 Name 不一定要相同，但都要求唯一
-		PluginNameCN:      "示例插件",       // 用于前端插件总开关
-		PluginNameCNShort: "示例插件",       // 用于前端侧边栏展示，不建议太长
+		PluginNameCN:      "示例插件",   // 用于前端插件总开关
+		PluginNameCNShort: "示例插件",   // 用于前端侧边栏展示，不建议太长
 		PluginNameFE:      "kd_example", // 在前端 `pages/` 的路径，如果没有就留空，允许跟 Name 不同，但要求唯一
 
 		Version: "1.0",
@@ -105,6 +105,10 @@ func (pluginInfo *ExamplePluginType) RemoveAccount(_type string, id int32, tx *g
 
 func (pluginInfo *ExamplePluginType) Report(int32, *gorm.DB) (string, error) {
 	return "", nil
+}
+
+func (pluginInfo *ExamplePluginType) Reset(int32, int32, int32) error {
+	return nil
 }
 
 // OptionValidator

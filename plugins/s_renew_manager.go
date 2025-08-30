@@ -265,6 +265,23 @@ func (pluginInfo *RenewManagerType) Report(uid int32, tx *gorm.DB) (string, erro
 	return message, nil
 }
 
+func (pluginInfo *RenewManagerType) Reset(uid, pid, tid int32) error {
+	if uid == 0 {
+		return errors.New("invalid uid")
+	}
+
+	_sql := _function.GormDB.W.Model(&model.TcKdRenewManager{}).Where("uid = ?", uid)
+	if pid != 0 {
+		_sql = _sql.Where("pid = ?", pid)
+	}
+
+	if tid != 0 {
+		_sql = _sql.Where("id = ?", tid)
+	}
+
+	return _sql.Update("date", 0).Error
+}
+
 // func _PluginRenewManagerAlertMessage(name, fname, end string, fid int32) _function.PushMessageTemplateStruct {
 // 	return _function.PushMessageTemplateStruct{
 // 		Title: fmt.Sprintf("吧主考核提醒 - %s吧", fname),

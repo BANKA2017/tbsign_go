@@ -1,6 +1,7 @@
 package _plugin
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -782,6 +783,23 @@ func (pluginInfo *ForumSupportPluginInfoType) RemoveAccount(_type string, id int
 
 func (pluginInfo *ForumSupportPluginInfoType) Report(int32, *gorm.DB) (string, error) {
 	return "", nil
+}
+
+func (pluginInfo *ForumSupportPluginInfoType) Reset(uid, pid, tid int32) error {
+	if uid == 0 {
+		return errors.New("invalid uid")
+	}
+
+	_sql := _function.GormDB.W.Model(&model.TcVer4RankLog{}).Where("uid = ?", uid)
+	if pid != 0 {
+		_sql = _sql.Where("pid = ?", pid)
+	}
+
+	if tid != 0 {
+		_sql = _sql.Where("id = ?", tid)
+	}
+
+	return _sql.Update("date", 0).Error
 }
 
 // endpoints
