@@ -190,7 +190,7 @@ func Login(c echo.Context) error {
 	case "banned":
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号已封禁", _function.EchoEmptyObject, "tbsign"))
 	case "deleted":
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号已删除", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "账号已删除", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	token, expireAt := tokenBuilder(int(accountInfo[0].ID))

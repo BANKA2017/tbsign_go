@@ -53,7 +53,7 @@ func PreCheck(next echo.HandlerFunc) echo.HandlerFunc {
 
 		// deleted
 		if role == "deleted" {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号已删除", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "账号已删除", _function.EchoEmptyObject, "tbsign"))
 		}
 
 		// TODO banned

@@ -91,11 +91,13 @@ func Api(address string) {
 	api.GET("/admin/settings", GetAdminSettings)
 	api.POST("/admin/settings", UpdateAdminSettings)
 	api.GET("/admin/account", GetAccountsList)
-	api.PATCH("/admin/account/modify/:uid", AdminModifyAccountInfo)
-	api.DELETE("/admin/account/token/:uid", AdminDeleteAccountToken)
-	api.DELETE("/admin/account/list/:uid", AdminDeleteTiebaAccountList)
-	api.POST("/admin/account/list/:uid/reset", AdminResetTiebaList)
-	api.POST("/admin/account/password/:uid/reset", AdminResetPassword)
+	api.DELETE("/admin/account/:uid", AdminDeleteAccount)
+	api.PATCH("/admin/account/:uid/modify", AdminModifyAccountInfo)
+	api.DELETE("/admin/account/:uid/token", AdminDeleteAccountToken)
+	api.DELETE("/admin/account/:uid/list", AdminDeleteTiebaAccountList)
+	api.POST("/admin/account/:uid/list/reset", AdminResetTiebaList)
+	api.POST("/admin/account/:uid/password/reset", AdminResetPassword)
+	api.POST("/admin/account/:uid/plugin/:plugin_name/reset", AdminResetAccountPlugin)
 	api.POST("/admin/plugin/:plugin_name/switch", PluginSwitch)
 	api.DELETE("/admin/plugin/:plugin_name", PluginUninstall)
 	api.POST("/admin/service/push/mail/test", SendTestMessage)
@@ -120,11 +122,11 @@ func Api(address string) {
 	plugin := api.Group("/plugins")
 	plugin.Use(PluginPathPrecheck)
 	for _, v := range _plugin.PluginList {
-		// TDOO disable endpoint before install?
 		for _, r := range v.(_plugin.PluginHooks).GetEndpoints() {
 			plugin.Match([]string{r.Method}, "/"+v.(_plugin.PluginHooks).GetInfo().Name+"/"+r.Path, r.Function)
 		}
 	}
+
 	// frontend
 	if share.EnableFrontend {
 		fe, _ := fs.Sub(assets.EmbeddedFrontent, "dist")

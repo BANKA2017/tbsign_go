@@ -269,7 +269,9 @@ func AdminModifyAccountInfo(c echo.Context) error {
 
 	// role
 	if newRole != "" && accountInfo.Role != newRole {
-		if !slices.Contains(RoleList, newRole) {
+		if newRole == "deleted" {
+			return c.JSON(http.StatusOK, _function.ApiTemplate(400, "请使用 DELETE:/admin/account/:uid 删除用户", _function.EchoEmptyObject, "tbsign"))
+		} else if !slices.Contains(RoleList, newRole) {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "新用户组 "+newRole+" 不存在", _function.EchoEmptyObject, "tbsign"))
 		} else {
 			newAccountInfo.Role = newRole
@@ -278,38 +280,7 @@ func AdminModifyAccountInfo(c echo.Context) error {
 		newRole = accountInfo.Role
 	}
 
-	// soft delete?
-	if newRole == "deleted" {
-		err := _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
-			var err error
-			// plugins
-			if err = _plugin.DeleteAccount("uid", accountInfo.ID, tx); err != nil {
-				return err
-			}
-			// account
-			if err = tx.Where("id = ?", accountInfo.ID).Delete(&model.TcUser{}).Error; err != nil {
-				return err
-			}
-			if err = tx.Where("uid = ?", accountInfo.ID).Delete(&model.TcTieba{}).Error; err != nil {
-				return err
-			}
-			if err = tx.Where("uid = ?", accountInfo.ID).Delete(&model.TcBaiduid{}).Error; err != nil {
-				return err
-			}
-			if err = tx.Where("uid = ?", accountInfo.ID).Delete(&model.TcUsersOption{}).Error; err != nil {
-				return err
-			}
-			return err
-		})
-
-		if err != nil {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(500, fmt.Sprintf("删除用户 %d:%s 失败 (%s)", accountInfo.ID, accountInfo.Name, err.Error()), _function.EchoEmptyObject, "tbsign"))
-		}
-
-		HttpAuthRefreshTokenMap.Delete(int(accountInfo.ID))
-	} else {
-		_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", accountInfo.ID).Updates(&newAccountInfo)
-	}
+	_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", accountInfo.ID).Updates(&newAccountInfo)
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", &SiteAccountsResponse{
 		ID:    accountInfo.ID,
@@ -551,6 +522,109 @@ func GetAccountsList(c echo.Context) error {
 	respAccountInfo.Total = accountInfoCount
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", respAccountInfo, "tbsign"))
+}
+
+func AdminDeleteAccount(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	targetUID := c.Param("uid")
+
+	if targetUID == "" {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyObject, "tbsign"))
+	} else if uid == targetUID {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无法删除自己的账号", _function.EchoEmptyObject, "tbsign"))
+	}
+
+	numTargetUID, err := strconv.ParseInt(targetUID, 10, 64)
+	if err != nil || numTargetUID <= 0 {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
+	}
+
+	// exists?
+	var accountInfo model.TcUser
+	err = _function.GormDB.R.Model(&model.TcUser{}).Where("id = ?", targetUID).Take(&accountInfo).Error
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
+	}
+	if accountInfo.Role == "admin" && uid != "1" && uid != targetUID {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "只有根管理员允许改变其他管理员状态", false, "tbsign"))
+	}
+
+	err = _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
+		var err error
+		// plugins
+		if err = _plugin.DeleteAccount("uid", accountInfo.ID, tx); err != nil {
+			return err
+		}
+		// account
+		if err = tx.Where("id = ?", accountInfo.ID).Delete(&model.TcUser{}).Error; err != nil {
+			return err
+		}
+		if err = tx.Where("uid = ?", accountInfo.ID).Delete(&model.TcTieba{}).Error; err != nil {
+			return err
+		}
+		if err = tx.Where("uid = ?", accountInfo.ID).Delete(&model.TcBaiduid{}).Error; err != nil {
+			return err
+		}
+		if err = tx.Where("uid = ?", accountInfo.ID).Delete(&model.TcUsersOption{}).Error; err != nil {
+			return err
+		}
+		return err
+	})
+
+	if err != nil {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, fmt.Sprintf("删除用户 %d:%s 失败 (%s)", accountInfo.ID, accountInfo.Name, err.Error()), false, "tbsign"))
+	}
+
+	HttpAuthRefreshTokenMap.Delete(int(accountInfo.ID))
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
+}
+
+func AdminResetAccountPlugin(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	c.Request().ParseForm()
+	pluginName := c.Param("plugin_name")
+	targetUID := c.Param("uid")
+
+	// plugin
+	_pluginInfo, ok := _plugin.PluginList[pluginName]
+	if !ok {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "插件不存在", false, "tbsign"))
+	}
+
+	if _pluginInfo.(_plugin.PluginHooks).GetDBInfo().Ver == "-1" {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "插件尚未安装", false, "tbsign"))
+	}
+
+	// target uid
+	if targetUID == "" {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
+	}
+
+	numTargetUID, err := strconv.ParseInt(targetUID, 10, 64)
+	if err != nil || numTargetUID <= 0 {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
+	}
+
+	// exists?
+	var accountInfo model.TcUser
+	err = _function.GormDB.R.Model(&model.TcUser{}).Where("id = ?", targetUID).Take(&accountInfo).Error
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
+	}
+	if accountInfo.Role == "admin" && uid != "1" && uid != targetUID {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "只有根管理员允许改变其他管理员状态", false, "tbsign"))
+	}
+
+	err = _pluginInfo.Reset(int32(numTargetUID), 0, 0)
+
+	if err != nil {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(400, err.Error(), false, "tbsign"))
+	} else {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
+	}
 }
 
 func PluginSwitch(c echo.Context) error {
