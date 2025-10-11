@@ -567,6 +567,7 @@ func PostSync(cookie _type.TypeCookie) (any, error) {
 }
 
 func GetLoginQRCode() (*_type.LoginQRCode, error) {
+	// &qrloginfrom=native <- force to use the client to scan qrcode
 	response, err := TBFetch("https://passport.baidu.com/v2/api/getqrcode?lp=pc", http.MethodGet, nil, EmptyHeaders)
 
 	if err != nil {

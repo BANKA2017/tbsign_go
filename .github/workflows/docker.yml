@@ -99,7 +99,7 @@ jobs:
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: "tbsign_go.musl.${{ matrix.arch.name }}"
+          name: "tbsign_go.musl.${{ matrix.arch.name }}.docker"
           path: tbsign_go
 
   combine-docker:

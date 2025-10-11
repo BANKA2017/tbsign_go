@@ -3,7 +3,7 @@ FROM alpine:3 AS build
 WORKDIR /app/tbsign
 
 ARG TARGETARCH
-COPY tbsign_go.musl.${TARGETARCH}/tbsign_go /app/tbsign/
+COPY tbsign_go.musl.${TARGETARCH}.docker/tbsign_go /app/tbsign/
 
 RUN echo -e "#!/bin/sh\nsh -c /app/tbsign/tbsign_go" > /app/tbsign/run.sh &&\
     chmod +x /app/tbsign/tbsign_go /app/tbsign/run.sh &&\
