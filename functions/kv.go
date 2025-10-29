@@ -15,9 +15,9 @@ type KV[K comparable, T any] struct {
 // 	ExpireAt int64 `json:"expire_at"`
 // }
 
-func NewKV[K comparable, T any]() *KV[K, T] {
+func NewKV[K comparable, T any](opts ...ttlcache.Option[K, T]) *KV[K, T] {
 	return &KV[K, T]{
-		KV: ttlcache.New[K, T](),
+		KV: ttlcache.New[K, T](opts...),
 	}
 }
 
@@ -41,6 +41,17 @@ func (list *KV[K, T]) Load(key K) (T, bool) {
 	}
 
 	return v.Value(), true
+}
+
+func (list *KV[K, T]) LoadWithTTL(key K) (T, int, bool) {
+	v := list.KV.Get(key)
+
+	if v == nil {
+		var nullValue T
+		return nullValue, 0, false
+	}
+
+	return v.Value(), int(v.ExpiresAt().Unix()), true
 }
 
 // Unix timestamp

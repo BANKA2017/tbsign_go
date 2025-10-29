@@ -14,6 +14,7 @@ import (
 	"github.com/BANKA2017/tbsign_go/model"
 	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
+	"github.com/jellydator/ttlcache/v3"
 	"golang.org/x/mod/semver"
 	"golang.org/x/sync/singleflight"
 
@@ -21,9 +22,13 @@ import (
 	_ "time/tzdata"
 )
 
-var Options = NewKV[string, string]()             //  make(map[string]string)
-var CookieList = NewKV[int32, _type.TypeCookie]() //= make(map[int32]_type.TypeCookie)
-var FidList = NewKV[string, int64]()              //= make(map[string]int64)
+var Options = NewKV[string, string]() //  make(map[string]string)
+var CookieList = NewKV[int32, _type.TypeCookie](
+	ttlcache.WithCapacity[int32, _type.TypeCookie](100),
+) //= make(map[int32]_type.TypeCookie)
+var FidList = NewKV[string, int64](
+	ttlcache.WithCapacity[string, int64](500),
+) //= make(map[string]int64)
 
 const ResetPwdMaxTimes = 5
 const ResetPwdExpire = 60 * 5 // 5 mins

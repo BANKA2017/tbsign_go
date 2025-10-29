@@ -2,10 +2,14 @@ package _function
 
 import (
 	"strconv"
+
+	"github.com/jellydator/ttlcache/v3"
 )
 
 func init() {
-	VerifyCodeList.List = NewKV[string, *VerifyCodeStruct]()
+	VerifyCodeList.List = NewKV[string, *VerifyCodeStruct](
+		ttlcache.WithDisableTouchOnHit[string, *VerifyCodeStruct](),
+	)
 }
 
 type VerifyCodeStruct struct {
@@ -29,9 +33,8 @@ func (list *VerifyCodeListType) StoreCode(_type string, uid int32, data *VerifyC
 
 func (list *VerifyCodeListType) LoadCode(_type string, uid int32) (*VerifyCodeStruct, bool) {
 	key := _type + ":" + strconv.Itoa(int(uid))
-	v, s := list.List.Load(key)
+	v, ttl, s := list.List.LoadWithTTL(key)
 	if s {
-		ttl, s := list.List.TTL(key)
 		if ttl > 0 && v.Expire != int64(ttl) {
 			v.Expire = int64(ttl)
 		}

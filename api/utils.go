@@ -148,12 +148,10 @@ func tokenBuilder(uid int, password string) (string, int64, int64) {
 	return strconv.Itoa(uid) + ":" + token + ":" + strconv.Itoa(int(expiredAt)), expiredAt, numberCookieExpire
 }
 
-var ExpiredTimeCache = &_function.KV[string, int64]{
-	KV: ttlcache.New[string, int64](
-		ttlcache.WithTTL[string, int64](time.Hour),
-		ttlcache.WithCapacity[string, int64](100),
-	),
-}
+var ExpiredTimeCache = _function.NewKV[string, int64](
+	ttlcache.WithTTL[string, int64](time.Hour),
+	ttlcache.WithCapacity[string, int64](100),
+)
 
 func GetSessionExpiredAt(uid string) int64 {
 	if t, ok := ExpiredTimeCache.Load(uid); ok {

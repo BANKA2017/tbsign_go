@@ -16,12 +16,10 @@ func VerifyPasswordHash(hashedPassword string, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }
 
-var PasswordCache = &KV[int, string]{
-	KV: ttlcache.New[int, string](
-		ttlcache.WithTTL[int, string](time.Hour),
-		ttlcache.WithCapacity[int, string](100),
-	),
-}
+var PasswordCache = NewKV[int, string](
+	ttlcache.WithTTL[int, string](time.Hour),
+	ttlcache.WithCapacity[int, string](100),
+)
 
 func GetPassword(uid int) string {
 	if pwd, ok := PasswordCache.Load(uid); ok {
