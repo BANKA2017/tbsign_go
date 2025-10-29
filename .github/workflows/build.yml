@@ -96,11 +96,6 @@ jobs:
         with:
           go-version: "1.24.2"
           cache-dependency-path: "go.sum"
-      - name: Rename Linux binary
-        run: |
-          mv "tbsign_go.musl.amd64.binary/tbsign_go" "build/${build_prefix}.linux-amd64"
-          mv "tbsign_go.musl.arm64.binary/tbsign_go" "build/${build_prefix}.linux-arm64"
-
       - name: Backend
         run: |
           cd build
@@ -120,11 +115,11 @@ jobs:
           echo "$(sha256sum build/${build_prefix}.windows-amd64.exe | awk '{print $1}')" >> "build/${build_prefix}.windows-amd64.exe.sha256"
           echo "windows_amd64_sha256=$(cat build/${build_prefix}.windows-amd64.exe.sha256)" >> "$GITHUB_ENV"
 
-          mv "build/${build_prefix}-linux-arm64" "build/${build_prefix}.linux-arm64"
+          mv "tbsign_go.musl.arm64.binary/tbsign_go" "build/${build_prefix}.linux-arm64"
           echo "$(sha256sum build/${build_prefix}.linux-arm64 | awk '{print $1}')" >> "build/${build_prefix}.linux-arm64.sha256"
           echo "linux_arm64_sha256=$(cat build/${build_prefix}.linux-arm64.sha256)" >> "$GITHUB_ENV"
 
-          mv "build/${build_prefix}-linux-amd64" "build/${build_prefix}.linux-amd64"
+          mv "tbsign_go.musl.amd64.binary/tbsign_go" "build/${build_prefix}.linux-amd64"
           echo "$(sha256sum build/${build_prefix}.linux-amd64 | awk '{print $1}')" >> "build/${build_prefix}.linux-amd64.sha256"
           echo "linux_amd64_sha256=$(cat build/${build_prefix}.linux-amd64.sha256)" >> "$GITHUB_ENV"
 
