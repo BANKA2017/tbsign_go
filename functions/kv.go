@@ -1,75 +1,68 @@
 package _function
 
 import (
-	"sync"
 	"time"
+
+	"github.com/jellydator/ttlcache/v3"
 )
 
-type KV[K, T any] struct {
-	KV sync.Map
-	// SF singleflight.Group
+type KV[K comparable, T any] struct {
+	KV *ttlcache.Cache[K, T]
 }
 
-type KVStruct[T any] struct {
-	Value    T     `json:"value"`
-	ExpireAt int64 `json:"expire_at"`
+// type KVStruct[T any] struct {
+// 	Value    T     `json:"value"`
+// 	ExpireAt int64 `json:"expire_at"`
+// }
+
+func NewKV[K comparable, T any]() *KV[K, T] {
+	return &KV[K, T]{
+		KV: ttlcache.New[K, T](),
+	}
 }
 
 func (list *KV[K, T]) Store(key K, value T, ttlSeconds int64) {
-	list.KV.Store(key, &KVStruct[T]{
-		Value:    value,
-		ExpireAt: When(ttlSeconds == -1, -1, time.Now().Add(time.Second*time.Duration(ttlSeconds)).Unix()),
-	})
+	var ttl time.Duration
+	if ttlSeconds <= -1 {
+		ttl = ttlcache.NoTTL
+	} else {
+		ttl = time.Duration(ttlSeconds) * time.Second
+	}
+
+	list.KV.Set(key, value, ttl)
 }
 
 func (list *KV[K, T]) Load(key K) (T, bool) {
-	v, ok := list.KV.Load(key)
+	v := list.KV.Get(key)
 
-	if !ok {
+	if v == nil {
 		var nullValue T
 		return nullValue, false
 	}
 
-	vStructed := v.(*KVStruct[T])
-
-	if vStructed.ExpireAt > -1 && vStructed.ExpireAt < time.Now().Unix() {
-		list.Delete(key)
-		var nullValue T
-		return nullValue, false
-	}
-
-	return vStructed.Value, true
+	return v.Value(), true
 }
 
 // Unix timestamp
 func (list *KV[K, T]) TTL(key K) (int, bool) {
-	v, ok := list.KV.Load(key)
+	v := list.KV.Get(key)
 
-	if !ok {
+	if v == nil {
 		return 0, false
 	}
 
-	vStructed := v.(*KVStruct[T])
-
-	return int(vStructed.ExpireAt), true
+	return int(v.TTL()), true
 }
 
 func (list *KV[K, T]) LoadAndDelete(key K) (T, bool) {
-	v, ok := list.KV.LoadAndDelete(key)
+	v, _ := list.KV.GetAndDelete(key)
 
-	if !ok {
+	if v == nil {
 		var nullValue T
 		return nullValue, false
 	}
 
-	vStructed := v.(*KVStruct[T])
-
-	if vStructed.ExpireAt > -1 && vStructed.ExpireAt < time.Now().Unix() {
-		var nullValue T
-		return nullValue, false
-	}
-
-	return vStructed.Value, true
+	return v.Value(), true
 }
 
 func (list *KV[K, T]) Delete(key K) {
@@ -77,39 +70,23 @@ func (list *KV[K, T]) Delete(key K) {
 }
 
 func (list *KV[K, T]) DeleteAll() {
-	list.KV.Range(func(key, value any) bool {
-		list.KV.Delete(key)
-		return true
-	})
+	list.KV.DeleteAll()
 }
 
 func (list *KV[K, T]) Length() int {
-	length := 0
-	list.KV.Range(func(key, value any) bool {
-		length++
-		return true
-	})
-	return length
+	return list.KV.Len()
 }
 
 func (list *KV[K, T]) Range(f func(key K, value T) bool) {
-	list.KV.Range(func(k, v any) bool {
-		typedKey, ok1 := k.(K)
-		typedVal, ok2 := v.(*KVStruct[T])
-		if !ok1 || !ok2 {
-			return true
+	list.KV.Range(func(item *ttlcache.Item[K, T]) bool {
+		if item != nil {
+			return f(item.Key(), item.Value())
 		}
-		return f(typedKey, typedVal.Value)
+
+		return true
 	})
 }
 
 func (list *KV[K, T]) RemoveExpired() {
-	now := time.Now().Unix()
-	list.KV.Range(func(key, value any) bool {
-		expireAt := value.(*KVStruct[T]).ExpireAt
-		if expireAt > -1 && expireAt < now {
-			list.Delete(key.(K))
-		}
-		return true
-	})
+	list.KV.DeleteExpired()
 }

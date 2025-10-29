@@ -4,6 +4,10 @@ import (
 	"strconv"
 )
 
+func init() {
+	VerifyCodeList.List = NewKV[string, *VerifyCodeStruct]()
+}
+
 type VerifyCodeStruct struct {
 	VerifyCode string `json:"verify_code"`
 	Value      string `json:"value"`
@@ -14,7 +18,7 @@ type VerifyCodeStruct struct {
 }
 
 type VerifyCodeListType struct {
-	List KV[string, *VerifyCodeStruct]
+	List *KV[string, *VerifyCodeStruct]
 }
 
 var VerifyCodeList VerifyCodeListType //= make(map[int32]*ResetPwdStruct)

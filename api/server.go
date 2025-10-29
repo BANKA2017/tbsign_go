@@ -56,8 +56,6 @@ func GetServerStatus(c echo.Context) error {
 
 	ForumCount := checkinStatus.Success + checkinStatus.Failed + checkinStatus.Waiting + checkinStatus.IsIgnore
 
-	onlineCount := HttpAuthRefreshTokenMap.Length()
-
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
 		"goroutine":  runtime.NumGoroutine(),
 		"goversion":  fmt.Sprintf("%s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH),
@@ -75,7 +73,7 @@ func GetServerStatus(c echo.Context) error {
 		"compat":          _function.GetOption("core_version"),
 		"pure_go":         share.IsPureGO,
 		"encrypt":         share.IsEncrypt,
-		"uid_count":       fmt.Sprintf("%d [online:%d]", UIDCount, onlineCount),
+		"uid_count":       strconv.Itoa(int(UIDCount)),
 		"pid_count":       PIDCount,
 		"forum_count":     ForumCount,
 		"checkin_status":  checkinStatus,

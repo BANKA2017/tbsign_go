@@ -42,12 +42,34 @@ func PreCheck(next echo.HandlerFunc) echo.HandlerFunc {
 			path = strings.TrimPrefix(path, "/api")
 		}
 
-		authorization := c.Request().Header.Get("Authorization")
+		authorization := ""
+		authSource := "header"
+		if share.EnableFrontend {
+			_authorization, err := c.Cookie("tc_auth")
+			if err == nil {
+				authorization = _authorization.Value
+				authSource = "cookie"
+			}
+		}
+
+		if authorization == "" {
+			authorization = c.Request().Header.Get("Authorization")
+		}
 
 		uid, role := verifyAuthorization(authorization)
 
 		// login
 		if uid == "0" {
+			if authSource == "cookie" {
+				c.SetCookie(&http.Cookie{
+					Name:     "tc_auth",
+					Value:    "",
+					MaxAge:   -1,
+					Expires:  time.Unix(0, 0),
+					Path:     "/api",
+					HttpOnly: true,
+				})
+			}
 			return c.JSON(http.StatusOK, _function.ApiTemplate(401, "无效 session", _function.EchoEmptyObject, "tbsign"))
 		}
 

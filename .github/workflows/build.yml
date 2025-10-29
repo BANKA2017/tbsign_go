@@ -9,6 +9,7 @@ concurrency:
 
 env:
   NUXT_BASE_PATH: "/api"
+  NUXT_USE_COOKIE_TOKEN: "1"
   CGO_ENABLED: "1"
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}

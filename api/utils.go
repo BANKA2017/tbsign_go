@@ -1,6 +1,8 @@
 package _api
 
 import (
+	"crypto/hmac"
+	"encoding/base64"
 	"errors"
 	"log"
 	"math"
@@ -12,6 +14,7 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	"github.com/BANKA2017/tbsign_go/share"
+	"github.com/jellydator/ttlcache/v3"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slices"
 )
@@ -59,7 +62,7 @@ func verifyAuthorization(authorization string) (string, string) {
 	} else {
 		token := strings.Split(strings.TrimSpace(authorization), ":")
 		// TODO static target
-		if len(token) != 2 {
+		if len(token) != 3 {
 			return "0", "guest"
 		}
 
@@ -68,8 +71,32 @@ func verifyAuthorization(authorization string) (string, string) {
 			return "0", "guest"
 		}
 
-		if storeToken, ok := HttpAuthRefreshTokenMap.Load(int(uid)); ok {
-			if !ok || storeToken != token[1] {
+		strUID := strconv.Itoa(int(uid))
+
+		expiredAt, _ := strconv.ParseInt(token[2], 10, 64)
+		expiredAtTime := time.Unix(expiredAt, 0)
+
+		if time.Now().After(expiredAtTime) {
+			return "0", "guest"
+		}
+
+		savedSessionExpiredAt := GetSessionExpiredAt(strUID)
+
+		if savedSessionExpiredAt <= 0 {
+			return "0", "guest"
+		}
+
+		savedSessionExpiredAtTime := time.Unix(savedSessionExpiredAt, 0)
+		if savedSessionExpiredAtTime.After(expiredAtTime) {
+			return "0", "guest"
+		}
+
+		dbPwd := _function.GetPassword(int(uid))
+
+		byteToken, _ := base64.RawURLEncoding.DecodeString(token[1])
+
+		if dbPwd != "" {
+			if !hmac.Equal(HmacSessionToken(strUID, dbPwd, strconv.Itoa(int(savedSessionExpiredAt))), byteToken) {
 				return "0", "guest"
 			}
 			var accountInfo []*model.TcUser
@@ -94,15 +121,13 @@ func verifyAuthorization(authorization string) (string, string) {
 // 	ExpireAt int64
 // }
 
-var HttpAuthRefreshTokenMap _function.KV[int, string]
+// var HttpAuthRefreshTokenMap _function.KV[int, string]
 
-func tokenBuilder(uid int) (string, int64) {
-	_token, err := _function.RandomTokenBuilder(48)
-	if err != nil {
-		return "", 0
-	}
-	token := _function.Base64URLEncode(_token)
+func HmacSessionToken(uid, password, expiredAt string) []byte {
+	return _function.GenHMAC256([]byte(password), []byte(uid+":"+password+":"+expiredAt))
+}
 
+func tokenBuilder(uid int, password string) (string, int64, int64) {
 	// expire
 	strCookieExpire := _function.GetOption("cktime")
 	numberCookieExpire, err := strconv.ParseInt(strCookieExpire, 10, 64)
@@ -113,10 +138,48 @@ func tokenBuilder(uid int) (string, int64) {
 	} else if numberCookieExpire < 30 {
 		numberCookieExpire = 30
 	}
+	expiredAt := time.Now().Add(time.Duration(numberCookieExpire) * time.Second).Unix()
+	strExpiredAt := strconv.Itoa(int(expiredAt))
 
-	HttpAuthRefreshTokenMap.Store(int(uid), token, numberCookieExpire)
+	token := base64.RawURLEncoding.EncodeToString(HmacSessionToken(strconv.Itoa(int(uid)), password, strExpiredAt))
 
-	return strconv.Itoa(uid) + ":" + token, time.Now().Add(time.Duration(numberCookieExpire) * time.Second).Unix()
+	// HttpAuthRefreshTokenMap.Store(int(uid), token, numberCookieExpire)
+
+	return strconv.Itoa(uid) + ":" + token + ":" + strconv.Itoa(int(expiredAt)), expiredAt, numberCookieExpire
+}
+
+var ExpiredTimeCache = &_function.KV[string, int64]{
+	KV: ttlcache.New[string, int64](
+		ttlcache.WithTTL[string, int64](time.Hour),
+		ttlcache.WithCapacity[string, int64](100),
+	),
+}
+
+func GetSessionExpiredAt(uid string) int64 {
+	if t, ok := ExpiredTimeCache.Load(uid); ok {
+		return t
+	}
+	strT := _function.GetUserOption("session_expired_at", uid)
+
+	t, _ := strconv.ParseInt(strT, 10, 64)
+	ExpiredTimeCache.Store(uid, t, int64(ttlcache.DefaultTTL))
+	return t
+}
+
+func UpdateSessionExpiredAt(uid string, t int64) (int64, error) {
+	if err := _function.SetUserOption("session_expired_at", strconv.Itoa(int(t)), uid); err != nil {
+		return 0, err
+	}
+	ExpiredTimeCache.Store(uid, t, int64(ttlcache.DefaultTTL))
+	return t, nil
+}
+
+func DeleteSessionExpiredAt(uid string) (bool, error) {
+	if err := _function.DeleteUserOption("session_expired_at", uid); err != nil {
+		return false, err
+	}
+	ExpiredTimeCache.Delete(uid)
+	return true, nil
 }
 
 var resetPasswordVerifyCodeByteLength int64 = 6

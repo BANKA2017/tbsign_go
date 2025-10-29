@@ -12,7 +12,7 @@ import (
 )
 
 var PluginList = make(map[string]PluginActionHooks)
-var PluginOptionValidatorMap _function.KV[string, func(value string) bool]
+var PluginOptionValidatorMap = _function.NewKV[string, func(value string) bool]()
 
 func RegisterPlugin(name string, plugin PluginActionHooks) {
 	PluginList[name] = plugin

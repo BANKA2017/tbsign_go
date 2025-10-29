@@ -6,6 +6,7 @@ EXTERNAL_LDFLAGS="${EXTERNAL_LDFLAGS:-}"
 
 flag=$(pwd)
 export NUXT_BASE_PATH="/api"
+export NUXT_USE_COOKIE_TOKEN="1"
 
 mkdir tbsign_build
 cd tbsign_build
@@ -22,6 +23,7 @@ yarn install
 yarn run postinstall
 yarn run generate
 unset NUXT_BASE_PATH
+unset NUXT_USE_COOKIE_TOKEN
 unset NUXT_COMMIT_HASH
 cd $flag/tbsign_build
 

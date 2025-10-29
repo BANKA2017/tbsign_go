@@ -365,10 +365,10 @@ func main() {
 			}
 
 			// session list
-			_api.HttpAuthRefreshTokenMap.RemoveExpired()
+			// _api.HttpAuthRefreshTokenMap.RemoveExpired()
 
 			// clean verify code list
-			_function.VerifyCodeList.List.RemoveExpired()
+			// _function.VerifyCodeList.List.RemoveExpired()
 
 			// daily report
 			_plugin.DailyReportAction()
@@ -377,8 +377,8 @@ func main() {
 			_plugin.InitPluginList()
 
 			// clean cookie/fid cache
-			_function.CookieList.RemoveExpired()
-			_function.FidList.RemoveExpired()
+			// _function.CookieList.RemoveExpired()
+			// _function.FidList.RemoveExpired()
 		}
 	}
 }

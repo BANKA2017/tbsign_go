@@ -78,7 +78,7 @@ func Api(address string) {
 	api.GET("/account/check/:pid/is_manager/:fname", CheckIsManager)
 
 	// tieba list
-	api.POST("/list/sync", RefreshTiebaList, RateLimit(1, time.Second))
+	api.POST("/list/sync", RefreshTiebaList, RateLimit(1, time.Second*10))
 	api.GET("/list", GetTiebaList)
 	api.PATCH("/list", AddTieba)
 	api.DELETE("/list", CleanTiebaList)

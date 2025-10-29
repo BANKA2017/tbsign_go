@@ -175,6 +175,7 @@ go run main.go --db_tls=/etc/ssl/certs/ca-certificates.crt
 
   ```env
   NUXT_BASE_PATH="/api"
+  NUXT_USE_COOKIE_TOKEN="1"
   ```
 
 - 在前端仓库的目录执行 `yarn run generate` 后将 `.output/public` 目录的文件拷贝到 `/assets/dist` 内
@@ -290,9 +291,11 @@ docker run -d --restart unless-stopped -v ./db:/app/tbsign/db -p 8080:1323 ghcr.
 
 格式为 `tbsign_go.<YYYYMMDD>.<BACKEND_COMMIT_HASH[0:7]>.<FRONTEND_COMMIT_HASH[0:7]>.<OS>-<ARCH>` ，如果是用于 Windows 系统的可执行文件还会有 `.exe` 拓展名
 
-官方提供的可执行文件包含 linux/amd64, linux/arm64, windows/amd64, darwin/amd64, darwin/arm64 五个版本，使用 [xgo](https://github.com/techknowlogick/xgo) 进行交叉编译，手动触发编译的 Actions 任务
+官方提供的可执行文件包含 linux/amd64, linux/arm64, windows/amd64, darwin/amd64, darwin/arm64 五个版本，后三个版本使用 [xgo](https://github.com/techknowlogick/xgo) 进行交叉编译，手动触发编译的 Actions 任务
 
-\* 由于添加 `musl-libc` 静态编译产物比较麻烦，所以不会发布 `musl` 版的可执行文件，如有需要可以解包 Docker 镜像
+~~\* 由于添加 `musl-libc` 静态编译产物比较麻烦，所以不会发布 `musl` 版的可执行文件，如有需要可以解包 Docker 镜像~~
+
+仓库发布的 Linux 版自带 `musl-libc`，无需处理 `libc` 问题
 
 其它系统请自行编译运行
 

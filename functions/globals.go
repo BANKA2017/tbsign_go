@@ -21,9 +21,9 @@ import (
 	_ "time/tzdata"
 )
 
-var Options KV[string, string]             //  make(map[string]string)
-var CookieList KV[int32, _type.TypeCookie] //= make(map[int32]_type.TypeCookie)
-var FidList KV[string, int64]              //= make(map[string]int64)
+var Options = NewKV[string, string]()             //  make(map[string]string)
+var CookieList = NewKV[int32, _type.TypeCookie]() //= make(map[int32]_type.TypeCookie)
+var FidList = NewKV[string, int64]()              //= make(map[string]int64)
 
 const ResetPwdMaxTimes = 5
 const ResetPwdExpire = 60 * 5 // 5 mins
@@ -176,8 +176,8 @@ func RandomEmoji() string {
 	emojiMap := []string{"💻", "✅", "➡️", "🎉", "🤖", "🐱", "⚙️", "😊", "📌", "✒️", "⌛", "🔔"}
 	randNum := rand.Perm(len(emojiMap))
 
-	resStr := []string{}
-	for _, v := range randNum {
+	var resStr []string
+	for _, v := range randNum[:3] {
 		resStr = append(resStr, emojiMap[v])
 	}
 	return strings.Join(resStr, "")

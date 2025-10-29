@@ -399,11 +399,11 @@ func AdminDeleteAccountToken(c echo.Context) error {
 
 	numTargetUID, _ := strconv.ParseInt(targetUID, 10, 64)
 
-	if _, ok := HttpAuthRefreshTokenMap.LoadAndDelete(int(numTargetUID)); ok {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
-	} else {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不在线上", false, "tbsign"))
+	if _, err := DeleteSessionExpiredAt(strconv.Itoa(int(numTargetUID))); err != nil {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "令牌错误", false, "tbsign"))
 	}
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 }
 
 func AdminResetPassword(c echo.Context) error {
@@ -576,7 +576,8 @@ func AdminDeleteAccount(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, fmt.Sprintf("删除用户 %d:%s 失败 (%s)", accountInfo.ID, accountInfo.Name, err.Error()), false, "tbsign"))
 	}
 
-	HttpAuthRefreshTokenMap.Delete(int(accountInfo.ID))
+	//HttpAuthRefreshTokenMap.Delete(int(accountInfo.ID))
+	_function.PasswordCache.Delete(int(accountInfo.ID))
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 }

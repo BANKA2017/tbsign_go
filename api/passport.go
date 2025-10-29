@@ -5,11 +5,13 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/BANKA2017/tbsign_go/share"
+	"github.com/jellydator/ttlcache/v3"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
@@ -151,7 +153,8 @@ func DeleteAccount(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "账号删除失败", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	HttpAuthRefreshTokenMap.Delete(int(numUID))
+	// HttpAuthRefreshTokenMap.Delete(int(numUID))
+	_function.PasswordCache.Delete(int(numUID))
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "账号已删除，感谢您的使用", map[string]any{
 		"uid":  int64(accountInfo.ID),
@@ -176,10 +179,14 @@ func Login(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(401, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	err := _function.VerifyPasswordHash(accountInfo[0].Pw, password)
+	dbPwd := accountInfo[0].Pw
+	// save pwd to cache
+	_function.PasswordCache.Store(int(accountInfo[0].ID), dbPwd, int64(ttlcache.DefaultTTL))
+
+	err := _function.VerifyPasswordHash(dbPwd, password)
 	if err != nil && _function.GetOption("go_ver") != "1" {
 		// Compatible with older versions -> md5(md5(md5($pwd)))
-		if _function.Md5(_function.Md5(_function.Md5(password))) != accountInfo[0].Pw {
+		if _function.Md5(_function.Md5(_function.Md5(password))) != dbPwd {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(401, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
 		}
 	} else if err != nil {
@@ -193,12 +200,27 @@ func Login(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "账号已删除", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	token, expireAt := tokenBuilder(int(accountInfo[0].ID))
+	token, expireAt, maxAge := tokenBuilder(int(accountInfo[0].ID), dbPwd)
 
 	var resp = tokenResponse{
 		Type:     "session",
 		Token:    token,
 		ExpireAt: expireAt,
+	}
+
+	if _, err = UpdateSessionExpiredAt(strconv.Itoa(int(accountInfo[0].ID)), expireAt); err != nil {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "令牌错误", _function.EchoEmptyObject, "tbsign"))
+	}
+
+	if share.EnableFrontend {
+		c.SetCookie(&http.Cookie{
+			Name:     "tc_auth",
+			Value:    token,
+			MaxAge:   int(maxAge),
+			Expires:  time.Unix(expireAt, 0),
+			Path:     "/api",
+			HttpOnly: true,
+		})
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
@@ -207,9 +229,24 @@ func Login(c echo.Context) error {
 func Logout(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	numUID, _ := strconv.ParseInt(uid, 10, 64)
+	// numUID, _ := strconv.ParseInt(uid, 10, 64)
 
-	HttpAuthRefreshTokenMap.Delete(int(numUID))
+	// HttpAuthRefreshTokenMap.Delete(int(numUID))
+
+	if _, err := DeleteSessionExpiredAt(uid); err != nil {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "令牌错误", _function.EchoEmptyObject, "tbsign"))
+	}
+
+	if share.EnableFrontend {
+		c.SetCookie(&http.Cookie{
+			Name:     "tc_auth",
+			Value:    "",
+			MaxAge:   -1,
+			Expires:  time.Unix(0, 0),
+			Path:     "/api",
+			HttpOnly: true,
+		})
+	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 }
@@ -344,18 +381,19 @@ func UpdatePassword(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "新/旧密码都不可为空", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	var accountInfo []*model.TcUser
-	_function.GormDB.R.Where("id = ?", uid).Limit(1).Find(&accountInfo)
+	numUID, _ := strconv.ParseInt(uid, 10, 64)
 
-	if len(accountInfo) == 0 {
+	dbPwd := _function.GetPassword(int(numUID))
+
+	if dbPwd == "" {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// compare old password
-	err := _function.VerifyPasswordHash(accountInfo[0].Pw, oldPwd)
+	err := _function.VerifyPasswordHash(dbPwd, oldPwd)
 	if err != nil && _function.GetOption("go_ver") != "1" {
 		// Compatible with older versions
-		if _function.Md5(_function.Md5(_function.Md5(oldPwd))) != accountInfo[0].Pw {
+		if _function.Md5(_function.Md5(_function.Md5(oldPwd))) != dbPwd {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "旧密码错误", _function.EchoEmptyObject, "tbsign"))
 		}
 	} else if err != nil {
@@ -363,21 +401,33 @@ func UpdatePassword(c echo.Context) error {
 	}
 
 	// create new password
-	hash, err := _function.CreatePasswordHash(newPwd)
+
+	hash, err := _function.UpdatePassword(int(numUID), newPwd)
 	if err != nil {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法更新密码...", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", uid).Update("pw", string(hash))
-
-	numUID, _ := strconv.ParseInt(uid, 10, 64)
-
-	token, expireAt := tokenBuilder(int(numUID))
+	token, expireAt, maxAge := tokenBuilder(int(numUID), string(hash))
 
 	var resp = tokenResponse{
 		Type:     "session",
 		Token:    token,
 		ExpireAt: expireAt,
+	}
+
+	if _, err = UpdateSessionExpiredAt(uid, expireAt); err != nil {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "令牌错误", _function.EchoEmptyObject, "tbsign"))
+	}
+
+	if share.EnableFrontend {
+		c.SetCookie(&http.Cookie{
+			Name:     "tc_auth",
+			Value:    token,
+			MaxAge:   int(maxAge),
+			Expires:  time.Unix(expireAt, 0),
+			Path:     "/api",
+			HttpOnly: true,
+		})
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
@@ -528,15 +578,14 @@ func ResetPassword(c echo.Context) error {
 					return c.JSON(http.StatusOK, _function.ApiTemplate(404, "密码不能为空", resMessage, "tbsign"))
 				} else {
 					// create new password
-					hash, err := _function.CreatePasswordHash(newPwd)
+					_, err := _function.UpdatePassword(int(accountInfo.ID), newPwd)
 					if err != nil {
 						return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法更新密码...", resMessage, "tbsign"))
 					}
 
-					_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", accountInfo.ID).Update("pw", string(hash))
-
 					_function.VerifyCodeList.DeleteCode("reset_password", accountInfo.ID)
-					HttpAuthRefreshTokenMap.Delete(int(accountInfo.ID))
+					// HttpAuthRefreshTokenMap.Delete(int(accountInfo.ID))
+					DeleteSessionExpiredAt(strconv.Itoa(int(accountInfo.ID)))
 					return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resMessage, "tbsign"))
 				}
 			} else {
@@ -545,7 +594,7 @@ func ResetPassword(c echo.Context) error {
 		} else {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
 		}
-	} else if verifyCode == "" && newPwd != "" {
+	} else if newPwd != "" {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
 	} else {
 		VerifyCode, err := SendResetMessage(accountInfo.ID, "", false)
@@ -584,10 +633,12 @@ func ExportAccountData(c echo.Context) error {
 
 	password := c.FormValue("password")
 
-	var tcUser []*model.TcUser
-	_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", uid).Find(&tcUser)
-	if len(tcUser) > 0 {
-		err := _function.VerifyPasswordHash(tcUser[0].Pw, password)
+	numUid, _ := strconv.ParseInt(uid, 10, 64)
+
+	dbPwd := _function.GetPassword(int(numUid))
+
+	if dbPwd != "" {
+		err := _function.VerifyPasswordHash(dbPwd, password)
 		if err != nil {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "密码错误", _function.EchoEmptyObject, "tbsign"))
 		}
@@ -679,10 +730,12 @@ func ImportAccountData(c echo.Context) error {
 
 	password := strings.TrimSpace(c.FormValue("password"))
 
-	var tcUser []*model.TcUser
-	_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", uid).Find(&tcUser)
-	if len(tcUser) > 0 {
-		err := _function.VerifyPasswordHash(tcUser[0].Pw, password)
+	numUid, _ := strconv.ParseInt(uid, 10, 64)
+
+	dbPwd := _function.GetPassword(int(numUid))
+
+	if dbPwd != "" {
+		err := _function.VerifyPasswordHash(dbPwd, password)
 		if err != nil {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "密码错误", _function.EchoEmptyObject, "tbsign"))
 		}
