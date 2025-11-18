@@ -12,7 +12,6 @@ import (
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
-	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slices"
@@ -192,22 +191,7 @@ func (pluginInfo *LoopBanPluginType) Install() error {
 	}
 	UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
 
-	// index ?
-	if share.DBMode == "mysql" {
-		_function.GormDB.W.Set("gorm:table_options", "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci").Migrator().CreateTable(&model.TcVer4BanUserset{})
-		_function.GormDB.W.Set("gorm:table_options", "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci").Migrator().CreateTable(&model.TcVer4BanList{})
-		_function.GormDB.W.Exec("ALTER TABLE `tc_ver4_ban_list` ADD KEY `uid` (`uid`), ADD KEY `id_uid` (`id`,`uid`), ADD KEY `pid` (`pid`), ADD KEY `id_date_stime_etime_uid` (`id`,`date`,`stime`,`etime`,`uid`) USING BTREE;")
-		_function.GormDB.W.Exec("ALTER TABLE `tc_ver4_ban_userset` ADD UNIQUE KEY `uid` (`uid`);")
-	} else {
-		_function.GormDB.W.Migrator().CreateTable(&model.TcVer4BanUserset{})
-		_function.GormDB.W.Migrator().CreateTable(&model.TcVer4BanList{})
-
-		_function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_ver4_ban_list_uid" ON "tc_ver4_ban_list" ("uid");`)
-		_function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_ver4_ban_list_id_uid" ON "tc_ver4_ban_list" ("id","uid");`)
-		_function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_ver4_ban_list_pid" ON "tc_ver4_ban_list" ("pid");`)
-		_function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_ver4_ban_list_id_date_stime_etime_uid" ON "tc_ver4_ban_list" ("id","date","stime","etime","uid");`)
-	}
-	return nil
+	return _function.GormDB.W.Migrator().CreateTable(&model.TcVer4BanUserset{}, &model.TcVer4BanList{})
 }
 
 func (pluginInfo *LoopBanPluginType) Delete() error {

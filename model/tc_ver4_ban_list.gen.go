@@ -8,17 +8,17 @@ const TableNameTcVer4BanList = "tc_ver4_ban_list"
 
 // TcVer4BanList mapped from table <tc_ver4_ban_list>
 type TcVer4BanList struct {
-	ID       int32  `gorm:"column:id;primaryKey;autoIncrement:true" json:"id"`
-	UID      int32  `gorm:"column:uid;not null" json:"uid"`
-	Pid      int32  `gorm:"column:pid;not null" json:"pid"`
-	Name     string `gorm:"column:name" json:"name"`
-	NameShow string `gorm:"column:name_show" json:"name_show"`
-	Portrait string `gorm:"column:portrait" json:"portrait"`
-	Tieba    string `gorm:"column:tieba;not null" json:"tieba"`
-	Stime    int32  `gorm:"column:stime;not null" json:"stime"`
-	Etime    int32  `gorm:"column:etime;not null" json:"etime"`
-	Log      string `gorm:"column:log" json:"log"`
-	Date     int32  `gorm:"column:date;not null;default:0" json:"date"`
+	ID       int32  `gorm:"column:id;type:int;primaryKey;autoIncrement:true;index:tc_ver4_ban_list_id_date_stime_etime_uid,priority:1;index:tc_ver4_ban_list_id_uid,priority:1" json:"id"`
+	UID      int32  `gorm:"column:uid;type:int;not null;index:tc_ver4_ban_list_id_date_stime_etime_uid,priority:5;index:tc_ver4_ban_list_id_uid,priority:2;index:tc_ver4_ban_list_uid,priority:1" json:"uid"`
+	Pid      int32  `gorm:"column:pid;type:int;not null;index:tc_ver4_ban_list_pid,priority:1" json:"pid"`
+	Name     string `gorm:"column:name;type:text" json:"name"`
+	NameShow string `gorm:"column:name_show;type:text" json:"name_show"`
+	Portrait string `gorm:"column:portrait;type:text" json:"portrait"`
+	Tieba    string `gorm:"column:tieba;type:text;not null" json:"tieba"`
+	Stime    int32  `gorm:"column:stime;type:int;not null;index:tc_ver4_ban_list_id_date_stime_etime_uid,priority:3" json:"stime"`
+	Etime    int32  `gorm:"column:etime;type:int;not null;index:tc_ver4_ban_list_id_date_stime_etime_uid,priority:4" json:"etime"`
+	Log      string `gorm:"column:log;type:text" json:"log"`
+	Date     int32  `gorm:"column:date;type:int;not null;index:tc_ver4_ban_list_id_date_stime_etime_uid,priority:2" json:"date"`
 }
 
 // TableName TcVer4BanList's table name

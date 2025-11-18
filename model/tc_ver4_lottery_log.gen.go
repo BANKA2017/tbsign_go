@@ -8,12 +8,12 @@ const TableNameTcVer4LotteryLog = "tc_ver4_lottery_log"
 
 // TcVer4LotteryLog mapped from table <tc_ver4_lottery_log>
 type TcVer4LotteryLog struct {
-	ID     int32  `gorm:"column:id;primaryKey;autoIncrement:true" json:"id"`
-	UID    int32  `gorm:"column:uid;not null" json:"uid"`
-	Pid    int32  `gorm:"column:pid;not null" json:"pid"`
-	Result string `gorm:"column:result;not null" json:"result"`
-	Prize  string `gorm:"column:prize;not null" json:"prize"`
-	Date   int32  `gorm:"column:date;not null;default:0" json:"date"`
+	ID     int32  `gorm:"column:id;type:int;primaryKey;autoIncrement:true" json:"id"`
+	UID    int32  `gorm:"column:uid;type:int;not null" json:"uid"`
+	Pid    int32  `gorm:"column:pid;type:int;not null;index:tc_ver4_lottery_log_pid,priority:1;index:tc_ver4_lottery_log_pid_date,priority:1" json:"pid"`
+	Result string `gorm:"column:result;type:text;not null" json:"result"`
+	Prize  string `gorm:"column:prize;type:text;not null" json:"prize"`
+	Date   int32  `gorm:"column:date;type:int;not null;index:tc_ver4_lottery_log_date,priority:1;index:tc_ver4_lottery_log_pid_date,priority:2" json:"date"`
 }
 
 // TableName TcVer4LotteryLog's table name

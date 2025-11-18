@@ -8,12 +8,12 @@ const TableNameTcUser = "tc_users"
 
 // TcUser mapped from table <tc_users>
 type TcUser struct {
-	ID    int32  `gorm:"column:id;primaryKey;autoIncrement:true" json:"id"`
-	Name  string `gorm:"column:name;not null" json:"name"`
-	Pw    string `gorm:"column:pw;not null" json:"pw"`
-	Email string `gorm:"column:email;not null" json:"email"`
-	Role  string `gorm:"column:role;not null;default:'user'" json:"role"`
-	T     string `gorm:"column:t;not null;default:'tieba'" json:"t"`
+	ID    int32  `gorm:"column:id;type:int;primaryKey;autoIncrement:true" json:"id"`
+	Name  string `gorm:"column:name;type:varchar(20);not null;uniqueIndex:tc_users_email_name,priority:2;uniqueIndex:tc_users_name,priority:1" json:"name"`
+	Pw    string `gorm:"column:pw;type:text;not null" json:"pw"`
+	Email string `gorm:"column:email;type:varchar(40);not null;uniqueIndex:tc_users_email_name,priority:1" json:"email"`
+	Role  string `gorm:"column:role;type:varchar(10);not null;index:tc_users_role,priority:1;default:user" json:"role"`
+	T     string `gorm:"column:t;type:varchar(20);not null;default:tieba" json:"t"`
 }
 
 // TableName TcUser's table name

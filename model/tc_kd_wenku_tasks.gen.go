@@ -8,12 +8,12 @@ const TableNameTcKdWenkuTask = "tc_kd_wenku_tasks"
 
 // TcKdWenkuTask mapped from table <tc_kd_wenku_tasks>
 type TcKdWenkuTask struct {
-	ID     int64  `gorm:"column:id;primaryKey;autoIncrement:true" json:"id"`
-	UID    int64  `gorm:"column:uid;not null" json:"uid"`
-	Pid    int64  `gorm:"column:pid;not null" json:"pid"`
-	Status string `gorm:"column:status" json:"status"`
-	Log    string `gorm:"column:log" json:"log"`
-	Date   int32  `gorm:"column:date;not null;default:0" json:"date"`
+	ID     int64  `gorm:"column:id;type:bigint;primaryKey;autoIncrement:true;uniqueIndex:tc_kd_wenku_tasks_id_uid_pid,priority:1;index:tc_kd_wenku_tasks_date_id,priority:2" json:"id"`
+	UID    int64  `gorm:"column:uid;type:bigint;not null;uniqueIndex:tc_kd_wenku_tasks_id_uid_pid,priority:2;index:tc_kd_wenku_tasks_uid,priority:1" json:"uid"`
+	Pid    int64  `gorm:"column:pid;type:bigint;not null;uniqueIndex:tc_kd_wenku_tasks_id_uid_pid,priority:3;index:tc_kd_wenku_tasks_pid,priority:1" json:"pid"`
+	Status string `gorm:"column:status;type:text" json:"status"`
+	Log    string `gorm:"column:log;type:text" json:"log"`
+	Date   int32  `gorm:"column:date;type:int;not null;index:tc_kd_wenku_tasks_date_id,priority:1" json:"date"`
 }
 
 // TableName TcKdWenkuTask's table name

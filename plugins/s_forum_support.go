@@ -12,7 +12,6 @@ import (
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
-	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
@@ -724,36 +723,7 @@ func (pluginInfo *ForumSupportPluginInfoType) Install() error {
 		return err
 	}
 
-	// index ?
-	if share.DBMode == "mysql" {
-		err = _function.GormDB.W.Set("gorm:table_options", "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci").Migrator().CreateTable(&model.TcVer4RankLog{})
-		if err != nil {
-			return err
-		}
-		err = _function.GormDB.W.Exec("ALTER TABLE `tc_ver4_rank_log` ADD KEY `pid` (`pid`), ADD KEY `uid_pid` (`uid`,`pid`), ADD KEY `id_date` (`id`,`date`) USING BTREE;").Error
-		if err != nil {
-			return err
-		}
-	} else {
-		err = _function.GormDB.W.Migrator().CreateTable(&model.TcVer4RankLog{})
-		if err != nil {
-			return err
-		}
-
-		err = _function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_ver4_rank_log_id_date" ON "tc_ver4_rank_log" ("id", "date");`).Error
-		if err != nil {
-			return err
-		}
-		err = _function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_ver4_rank_log_uid_pid" ON "tc_ver4_rank_log" ("uid","pid");`).Error
-		if err != nil {
-			return err
-		}
-		err = _function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_ver4_rank_log_pid" ON "tc_ver4_rank_log" ("pid");`).Error
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return _function.GormDB.W.Migrator().CreateTable(&model.TcVer4RankLog{})
 }
 
 func (pluginInfo *ForumSupportPluginInfoType) Delete() error {

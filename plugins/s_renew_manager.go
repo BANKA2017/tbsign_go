@@ -12,7 +12,6 @@ import (
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
-	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
@@ -187,19 +186,7 @@ func (pluginInfo *RenewManagerType) Install() error {
 	}
 	UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
 
-	// index ?
-	if share.DBMode == "mysql" {
-		_function.GormDB.W.Set("gorm:table_options", "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci").Migrator().CreateTable(&model.TcKdRenewManager{})
-		_function.GormDB.W.Exec("ALTER TABLE `tc_kd_renew_manager` ADD UNIQUE KEY `pid_fid` (`pid`,`fid`) USING BTREE, ADD KEY `id_date_uid` (`id`,`date`,`uid`), ADD KEY `uid_pid_fid` (`uid`,`pid`,`fid`);")
-	} else {
-		_function.GormDB.W.Migrator().CreateTable(&model.TcKdRenewManager{})
-
-		_function.GormDB.W.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS "idx_tc_kd_renew_manager_pid_fid" ON "tc_kd_renew_manager" ("pid","fid");`)
-		_function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_kd_renew_manager_id_date_uid" ON "tc_kd_renew_manager" ("id","date","uid");`)
-		_function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_kd_renew_manager_uid_pid_fid" ON "tc_kd_renew_manager" ("uid","pid","fid");`)
-	}
-
-	return nil
+	return _function.GormDB.W.Migrator().CreateTable(&model.TcKdRenewManager{})
 }
 
 func (pluginInfo *RenewManagerType) Delete() error {

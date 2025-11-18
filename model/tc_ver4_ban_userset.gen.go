@@ -8,8 +8,8 @@ const TableNameTcVer4BanUserset = "tc_ver4_ban_userset"
 
 // TcVer4BanUserset mapped from table <tc_ver4_ban_userset>
 type TcVer4BanUserset struct {
-	UID int32  `gorm:"column:uid;primaryKey;autoIncrement:false" json:"uid"`
-	C   string `gorm:"column:c" json:"c"`
+	UID int32  `gorm:"column:uid;type:int;primaryKey" json:"uid"`
+	C   string `gorm:"column:c;type:text" json:"c"`
 }
 
 // TableName TcVer4BanUserset's table name

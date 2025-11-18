@@ -8,8 +8,8 @@ const TableNameTcOption = "tc_options"
 
 // TcOption mapped from table <tc_options>
 type TcOption struct {
-	Name  string `gorm:"column:name;primaryKey" json:"name"`
-	Value string `gorm:"column:value;not null" json:"value"`
+	Name  string `gorm:"column:name;type:varchar(124);primaryKey" json:"name"`
+	Value string `gorm:"column:value;type:text;not null" json:"value"`
 }
 
 // TableName TcOption's table name

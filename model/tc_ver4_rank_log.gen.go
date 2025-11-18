@@ -8,15 +8,15 @@ const TableNameTcVer4RankLog = "tc_ver4_rank_log"
 
 // TcVer4RankLog mapped from table <tc_ver4_rank_log>
 type TcVer4RankLog struct {
-	ID    int32  `gorm:"column:id;primaryKey;autoIncrement:true" json:"id"`
-	UID   int32  `gorm:"column:uid;not null" json:"uid"`
-	Pid   int32  `gorm:"column:pid;not null" json:"pid"`
-	Fid   int32  `gorm:"column:fid;not null" json:"fid"`
-	Nid   string `gorm:"column:nid;not null" json:"nid"`
-	Name  string `gorm:"column:name;not null" json:"name"`
-	Tieba string `gorm:"column:tieba;not null" json:"tieba"`
-	Log   string `gorm:"column:log" json:"log"`
-	Date  int32  `gorm:"column:date;not null;default:0" json:"date"`
+	ID    int32  `gorm:"column:id;type:int;primaryKey;autoIncrement:true;index:tc_ver4_rank_log_id_date,priority:1" json:"id"`
+	UID   int32  `gorm:"column:uid;type:int;not null;index:tc_ver4_rank_log_uid_pid,priority:1" json:"uid"`
+	Pid   int32  `gorm:"column:pid;type:int;not null;index:tc_ver4_rank_log_pid,priority:1;index:tc_ver4_rank_log_uid_pid,priority:2" json:"pid"`
+	Fid   int32  `gorm:"column:fid;type:int;not null" json:"fid"`
+	Nid   string `gorm:"column:nid;type:text;not null" json:"nid"`
+	Name  string `gorm:"column:name;type:text;not null" json:"name"`
+	Tieba string `gorm:"column:tieba;type:text;not null" json:"tieba"`
+	Log   string `gorm:"column:log;type:text" json:"log"`
+	Date  int32  `gorm:"column:date;type:int;not null;index:tc_ver4_rank_log_id_date,priority:2" json:"date"`
 }
 
 // TableName TcVer4RankLog's table name

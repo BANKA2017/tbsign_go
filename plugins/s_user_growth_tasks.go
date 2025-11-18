@@ -12,7 +12,6 @@ import (
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
-	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slices"
@@ -531,19 +530,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Install() error {
 	}
 	UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
 
-	// index ?
-	if share.DBMode == "mysql" {
-		_function.GormDB.W.Set("gorm:table_options", "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci").Migrator().CreateTable(&model.TcKdGrowth{})
-		_function.GormDB.W.Exec("ALTER TABLE `tc_kd_growth` ADD UNIQUE KEY `id_uid_pid` (`id`,`uid`,`pid`), ADD KEY `uid` (`uid`), ADD KEY `pid` (`pid`), ADD KEY `date_id` (`date`,`id`) USING BTREE;")
-	} else {
-		_function.GormDB.W.Migrator().CreateTable(&model.TcKdGrowth{})
-
-		_function.GormDB.W.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS "idx_tc_kd_growth_id_uid_pid" ON "tc_kd_growth" ("id","uid","pid");`)
-		_function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_kd_growth_date_id" ON "tc_kd_growth" ("date","id");`)
-		_function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_kd_growth_pid" ON "tc_kd_growth" ("pid");`)
-		_function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_kd_growth_uid" ON "tc_kd_growth" ("uid");`)
-	}
-	return nil
+	return _function.GormDB.W.Migrator().CreateTable(&model.TcKdGrowth{})
 }
 
 func (pluginInfo *UserGrowthTasksPluginType) Delete() error {

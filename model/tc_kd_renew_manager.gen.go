@@ -8,16 +8,16 @@ const TableNameTcKdRenewManager = "tc_kd_renew_manager"
 
 // TcKdRenewManager mapped from table <tc_kd_renew_manager>
 type TcKdRenewManager struct {
-	ID     int32  `gorm:"column:id;primaryKey;autoIncrement:true" json:"id"`
-	UID    int32  `gorm:"column:uid;not null" json:"uid"`
-	Pid    int32  `gorm:"column:pid;not null" json:"pid"`
-	Fname  string `gorm:"column:fname;not null" json:"fname"`
-	Fid    int32  `gorm:"column:fid;not null" json:"fid"`
-	Tid    string `gorm:"column:tid;not null" json:"tid"`
-	Status string `gorm:"column:status;not null" json:"status"`
-	Date   int32  `gorm:"column:date;not null" json:"date"`
-	End    int32  `gorm:"column:end;not null" json:"end"`
-	Log    string `gorm:"column:log;not null" json:"log"`
+	ID     int32  `gorm:"column:id;type:int;primaryKey;autoIncrement:true;index:tc_kd_renew_manager_id_date_uid,priority:1" json:"id"`
+	UID    int32  `gorm:"column:uid;type:int;not null;index:tc_kd_renew_manager_id_date_uid,priority:3;index:tc_kd_renew_manager_uid_pid_fid,priority:1" json:"uid"`
+	Pid    int32  `gorm:"column:pid;type:int;not null;uniqueIndex:tc_kd_renew_manager_pid_fid,priority:1;index:tc_kd_renew_manager_uid_pid_fid,priority:2" json:"pid"`
+	Fname  string `gorm:"column:fname;type:text;not null" json:"fname"`
+	Fid    int32  `gorm:"column:fid;type:int;not null;uniqueIndex:tc_kd_renew_manager_pid_fid,priority:2;index:tc_kd_renew_manager_uid_pid_fid,priority:3" json:"fid"`
+	Tid    string `gorm:"column:tid;type:text;not null" json:"tid"`
+	Status string `gorm:"column:status;type:text;not null" json:"status"`
+	Date   int32  `gorm:"column:date;type:int;not null;index:tc_kd_renew_manager_id_date_uid,priority:2" json:"date"`
+	End    int32  `gorm:"column:end;type:int;not null" json:"end"`
+	Log    string `gorm:"column:log;type:text;not null" json:"log"`
 }
 
 // TableName TcKdRenewManager's table name

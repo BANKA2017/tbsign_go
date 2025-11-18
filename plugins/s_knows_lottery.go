@@ -10,7 +10,6 @@ import (
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
-	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
@@ -187,19 +186,7 @@ func (pluginInfo *LotteryPluginPluginType) Install() error {
 	}
 	UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
 
-	// index ?
-	if share.DBMode == "mysql" {
-		_function.GormDB.W.Set("gorm:table_options", "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci").Migrator().CreateTable(&model.TcVer4LotteryLog{})
-
-		_function.GormDB.W.Exec("ALTER TABLE `tc_ver4_lottery_log` ADD KEY `pid` (`pid`), ADD KEY `date` (`date`), ADD KEY `pid_date` (`pid`,`date`);")
-	} else {
-		_function.GormDB.W.Migrator().CreateTable(&model.TcVer4LotteryLog{})
-
-		_function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_ver4_lottery_log_pid" ON "tc_ver4_lottery_log" ("pid");`)
-		_function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_ver4_lottery_log_date" ON "tc_ver4_lottery_log" ("date");`)
-		_function.GormDB.W.Exec(`CREATE INDEX IF NOT EXISTS "idx_tc_ver4_lottery_log_pid_date" ON "tc_ver4_lottery_log" ("pid","date");`)
-	}
-	return nil
+	return _function.GormDB.W.Migrator().CreateTable(&model.TcVer4LotteryLog{})
 }
 
 func (pluginInfo *LotteryPluginPluginType) Delete() error {

@@ -20,9 +20,9 @@ func SetupSystem(dbMode, dbPath, dbUsername, dbPassword, dbEndpoint, dbName, dbT
 	reader := bufio.NewReader(os.Stdin)
 	var err error
 
-	_tc_mysql, _ := assets.EmbeddedSQL.ReadFile("sql/tc_mysql.sql")
-	_tc_sqlite, _ := assets.EmbeddedSQL.ReadFile("sql/tc_sqlite.sql")
-	_tc_pgsql, _ := assets.EmbeddedSQL.ReadFile("sql/tc_pgsql.sql")
+	// _tc_mysql, _ := assets.EmbeddedSQL.ReadFile("sql/tc_mysql.sql")
+	// _tc_sqlite, _ := assets.EmbeddedSQL.ReadFile("sql/tc_sqlite.sql")
+	// _tc_pgsql, _ := assets.EmbeddedSQL.ReadFile("sql/tc_pgsql.sql")
 
 	fmt.Println("📌现在正在安装 TbSign➡️")
 	if dbExists {
@@ -72,33 +72,16 @@ func SetupSystem(dbMode, dbPath, dbUsername, dbPassword, dbEndpoint, dbName, dbT
 	)
 
 	fmt.Println("⌛正在建立数据表和索引")
-	if dbMode == "mysql" {
-		err = _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
-			for i, v := range strings.Split(string(_tc_mysql), ";") {
-				if len(strings.TrimSpace(v)) == 0 {
-					continue
-				}
-				fmt.Println("⌛导入第" + strconv.Itoa(i+1) + "项...")
-				err := tx.Exec(v).Error
-				if err != nil {
-					return err
-				}
-			}
-			return nil
-		})
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else if dbMode == "pgsql" {
-		err := _function.GormDB.W.Exec(string(_tc_pgsql)).Error
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		err := _function.GormDB.W.Exec(string(_tc_sqlite)).Error
-		if err != nil {
-			log.Fatal(err)
-		}
+	err = _function.GormDB.W.Migrator().CreateTable(
+		&model.TcBaiduid{},
+		&model.TcOption{},
+		&model.TcPlugin{},
+		&model.TcTieba{},
+		&model.TcUsersOption{},
+		&model.TcUser{},
+	)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	fmt.Println("⌛正在导入默认设置...")
