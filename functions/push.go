@@ -206,7 +206,8 @@ func SendEmail(_to, title, body string) error {
 	var client sasl.Client
 	switch smtp_auth {
 	case "1":
-		client = sasl.NewLoginClient(smtp_username, smtp_password)
+		// ref: https://github.com/MoeNetwork/Tieba-Cloud-Sign/issues/295
+		client = sasl.NewLoginClient(smtp_username, smtp_password) // sasl.NewPlainClient("", smtp_username, smtp_password)
 	case "2":
 		// TODO well... might works?
 		// https://learn.microsoft.com/en-us/exchange/client-developer/legacy-protocols/how-to-authenticate-an-imap-pop-smtp-application-by-using-oauth
