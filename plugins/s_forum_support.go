@@ -587,7 +587,7 @@ type ForumSupportPluginInfoType struct {
 	PluginInfo
 }
 
-var ForumSupportPluginInfo = _function.VariablePtrWrapper(ForumSupportPluginInfoType{
+var ForumSupportPluginInfo = _function.VPtr(ForumSupportPluginInfoType{
 	PluginInfo{
 		Name:              "ver4_rank",
 		PluginNameCN:      "贴吧名人堂助攻",

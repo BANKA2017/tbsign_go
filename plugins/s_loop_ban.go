@@ -38,7 +38,7 @@ type LoopBanPluginType struct {
 	PluginInfo
 }
 
-var LoopBanPlugin = _function.VariablePtrWrapper(LoopBanPluginType{
+var LoopBanPlugin = _function.VPtr(LoopBanPluginType{
 	PluginInfo{
 		Name:              "ver4_ban",
 		PluginNameCN:      "循环封禁",

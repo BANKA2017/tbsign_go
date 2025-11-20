@@ -2,6 +2,7 @@ package _function
 
 import (
 	"errors"
+	"log"
 	"mime"
 	"net/http"
 	"net/url"
@@ -12,10 +13,10 @@ import (
 
 	"github.com/BANKA2017/tbsign_go/model"
 	"github.com/BANKA2017/tbsign_go/share"
+	"github.com/emersion/go-sasl"
 	"github.com/emersion/go-smtp"
 	"golang.org/x/exp/slices"
 
-	"github.com/emersion/go-sasl"
 	"github.com/google/uuid"
 )
 
@@ -34,7 +35,7 @@ func VerifyEmail(email string) bool {
 		return false
 	}
 
-	return len(regexp.MustCompile(`(?m)^[\w\.\-]+@\w+(?:[\.\-]\w+)*$`).FindAllString(email, -1)) == 1
+	return len(regexp.MustCompile(`(?m)^[\w.\-]+@\w+(?:[.\-]\w+)*$`).FindAllString(email, -1)) == 1
 }
 
 func SendMessage(_type string, uid int32, _subject, _body string) error {
@@ -204,23 +205,25 @@ func SendEmail(_to, title, body string) error {
 	}
 
 	var client sasl.Client
+	// ref: https://github.com/MoeNetwork/Tieba-Cloud-Sign/issues/295
 	switch smtp_auth {
 	case "1":
-		// ref: https://github.com/MoeNetwork/Tieba-Cloud-Sign/issues/295
-		client = sasl.NewLoginClient(smtp_username, smtp_password) // sasl.NewPlainClient("", smtp_username, smtp_password)
+		client = sasl.NewLoginClient(smtp_username, smtp_password)
 	case "2":
-		// TODO well... might works?
-		// https://learn.microsoft.com/en-us/exchange/client-developer/legacy-protocols/how-to-authenticate-an-imap-pop-smtp-application-by-using-oauth
-		numSMTPPort, _ := strconv.ParseInt(smtp_port, 10, 64)
-		client = sasl.NewOAuthBearerClient(&sasl.OAuthBearerOptions{
-			Username: smtp_username,
-			Token:    smtp_password,
-			Host:     smtp_host,
-			Port:     int(numSMTPPort),
-		})
+		client = sasl.NewPlainClient("", smtp_username, smtp_password)
+	// case "3":
+	// 	// TODO well... might works?
+	// 	// https://learn.microsoft.com/en-us/exchange/client-developer/legacy-protocols/how-to-authenticate-an-imap-pop-smtp-application-by-using-oauth
+	// 	client = sasl.NewXoauth2Client(smtp_username, smtp_password)
 	default:
 		client = sasl.NewAnonymousClient(uuid.New().String())
 	}
+
+	if share.TestMode {
+		m, i, err := client.Start()
+		log.Println("mail client:", m, string(i), err)
+	}
+
 	to := []string{_to}
 	msg := strings.NewReader("To: " + _to + "\r\n" +
 		"From: \"TbSign Push Service\" <" + mail + ">\r\n" +

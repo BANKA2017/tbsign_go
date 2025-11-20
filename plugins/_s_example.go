@@ -22,7 +22,7 @@ type ExamplePluginType struct {
 	PluginInfo
 }
 
-var ExamplePlugin = _function.VariablePtrWrapper(ExamplePluginType{
+var ExamplePlugin = _function.VPtr(ExamplePluginType{
 	PluginInfo{
 		Name:              "kd_example", // 文件名跟 Name 不一定要相同，但都要求唯一
 		PluginNameCN:      "示例插件",       // 用于前端插件总开关

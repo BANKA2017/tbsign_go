@@ -25,7 +25,7 @@ type WenkuTasksPluginType struct {
 	PluginInfo
 }
 
-var WenkuTasksPlugin = _function.VariablePtrWrapper(WenkuTasksPluginType{
+var WenkuTasksPlugin = _function.VPtr(WenkuTasksPluginType{
 	PluginInfo{
 		Name:              "kd_wenku_tasks",
 		PluginNameCN:      "文库任务",

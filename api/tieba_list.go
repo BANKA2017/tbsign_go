@@ -49,9 +49,9 @@ func AddTieba(c echo.Context) error {
 			No:     0,
 			Latest: 0,
 		},
-		Tieba:     _function.VariablePtrWrapper(fname),
-		Status:    _function.VariablePtrWrapper(int32(0)),
-		LastError: _function.VariablePtrWrapper(""),
+		Tieba:     _function.VPtr(fname),
+		Status:    _function.VPtr(int32(0)),
+		LastError: _function.VPtr(""),
 	}
 
 	_function.GormDB.W.Create(&newTieba)

@@ -156,7 +156,7 @@ func VariableWrapper[T any](anyValue T) T {
 	return anyValue
 }
 
-func VariablePtrWrapper[T any](anyValue T) *T {
+func VPtr[T any](anyValue T) *T {
 	return &anyValue
 }
 

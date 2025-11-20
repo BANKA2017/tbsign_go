@@ -18,7 +18,7 @@ type RefreshTiebaListPluginType struct {
 	PluginInfo
 }
 
-var RefreshTiebaListPlugin = _function.VariablePtrWrapper(RefreshTiebaListPluginType{
+var RefreshTiebaListPlugin = _function.VPtr(RefreshTiebaListPluginType{
 	PluginInfo{
 		Name:              "ver4_ref",
 		PluginNameCN:      "自动同步贴吧列表",

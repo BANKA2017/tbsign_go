@@ -331,7 +331,7 @@ func GetForumList(cookie _type.TypeCookie, uid string, page int64) (*_type.Forum
 		return nil, err
 	}
 
-	forumListDecode := VariablePtrWrapper(_type.ForumListResponse[*_type.ForumList]{
+	forumListDecode := VPtr(_type.ForumListResponse[*_type.ForumList]{
 		ErrorCode: tmpForumListDecode.ErrorCode,
 		HasMore:   tmpForumListDecode.HasMore,
 		ForumList: new(_type.ForumList),

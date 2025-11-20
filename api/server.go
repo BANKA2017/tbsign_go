@@ -106,7 +106,7 @@ func GetPluginsList(c echo.Context) error {
 	for name, info := range _plugin.PluginList {
 		value := info.(_plugin.PluginHooks).GetInfo()
 
-		resPluginList[name] = _function.VariablePtrWrapper(PluginListContent{
+		resPluginList[name] = _function.VPtr(PluginListContent{
 			Name:   value.Name,
 			Ver:    value.Info.Ver,
 			Status: _function.TinyIntToBool(value.Info.Status),

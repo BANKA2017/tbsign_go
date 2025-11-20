@@ -25,7 +25,7 @@ type RenewManagerType struct {
 	PluginInfo
 }
 
-var RenewManager = _function.VariablePtrWrapper(RenewManagerType{
+var RenewManager = _function.VPtr(RenewManagerType{
 	PluginInfo{
 		Name:              "kd_renew_manager",
 		PluginNameCN:      "吧主考核",

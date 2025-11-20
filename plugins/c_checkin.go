@@ -83,8 +83,8 @@ func DosignWorker(tasks <-chan *model.TcTieba, _errors chan<- error, badBdussPid
 
 			// TODO better sql update
 			_function.GormDB.W.Model(&model.TcTieba{}).Where("id = ?", task.ID).Updates(&_type.TcTieba{
-				Status:    _function.VariablePtrWrapper(int32(errorCode)),
-				LastError: _function.VariablePtrWrapper(errorMsg),
+				Status:    _function.VPtr(int32(errorCode)),
+				LastError: _function.VPtr(errorMsg),
 				TcTieba: model.TcTieba{
 					Latest: int32(today),
 				},

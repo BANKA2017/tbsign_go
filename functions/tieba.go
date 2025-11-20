@@ -70,9 +70,9 @@ func ScanTiebaByPid(pid int32) {
 						UID:    account.UID,
 						Latest: int32(latest),
 					},
-					Tieba:     VariablePtrWrapper(tiebaInfo.ForumName),
-					Status:    VariablePtrWrapper(int32(0)),
-					LastError: VariablePtrWrapper(""),
+					Tieba:     VPtr(tiebaInfo.ForumName),
+					Status:    VPtr(int32(0)),
+					LastError: VPtr(""),
 				}
 
 				if !slices.Contains(localTiebaFidList, tiebaInfo.ForumID) {

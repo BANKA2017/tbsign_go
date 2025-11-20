@@ -15,7 +15,7 @@ import (
 )
 
 func HtmlSpecialchars(html string) string {
-	reg, err := regexp.Compile(`<([\w]+)(\s*[\w]+=([\w]+|"[^"]+"))*>([\S\s]*)<[/]?([\w]+)>`)
+	reg, err := regexp.Compile(`<(\w+)(\s*\w+=(\w+|"[^"]+"))*>([\S\s]*)</?(\w+)>`)
 	if err != nil {
 		return html
 	}
@@ -58,6 +58,5 @@ func Sha256(str []byte) string {
 func GenHMAC256(ciphertext, key []byte) []byte {
 	mac := hmac.New(sha256.New, key)
 	mac.Write([]byte(ciphertext))
-	hmac := mac.Sum(nil)
-	return hmac
+	return mac.Sum(nil)
 }

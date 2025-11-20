@@ -26,7 +26,7 @@ type UserGrowthTasksPluginType struct {
 	PluginInfo
 }
 
-var UserGrowthTasksPlugin = _function.VariablePtrWrapper(UserGrowthTasksPluginType{
+var UserGrowthTasksPlugin = _function.VPtr(UserGrowthTasksPluginType{
 	PluginInfo{
 		Name:              "kd_growth",
 		PluginNameCN:      "用户成长任务",

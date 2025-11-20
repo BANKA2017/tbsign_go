@@ -68,135 +68,161 @@ func encodeSignMode(val []string) string {
 	return sb.String()
 }
 
+type AdminSettingsRule struct {
+	Enum      []string
+	Min       *int64
+	Max       *int64
+	IsURL     bool
+	Custom    func(string) error
+	Transform func(string) string
+}
+
+var SettingsRules = map[string]AdminSettingsRule{
+	"sign_mode": {
+		Custom: func(val string) error {
+			if val == "" {
+				return nil
+			}
+			signMode := strings.SplitSeq(val, ",")
+			for v := range signMode {
+				if !slices.Contains([]string{"1", "2", "3"}, v) {
+					return errors.New("invalid value " + v)
+				}
+			}
+			return nil
+		},
+		Transform: func(val string) string {
+			signMode := strings.Split(val, ",")
+
+			if len(signMode) == 0 {
+				signMode = append(signMode, "1")
+			}
+
+			return encodeSignMode(signMode)
+		},
+	},
+	"mail_auth":                   {Enum: []string{"0", "1", "2"}},
+	"enable_reg":                  {Enum: []string{"0", "1"}},
+	"go_export_personal_data":     {Enum: []string{"0", "1"}},
+	"go_import_personal_data":     {Enum: []string{"0", "1"}},
+	"mail_secure":                 {Enum: []string{"none", "ssl", "tls"}},
+	"cron_limit":                  {Min: _function.VPtr(int64(0))},
+	"retry_max":                   {Min: _function.VPtr(int64(0))},
+	"sign_sleep":                  {Min: _function.VPtr(int64(0))},
+	"sign_multith":                {Min: _function.VPtr(int64(0))},
+	"mail_port":                   {Min: _function.VPtr(int64(0)), Max: _function.VPtr(int64(65535))},
+	"cktime":                      {Min: _function.VPtr(int64(0))},
+	"go_re_check_in_max_interval": {Min: _function.VPtr(int64(1))},
+
+	"sign_hour":            {Min: _function.VPtr(int64(-1)), Max: _function.VPtr(int64(23))},
+	"go_daily_report_hour": {Min: _function.VPtr(int64(-1)), Max: _function.VPtr(int64(23))},
+
+	"go_forum_sync_policy": {
+		Enum: []string{"add_delete", "add_only", ""},
+		Transform: func(val string) string {
+			if val == "" {
+				return "add_only"
+			}
+			return val
+		},
+	},
+
+	"go_ntfy_addr":     {IsURL: true},
+	"go_bark_addr":     {IsURL: true},
+	"go_pushdeer_addr": {IsURL: true},
+
+	"bduss_num": {Min: _function.VPtr(int64(-1)), Max: _function.VPtr(int64(999999999))},
+	// "tb_max": {Min: _function.VPtr(int64(-1)), Max: _function.VPtr(int64(10000))},
+}
+
+func ValidateValue(name, val string, rule AdminSettingsRule) (string, error) {
+	// enum
+	if len(rule.Enum) > 0 {
+		if !slices.Contains(rule.Enum, val) {
+			return "", fmt.Errorf("invalid value `%s`", val)
+		}
+	}
+
+	// url
+	if rule.IsURL {
+		if !_function.VerifyURL(val) {
+			return "", fmt.Errorf("invalid URL `%s`", val)
+		}
+	}
+
+	// num value
+	if rule.Min != nil || rule.Max != nil {
+		num, err := strconv.ParseInt(val, 10, 64)
+		if err != nil {
+			return "", fmt.Errorf("invalid number `%s`", val)
+		}
+		if rule.Min != nil && num < *rule.Min {
+			return "", fmt.Errorf("value < min (%d)", *rule.Min)
+		}
+		if rule.Max != nil && num > *rule.Max {
+			return "", fmt.Errorf("value > max (%d)", *rule.Max)
+		}
+	}
+
+	// custom
+	if rule.Custom != nil {
+		if err := rule.Custom(val); err != nil {
+			return "", err
+		}
+	}
+
+	// transform
+	if rule.Transform != nil {
+		val = rule.Transform(val)
+	}
+
+	return val, nil
+}
+
 func UpdateAdminSettings(c echo.Context) error {
-	c.Request().ParseForm()
-
-	var adminSettings []*model.TcOption
-	_function.GormDB.R.Where("name in ?", _function.SettingsFilter).Find(&adminSettings)
-
 	var errStr []string
 	settings := make(map[string]string)
-	for _, vName := range _function.SettingsFilter {
-		for k1, v1 := range c.Request().Form {
-			if vName == k1 && len(v1) > 0 {
-				vValue := _function.GetOption(vName)
-				if vValue != v1[0] {
-					// verify
-					switch vName {
-					case "sign_mode":
-						signMode := strings.Split(v1[0], ",")
 
-						if len(signMode) == 0 {
-							signMode = append(signMode, "1")
-						}
-						check := true
-						for _, signModeItem := range signMode {
-							if !slices.Contains([]string{"1", "2", "3"}, signModeItem) {
-								check = false
-								break
-							}
-						}
-						if !check {
-							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
-							continue
-						}
-
-						signModeEncoded := encodeSignMode(signMode)
-						if string(signModeEncoded) != vValue {
-							settings[vName] = v1[0]
-							_function.SetOption(vName, string(signModeEncoded))
-						}
-					case "enable_reg", "mail_auth", "go_export_personal_data", "go_import_personal_data":
-						if v1[0] == "0" || v1[0] == "1" {
-							settings[vName] = v1[0]
-							_function.SetOption(vName, v1[0])
-						} else {
-							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
-						}
-					case "mail_secure":
-						if v1[0] == "none" || v1[0] == "ssl" || v1[0] == "tls" {
-							settings[vName] = v1[0]
-							_function.SetOption(vName, v1[0])
-						} else {
-							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
-						}
-					case "cron_limit", "retry_max", "sign_sleep", "sign_multith", "mail_port", "cktime":
-						numValue, err := strconv.ParseInt(v1[0], 10, 64)
-						if err == nil && numValue >= 0 {
-							settings[vName] = v1[0]
-							_function.SetOption(vName, v1[0])
-						} else {
-							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
-							log.Println(vName, numValue, err)
-						}
-					case "go_re_check_in_max_interval":
-						numValue, err := strconv.ParseInt(v1[0], 10, 64)
-						if err == nil && numValue >= 1 {
-							settings[vName] = v1[0]
-							_function.SetOption(vName, v1[0])
-						} else {
-							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
-							log.Println(vName, numValue, err)
-						}
-					case "sign_hour", "go_daily_report_hour":
-						numValue, err := strconv.ParseInt(v1[0], 10, 64)
-						if err != nil {
-							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
-							log.Println(vName, err)
-							continue
-						} else if numValue < -1 {
-							numValue = -1
-						} else if numValue > 23 {
-							numValue = 23
-						}
-						settings[vName] = strconv.Itoa(int(numValue))
-						_function.SetOption(vName, settings[vName])
-					case "go_forum_sync_policy":
-						if v1[0] == "add_delete" || v1[0] == "add_only" || v1[0] == "" {
-							if v1[0] == "" {
-								settings[vName] = "add_only"
-							} else {
-								settings[vName] = v1[0]
-							}
-							err := _function.SetOption(vName, settings[vName])
-							log.Println(err)
-						} else {
-							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
-						}
-					case "go_ntfy_addr", "go_bark_addr", "go_pushdeer_addr":
-						if _function.VerifyURL(v1[0]) {
-							settings[vName] = v1[0]
-						} else {
-							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
-						}
-					case "bduss_num": //, "tb_max":
-						numValue, err := strconv.ParseInt(v1[0], 10, 64)
-						if err != nil || numValue < -1 {
-							errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
-							log.Println(vName, err)
-							continue
-						}
-
-						settings[vName] = strconv.Itoa(int(numValue))
-						_function.SetOption(vName, settings[vName])
-					default:
-						if PluginOptionValidator, ok := _plugin.PluginOptionValidatorMap.Load(vName); ok {
-							if PluginOptionValidator(v1[0]) {
-								settings[vName] = v1[0]
-								_function.SetOption(vName, v1[0])
-							} else {
-								errStr = append(errStr, vName+": Invalid value `"+v1[0]+"`")
-								log.Println("invalid settings kv", vName, v1[0])
-							}
-						} else {
-							settings[vName] = v1[0]
-							_function.SetOption(vName, v1[0])
-						}
-					}
-				}
-				break
-			}
+	for _, key := range _function.SettingsFilter {
+		val := c.Request().FormValue(key)
+		if val == "" {
+			continue
 		}
+
+		oldVal := _function.GetOption(key)
+		if oldVal == val {
+			continue
+		}
+
+		if pluginValidator, ok := _plugin.PluginOptionValidatorMap.Load(key); ok {
+			if !pluginValidator(val) {
+				errStr = append(errStr, key+": Invalid value `"+val+"`")
+				continue
+			}
+			settings[key] = val
+			_function.SetOption(key, val)
+
+			continue
+		} else if validator, ok := SettingsRules[key]; ok {
+			newVal, err := ValidateValue(key, val, validator)
+			if err != nil {
+				errStr = append(errStr, key+": "+err.Error())
+				continue
+			}
+
+			if newVal == oldVal {
+				continue
+			}
+
+			settings[key] = newVal
+			_function.SetOption(key, newVal)
+
+			continue
+		}
+
+		settings[key] = val
+		_function.SetOption(key, val)
+
 	}
 
 	if len(errStr) == 0 {
