@@ -42,7 +42,7 @@ go run main.go -username=<dbUsername> -pwd=<DBPassword>
 # or
 ./tbsign_go -username=<dbUsername> -pwd=<DBPassword>
 # or https://github.com/cosmtrek/air
-air -- -db_path=tbsign.db -test=true -api=true
+air -- -db_path=tbsign.db -test -api
 ```
 
 ## env
@@ -99,6 +99,8 @@ MySQL 要求支持 [MySQL 窗口函数](https://dev.mysql.com/doc/refman/8.0/en/
 
 例如下面的第二项是 Debian/Ubuntu 的目录；如果证书尚未被导入到系统并且软件内嵌的 Mozilla Root Store 也不包含该证书，部署时可能就需要这样填写证书的实际目录
 
+\* 注：此处的 `db_tls` 类型为 `string`，不能像 `boolean` 类型那样忽略掉 `=true`
+
 ```shell
 go run main.go -db_tls=true
 # or...
@@ -121,11 +123,11 @@ go run main.go -db_tls=/etc/ssl/certs/ca-certificates.crt
   - 使用原数据库配置启动
 - 全新安装 (MySQL, SQLite, PostgreSQL)
   - 手动安装
-    - 启动程序，添加 `flag` `setup=true` (示例: `./tbsign_go -db_path=tbsign.db -api=true -address=:8080 -setup=true`)
+    - 启动程序，添加 `flag` `-setup` (示例: `./tbsign_go -db_path=tbsign.db -api -address=:8080 -setup`)
     - 根据文字提示完成自动安装流程（不同情况下文字提示可能会略有不同）
 
       ```plaintext
-      ➜  tbsign_go git:(master) ✗ ./tbsign_go -db_path=tbsign1.db -api=true -setup=true
+      ➜  tbsign_go git:(master) ✗ ./tbsign_go -db_path=tbsign1.db -api -setup
       2024/06/29 18:18:47 tbsign: sqlite connected!
       📌现在正在安装 TbSign➡️，如果数据库内含有数据，这样做会导致数据丢失，请提前做好备份。
       如果已经完成备份，请输入以下随机数字并按下回车（显示为 "--> 1234 <--" 代表需要输入 "1234"）
@@ -146,7 +148,7 @@ go run main.go -db_tls=/etc/ssl/certs/ca-certificates.crt
 
     - \*(选做) 登录管理员账号，打开 **系统管理** 即可手动开启自带插件
   - 自动安装
-    - 启动程序，添加 `flags` 或 环境变量 (示例: `./tbsign_go -db=tbsign -username tcdb -pwd tcdb_password -api=true -address=:8080 -auto_install=true -admin_name=a -admin_email=a@a.a -admin_password=a`)
+    - 启动程序，添加 `flags` 或 环境变量 (示例: `./tbsign_go -db=tbsign -username tcdb -pwd tcdb_password -api -address=:8080 -auto_install -admin_name=a -admin_email=a@a.a -admin_password=a`)
 
       - 担心 log 泄露信息的此时可以设随机值，等到安装完成后再登录修改
       - 除非数据库被删除，否则 用户名/邮箱/密码 仅在首次开启时会用到
