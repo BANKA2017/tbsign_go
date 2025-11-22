@@ -42,9 +42,8 @@ var UserGrowthTasksPlugin = _function.VPtr(UserGrowthTasksPluginType{
 			"kd_growth_action_limit": {
 				OptionName:   "kd_growth_action_limit",
 				OptionNameCN: "每分钟最大执行数",
-				Validate: func(value string) bool {
-					numLimit, err := strconv.ParseInt(value, 10, 64)
-					return err == nil && numLimit >= 0
+				Validate: &_function.OptionRule{
+					Min: _function.VPtr(int64(0)),
 				},
 			},
 			// "kd_growth_client_version": {

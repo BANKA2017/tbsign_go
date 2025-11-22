@@ -41,8 +41,8 @@ func GetAdminSettings(c echo.Context) error {
 	settings := make(map[string]string, len(adminSettings))
 	for _, v := range adminSettings {
 		if v.Name == "sign_mode" {
-			tmpOption := []string{}
-			for _, match := range regexp.MustCompile(`(?m)\"([123])\"`).FindAllString(v.Value, -1) {
+			var tmpOption []string
+			for _, match := range regexp.MustCompile(`(?m)"([123])"`).FindAllString(v.Value, -1) {
 				tmpOption = append(tmpOption, strings.ReplaceAll(match, "\"", ""))
 			}
 			settings[v.Name] = strings.Join(tmpOption, ",")
@@ -68,16 +68,7 @@ func encodeSignMode(val []string) string {
 	return sb.String()
 }
 
-type AdminSettingsRule struct {
-	Enum      []string
-	Min       *int64
-	Max       *int64
-	IsURL     bool
-	Custom    func(string) error
-	Transform func(string) string
-}
-
-var SettingsRules = map[string]AdminSettingsRule{
+var SettingsRules = map[string]*_function.OptionRule{
 	"sign_mode": {
 		Custom: func(val string) error {
 			if val == "" {
@@ -135,50 +126,6 @@ var SettingsRules = map[string]AdminSettingsRule{
 	// "tb_max": {Min: _function.VPtr(int64(-1)), Max: _function.VPtr(int64(10000))},
 }
 
-func ValidateValue(name, val string, rule AdminSettingsRule) (string, error) {
-	// enum
-	if len(rule.Enum) > 0 {
-		if !slices.Contains(rule.Enum, val) {
-			return "", fmt.Errorf("invalid value `%s`", val)
-		}
-	}
-
-	// url
-	if rule.IsURL {
-		if !_function.VerifyURL(val) {
-			return "", fmt.Errorf("invalid URL `%s`", val)
-		}
-	}
-
-	// num value
-	if rule.Min != nil || rule.Max != nil {
-		num, err := strconv.ParseInt(val, 10, 64)
-		if err != nil {
-			return "", fmt.Errorf("invalid number `%s`", val)
-		}
-		if rule.Min != nil && num < *rule.Min {
-			return "", fmt.Errorf("value < min (%d)", *rule.Min)
-		}
-		if rule.Max != nil && num > *rule.Max {
-			return "", fmt.Errorf("value > max (%d)", *rule.Max)
-		}
-	}
-
-	// custom
-	if rule.Custom != nil {
-		if err := rule.Custom(val); err != nil {
-			return "", err
-		}
-	}
-
-	// transform
-	if rule.Transform != nil {
-		val = rule.Transform(val)
-	}
-
-	return val, nil
-}
-
 func UpdateAdminSettings(c echo.Context) error {
 	var errStr []string
 	settings := make(map[string]string)
@@ -194,35 +141,31 @@ func UpdateAdminSettings(c echo.Context) error {
 			continue
 		}
 
-		if pluginValidator, ok := _plugin.PluginOptionValidatorMap.Load(key); ok {
-			if !pluginValidator(val) {
-				errStr = append(errStr, key+": Invalid value `"+val+"`")
-				continue
-			}
-			settings[key] = val
-			_function.SetOption(key, val)
+		var validator *_function.OptionRule
 
-			continue
-		} else if validator, ok := SettingsRules[key]; ok {
-			newVal, err := ValidateValue(key, val, validator)
+		if pluginValidator, ok := _plugin.PluginOptionValidatorMap.Load(key); ok {
+			validator = pluginValidator
+
+		} else if optionRule, ok := SettingsRules[key]; ok {
+			validator = optionRule
+		}
+
+		if validator != nil {
+			newVal, err := _function.ValidateOptionValue(val, validator)
 			if err != nil {
 				errStr = append(errStr, key+": "+err.Error())
 				continue
 			}
-
 			if newVal == oldVal {
 				continue
 			}
 
 			settings[key] = newVal
 			_function.SetOption(key, newVal)
-
-			continue
+		} else {
+			settings[key] = val
+			_function.SetOption(key, val)
 		}
-
-		settings[key] = val
-		_function.SetOption(key, val)
-
 	}
 
 	if len(errStr) == 0 {

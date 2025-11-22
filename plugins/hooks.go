@@ -12,7 +12,7 @@ import (
 )
 
 var PluginList = make(map[string]PluginActionHooks)
-var PluginOptionValidatorMap = _function.NewKV[string, func(value string) bool]()
+var PluginOptionValidatorMap = _function.NewKV[string, *_function.OptionRule]()
 
 func RegisterPlugin(name string, plugin PluginActionHooks) {
 	PluginList[name] = plugin
@@ -27,7 +27,7 @@ type PluginEndpintStruct struct {
 type PluinSettingOption struct {
 	OptionName   string
 	OptionNameCN string
-	Validate     func(value string) bool
+	Validate     *_function.OptionRule
 }
 
 type PluginInfo struct {
@@ -210,7 +210,7 @@ func DeletePluginInfo(name string) error {
 
 func AddToSettingsFilter() {
 	tmpSettingsFilter := _function.SettingsKeys
-	PluginOptionValidatorMap.Range(func(key string, value func(value string) bool) bool {
+	PluginOptionValidatorMap.Range(func(key string, value *_function.OptionRule) bool {
 		tmpSettingsFilter = append(tmpSettingsFilter, key)
 		return true
 	})

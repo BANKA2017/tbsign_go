@@ -603,9 +603,8 @@ var ForumSupportPluginInfo = _function.VPtr(ForumSupportPluginInfoType{
 			"ver4_rank_action_limit": {
 				OptionName:   "ver4_rank_action_limit",
 				OptionNameCN: "每分钟最大执行数",
-				Validate: func(value string) bool {
-					numLimit, err := strconv.ParseInt(value, 10, 64)
-					return err == nil && numLimit >= 0
+				Validate: &_function.OptionRule{
+					Min: _function.VPtr(int64(0)),
 				},
 			},
 		},

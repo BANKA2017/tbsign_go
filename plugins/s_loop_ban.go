@@ -55,19 +55,22 @@ var LoopBanPlugin = _function.VPtr(LoopBanPluginType{
 			"ver4_ban_break_check": {
 				OptionName:   "ver4_ban_break_check",
 				OptionNameCN: "跳过吧务权限检查",
-				Validate:     PluginLoopBanOptionValidatorVer4BanBreakCheck,
+				Validate: &_function.OptionRule{
+					Enum: []string{"0", "1"},
+				},
 			},
 			"ver4_ban_limit": {
 				OptionName:   "ver4_ban_limit",
 				OptionNameCN: "可添加循环封禁账号上限",
-				Validate:     PluginLoopBanOptionValidatorVer4BanLimit,
+				Validate: &_function.OptionRule{
+					Min: _function.VPtr(int64(0)),
+				},
 			},
 			"ver4_ban_action_limit": {
 				OptionName:   "ver4_ban_action_limit",
 				OptionNameCN: "每分钟最大执行数",
-				Validate: func(value string) bool {
-					numLimit, err := strconv.ParseInt(value, 10, 64)
-					return err == nil && numLimit >= 0
+				Validate: &_function.OptionRule{
+					Min: _function.VPtr(int64(0)),
 				},
 			},
 		},
@@ -244,17 +247,6 @@ func (pluginInfo *LoopBanPluginType) Reset(uid, pid, tid int32) error {
 	}
 
 	return _sql.Update("date", 0).Error
-}
-
-// OptionValidator
-
-func PluginLoopBanOptionValidatorVer4BanBreakCheck(value string) bool {
-	return value == "0" || value == "1"
-}
-
-func PluginLoopBanOptionValidatorVer4BanLimit(value string) bool {
-	numValue, err := strconv.ParseInt(value, 10, 64)
-	return err == nil && numValue >= 0
 }
 
 // endpoint

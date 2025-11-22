@@ -42,9 +42,8 @@ var WenkuTasksPlugin = _function.VPtr(WenkuTasksPluginType{
 			"kd_wenku_tasks_action_limit": {
 				OptionName:   "kd_wenku_tasks_action_limit",
 				OptionNameCN: "每分钟最大执行数",
-				Validate: func(value string) bool {
-					numLimit, err := strconv.ParseInt(value, 10, 64)
-					return err == nil && numLimit >= 0
+				Validate: &_function.OptionRule{
+					Min: _function.VPtr(int64(0)),
 				},
 			},
 		},

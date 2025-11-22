@@ -47,8 +47,8 @@ var ExamplePlugin = _function.VPtr(ExamplePluginType{
 			"key3_action_limit": {
 				OptionName:   "key3_action_limit",
 				OptionNameCN: "这个变量在前端会被识别成数字",
-				Validate: func(value string) bool {
-					return value == "50" // ...
+				Validate: _function.OptionRule{
+					Enum: []string{"50"},
 				},
 			},
 			// ...
@@ -113,8 +113,8 @@ func (pluginInfo *ExamplePluginType) Reset(int32, int32, int32) error {
 
 // OptionValidator
 
-func PluginExampleOptionValidatorKey2(value string) bool {
-	return value == "0" || value == "1"
+var PluginExampleOptionValidatorKey2 = _function.OptionRule{
+	Enum: []string{"0", "1"},
 }
 
 // endpoint

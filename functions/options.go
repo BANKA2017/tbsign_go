@@ -1,6 +1,8 @@
 package _function
 
 import (
+	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -142,4 +144,70 @@ func DeleteUserOption(keyName string, uid string, ext ...any) error {
 		}
 	}
 	return _sql.Where("uid = ? AND name = ?", uid, keyName).Delete(&model.TcUsersOption{}).Error
+}
+
+// option validation rule
+// by ChatGPT
+
+type OptionRule struct {
+	Enum []string
+	Min  *int64
+	Max  *int64
+	// Length    *int64
+	IsURL     bool
+	Custom    func(string) error
+	Transform func(string) string
+}
+
+func ValidateOptionValue(val string, rule *OptionRule) (string, error) {
+	if val == "" || rule == nil {
+		return val, nil
+	}
+	// enum
+	if len(rule.Enum) > 0 {
+		if !slices.Contains(rule.Enum, val) {
+			return "", fmt.Errorf("invalid value `%s`", val)
+		}
+	}
+
+	// url
+	if rule.IsURL {
+		if !VerifyURL(val) {
+			return "", fmt.Errorf("invalid URL `%s`", val)
+		}
+	}
+
+	// num value
+	if rule.Min != nil || rule.Max != nil {
+		num, err := strconv.ParseInt(val, 10, 64)
+		if err != nil {
+			return "", fmt.Errorf("invalid number `%s`", val)
+		}
+		if rule.Min != nil && num < *rule.Min {
+			return "", fmt.Errorf("value < min (%d)", *rule.Min)
+		}
+		if rule.Max != nil && num > *rule.Max {
+			return "", fmt.Errorf("value > max (%d)", *rule.Max)
+		}
+	}
+
+	// if rule.Length != nil {
+	// 	if int64(len(val)) != *rule.Length {
+	// 		return "", fmt.Errorf("length != (%d)", *rule.Length)
+	// 	}
+	// }
+
+	// custom
+	if rule.Custom != nil {
+		if err := rule.Custom(val); err != nil {
+			return "", err
+		}
+	}
+
+	// transform
+	if rule.Transform != nil {
+		val = rule.Transform(val)
+	}
+
+	return val, nil
 }
