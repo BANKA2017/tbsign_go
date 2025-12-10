@@ -3,6 +3,7 @@ package _api
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
@@ -59,6 +60,38 @@ func AddTieba(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", newTieba, "tbsign"))
 }
 
+type ModifyForumIDList struct {
+	InvalidFid []string `json:"invalid_fid"`
+	ValidFid   []int64  `json:"valid_fid"`
+}
+
+const MaxFidSeqCount = 100
+
+func VerifyFidList(fid string) ModifyForumIDList {
+	list := ModifyForumIDList{
+		[]string{},
+		[]int64{},
+	}
+
+	fidArray := strings.SplitSeq(strings.TrimSpace(fid), ",")
+
+	seq := 0
+	for f := range fidArray {
+		if seq > MaxFidSeqCount {
+			break
+		}
+		numFid, err := strconv.ParseInt(f, 10, 64)
+		if err != nil {
+			list.InvalidFid = append(list.InvalidFid, f)
+		} else {
+			list.ValidFid = append(list.ValidFid, numFid)
+		}
+		seq++
+	}
+
+	return list
+}
+
 func RemoveTieba(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
@@ -70,14 +103,18 @@ func RemoveTieba(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
-	numFid, err := strconv.ParseInt(fid, 10, 64)
-	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 fid", _function.EchoEmptyObject, "tbsign"))
+
+	response := VerifyFidList(fid)
+
+	if len(response.ValidFid) > 0 {
+		if len(response.ValidFid) == 1 {
+			_function.GormDB.W.Where("uid = ? AND pid = ? AND fid = ?", numUID, numPid, response.ValidFid[0]).Delete(&model.TcTieba{})
+		} else {
+			_function.GormDB.W.Where("uid = ? AND pid = ? AND fid IN (?)", numUID, numPid, response.ValidFid).Delete(&model.TcTieba{})
+		}
 	}
 
-	_function.GormDB.W.Where("uid = ? AND pid = ? AND fid = ?", numUID, numPid, numFid).Delete(&model.TcTieba{})
-
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", _function.EchoEmptyObject, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", response, "tbsign"))
 }
 
 func ResetTieba(c echo.Context) error {
@@ -91,14 +128,17 @@ func ResetTieba(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
-	numFid, err := strconv.ParseInt(fid, 10, 64)
-	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 fid", _function.EchoEmptyObject, "tbsign"))
+	response := VerifyFidList(fid)
+
+	if len(response.ValidFid) > 0 {
+		if len(response.ValidFid) == 1 {
+			_function.GormDB.W.Model(&model.TcTieba{}).Where("uid = ? AND pid = ? AND fid = ?", numUID, numPid, response.ValidFid[0]).Update("latest", 0)
+		} else {
+			_function.GormDB.W.Model(&model.TcTieba{}).Where("uid = ? AND pid = ? AND fid IN (?)", numUID, numPid, response.ValidFid).Update("latest", 0)
+		}
 	}
 
-	_function.GormDB.W.Model(&model.TcTieba{}).Where("uid = ? AND pid = ? AND fid = ?", numUID, numPid, numFid).Update("latest", 0)
-
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", _function.EchoEmptyObject, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", response, "tbsign"))
 }
 
 func IgnoreTieba(c echo.Context) error {
@@ -114,20 +154,26 @@ func IgnoreTieba(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
-	numFid, err := strconv.ParseInt(fid, 10, 64)
-	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 fid", _function.EchoEmptyObject, "tbsign"))
-	}
+	response := VerifyFidList(fid)
 
-	_function.GormDB.W.Model(&model.TcTieba{}).Select("no", "latest").Where("uid = ? AND pid = ? AND fid = ?", numUID, numPid, numFid).Updates(&model.TcTieba{
-		No:     _function.When(method == http.MethodDelete, 0, 1),
-		Latest: -1,
-	})
+	if len(response.ValidFid) > 0 {
+		if len(response.ValidFid) == 1 {
+			_function.GormDB.W.Model(&model.TcTieba{}).Select("no", "latest").Where("uid = ? AND pid = ? AND fid = ?", numUID, numPid, response.ValidFid[0]).Updates(&model.TcTieba{
+				No:     _function.When(method == http.MethodDelete, 0, 1),
+				Latest: -1,
+			})
+		} else {
+			_function.GormDB.W.Model(&model.TcTieba{}).Select("no", "latest").Where("uid = ? AND pid = ? AND fid IN (?)", numUID, numPid, response.ValidFid).Updates(&model.TcTieba{
+				No:     _function.When(method == http.MethodDelete, 0, 1),
+				Latest: -1,
+			})
+		}
+	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
 		"uid": numUID,
 		"pid": numPid,
-		"fid": numFid,
+		"fid": response,
 		"no":  method != http.MethodDelete,
 	}, "tbsign"))
 }

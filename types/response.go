@@ -368,6 +368,6 @@ type BatchCheckinActionResponse struct {
 		Usermsg string `json:"usermsg"`
 	} `json:"error"`
 
-	ErrorCode string `json:"error_code"` // shoule be "0" without system error
+	ErrorCode string `json:"error_code"` // should be "0" without system error
 	ErrorMsg  string `json:"error_msg"`
 }

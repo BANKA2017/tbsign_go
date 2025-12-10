@@ -299,15 +299,15 @@ func GetTiebaAccountList(c echo.Context) error {
 	var tiebaAccountsBatchQueryList []*model.TcBaiduid
 	// _function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
 
-	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").FindInBatches(&tiebaAccountsBatchQueryList, 1000, func(tx *gorm.DB, batch int) error {
+	_function.GormDB.R.Select("id, uid, name, portrait").Where("uid = ?", uid).Order("id ASC").FindInBatches(&tiebaAccountsBatchQueryList, 1000, func(tx *gorm.DB, batch int) error {
 		tiebaAccounts = append(tiebaAccounts, tiebaAccountsBatchQueryList...)
 		return nil
 	})
 
-	for k := range tiebaAccounts {
-		tiebaAccounts[k].Bduss = ""
-		tiebaAccounts[k].Stoken = ""
-	}
+	// for k := range tiebaAccounts {
+	// 	tiebaAccounts[k].Bduss = ""
+	// 	tiebaAccounts[k].Stoken = ""
+	// }
 
 	if arrayMode {
 		listArray := make([][4]any, len(tiebaAccounts))
