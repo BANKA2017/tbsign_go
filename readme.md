@@ -219,9 +219,10 @@ go run main.go -db_tls=/etc/ssl/certs/ca-certificates.crt
   - 核心插件
     - 文件命名应当使用前缀 `c_`(core)
 - 前端
-  - 对应插件的页面
-    - 在目录 `pages/` 添加对应插件的页面 vue 文件，文件名必须带有前缀 `plugin_`
-  - *如果对变量设置表单有特殊要求，还需要修改 `system_admin.vue` 的内容
+  - 对应插件的页面，插件名使用 `PluginInfo.PluginNameFE`
+    - 在目录 `app/pages/plugin/` 添加对应插件的页面 vue 文件，文件名必须使用 `插件名.vue`
+    - 或者在目录 `app/pages/plugin/` 添加对应 `插件名` 的目录，目录里面的 `index.vue` 会被自动导入
+  - *如果对变量设置表单有特殊要求，还需要修改 `admin/system.vue` 的内容
     - 含有特殊后缀 `_action_limit` 的变量将会在前端自动识别成不小于 `0` 的 `number` 类型
     - 其他变量识别成 `text`
 - *数据库 model
