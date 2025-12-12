@@ -17,7 +17,7 @@ type KV[K comparable, T any] struct {
 
 func NewKV[K comparable, T any](opts ...ttlcache.Option[K, T]) *KV[K, T] {
 	return &KV[K, T]{
-		KV: ttlcache.New[K, T](opts...),
+		KV: ttlcache.New(opts...),
 	}
 }
 

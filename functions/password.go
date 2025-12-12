@@ -16,7 +16,7 @@ func VerifyPasswordHash(hashedPassword string, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }
 
-var PasswordCache = NewKV[int, string](
+var PasswordCache = NewKV(
 	ttlcache.WithTTL[int, string](time.Hour),
 	ttlcache.WithCapacity[int, string](100),
 )

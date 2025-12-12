@@ -371,3 +371,37 @@ type BatchCheckinActionResponse struct {
 	ErrorCode string `json:"error_code"` // should be "0" without system error
 	ErrorMsg  string `json:"error_msg"`
 }
+
+type UserinfoCard struct {
+	No    int    `json:"no"`
+	Error string `json:"error"`
+	Data  struct {
+		UserInfo *struct {
+			NameShow      string `json:"name_show"`
+			Portrait      string `json:"portrait"`
+			TotalAgreeNum int    `json:"total_agree_num"`
+			ConcernNum    int    `json:"concern_num"`
+			FansNum       int    `json:"fans_num"`
+			HasConcerned  int    `json:"has_concerned"`
+			TiebaUID      string `json:"tieba_uid"`
+			TbAge         string `json:"tb_age"`
+			IPAddress     string `json:"ip_address"`
+			Intro         string `json:"intro"`
+			IconInfo      []struct {
+				Name   string `json:"name"`
+				Weight int    `json:"weight"`
+				URL    string `json:"url"`
+				Icon   string `json:"icon"`
+				Value  int    `json:"value"`
+			} `json:"icon_info"`
+			Sex int `json:"sex"`
+		} `json:"user_info,omitempty"`
+	} `json:"data"`
+
+	// Ctime string `json:"ctime"`
+	ErrorCode int    `json:"error_code"`
+	ErrorMsg  string `json:"error_msg,omitempty"`
+	// Logid      string `json:"logid"`
+	// ServerTime int    `json:"server_time"`
+	Time int `json:"time"`
+}

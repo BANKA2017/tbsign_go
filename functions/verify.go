@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	VerifyCodeList.List = NewKV[string, *VerifyCodeStruct](
+	VerifyCodeList.List = NewKV(
 		ttlcache.WithDisableTouchOnHit[string, *VerifyCodeStruct](),
 	)
 }

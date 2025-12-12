@@ -85,7 +85,7 @@ func ConnectToMySQL(username string, password string, endpoint string, dbname st
 					return nil, nil, err
 				}
 				if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
-					return nil, nil, errors.New("Failed to append PEM.")
+					return nil, nil, errors.New("failed to append pem")
 				}
 				parsedURL, err := url.Parse("tcp://" + endpoint)
 				if err != nil {

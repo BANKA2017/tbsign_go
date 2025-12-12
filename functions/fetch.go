@@ -181,18 +181,31 @@ func MultipartBodyBuilder(_body map[string][]byte, files ...MultipartBodyBinaryF
 	return body.Bytes(), writer.FormDataContentType(), nil
 }
 
+var clientSignSalt = string([]byte{116, 105, 101, 98, 97, 99, 108, 105, 101, 110, 116, 33, 33, 33})
+var pcSignSalt = string([]byte{51, 54, 55, 55, 48, 98, 49, 102, 51, 52, 99, 57, 98, 98, 102, 50, 101, 55, 100, 49, 97, 57, 57, 100, 50, 98, 56, 50, 102, 97, 57, 101})
+var otherSignSalt = string([]byte{48, 48, 51, 57, 100, 55, 57, 100, 99, 51, 99, 99, 50, 48, 55, 53, 49, 50, 57, 55, 52, 53, 97, 51, 48, 50, 51, 55, 97, 51, 99, 52})
+
 func AddSign(form map[string]string, client_type string) {
 	if form == nil {
 		form = make(map[string]string)
 	}
 
-	if client_type == "" {
-		client_type = "4"
+	if ct := form["_client_type"]; ct == "" {
+		if client_type == "" {
+			client_type = "4"
+		}
+		form["_client_type"] = client_type
 	}
-	form["_client_type"] = client_type
 
-	if v := form["_client_version"]; v == "" {
-		form["_client_version"] = ClientVersion
+	var signSalt = otherSignSalt
+	switch form["subapp_type"] {
+	case "client":
+		if v := form["_client_version"]; v == "" {
+			form["_client_version"] = ClientVersion
+		}
+		signSalt = clientSignSalt
+	case "pc":
+		signSalt = pcSignSalt
 	}
 
 	var formKeys []string
@@ -208,7 +221,7 @@ func AddSign(form map[string]string, client_type string) {
 		payload.WriteString(v + "=" + form[v])
 	}
 	//log.Println("payload", payload)
-	form["sign"] = strings.ToUpper(Md5(payload.String() + "tiebaclient!!!"))
+	form["sign"] = strings.ToUpper(Md5(payload.String() + signSalt))
 }
 
 func GetTbs(bduss string) (*_type.TbsResponse, error) {
@@ -709,4 +722,29 @@ func GetManagerStatus(portrait string, fid int64) (*_type.IsManagerPreCheckRespo
 	}
 
 	return &_type.IsManagerPreCheckResponse{}, nil
+}
+
+func GetUserinfoCard(portrait string) (*_type.UserinfoCard, error) {
+	query := map[string]string{
+		"portrait":     portrait,
+		"subapp_type":  "pc",
+		"_client_type": "20",
+	}
+	AddSign(query, "20")
+	_query := url.Values{}
+	for k, v := range query {
+		if k != "sign" {
+			_query.Set(k, v)
+		}
+	}
+
+	response, err := TBFetch("https://tieba.baidu.com/c/u/pc/userCard?"+_query.Encode()+"&sign="+query["sign"], http.MethodGet, nil, EmptyHeaders)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var resp = new(_type.UserinfoCard)
+	err = JsonDecode(response, resp)
+	return resp, err
 }

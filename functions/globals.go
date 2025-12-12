@@ -23,10 +23,10 @@ import (
 )
 
 var Options = NewKV[string, string]() //  make(map[string]string)
-var CookieList = NewKV[int32, _type.TypeCookie](
+var CookieList = NewKV(
 	ttlcache.WithCapacity[int32, _type.TypeCookie](100),
 ) //= make(map[int32]_type.TypeCookie)
-var FidList = NewKV[string, int64](
+var FidList = NewKV(
 	ttlcache.WithCapacity[string, int64](500),
 ) //= make(map[string]int64)
 
