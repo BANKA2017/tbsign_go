@@ -197,15 +197,15 @@ func AddSign(form map[string]string, client_type string) {
 		form["_client_type"] = client_type
 	}
 
-	var signSalt = otherSignSalt
+	var signSalt = clientSignSalt
 	switch form["subapp_type"] {
-	case "client":
+	case "pc":
+		signSalt = pcSignSalt
+	default:
 		if v := form["_client_version"]; v == "" {
 			form["_client_version"] = ClientVersion
 		}
-		signSalt = clientSignSalt
-	case "pc":
-		signSalt = pcSignSalt
+		// signSalt = clientSignSalt
 	}
 
 	var formKeys []string
