@@ -125,6 +125,48 @@ func PostClientBan(cookie _type.TypeCookie, fid int32, portrait string, day int3
 	return &banDecode, err
 }
 
+func PostNewPCBan(cookie _type.TypeCookie, fid int32, portrait string, day int32, reason string) (*any, error) {
+	// isSvipBlock := "0"
+	banDaysIndex := 0
+	if ndi := slices.Index(banDays, day); ndi != -1 {
+		// isSvipBlock = "1"
+		banDaysIndex = ndi
+	}
+
+	var form = map[string]string{
+		"BDUSS": cookie.Bduss,
+		"day":   strconv.Itoa(int(banDaysIndex)),
+		"fid":   strconv.Itoa(int(fid)),
+		// "is_loop_ban": isSvipBlock, // <- Not yet known how to set loop ban from new pc client
+		"ntn":      "banid",
+		"portrait": portrait,
+		"reason":   reason,
+		"tbs":      cookie.Tbs,
+		"word":     "-", //fname
+		"z":        "6", //tid
+
+		"post_id":     "0",
+		"un":          "",
+		"subapp_type": "pc",
+	}
+	_function.AddSign(form, "20")
+	_body := url.Values{}
+	for k, v := range form {
+		if k != "sign" {
+			_body.Set(k, v)
+		}
+	}
+	banResponse, err := _function.TBFetch("https://tieba.baidu.com/c/c/bawu/commitprison_pc", http.MethodPost, []byte(_body.Encode()+"&sign="+form["sign"]), _function.EmptyHeaders)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var banDecode any
+	err = _function.JsonDecode(banResponse, &banDecode)
+	return &banDecode, err
+}
+
 func (pluginInfo *LoopBanPluginType) Action() {
 	if !pluginInfo.PluginInfo.CheckActive() {
 		return
