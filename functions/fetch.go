@@ -57,8 +57,8 @@ var TBClient *http.Client
 var CACertPool *x509.CertPool
 
 func InitClient(timeout time.Duration) *http.Client {
-	transport := http.DefaultTransport
-	transport.(*http.Transport).TLSClientConfig = &tls.Config{
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig = &tls.Config{
 		RootCAs: CACertPool,
 	}
 
@@ -76,13 +76,13 @@ func InitClient(timeout time.Duration) *http.Client {
 			},
 		}
 
-		transport.(*http.Transport).DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+		transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
 			return dialer.DialContext(ctx, network, addr)
 		}
 	}
 
 	if IgnoreProxy {
-		transport.(*http.Transport).Proxy = nil
+		transport.Proxy = nil
 	}
 
 	return &http.Client{
@@ -196,6 +196,10 @@ func AddSign(form map[string]string, client_type string) {
 		}
 		form["_client_type"] = client_type
 	}
+
+	// if form["subapp_type"] == "" {
+	// 	form["subapp_type"] = "client"
+	// }
 
 	var signSalt = clientSignSalt
 	switch form["subapp_type"] {
@@ -724,7 +728,7 @@ func GetManagerStatus(portrait string, fid int64) (*_type.IsManagerPreCheckRespo
 	return &_type.IsManagerPreCheckResponse{}, nil
 }
 
-func GetUserinfoCard(portrait string) (*_type.UserinfoCard, error) {
+func GetNewPCUserCard(portrait string) (*_type.GetNewPCUserCardResponse, error) {
 	query := map[string]string{
 		"portrait":     portrait,
 		"subapp_type":  "pc",
@@ -744,7 +748,32 @@ func GetUserinfoCard(portrait string) (*_type.UserinfoCard, error) {
 		return nil, err
 	}
 
-	var resp = new(_type.UserinfoCard)
+	var resp = new(_type.GetNewPCUserCardResponse)
+	err = JsonDecode(response, resp)
+	return resp, err
+}
+
+func GetNewPCForumCard(fid int) (*_type.GetNewPCForumCardResponse, error) {
+	query := map[string]string{
+		"forum_id":     strconv.Itoa(fid),
+		"subapp_type":  "pc",
+		"_client_type": "20",
+	}
+	AddSign(query, "20")
+	_query := url.Values{}
+	for k, v := range query {
+		if k != "sign" {
+			_query.Set(k, v)
+		}
+	}
+
+	response, err := TBFetch("https://tieba.baidu.com/c/f/pc/forumCard?"+_query.Encode()+"&sign="+query["sign"], http.MethodGet, nil, EmptyHeaders)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var resp = new(_type.GetNewPCForumCardResponse)
 	err = JsonDecode(response, resp)
 	return resp, err
 }

@@ -372,7 +372,7 @@ type BatchCheckinActionResponse struct {
 	ErrorMsg  string `json:"error_msg"`
 }
 
-type UserinfoCard struct {
+type GetNewPCUserCardResponse struct {
 	No    int    `json:"no"`
 	Error string `json:"error"`
 	Data  struct {
@@ -399,6 +399,38 @@ type UserinfoCard struct {
 	} `json:"data"`
 
 	// Ctime string `json:"ctime"`
+	ErrorCode int    `json:"error_code"`
+	ErrorMsg  string `json:"error_msg,omitempty"`
+	// Logid      string `json:"logid"`
+	// ServerTime int    `json:"server_time"`
+	Time int `json:"time"`
+}
+
+type GetNewPCForumCardResponse struct {
+	// Ctime string `json:"ctime"`
+	Data struct {
+		Activityhead *struct {
+			HeadImgs []struct {
+				ImgURL string `json:"img_url"`
+				Type   int    `json:"type"`
+			} `json:"head_imgs"`
+		} `json:"activityhead,omitempty"`
+		Forum *struct {
+			ID           int    `json:"id"`
+			Name         string `json:"name"`
+			Avatar       string `json:"avatar"`
+			MemberNum    int    `json:"member_num"`
+			PostNum      int    `json:"post_num"`
+			RecommendTip string `json:"recommend_tip"`
+			Desc         string `json:"desc"`
+			Slogan       string `json:"slogan"`
+			ForumCtime   int    `json:"forum_ctime"`
+		} `json:"forum,omitempty"`
+		Manager *struct {
+			NameShow string `json:"name_show"`
+			Portrait string `json:"portrait"`
+		} `json:"manager,omitempty"`
+	} `json:"data"`
 	ErrorCode int    `json:"error_code"`
 	ErrorMsg  string `json:"error_msg,omitempty"`
 	// Logid      string `json:"logid"`

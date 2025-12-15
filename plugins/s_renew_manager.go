@@ -308,12 +308,13 @@ func PluginRenewManagerCancelTop(cookie _type.TypeCookie, fname string, tid stri
 		"Referrer":     "https://tieba.baidu.com/p/" + tid,
 	}
 
-	body := url.Values{}
-	body.Set("ie", "utf-8")
-	body.Set("tbs", cookie.Tbs)
-	body.Set("kw", fname)
-	body.Set("fid", strconv.Itoa(int(_function.GetFid(fname))))
-	body.Set("tid", tid)
+	body := url.Values{
+		"ie":  {"utf-8"},
+		"tbs": {cookie.Tbs},
+		"kw":  {fname},
+		"fid": {strconv.Itoa(int(_function.GetFid(fname)))},
+		"tid": {tid},
+	}
 
 	res, err := _function.TBFetch("https://tieba.baidu.com/f/commit/thread/top/cancel", http.MethodPost, []byte(body.Encode()), headersMap)
 

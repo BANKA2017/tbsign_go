@@ -130,8 +130,8 @@ func Dosign(_ string, retry bool) (bool, error) {
 			_function.GormDB.R.Table(
 				"(?) as filtered_forums",
 				_function.GormDB.R.Model(&model.TcTieba{}).Where("no = ? AND latest != ?", 0, today).Select("*"),
-			).Select("*", "ROW_NUMBER() OVER (PARTITION BY pid ORDER BY id) AS rn"),
-		).Select("id", "pid", "tieba", "fid").Where("no = ? AND latest != ? AND rn <= ?", 0, today, limit).Limit(int(limit * 3)).Find(&tiebaList)
+			).Select("*", "ROW_NUMBER() OVER (PARTITION BY pid ORDER BY id) AS rn").Where("rn <= ?", limit),
+		).Select("id", "pid", "tieba", "fid").Limit(int(limit * 3)).Find(&tiebaList)
 	}
 
 	if len(tiebaList) <= 0 {
