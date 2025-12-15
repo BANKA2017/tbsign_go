@@ -42,4 +42,6 @@ var DefaultOptions = map[string]string{
 	"go_encrypt":                  "0",
 	"go_re_check_in_max_interval": "1",
 	"go_daily_report_hour":        "-1",
+
+	"go_plugin_batch_tasks": "0",
 }

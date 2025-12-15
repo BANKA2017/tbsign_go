@@ -228,3 +228,13 @@ func DeleteAccount(_type string, id int32, tx *gorm.DB) error {
 	}
 	return nil
 }
+
+func BatchPluginQuery(originalQuery *gorm.DB, limit, rate int, selectedKeys []string, target any) error {
+	return _function.GormDB.R.Table(
+		"(?) as tasks",
+		_function.GormDB.R.Table(
+			"(?) as filtered_tasks",
+			originalQuery.Select("*"),
+		).Select("*", "ROW_NUMBER() OVER (PARTITION BY pid ORDER BY id) AS rn").Where("rn <= ?", limit),
+	).Select(selectedKeys).Limit(limit * rate).Scan(target).Error
+}

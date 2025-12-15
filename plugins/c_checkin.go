@@ -125,13 +125,7 @@ func Dosign(_ string, retry bool) (bool, error) {
 		// 重签
 		_function.GormDB.R.Where("no = ? AND latest = ? AND status IN ?", 0, today, recheckinErrorID).Limit(int(limit)).Find(&tiebaList)
 	} else {
-		_function.GormDB.R.Table(
-			"(?) as forums",
-			_function.GormDB.R.Table(
-				"(?) as filtered_forums",
-				_function.GormDB.R.Model(&model.TcTieba{}).Where("no = ? AND latest != ?", 0, today).Select("*"),
-			).Select("*", "ROW_NUMBER() OVER (PARTITION BY pid ORDER BY id) AS rn").Where("rn <= ?", limit),
-		).Select("id", "pid", "tieba", "fid").Limit(int(limit * 3)).Find(&tiebaList)
+		BatchPluginQuery(_function.GormDB.R.Model(&model.TcTieba{}).Where("no = ? AND latest != ?", 0, today), int(limit), 3, []string{"id", "pid", "tieba", "fid"}, &tiebaList)
 	}
 
 	if len(tiebaList) <= 0 {

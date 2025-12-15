@@ -173,6 +173,7 @@ func (pluginInfo *LoopBanPluginType) Action() {
 	}
 	defer pluginInfo.PluginInfo.SetActive(false)
 
+	batchMode := _function.GetOption("go_plugin_batch_tasks") == "1"
 	id, err := strconv.ParseInt(_function.GetOption("ver4_ban_id"), 10, 64)
 	if err != nil {
 		id = 0
@@ -183,7 +184,11 @@ func (pluginInfo *LoopBanPluginType) Action() {
 
 	limit := _function.GetOption("ver4_ban_action_limit")
 	numLimit, _ := strconv.ParseInt(limit, 10, 64)
-	_function.GormDB.R.Model(&model.TcVer4BanList{}).Where("id > ? AND date < ? AND stime < ? AND etime > ? AND uid IN (?)", id, otime, _function.Now.Unix(), _function.Now.Unix(), subQuery).Order("id ASC").Limit(int(numLimit)).Find(&localBanAccountList)
+	if batchMode {
+		BatchPluginQuery(_function.GormDB.R.Model(&model.TcVer4BanList{}).Where("date < ? AND stime < ? AND etime > ? AND uid IN (?)", otime, _function.Now.Unix(), _function.Now.Unix(), subQuery), int(numLimit), 3, []string{"*"}, &localBanAccountList)
+	} else {
+		_function.GormDB.R.Model(&model.TcVer4BanList{}).Where("id > ? AND date < ? AND stime < ? AND etime > ? AND uid IN (?)", id, otime, _function.Now.Unix(), _function.Now.Unix(), subQuery).Order("id ASC").Limit(int(numLimit)).Find(&localBanAccountList)
+	}
 
 	var reasonList []*model.TcVer4BanUserset
 	_function.GormDB.R.Model(&model.TcVer4BanUserset{}).Find(&reasonList)
@@ -222,9 +227,13 @@ func (pluginInfo *LoopBanPluginType) Action() {
 			Log:  msg,
 			Date: int32(_function.Now.Unix()),
 		})
-		_function.SetOption("ver4_ban_id", strconv.Itoa(int(banAccountInfo.ID)))
+		if !batchMode {
+			_function.SetOption("ver4_ban_id", strconv.Itoa(int(banAccountInfo.ID)))
+		}
 	}
-	_function.SetOption("ver4_ban_id", "0")
+	if !batchMode {
+		_function.SetOption("ver4_ban_id", "0")
+	}
 
 	// clean
 

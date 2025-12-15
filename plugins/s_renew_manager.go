@@ -68,6 +68,7 @@ func (pluginInfo *RenewManagerType) Action() {
 	}
 	defer pluginInfo.PluginInfo.SetActive(false)
 
+	batchMode := _function.GetOption("go_plugin_batch_tasks") == "1"
 	id, err := strconv.ParseInt(_function.GetOption("kd_renew_manager_id"), 10, 64)
 	if err != nil {
 		id = 0
@@ -79,7 +80,12 @@ func (pluginInfo *RenewManagerType) Action() {
 	numLimit, _ := strconv.ParseInt(limit, 10, 64)
 	var localRenewList []*model.TcKdRenewManager
 	subQuery := _function.GormDB.R.Model(&model.TcUsersOption{}).Select("uid").Where("name = 'kd_renew_manager_open' AND value = '1'")
-	_function.GormDB.R.Model(&model.TcKdRenewManager{}).Where("id > ? AND date < ? AND uid IN (?)", id, otime, subQuery).Order("id ASC").Limit(int(numLimit)).Find(&localRenewList)
+
+	if batchMode {
+		BatchPluginQuery(_function.GormDB.R.Model(&model.TcKdRenewManager{}).Where("date < ? AND uid IN (?)", otime, subQuery), int(numLimit), 3, []string{"*"}, &localRenewList)
+	} else {
+		_function.GormDB.R.Model(&model.TcKdRenewManager{}).Where("id > ? AND date < ? AND uid IN (?)", id, otime, subQuery).Order("id ASC").Limit(int(numLimit)).Find(&localRenewList)
+	}
 
 	intervalMap := map[int32]time.Time{}
 
@@ -170,11 +176,13 @@ func (pluginInfo *RenewManagerType) Action() {
 		renewItem.Log = fmt.Sprintf("%s: %s<br />%s", _function.Now.Format(time.DateOnly), strings.Join(tmpLog, ", "), strings.Join(previousLogs, "<br />"))
 
 		_function.GormDB.W.Model(&model.TcKdRenewManager{}).Where("id = ?", renewItem.ID).Updates(renewItem)
-		_function.SetOption("kd_renew_manager_id", strconv.Itoa(int(renewItem.ID)))
-
+		if !batchMode {
+			_function.SetOption("kd_renew_manager_id", strconv.Itoa(int(renewItem.ID)))
+		}
 	}
-	_function.SetOption("kd_renew_manager_id", "0")
-
+	if !batchMode {
+		_function.SetOption("kd_renew_manager_id", "0")
+	}
 	// clean
 
 }

@@ -646,6 +646,7 @@ func (pluginInfo *ForumSupportPluginInfoType) Action() {
 	}
 	defer pluginInfo.PluginInfo.SetActive(false)
 
+	batchMode := _function.GetOption("go_plugin_batch_tasks") == "1"
 	id, err := strconv.ParseInt(_function.GetOption("ver4_rank_id"), 10, 64)
 	if err != nil {
 		id = 0
@@ -659,7 +660,13 @@ func (pluginInfo *ForumSupportPluginInfoType) Action() {
 
 	limit := _function.GetOption("ver4_rank_action_limit")
 	numLimit, _ := strconv.ParseInt(limit, 10, 64)
-	_function.GormDB.R.Model(&model.TcVer4RankLog{}).Where("date < ? AND id > ?", todayBeginning, id).Limit(int(numLimit)).Find(&ver4RankLog)
+
+	if batchMode {
+		BatchPluginQuery(_function.GormDB.R.Model(&model.TcVer4RankLog{}).Where("date < ?", todayBeginning), int(numLimit), 3, []string{"*"}, &ver4RankLog)
+	} else {
+		_function.GormDB.R.Model(&model.TcVer4RankLog{}).Where("date < ? AND id > ?", todayBeginning, id).Limit(int(numLimit)).Find(&ver4RankLog)
+	}
+
 	for _, forumSupportItem := range ver4RankLog {
 		if _, ok := accountStatusList[forumSupportItem.UID]; !ok {
 			accountStatusList[forumSupportItem.UID] = _function.GetUserOption("ver4_rank_check", strconv.Itoa(int(forumSupportItem.UID)))
@@ -705,10 +712,14 @@ func (pluginInfo *ForumSupportPluginInfoType) Action() {
 				Date: int32(_function.Now.Unix()),
 			})
 
-			_function.SetOption("ver4_rank_id", strconv.Itoa(int(forumSupportItem.ID)))
+			if !batchMode {
+				_function.SetOption("ver4_rank_id", strconv.Itoa(int(forumSupportItem.ID)))
+			}
 		}
 	}
-	_function.SetOption("ver4_rank_id", "0")
+	if !batchMode {
+		_function.SetOption("ver4_rank_id", "0")
+	}
 }
 
 func (pluginInfo *ForumSupportPluginInfoType) Install() error {
