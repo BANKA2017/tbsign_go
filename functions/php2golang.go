@@ -57,6 +57,6 @@ func Sha256(str []byte) string {
 
 func GenHMAC256(ciphertext, key []byte) []byte {
 	mac := hmac.New(sha256.New, key)
-	mac.Write([]byte(ciphertext))
+	mac.Write(ciphertext)
 	return mac.Sum(nil)
 }

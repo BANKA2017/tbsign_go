@@ -103,14 +103,21 @@ func main() {
 	if share.DBName == "tbsign" && os.Getenv("tc_db") != "" {
 		share.DBName = os.Getenv("tc_db")
 	}
+
+	// DBMode **must** be set before DBTLSOption
+	if share.DBMode == "mysql" && os.Getenv("tc_db_mode") != "" {
+		share.DBMode = os.Getenv("tc_db_mode")
+	}
 	if share.DBTLSOption == "false" && os.Getenv("tc_db_tls") != "" {
 		share.DBTLSOption = os.Getenv("tc_db_tls")
 	}
+
+	if share.DBTLSOption == "false" && share.DBMode == "pgsql" {
+		share.DBTLSOption = "prefer" // default value
+	}
+
 	if share.DBPath == "" && os.Getenv("tc_db_path") != "" {
 		share.DBPath = os.Getenv("tc_db_path")
-	}
-	if share.DBMode == "mysql" && os.Getenv("tc_db_mode") != "" {
-		share.DBMode = os.Getenv("tc_db_mode")
 	}
 	if !share.TestMode && os.Getenv("tc_test") != "" {
 		share.TestMode = os.Getenv("tc_test") == "true"

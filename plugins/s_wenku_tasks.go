@@ -280,7 +280,7 @@ func (m *WenkuTasksPluginVipMatrixIDSet) AddID(id int32, uid string, day int64, 
 	}
 	// time.Weekday -> Sunday is 0
 	weekDayList := []string{"0", "1", "2", "3", "4", "5", "6"}
-	var currentDay int64 = day
+	var currentDay = day
 	strCurrentDay := strconv.Itoa(int(currentDay))
 
 	if currentDay == -1 {

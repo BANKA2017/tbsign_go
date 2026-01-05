@@ -407,7 +407,7 @@ func UpdatePassword(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法更新密码...", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	token, expireAt, maxAge := tokenBuilder(int(numUID), string(hash))
+	token, expireAt, maxAge := tokenBuilder(int(numUID), hash)
 
 	var resp = tokenResponse{
 		Type:     "session",

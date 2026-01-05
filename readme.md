@@ -17,7 +17,7 @@
 | ~~endpoint~~        | `127.0.0.1:3306` | 数据库 `host:port` （已废弃）                                                                            |
 | host                | `127.0.0.1:3306` | 数据库 `host:port`                                                                                       |
 | db                  | `tbsign`         | 数据库名称                                                                                               |
-| db_tls              | `false`          | CA 证书的选项（仅用于 MySQL），请看 [CA 证书](#ca-证书) 部分                                             |
+| db_tls              | `false`          | CA 证书的选项，请看 [CA 证书](#ca-证书) 部分                                                             |
 | db_path             |                  | SQLite 文件目录                                                                                          |
 | db_mode             | `mysql`          | 用于显式指定数据库类型，只用于 PostgreSQL (仅当值为 `pgsql` 时有效，请看 [PostgreSQL](#postgresql) 部分) |
 | test                | `false`          | 测试模式，此模式下不会运行计划任务                                                                       |
@@ -56,7 +56,7 @@ air -- -db_path=tbsign.db -test -api
 | ~~tc_endpoint~~     | 数据库 `host:port` （已废弃）                                                                            |
 | tc_host             | 数据库 `host:port`                                                                                       |
 | tc_db               | 数据库名称                                                                                               |
-| tc_db_tls           | CA 证书的选项（仅用于 MySQL），请看 [CA 证书](#ca-证书) 部分                                             |
+| tc_db_tls           | CA 证书的选项，请看 [CA 证书](#ca-证书) 部分                                                             |
 | tc_db_path          | SQLite 文件目录                                                                                          |
 | tc_db_mode          | 用于显式指定数据库类型，只用于 PostgreSQL (仅当值为 `pgsql` 时有效，请看 [PostgreSQL](#postgresql) 部分) |
 | tc_test             | 测试模式，此模式下不会运行计划任务                                                                       |
@@ -89,17 +89,29 @@ MySQL 要求支持 [MySQL 窗口函数](https://dev.mysql.com/doc/refman/8.0/en/
 - MariaDB >= [10.2](https://mariadb.com/kb/en/changes-improvements-in-mariadb-10-2/)
 - TiDB >= [3.0](https://docs.pingcap.com/tidb/stable/release-3.0-ga)
 
+### *PostgreSQL
+
+支持 PostgreSQL 是实验性的功能，不会被砍掉。下面是一些测试环境的细节
+
+- 测试数据库使用 [Supabase](https://supabase.com/) 的云数据库
+- 由于需要向前兼容，`db_mode` 无法用于另外两类数据库
+- 开发者对 PostgreSQL 不了解，以前从未使用过 PostgreSQL
+
 ### CA 证书
 
-仅限 `MySQL`
+适用于 `MySQL` 和 `PostgreSQL`
 
 有的云服务，要求用户使用 TLS 连接到它们的数据库；有的用户对内网环境有特殊的安全需求，此时可能需要用到证书文件
 
-可用于 `db_tls` 的值包括 `true`, `false`, `skip-verify`, `preferred` 以及证书文件的路径，更多信息请参考 [go-sql-driver/mysql#tls](https://github.com/go-sql-driver/mysql?tab=readme-ov-file#tls)
+#### MySQL TLS
+
+对于 MySQL 可用于 `db_tls` 的值包括 `true`, `false`（默认值）, `skip-verify`, `preferred` 以及证书文件的路径，更多信息请参考 [go-sql-driver/mysql#tls](https://github.com/go-sql-driver/mysql?tab=readme-ov-file#tls)
 
 例如下面的第二项是 Debian/Ubuntu 的目录；如果证书尚未被导入到系统并且软件内嵌的 Mozilla Root Store 也不包含该证书，部署时可能就需要这样填写证书的实际目录
 
-\* 注：此处的 `db_tls` 类型为 `string`，不能像 `boolean` 类型那样忽略掉 `=true`
+- 使用 docker 部署时请注意处理好文件目录问题
+
+\* 注：此处的 `db_tls` 类型为 `string`，cli 传参时不能像 `boolean` 类型那样忽略掉 `=true`
 
 ```shell
 go run main.go -db_tls=true
@@ -107,14 +119,13 @@ go run main.go -db_tls=true
 go run main.go -db_tls=/etc/ssl/certs/ca-certificates.crt
 ```
 
-### **PostgreSQL
+#### PostgreSQL SSL Mode
 
-支持 PostgreSQL 是实验性的功能，可能会被砍掉。下面是一些测试环境的细节
+对于 PostgreSQL 有 `disable`, `allow`, `prefer`（默认值）, `require`, `verify-ca`, `verify-full` 以及证书文件的路径，更多信息请参考 [LIBPQ-SSL-PROTECTION](https://www.postgresql.org/docs/current/libpq-ssl.html#LIBPQ-SSL-PROTECTION)
 
-- 安装用的 `assets/sql/tc_pgsql.sql` 使用 ChatGPT 转换自 `assets/sql/tc_sqlite.sql`，目测没有出现执行错误
-- 测试数据库使用 [Supabase](https://supabase.com/) 的云数据库
-- 由于需要向前兼容，`db_mode` 无法用于另外两类数据库
-- 开发者对 PostgreSQL 不了解，以前从未使用过 PostgreSQL
+用法跟 MySQL 差不多，唯一不同的是无法使用内置证书，必须使用 `~/.postgres/root.crt` 或者自行准备的文件
+
+- 使用 docker 部署时请注意处理好文件目录问题
 
 ## 安装
 

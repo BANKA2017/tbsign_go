@@ -43,7 +43,7 @@ type GithubReleasesListResponseItem struct {
 	Body string `json:"body,omitempty"`
 }
 
-var passList map[string][]string = map[string][]string{
+var passList = map[string][]string{
 	"darwin":  {"amd64", "arm64"},
 	"linux":   {"amd64", "arm64"},
 	"windows": {"amd64"},

@@ -141,7 +141,7 @@ func tokenBuilder(uid int, password string) (string, int64, int64) {
 	expiredAt := time.Now().Add(time.Duration(numberCookieExpire) * time.Second).Unix()
 	strExpiredAt := strconv.Itoa(int(expiredAt))
 
-	token := base64.RawURLEncoding.EncodeToString(HmacSessionToken(strconv.Itoa(int(uid)), password, strExpiredAt))
+	token := base64.RawURLEncoding.EncodeToString(HmacSessionToken(strconv.Itoa(uid), password, strExpiredAt))
 
 	// HttpAuthRefreshTokenMap.Store(int(uid), token, numberCookieExpire)
 

@@ -111,9 +111,17 @@ func ConnectToMySQL(username string, password string, endpoint string, dbname st
 	return dbHandle, dbHandle, err
 }
 
-// TODO tlsOption, dsn format?
 func ConnectToPgSQL(username string, password string, endpoint string, dbname string, tlsOption string, logLevel logger.LogLevel, servicePrefix string) (*gorm.DB, *gorm.DB, error) {
 	dsn := fmt.Sprintf("postgresql://%s:%s@%s/%s", username, password, endpoint, dbname)
+
+	if tlsOption != "" {
+		lowerTLSOption := strings.ToLower(tlsOption)
+		if slices.Contains([]string{"disable", "allow", "prefer", "require", "verify-ca", "verify-full"}, lowerTLSOption) {
+			dsn += "?sslmode=" + lowerTLSOption
+		} else {
+			dsn += "?sslmode=verify-full&sslrootcert=" + tlsOption
+		}
+	}
 
 	dbHandle, err := gorm.Open(postgres.New(postgres.Config{
 		DSN:                  dsn,

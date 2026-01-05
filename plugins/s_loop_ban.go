@@ -135,7 +135,7 @@ func PostNewPCBan(cookie _type.TypeCookie, fid int32, portrait string, day int32
 
 	var form = map[string]string{
 		"BDUSS": cookie.Bduss,
-		"day":   strconv.Itoa(int(banDaysIndex)),
+		"day":   strconv.Itoa(banDaysIndex),
 		"fid":   strconv.Itoa(int(fid)),
 		// "is_loop_ban": isSvipBlock, // <- Not yet known how to set loop ban from new pc client
 		"ntn":      "banid",

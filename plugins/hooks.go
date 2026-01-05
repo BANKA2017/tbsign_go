@@ -234,7 +234,7 @@ func BatchPluginQuery(originalQuery *gorm.DB, limit, rate int, selectedKeys []st
 		"(?) as tasks",
 		_function.GormDB.R.Table(
 			"(?) as filtered_tasks",
-			originalQuery.Select("*"),
-		).Select("*", "ROW_NUMBER() OVER (PARTITION BY pid ORDER BY id) AS rn").Where("rn <= ?", limit),
+			originalQuery.Select("*", "ROW_NUMBER() OVER (PARTITION BY pid ORDER BY id) AS rn"),
+		).Where("rn <= ?", limit),
 	).Select(selectedKeys).Limit(limit * rate).Scan(target).Error
 }

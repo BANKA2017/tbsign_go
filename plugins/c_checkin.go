@@ -25,6 +25,7 @@ const AgainErrorId = "160002"
 // 320022#tbs check fail
 // 2280015#您的账号现已被封禁，不能进行签到
 // 2280001#您尚在黑名单中，不能操作。
+// 1990055#帐号未实名，功能禁用。请先完成帐号的手机实名验证
 var recheckinErrorID = []int64{340011, 2280007, 110001, 1989004, 255, 1, 340006}
 
 var tcPrivateErrorID = map[int]string{
@@ -253,7 +254,7 @@ func DoCheckinAction() {
 		RecheckInStatus.UnixTimestamp = 0
 		cronSignAgainEncoded := cronSignAgainInterface.Encode()
 
-		_function.SetOption("cron_sign_again", string(cronSignAgainEncoded))
+		_function.SetOption("cron_sign_again", cronSignAgainEncoded)
 
 		//log.Println(string(cronSignAgainEncoded))
 	}
@@ -314,7 +315,7 @@ func DoReCheckinAction() {
 		cronSignAgainInterface.Num = retryNum
 		cronSignAgainEncoded := cronSignAgainInterface.Encode()
 
-		_function.SetOption("cron_sign_again", string(cronSignAgainEncoded))
+		_function.SetOption("cron_sign_again", cronSignAgainEncoded)
 		//}
 	}
 }
