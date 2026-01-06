@@ -1,8 +1,6 @@
 module github.com/BANKA2017/tbsign_go
 
-go 1.24.0
-
-toolchain go1.24.2
+go 1.24.2
 
 replace github.com/emersion/go-sasl => github.com/kdnetwork/go-sasl v0.0.0-20251119095512-40c81e6be4a2
 
@@ -33,6 +31,7 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/kdnetwork/code-snippet/go v0.0.0-20260106094111-0fd876d7884d // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

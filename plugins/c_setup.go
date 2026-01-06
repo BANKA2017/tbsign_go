@@ -52,7 +52,7 @@ func SetupSystem(dbMode, dbPath, dbUsername, dbPassword, dbEndpoint, dbName, dbT
 				fmt.Println("已建立数据库:", dbName)
 			}
 		}
-		_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToMySQL(dbUsername, dbPassword, dbEndpoint, dbName, dbTLSOption, logLevel, "db")
+		err = _function.GormDB.ConnectToMySQL(dbUsername, dbPassword, dbEndpoint, dbName, dbTLSOption)
 		if err != nil {
 			log.Fatal("db:", err)
 		}

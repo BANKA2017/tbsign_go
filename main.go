@@ -194,15 +194,17 @@ func main() {
 		Version string
 	}{}
 
+	_function.GormDB.LogLevel = logLevel
+	_function.GormDB.ServicePrefix = "tbsign-db"
+	_function.GormDB.WALMode = true
+
 	if share.DBMode == "pgsql" {
 		// pgsql
-		if share.DBUsername == "" || share.DBPassword == "" {
-			log.Fatal("global: Empty username or password")
+		if share.DBUsername == "" {
+			log.Fatal("global: Empty username")
 		}
 		// precheck table
-		_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToPgSQL(share.DBUsername, share.DBPassword, share.DBEndpoint, "", share.DBTLSOption, logLevel, "db")
-
-		if err != nil {
+		if err = _function.GormDB.ConnectToPostgreSQL(share.DBUsername, share.DBPassword, share.DBEndpoint, "", share.DBTLSOption); err != nil {
 			log.Fatal("db:", err)
 		}
 
@@ -221,8 +223,10 @@ func main() {
 		if setup {
 			_plugin.SetupSystem(share.DBMode, "", share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, share.DBTLSOption, logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
 		} else {
-			_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToPgSQL(share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, share.DBTLSOption, logLevel, "db")
-			if err != nil {
+			sqlDB, _ := _function.GormDB.R.DB()
+			sqlDB.Close()
+
+			if err = _function.GormDB.ConnectToPostgreSQL(share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, share.DBTLSOption); err != nil {
 				log.Fatal("db:", err)
 			}
 		}
@@ -238,8 +242,8 @@ func main() {
 			dbExists = false
 			setup = true
 		}
-		_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToSQLite(share.DBPath, logLevel, "tbsign")
-		if err != nil {
+
+		if err = _function.GormDB.ConnectToSQLite(share.DBPath); err != nil {
 			log.Fatal("db:", err)
 		}
 
@@ -253,13 +257,12 @@ func main() {
 	} else {
 		share.DBMode = "mysql"
 		// mysql
-		if share.DBUsername == "" || share.DBPassword == "" {
-			log.Fatal("global: Empty username or password")
+		if share.DBUsername == "" {
+			log.Fatal("global: Empty username")
 		}
 		// precheck table
-		_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToMySQL(share.DBUsername, share.DBPassword, share.DBEndpoint, "", share.DBTLSOption, logLevel, "db")
 
-		if err != nil {
+		if err = _function.GormDB.ConnectToMySQL(share.DBUsername, share.DBPassword, share.DBEndpoint, "", share.DBTLSOption); err != nil {
 			log.Fatal("db:", err)
 		}
 
@@ -278,8 +281,10 @@ func main() {
 		if setup {
 			_plugin.SetupSystem(share.DBMode, "", share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, share.DBTLSOption, logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
 		} else {
-			_function.GormDB.R, _function.GormDB.W, err = _function.ConnectToMySQL(share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, share.DBTLSOption, logLevel, "db")
-			if err != nil {
+			sqlDB, _ := _function.GormDB.R.DB()
+			sqlDB.Close()
+
+			if err = _function.GormDB.ConnectToMySQL(share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, share.DBTLSOption); err != nil {
 				log.Fatal("db:", err)
 			}
 		}

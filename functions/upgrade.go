@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -50,19 +51,15 @@ var passList = map[string][]string{
 }
 
 func IsOfficialSupport() bool {
-	if list, ok := passList[runtime.GOOS]; ok {
-		if slices.Contains(list, runtime.GOARCH) {
-			return true
-		}
-	}
-	return false
+	list, ok := passList[runtime.GOOS]
+	return ok && slices.Contains(list, runtime.GOARCH)
 }
 
 func IsBinaryType() bool {
 	return strings.ToLower(share.BuildPublishType) == "binary"
 }
 
-var ReleaseFilesPath = "https://github.com/BANKA2017/tbsign_go/releases/download"
+var ReleaseFilesPath = share.ReleaseFilesPath
 
 // version = "20240707.c7990c7.6a6db54"
 func Upgrade(version string) error {
@@ -75,6 +72,8 @@ func Upgrade(version string) error {
 		return fmt.Errorf("❌ 不支持直接下载更新的版本(%s)", share.BuildPublishType)
 	} else if !IsOfficialSupport() {
 		return fmt.Errorf("❌ 不支持的版本(%s/%s)，请下载源码后参考 build.sh 编译运行", runtime.GOOS, runtime.GOARCH)
+	} else if _, err := url.Parse(ReleaseFilesPath); err != nil {
+		return errors.New("❌ 更新地址无效")
 	}
 
 	// pre check version

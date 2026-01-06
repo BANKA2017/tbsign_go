@@ -18,3 +18,5 @@ var BuildEmbeddedFrontendGitCommitHash = "N/A"
 var BuildPublishType = "source"
 
 var BuildAtTime time.Time
+
+var ReleaseFilesPath = "https://github.com/BANKA2017/tbsign_go/releases/download"
