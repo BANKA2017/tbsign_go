@@ -48,11 +48,25 @@ func SetupSystem(dbMode, dbPath, dbUsername, dbPassword, dbEndpoint, dbName, dbT
 			err = _function.GormDB.W.Exec("CREATE DATABASE IF NOT EXISTS " + dbName + ";").Error
 			if err != nil {
 				log.Fatal(err)
-			} else {
-				fmt.Println("已建立数据库:", dbName)
 			}
+
+			fmt.Println("已建立数据库:", dbName)
 		}
 		err = _function.GormDB.ConnectToMySQL(dbUsername, dbPassword, dbEndpoint, dbName, dbTLSOption)
+		if err != nil {
+			log.Fatal("db:", err)
+		}
+	} else if dbMode == "pgsql" {
+		if !dbExists {
+			fmt.Println("⌛正在建立数据库:", dbName)
+			err = _function.GormDB.W.Exec("CREATE DATABASE " + dbName + ";").Error
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			fmt.Println("已建立数据库:", dbName)
+		}
+		err = _function.GormDB.ConnectToPostgreSQL(dbUsername, dbPassword, dbEndpoint, dbName, dbTLSOption)
 		if err != nil {
 			log.Fatal("db:", err)
 		}

@@ -87,14 +87,14 @@ jobs:
       - name: Install tools
         run: |
           go install src.techknowlogick.com/xgo@v1.8.1-0.20250401170454-4b368d8a5afa
-          docker pull ghcr.io/techknowlogick/xgo:go-1.24.2
+          docker pull ghcr.io/techknowlogick/xgo:go-1.25.5
           curl -o assets/ca/cacert.pem https://curl.se/ca/cacert.pem
           rm assets/ca/.gitkeep
       - name: Packaging frontend
         run: tar -czf tcfe.tar.gz -C assets/dist/ .
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.24.2"
+          go-version: "1.25.5"
           cache-dependency-path: "go.sum"
       - name: Backend
         run: |
@@ -107,7 +107,7 @@ jobs:
           -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE' \
           "
-          $HOME/go/bin/xgo -go go-1.24.2 -out "$build_prefix" -ldflags "$ldflags" -tags netgo --targets=windows/amd64,darwin/amd64,darwin/arm64 ../
+          $HOME/go/bin/xgo -go go-1.25.5 -out "$build_prefix" -ldflags "$ldflags" -tags netgo --targets=windows/amd64,darwin/amd64,darwin/arm64 ../
 
       - name: Rename & SHA-256
         run: |
@@ -187,7 +187,7 @@ jobs:
           path: assets/dist
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.24.2"
+          go-version: "1.25.5"
           cache-dependency-path: "go.sum"
       - name: Install musl libc
         run: sudo apt install -y musl-dev

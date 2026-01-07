@@ -2,8 +2,10 @@ package main
 
 import (
 	_ "embed"
+	"errors"
 	"flag"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"strings"
@@ -183,38 +185,39 @@ func main() {
 		log.Fatal("ERROR: 管理员信息不完整，无法安装")
 	}
 
-	// connect to db
+	// TODO setup slog
+
 	logLevel := logger.Error
+	// slogLevel := slog.LevelError
 	if share.TestMode {
 		logLevel = logger.Info
+		// slogLevel = slog.LevelInfo
 	}
 
+	//slog.SetDefault(slog.New(
+	//	slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+	//		Level:     slogLevel,
+	//		AddSource: true,
+	//	}),
+	//))
+
+	// connect to db
 	dbExists := true
-	versionStruct := struct {
-		Version string
-	}{}
 
 	_function.GormDB.LogLevel = logLevel
 	_function.GormDB.ServicePrefix = "tbsign-db"
 	_function.GormDB.WALMode = true
 
 	if share.DBMode == "pgsql" {
-		// pgsql
-		if share.DBUsername == "" {
-			log.Fatal("global: Empty username")
-		}
 		// precheck table
 		if err = _function.GormDB.ConnectToPostgreSQL(share.DBUsername, share.DBPassword, share.DBEndpoint, "", share.DBTLSOption); err != nil {
 			log.Fatal("db:", err)
 		}
 
-		var count struct {
-			Count int64
-		}
-
-		_function.GormDB.R.Raw("SELECT COUNT(*) AS count FROM pg_database WHERE datname = ?;", share.DBName).Scan(&count)
-		dbExists = count.Count > 0
-		if !dbExists {
+		dbExists, err = _function.GormDB.FastDBCheck(share.DBName)
+		if err != nil {
+			log.Fatal("db:", err)
+		} else if !dbExists {
 			log.Println("db:", share.DBName, "is not exists")
 			setup = true
 		}
@@ -230,32 +233,32 @@ func main() {
 				log.Fatal("db:", err)
 			}
 		}
-
-		// version
-
-		_function.GormDB.R.Raw("SELECT version();").Scan(&versionStruct)
-		share.DBVersion = versionStruct.Version
 	} else if share.DBPath != "" {
 		// sqlite
-		share.DBMode = "sqlite"
-		if _, err := os.Stat(share.DBPath); err != nil && os.IsNotExist(err) {
+		dbStat, err := os.Stat(share.DBPath)
+		if err == nil {
+			if dbStat.IsDir() {
+				log.Fatal("db: `", share.DBPath, "` is a directory")
+			}
+		} else if errors.Is(err, fs.ErrNotExist) {
 			dbExists = false
-			setup = true
+		} else {
+			log.Fatal("db:", err)
 		}
+
+		setup = !dbExists
 
 		if err = _function.GormDB.ConnectToSQLite(share.DBPath); err != nil {
 			log.Fatal("db:", err)
 		}
 
+		share.DBMode = _function.GormDB.DBMode
+
 		// setup
 		if setup {
 			_plugin.SetupSystem(share.DBMode, share.DBPath, "", "", "", "", share.DBTLSOption, logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
 		}
-
-		_function.GormDB.R.Raw("SELECT sqlite_version() AS version;").Scan(&versionStruct)
-		share.DBVersion = versionStruct.Version
 	} else {
-		share.DBMode = "mysql"
 		// mysql
 		if share.DBUsername == "" {
 			log.Fatal("global: Empty username")
@@ -265,14 +268,12 @@ func main() {
 		if err = _function.GormDB.ConnectToMySQL(share.DBUsername, share.DBPassword, share.DBEndpoint, "", share.DBTLSOption); err != nil {
 			log.Fatal("db:", err)
 		}
+		share.DBMode = _function.GormDB.DBMode
 
-		var count struct {
-			Count int64
-		}
-
-		_function.GormDB.R.Raw("SELECT (COUNT(*) > 0) AS count FROM information_schema.tables WHERE table_schema = ?;", share.DBName).Scan(&count)
-		dbExists = count.Count > 0
-		if !dbExists {
+		dbExists, err = _function.GormDB.FastDBCheck(share.DBName)
+		if err != nil {
+			log.Fatal("db:", err)
+		} else if !dbExists {
 			log.Println("db:", share.DBName, "is not exists")
 			setup = true
 		}
@@ -288,12 +289,10 @@ func main() {
 				log.Fatal("db:", err)
 			}
 		}
-
-		// version
-
-		_function.GormDB.R.Raw("SELECT @@version AS version;").Scan(&versionStruct)
-		share.DBVersion = versionStruct.Version
 	}
+
+	// db version
+	share.DBVersion = _function.GormDB.GetVersion()
 
 	// init
 	_function.InitOptions()
