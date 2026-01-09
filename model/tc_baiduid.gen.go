@@ -10,8 +10,8 @@ const TableNameTcBaiduid = "tc_baiduid"
 type TcBaiduid struct {
 	ID       int32  `gorm:"column:id;type:int;primaryKey;autoIncrement:true;uniqueIndex:tc_baiduid_id_uid,priority:1" json:"id"`
 	UID      int32  `gorm:"column:uid;type:int;not null;uniqueIndex:tc_baiduid_id_uid,priority:2;uniqueIndex:tc_baiduid_uid_portrait,priority:1" json:"uid"`
-	Bduss    string `gorm:"column:bduss;type:text;not null" json:"bduss,omitempty"`
-	Stoken   string `gorm:"column:stoken;type:text;not null" json:"stoken,omitempty"`
+	Bduss    string `gorm:"column:bduss;type:text;not null" json:"-"`
+	Stoken   string `gorm:"column:stoken;type:text;not null" json:"-"`
 	Name     string `gorm:"column:name;type:varchar(40);not null" json:"name"`
 	Portrait string `gorm:"column:portrait;type:varchar(40);not null;uniqueIndex:tc_baiduid_uid_portrait,priority:2" json:"portrait"`
 }

@@ -95,8 +95,6 @@ func GetBDUSS(c echo.Context) error {
 			_function.GormDB.W.Model(&model.TcBaiduid{}).Where("id = ?", tiebaAccounts[0].ID).Updates(&newData)
 			newData.ID = tiebaAccounts[0].ID
 			newData.UID = tiebaAccounts[0].UID
-			newData.Bduss = ""
-			newData.Stoken = ""
 
 			_function.CookieList.Delete(tiebaAccounts[0].ID)
 			_function.GormDB.W.Model(&model.TcTieba{}).Select("status", "latest", "last_error").Where("pid = ? AND status = ?", tiebaAccounts[0].ID, 110000).Updates(&model.TcTieba{
@@ -107,8 +105,6 @@ func GetBDUSS(c echo.Context) error {
 
 			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "已更新 BDUSS", newData, "tbsign"))
 		} else if tiebaAccounts[0].Bduss == bduss && tiebaAccounts[0].Stoken == stoken {
-			tiebaAccounts[0].Bduss = ""
-			tiebaAccounts[0].Stoken = ""
 			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "贴吧账号已存在", tiebaAccounts[0], "tbsign"))
 		}
 	}
@@ -141,9 +137,6 @@ func GetBDUSS(c echo.Context) error {
 		Portrait: baiduAccountInfo.User.Portrait,
 	}
 	_function.GormDB.W.Create(&newAccount)
-
-	newAccount.Bduss = ""
-	newAccount.Stoken = ""
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(201, "OK", newAccount, "tbsign"))
 }
@@ -189,9 +182,6 @@ func AddTiebaAccount(c echo.Context) error {
 			newData.ID = tiebaAccounts[0].ID
 			newData.UID = tiebaAccounts[0].UID
 
-			newData.Bduss = ""
-			newData.Stoken = ""
-
 			_function.CookieList.Delete(tiebaAccounts[0].ID)
 			_function.GormDB.W.Model(&model.TcTieba{}).Select("status", "latest", "last_error").Where("pid = ? AND status = ?", tiebaAccounts[0].ID, 110000).Updates(&model.TcTieba{
 				Status:    0,
@@ -201,9 +191,6 @@ func AddTiebaAccount(c echo.Context) error {
 
 			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "已更新 BDUSS", newData, "tbsign"))
 		} else if tiebaAccounts[0].Bduss == bduss && tiebaAccounts[0].Stoken == stoken {
-			tiebaAccounts[0].Bduss = ""
-			tiebaAccounts[0].Stoken = ""
-
 			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "贴吧账号已存在", tiebaAccounts[0], "tbsign"))
 		}
 	}
@@ -236,9 +223,6 @@ func AddTiebaAccount(c echo.Context) error {
 		Portrait: baiduAccountInfo.User.Portrait,
 	}
 	_function.GormDB.W.Create(&newAccount)
-
-	newAccount.Bduss = ""
-	newAccount.Stoken = ""
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(201, "OK", newAccount, "tbsign"))
 }
@@ -304,11 +288,6 @@ func GetTiebaAccountList(c echo.Context) error {
 		return nil
 	})
 
-	// for k := range tiebaAccounts {
-	// 	tiebaAccounts[k].Bduss = ""
-	// 	tiebaAccounts[k].Stoken = ""
-	// }
-
 	if arrayMode {
 		listArray := make([][4]any, len(tiebaAccounts))
 		for i, accountInfo := range tiebaAccounts {
@@ -340,9 +319,6 @@ func GetTiebaAccountItem(c echo.Context) error {
 
 	var tiebaAccount model.TcBaiduid
 	_function.GormDB.R.Where("id = ? AND uid = ?", numPid, uid).Take(&tiebaAccount)
-
-	tiebaAccount.Bduss = ""
-	tiebaAccount.Stoken = ""
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaAccount, "tbsign"))
 }
