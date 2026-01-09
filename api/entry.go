@@ -10,6 +10,7 @@ import (
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/BANKA2017/tbsign_go/share"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func Api(address string) {
@@ -17,6 +18,8 @@ func Api(address string) {
 	e := echo.New()
 	//e.Use(middleware.Logger())
 	e.Use(SetHeaders)
+
+	e.Pre(middleware.RemoveTrailingSlash())
 
 	apiPrefix := ""
 	if share.EnableFrontend {
