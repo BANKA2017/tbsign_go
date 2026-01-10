@@ -618,6 +618,12 @@ type TcBackupExportStructTcTieba struct {
 	No bool `json:"no"`
 }
 
+type TcBackupExportStructTcBaiduid struct {
+	*model.TcBaiduid
+	Bduss  string `gorm:"column:bduss;type:text;not null" json:"bduss"`
+	Stoken string `gorm:"column:stoken;type:text;not null" json:"stoken"`
+}
+
 func ExportAccountData(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
@@ -646,8 +652,8 @@ func ExportAccountData(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	var tcTieba []*model.TcTieba
-	var tcBaiduid []*model.TcBaiduid
+	var tcTieba []*TcBackupExportStructTcTieba
+	var tcBaiduid []*TcBackupExportStructTcBaiduid
 
 	// TODO plugin data export
 	// var tcUsersOption []*model.TcUsersOption
@@ -671,20 +677,19 @@ func ExportAccountData(c echo.Context) error {
 			decryptedStoken, _ := _function.AES256GCMDecrypt(tcBaiduidItem.Stoken, share.DataEncryptKeyByte)
 			tcBaiduidItem.Stoken = string(decryptedStoken)
 		}
-	}
 
-	var tcTiebaForExport []*TcBackupExportStructTcTieba
-	for _, tcTiebaItem := range tcTieba {
-		tcTiebaForExport = append(tcTiebaForExport, &TcBackupExportStructTcTieba{
-			tcTiebaItem,
-			_function.TinyIntToBool(tcTiebaItem.No),
-		})
+		// for _, tcUsersOptionItem := range tcUsersOption {
+		// 	if slices.Contains([]string{"go_pushdeer_key", "go_bark_key", "go_ntfy_topic"}, tcUsersOptionItem.Name) {
+		// 		decryptedValue, _ := _function.AES256GCMDecrypt([]byte(tcUsersOptionItem.Value), share.DataEncryptKeyByte)
+		// 		tcUsersOptionItem.Value = string(decryptedValue)
+		// 	}
+		// }
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
-		"tc_tieba":   tcTiebaForExport,
+		"tc_tieba":   tcTieba,
 		"tc_baiduid": tcBaiduid,
-		// "tc_users_option":  tcUsersOption,
+		// "tc_users_option": tcUsersOption,
 		// "tc_ver4_ban_list": tcVer4BanList,
 		// "tc_ver4_bank_log": tcVer4RankLog,
 		// "tc_kd_growth":     tcKdGrowth,

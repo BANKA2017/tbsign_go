@@ -9,3 +9,4 @@
 **/*.db-wal
 
 bom.json
+**/*.txt

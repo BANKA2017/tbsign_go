@@ -414,7 +414,7 @@ func PostClientBatchCheckinForumList(cookie _type.TypeCookie) (*_type.BatchCheck
 		}
 	}
 
-	forumListResponse, err := TBFetch("https://tieba.baidu.com/c/f/forum/getforumlist", http.MethodPost, []byte(_body.Encode()+"&sign="+form["sign"]), EmptyHeaders)
+	forumListResponse, err := TBFetch("https://tiebac.baidu.com/c/f/forum/getforumlist", http.MethodPost, []byte(_body.Encode()+"&sign="+form["sign"]), EmptyHeaders)
 
 	if err != nil {
 		return nil, err
