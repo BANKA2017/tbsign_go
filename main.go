@@ -151,7 +151,7 @@ func main() {
 
 	if share.DBMode == "pgsql" {
 		// precheck table
-		if err = _function.GormDB.ConnectToPostgreSQL(share.DBUsername, share.DBPassword, share.DBEndpoint, "", share.DBTLSOption); err != nil {
+		if err = _function.GormDB.ConnectToPostgreSQL(share.DBUsername, share.DBPassword, share.DBEndpoint, "postgres", share.DBTLSOption); err != nil {
 			log.Fatal("db:", err)
 		}
 
@@ -166,7 +166,7 @@ func main() {
 		// setup
 		if setup {
 			_plugin.SetupSystem(share.DBMode, "", share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, share.DBTLSOption, logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
-		} else {
+		} else if share.DBName != "postgres" {
 			sqlDB, _ := _function.GormDB.R.DB()
 			sqlDB.Close()
 
