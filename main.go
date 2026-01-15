@@ -15,6 +15,7 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/BANKA2017/tbsign_go/share"
+	"github.com/kdnetwork/code-snippet/go/db"
 	"gorm.io/gorm/logger"
 )
 
@@ -58,10 +59,10 @@ func main() {
 	var tmpHost string
 	flag.StringVar(&share.DBUsername, "username", GetEnv("tc_username", ""), "Username")
 	flag.StringVar(&share.DBPassword, "pwd", GetEnv("tc_pwd", ""), "Password")
-	flag.StringVar(&tmpHost, "endpoint", "127.0.0.1:3306", "MySQL host:port (deprecated)")
+	flag.StringVar(&tmpHost, "endpoint", GetEnv("tc_endpoint", "127.0.0.1:3306"), "MySQL host:port (deprecated)")
 	flag.StringVar(&share.DBEndpoint, "host", GetEnv("tc_host", "127.0.0.1:3306"), "MySQL host:port")
 	flag.StringVar(&share.DBName, "db", GetEnv("tc_db", "tbsign"), "Database name")
-	flag.StringVar(&share.DBMode, "db_mode", GetEnv("tc_db_mode", "mysql"), "sqlite/mysql/pgsql")
+	flag.StringVar(&share.DBMode, "db_mode", GetEnv("tc_db_mode", "mysql"), "sqlite/mysql/(pgsql|postgresql)")
 	flag.StringVar(&share.DBTLSOption, "db_tls", GetEnv("tc_db_tls", "false"), "Option for CA cert (MySQL/PostgreSQL)")
 
 	//proxy
@@ -96,7 +97,7 @@ func main() {
 		share.DBEndpoint = tmpHost
 	}
 
-	if share.DBTLSOption == "false" && share.DBMode == "pgsql" {
+	if share.DBTLSOption == "false" && (share.DBMode == "pgsql" || share.DBMode == db.DBModePostgreSQL) {
 		share.DBTLSOption = "prefer" // default value
 	}
 
@@ -149,9 +150,9 @@ func main() {
 	_function.GormDB.ServicePrefix = "tbsign-db"
 	_function.GormDB.WALMode = true
 
-	if share.DBMode == "pgsql" {
+	if share.DBMode == "pgsql" || share.DBMode == db.DBModePostgreSQL {
 		// precheck table
-		if err = _function.GormDB.ConnectToPostgreSQL(share.DBUsername, share.DBPassword, share.DBEndpoint, "postgres", share.DBTLSOption); err != nil {
+		if err = _function.GormDB.SetDBMode(db.DBModePostgreSQL).SetDBAuth(share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, share.DBTLSOption).ConnectToDefault(); err != nil {
 			log.Fatal("db:", err)
 		}
 
@@ -165,12 +166,12 @@ func main() {
 
 		// setup
 		if setup {
-			_plugin.SetupSystem(share.DBMode, "", share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, share.DBTLSOption, logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
+			_plugin.SetupSystem(dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
 		} else if share.DBName != "postgres" {
 			sqlDB, _ := _function.GormDB.R.DB()
 			sqlDB.Close()
 
-			if err = _function.GormDB.ConnectToPostgreSQL(share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, share.DBTLSOption); err != nil {
+			if err = _function.GormDB.Connect(); err != nil {
 				log.Fatal("db:", err)
 			}
 		}
@@ -189,7 +190,7 @@ func main() {
 
 		setup = !dbExists
 
-		if err = _function.GormDB.ConnectToSQLite(share.DBPath); err != nil {
+		if err = _function.GormDB.SetDBMode(db.DBModeSQLite).SetDBPath(share.DBPath).Connect(); err != nil {
 			log.Fatal("db:", err)
 		}
 
@@ -197,7 +198,7 @@ func main() {
 
 		// setup
 		if setup {
-			_plugin.SetupSystem(share.DBMode, share.DBPath, "", "", "", "", share.DBTLSOption, logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
+			_plugin.SetupSystem(dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
 		}
 	} else {
 		// mysql
@@ -206,7 +207,7 @@ func main() {
 		}
 		// precheck table
 
-		if err = _function.GormDB.ConnectToMySQL(share.DBUsername, share.DBPassword, share.DBEndpoint, "", share.DBTLSOption); err != nil {
+		if err = _function.GormDB.SetDBMode(db.DBModeMySQL).SetDBAuth(share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, share.DBTLSOption).ConnectToDefault(); err != nil {
 			log.Fatal("db:", err)
 		}
 		share.DBMode = _function.GormDB.DBMode
@@ -221,16 +222,20 @@ func main() {
 
 		// setup
 		if setup {
-			_plugin.SetupSystem(share.DBMode, "", share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, share.DBTLSOption, logLevel, dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
+			_plugin.SetupSystem(dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
 		} else {
 			sqlDB, _ := _function.GormDB.R.DB()
 			sqlDB.Close()
 
-			if err = _function.GormDB.ConnectToMySQL(share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, share.DBTLSOption); err != nil {
+			if err = _function.GormDB.Connect(); err != nil {
 				log.Fatal("db:", err)
 			}
 		}
 	}
+
+	_adminEmail = ""
+	_adminName = ""
+	_adminPassword = ""
 
 	// db version
 	share.DBVersion = _function.GormDB.GetVersion()

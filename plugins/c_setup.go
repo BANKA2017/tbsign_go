@@ -6,23 +6,20 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/BANKA2017/tbsign_go/assets"
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
+	"github.com/kdnetwork/code-snippet/go/db"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
-func SetupSystem(dbMode, dbPath, dbUsername, dbPassword, dbEndpoint, dbName, dbTLSOption string, logLevel logger.LogLevel, dbExists, autoInstall bool, name, email, password string) {
+func SetupSystem(dbExists, autoInstall bool, name, email, password string) {
 	reader := bufio.NewReader(os.Stdin)
 	var err error
-
-	// _tc_mysql, _ := assets.EmbeddedSQL.ReadFile("sql/tc_mysql.sql")
-	// _tc_sqlite, _ := assets.EmbeddedSQL.ReadFile("sql/tc_sqlite.sql")
-	// _tc_pgsql, _ := assets.EmbeddedSQL.ReadFile("sql/tc_pgsql.sql")
 
 	fmt.Println("📌现在正在安装 TbSign➡️")
 	if dbExists {
@@ -41,48 +38,38 @@ func SetupSystem(dbMode, dbPath, dbUsername, dbPassword, dbEndpoint, dbName, dbT
 		}
 	}
 
-	// mysql
-	if dbMode == "mysql" {
+	dbName := _function.GormDB.GetDB()
+
+	if _function.GormDB.DBMode == db.DBModeMySQL || _function.GormDB.DBMode == db.DBModePostgreSQL {
 		if !dbExists {
+			if !regexp.MustCompile(`^[a-zA-Z0-9_]+$`).MatchString(dbName) {
+				log.Fatal("❌数据库名称无法用于 TbSign➡️")
+			}
+
 			fmt.Println("⌛正在建立数据库:", dbName)
-			err = _function.GormDB.W.Exec("CREATE DATABASE IF NOT EXISTS " + dbName + ";").Error
+			err = _function.GormDB.W.Exec(fmt.Sprintf("CREATE DATABASE `%s`;", dbName)).Error
 			if err != nil {
 				log.Fatal(err)
 			}
 
 			fmt.Println("已建立数据库:", dbName)
 		}
-		err = _function.GormDB.ConnectToMySQL(dbUsername, dbPassword, dbEndpoint, dbName, dbTLSOption)
-		if err != nil {
-			log.Fatal("db:", err)
-		}
-	} else if dbMode == "pgsql" {
-		if !dbExists {
-			fmt.Println("⌛正在建立数据库:", dbName)
-			err = _function.GormDB.W.Exec("CREATE DATABASE " + dbName + ";").Error
-			if err != nil {
-				log.Fatal(err)
-			}
 
-			fmt.Println("已建立数据库:", dbName)
-		}
-		err = _function.GormDB.ConnectToPostgreSQL(dbUsername, dbPassword, dbEndpoint, dbName, dbTLSOption)
-		if err != nil {
+		sqlDB, _ := _function.GormDB.R.DB()
+		sqlDB.Close()
+
+		if err = _function.GormDB.Connect(); err != nil {
 			log.Fatal("db:", err)
 		}
 	}
 
 	fmt.Println("⌛正在清理旧表")
 	_function.GormDB.W.Migrator().DropTable(&model.TcBaiduid{},
-		// &model.TcKdGrowth{},
 		&model.TcOption{},
 		&model.TcPlugin{},
 		&model.TcTieba{},
 		&model.TcUsersOption{},
 		&model.TcUser{},
-		// &model.TcVer4BanList{},
-		// &model.TcVer4BanUserset{},
-		// &model.TcVer4RankLog{},
 	)
 
 	fmt.Println("⌛正在建立数据表和索引")
@@ -178,7 +165,7 @@ func SetupSystem(dbMode, dbPath, dbUsername, dbPassword, dbEndpoint, dbName, dbT
 		Role:  "admin",
 		T:     "tieba",
 	})
-	if dbMode == "sqlite" {
+	if _function.GormDB.DBMode == db.DBModeSQLite {
 		err := _function.GormDB.W.Exec("VACUUM;").Error
 		if err != nil {
 			log.Fatal(err)

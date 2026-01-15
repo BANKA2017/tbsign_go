@@ -10,30 +10,30 @@
 
 ## 启动参数
 
-| flag                | env                 | default          | description                                                                                              |
-| :------------------ | :------------------ | :--------------- | :------------------------------------------------------------------------------------------------------- |
-| username            | tc_username         |                  | 数据库账号                                                                                               |
-| pwd                 | tc_pwd              |                  | 数据库密码                                                                                               |
-| ~~endpoint~~        | ~~tc_endpoint~~     | `127.0.0.1:3306` | 数据库 `host:port` （已废弃）                                                                            |
-| host                | tc_host             | `127.0.0.1:3306` | 数据库 `host:port`                                                                                       |
-| db                  | tc_db               | `tbsign`         | 数据库名称                                                                                               |
-| db_tls              | tc_db_tls           | `false`          | CA 证书的选项，请看 [CA 证书](#ca-证书) 部分                                                             |
-| db_path             | tc_db_path          |                  | SQLite 文件目录                                                                                          |
-| db_mode             | tc_db_mode          | `mysql`          | 用于显式指定数据库类型，只用于 PostgreSQL (仅当值为 `pgsql` 时有效，请看 [PostgreSQL](#postgresql) 部分) |
-| test                | tc_test             | `false`          | 测试模式，此模式下不会运行计划任务                                                                       |
-| api                 | tc_api              | `false`          | 是否启动 api                                                                                             |
-| fe                  | tc_fe               | `false`          | 是否启动自带前端，仅当 `api` 为 `true` 时可为 `true`                                                     |
-| address             | tc_address          | `:1323`          | 后端运行地址                                                                                             |
-| setup               |                     | `false`          | 强制安装程序（可能会覆盖现有配置）                                                                       |
-| auto_install        | tc_auto_install     | `false`          | 自动安装（仅当数据库不存在时安装）                                                                       |
-| admin_name          | tc_admin_name       |                  | 管理员账号，仅当 `auto_install` 为 `true` 时会用到                                                       |
-| admin_email         | tc_admin_email      |                  | 管理员邮箱，仅当 `auto_install` 为 `true` 时会用到                                                       |
-| admin_password      | tc_admin_password   |                  | 管理员密码，仅当 `auto_install` 为 `true` 时会用到                                                       |
-| no_proxy            |                     | `false`          | 忽略环境变量中的代理配置                                                                                 |
-| allow_backup        | tc_allow_backup     | `false`          | 允许用户批量导出/导入账号和贴吧列表，建议阅读 readme.md 的 [备份](#备份) 部分                            |
-| data_encrypt_key    | tc_data_encrypt_key |                  | 加密部分用户数据的密钥，使用 `base64url` 格式填写，建议阅读 readme.md 的 [加密](#加密) 部分              |
-| data_encrypt_action |                     |                  | `encrypt` 或者 `decrypt`，用于加密/解密用户数据，处理完成后会自动退出，默认应当留空                      |
-| dns_addr            | tc_dns_addr         |                  | 手动设置 DNS 地址，特殊情况下使用，默认应当留空，建议阅读 readme.md 的 [网络](#网络) 部分                |
+| flag                | env                 | default          | description                                                                                                              |
+| :------------------ | :------------------ | :--------------- | :----------------------------------------------------------------------------------------------------------------------- |
+| username            | tc_username         |                  | 数据库账号                                                                                                               |
+| pwd                 | tc_pwd              |                  | 数据库密码                                                                                                               |
+| ~~endpoint~~        | ~~tc_endpoint~~     | `127.0.0.1:3306` | 数据库 `host:port` （已废弃）                                                                                            |
+| host                | tc_host             | `127.0.0.1:3306` | 数据库 `host:port`                                                                                                       |
+| db                  | tc_db               | `tbsign`         | 数据库名称                                                                                                               |
+| db_tls              | tc_db_tls           | `false`          | CA 证书的选项，请看 [CA 证书](#ca-证书) 部分                                                                             |
+| db_path             | tc_db_path          |                  | SQLite 文件目录                                                                                                          |
+| db_mode             | tc_db_mode          | `mysql`          | 用于显式指定数据库类型，只用于 PostgreSQL (仅当值为 `pgsql` 或 `postgresql` 时有效，请看 [PostgreSQL](#postgresql) 部分) |
+| test                | tc_test             | `false`          | 测试模式，此模式下不会运行计划任务                                                                                       |
+| api                 | tc_api              | `false`          | 是否启动 api                                                                                                             |
+| fe                  | tc_fe               | `false`          | 是否启动自带前端，仅当 `api` 为 `true` 时可为 `true`                                                                     |
+| address             | tc_address          | `:1323`          | 后端运行地址                                                                                                             |
+| setup               |                     | `false`          | 强制安装程序（可能会覆盖现有配置）                                                                                       |
+| auto_install        | tc_auto_install     | `false`          | 自动安装（仅当数据库不存在时安装）                                                                                       |
+| admin_name          | tc_admin_name       |                  | 管理员账号，仅当 `auto_install` 为 `true` 时会用到                                                                       |
+| admin_email         | tc_admin_email      |                  | 管理员邮箱，仅当 `auto_install` 为 `true` 时会用到                                                                       |
+| admin_password      | tc_admin_password   |                  | 管理员密码，仅当 `auto_install` 为 `true` 时会用到                                                                       |
+| no_proxy            |                     | `false`          | 忽略环境变量中的代理配置                                                                                                 |
+| allow_backup        | tc_allow_backup     | `false`          | 允许用户批量导出/导入账号和贴吧列表，建议阅读 readme.md 的 [备份](#备份) 部分                                            |
+| data_encrypt_key    | tc_data_encrypt_key |                  | 加密部分用户数据的密钥，使用 `base64url` 格式填写，建议阅读 readme.md 的 [加密](#加密) 部分                              |
+| data_encrypt_action |                     |                  | `encrypt` 或者 `decrypt`，用于加密/解密用户数据，处理完成后会自动退出，默认应当留空                                      |
+| dns_addr            | tc_dns_addr         |                  | 手动设置 DNS 地址，特殊情况下使用，默认应当留空，建议阅读 readme.md 的 [网络](#网络) 部分                                |
 
 - 不支持 `.env` 文件，请直接设置环境变量，使用顺序是 `flag` > `env` > `default`
 - 有几个值不支持环境变量，必须手动操作
@@ -56,7 +56,7 @@ air -- -db_path=tbsign.db -test -api
 
 ## 数据库
 
-`db_mode`/`tc_db_mode` 的值为 `pgsql` 时选择 PostgreSQL，否则：
+`db_mode`/`tc_db_mode` 的值为 `pgsql` 或 `postgresql` 时（不区分大小写）选择 PostgreSQL，否则：
 
 当 `db_path`/`tc_db_path` 的值不为空字符串，就会使用 SQLite；否则使用 MySQL
 
