@@ -11,7 +11,7 @@ import (
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
-	_type "github.com/BANKA2017/tbsign_go/types"
+	"github.com/kdnetwork/code-snippet/go/worker"
 )
 
 const AgainErrorId = "160002"
@@ -39,64 +39,6 @@ var tcPrivateErrorID = map[int]string{
 
 var tableList = []string{"tieba"}
 var checkinToday string
-
-func DosignWorker(tasks <-chan *model.TcTieba, _errors chan<- error, badBdussPid chan<- int32, sleep int64) {
-	badBdussPidList := map[int32]struct{}{}
-	today := _function.Now.Day()
-	for task := range tasks {
-		if _, ok := badBdussPidList[task.Pid]; ok {
-			_errors <- nil
-			continue
-		}
-
-		// success := false
-		now := _function.Now
-		ck := _function.GetCookie(task.Pid)
-		if ck.Bduss == "" {
-			log.Println("checkin: Failed, no such account", task.Pid, task.Tieba, task.Fid, task.ID, today)
-			_errors <- nil
-			continue
-		} else if !ck.IsLogin {
-			badBdussPidList[task.Pid] = struct{}{}
-			log.Println("checkin: Failed, account login status failed", task.Pid, task.Tieba, task.Fid, task.ID, today)
-			_errors <- errors.New("account " + strconv.Itoa(int(task.Pid)) + " login status failed")
-
-			// tc err && today
-			if !(task.Status == 110000 && task.Latest == int32(today)) {
-				badBdussPid <- task.Pid
-			}
-
-			continue
-		}
-		response, err := _function.PostCheckinClient(ck, task.Tieba, task.Fid)
-
-		if err != nil {
-			log.Println(err)
-		} else if response.ErrorCode != "" {
-			var errorCode int64 = 0
-			errorMsg := "NULL"
-			if !(response.ErrorCode == "0" || response.ErrorCode == AgainErrorId) {
-				errorCode, _ = strconv.ParseInt(response.ErrorCode, 10, 64)
-				errorMsg = response.ErrorMsg
-			} else if response.ErrorCode == AgainErrorId {
-				errorMsg = ""
-			}
-
-			// TODO better sql update
-			_function.GormDB.W.Model(&model.TcTieba{}).Where("id = ?", task.ID).Updates(&_type.TcTieba{
-				Status:    _function.VPtr(int32(errorCode)),
-				LastError: _function.VPtr(errorMsg),
-				TcTieba: model.TcTieba{
-					Latest: int32(today),
-				},
-			})
-		}
-
-		log.Println("checkin:", task.Pid, task.Tieba, task.Fid, task.ID, today, time.Now().UnixMilli()-now.UnixMilli())
-		_errors <- err
-		time.Sleep(time.Millisecond * time.Duration(sleep))
-	}
-}
 
 var LastBreakHour = 0
 
@@ -142,35 +84,72 @@ func Dosign(_ string, retry bool) (bool, error) {
 		sleep = 100
 	}
 
-	tasksChan := make(chan *model.TcTieba, len(tiebaList))
-	errorsChan := make(chan error, len(tiebaList))
-	badBdussPidChan := make(chan int32, len(tiebaList))
-	defer close(tasksChan)
-	defer close(errorsChan)
-	defer close(badBdussPidChan)
-
 	threadCount, _ := strconv.ParseInt(_function.GetOption("sign_multith"), 10, 64)
 	if threadCount <= 0 {
 		threadCount = 10
 	}
 
-	for range threadCount {
-		go DosignWorker(tasksChan, errorsChan, badBdussPidChan, sleep)
-	}
+	badBdussPidChan := make(chan int32, len(tiebaList))
+	defer close(badBdussPidChan)
 
-	for _, task := range tiebaList {
-		tasksChan <- task
-	}
+	errs := worker.RunWorkerPool[model.TcTieba, int32, struct{}](tiebaList, int(threadCount), func(task *model.TcTieba, store map[int32]struct{}) error {
+		if _, ok := store[task.Pid]; ok {
+			return nil
+		}
 
-	for range tiebaList {
-		if <-errorsChan != nil {
+		now := _function.Now
+		ck := _function.GetCookie(task.Pid)
+		if ck.Bduss == "" {
+			log.Println("checkin: Failed, no such account", task.Pid, task.Tieba, task.Fid, task.ID, today)
+			return nil
+		} else if !ck.IsLogin {
+			store[task.Pid] = struct{}{}
+			log.Println("checkin: Failed, account login status failed", task.Pid, task.Tieba, task.Fid, task.ID, today)
+
+			// tc err && today
+			if !(task.Status == 110000 && task.Latest == int32(today)) {
+				badBdussPidChan <- task.Pid
+			}
+
+			return errors.New("account " + strconv.Itoa(int(task.Pid)) + " login status failed")
+		}
+		response, err := _function.PostCheckinClient(ck, task.Tieba, task.Fid)
+
+		if err != nil {
+			log.Println(err)
+		} else if response.ErrorCode != "" {
+			var errorCode int64 = 0
+			errorMsg := "NULL"
+			if !(response.ErrorCode == "0" || response.ErrorCode == AgainErrorId) {
+				errorCode, _ = strconv.ParseInt(response.ErrorCode, 10, 64)
+				errorMsg = response.ErrorMsg
+			} else if response.ErrorCode == AgainErrorId {
+				errorMsg = ""
+			}
+
+			// TODO better sql update
+			_function.GormDB.W.Model(&model.TcTieba{}).Select("status, last_error, latest").Where("id = ?", task.ID).Updates(&model.TcTieba{
+				Status:    int32(errorCode),
+				LastError: errorMsg,
+				Latest:    int32(today),
+			})
+		}
+
+		log.Println("checkin:", task.Pid, task.Tieba, task.Fid, task.ID, today, time.Now().UnixMilli()-now.UnixMilli())
+		time.Sleep(time.Millisecond * time.Duration(sleep))
+		return err
+	})
+
+	for _, err := range errs {
+		if err != nil {
 			hasFailed = true
+			break
 		}
 	}
 
 	badBdussPidChanLen := len(badBdussPidChan)
 	if badBdussPidChanLen > 0 {
-		badBdussPidArr := []int32{}
+		var badBdussPidArr []int32
 
 		for range badBdussPidChanLen {
 			badPid := <-badBdussPidChan
