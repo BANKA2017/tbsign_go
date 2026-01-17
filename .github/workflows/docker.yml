@@ -72,7 +72,7 @@ jobs:
           path: assets/dist
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.25.5"
+          go-version: "1.25.6"
           cache-dependency-path: "go.sum"
       - name: Install musl libc
         run: sudo apt install -y musl-dev

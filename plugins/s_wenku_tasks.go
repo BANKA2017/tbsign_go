@@ -175,7 +175,7 @@ func UpdateWenkuTask(cookie _type.TypeCookie, taskID int, minVersion string, isC
 	if minVersion == "" {
 		minVersion = WenkuSemver
 	} else {
-		minVersion = _function.GetSemver(WenkuSemver, minVersion)
+		minVersion = _function.NewerSemver(WenkuSemver, minVersion)
 	}
 
 	headersMap := map[string]string{

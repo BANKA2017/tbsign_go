@@ -66,6 +66,10 @@ MySQL 要求支持 [MySQL 窗口函数](https://dev.mysql.com/doc/refman/8.0/en/
 - MariaDB >= [10.2](https://mariadb.com/kb/en/changes-improvements-in-mariadb-10-2/)
 - TiDB >= [3.0](https://docs.pingcap.com/tidb/stable/release-3.0-ga)
 
+### 超时
+
+为了避免启动时超长时间的等待，设定了**初次**连接 `30s` 超时，超时后会报错退出
+
 ### *PostgreSQL
 
 支持 PostgreSQL 是实验性的功能，不会被砍掉。下面是一些测试环境的细节
@@ -84,7 +88,7 @@ MySQL 要求支持 [MySQL 窗口函数](https://dev.mysql.com/doc/refman/8.0/en/
 
 对于 MySQL 可用于 `db_tls` 的值包括 `true`, `false`（默认值）, `skip-verify`, `preferred` 以及证书文件的路径，更多信息请参考 [go-sql-driver/mysql#tls](https://github.com/go-sql-driver/mysql?tab=readme-ov-file#tls)
 
-例如下面的第二项是 Debian/Ubuntu 的目录；如果证书尚未被导入到系统并且软件内嵌的 Mozilla Root Store 也不包含该证书，部署时可能就需要这样填写证书的实际目录
+例如下面的第二项是 Debian/Ubuntu 的目录；如果证书尚未被导入到系统，部署时就需要这样填写证书的实际目录
 
 - 使用 docker 部署时请注意处理好文件目录问题
 
@@ -100,7 +104,7 @@ go run main.go -db_tls=/etc/ssl/certs/ca-certificates.crt
 
 对于 PostgreSQL 有 `disable`, `allow`, `prefer`（默认值）, `require`, `verify-ca`, `verify-full` 以及证书文件的路径，更多信息请参考 [LIBPQ-SSL-PROTECTION](https://www.postgresql.org/docs/current/libpq-ssl.html#LIBPQ-SSL-PROTECTION)
 
-用法跟 MySQL 差不多，唯一不同的是无法使用内置证书，必须使用 `~/.postgres/root.crt` 或者自行准备的文件
+用法跟 MySQL 差不多，证书使用默认的 `~/.postgres/root.crt` 或者自行准备的文件
 
 - 使用 docker 部署时请注意处理好文件目录问题
 
@@ -151,7 +155,7 @@ go run main.go -db_tls=/etc/ssl/certs/ca-certificates.crt
 - [❌] MySQL 不支持无法使用 [MySQL 窗口函数](https://dev.mysql.com/doc/refman/8.0/en/window-functions.html) 的发行版，使用了**不支持**的函数 `ROW_NUMBER()`
 - [⚠️] 开发环境使用的 MySQL 版本号为 `8.0` 或更高，其他 MySQL 发行版请自行测试是否可用
 - [⚠️] PostgreSQL 不保证可用
-- [⚠️] xgo 镜像使用的 tag 为 `go-1.25.5`，请自行检查[兼容性](https://tip.golang.org/wiki/MinimumRequirements)
+- [⚠️] xgo 镜像使用的 tag 为 `go-1.25.6`，请自行检查[兼容性](https://tip.golang.org/wiki/MinimumRequirements)
 
 ## 前端
 

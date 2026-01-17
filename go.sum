@@ -37,6 +37,8 @@ github.com/kdnetwork/code-snippet/go v0.0.0-20260114163907-e19bb5d455ce h1:TK4cl
 github.com/kdnetwork/code-snippet/go v0.0.0-20260114163907-e19bb5d455ce/go.mod h1:fcwO3a9sV29Y7KZYwBh7Zad6pXpdTK2GG0EVE+j56Pg=
 github.com/kdnetwork/code-snippet/go v0.0.0-20260114182722-c35bc42c55df h1:u2CVqUGwRCIhx3/3v6LPxmVjYRKM75n+ZDTBtUTsTXg=
 github.com/kdnetwork/code-snippet/go v0.0.0-20260114182722-c35bc42c55df/go.mod h1:fcwO3a9sV29Y7KZYwBh7Zad6pXpdTK2GG0EVE+j56Pg=
+github.com/kdnetwork/code-snippet/go v0.0.0-20260117133148-aff0bc949144 h1:TA8puY6pGrbn/4MZq1UmR1+Jz1anQ7IdDK5yserwSBA=
+github.com/kdnetwork/code-snippet/go v0.0.0-20260117133148-aff0bc949144/go.mod h1:Nj70Ukn1u9CIj/3PHmEgolWt5clPuw8W10/cwVM4oNs=
 github.com/kdnetwork/go-sasl v0.0.0-20251119095512-40c81e6be4a2 h1:aOZbW4drVgy2w+od/r6pwavaCkTW9GM+E5gpfdTKjJc=
 github.com/kdnetwork/go-sasl v0.0.0-20251119095512-40c81e6be4a2/go.mod h1:iL2twTeMvZnrg54ZoPDNfJaJaqy0xIQFuBdrLsmspwQ=
 github.com/labstack/echo/v4 v4.13.4 h1:oTZZW+T3s9gAu5L8vmzihV7/lkXGZuITzTQkTEhcXEA=

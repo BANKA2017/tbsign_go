@@ -164,8 +164,11 @@ func GetGravatarLink(email string) string {
 	return "https://www.gravatar.com/avatar/" + Sha256([]byte(email))
 }
 
-func GetSemver(cur, ver2 string) string {
-	if semver.Compare(cur, ver2) == 1 {
+func NewerSemver(cur, ver2 string) string {
+	cver := When(strings.HasPrefix(strings.ToLower(cur), "v"), "", "v") + strings.ToLower(cur)
+	nver := When(strings.HasPrefix(strings.ToLower(ver2), "v"), "", "v") + strings.ToLower(ver2)
+
+	if semver.Compare(cver, nver) == 1 {
 		return cur
 	} else {
 		return ver2

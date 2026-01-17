@@ -23,9 +23,9 @@ import (
 var setup bool
 var autoInstall bool
 
-var _adminName string
-var _adminEmail string
-var _adminPassword string
+var adminName string
+var adminEmail string
+var adminPassword string
 
 var EncryptDataAction string
 
@@ -77,9 +77,9 @@ func main() {
 	// setup
 	flag.BoolVar(&setup, "setup", false, "Init the system [force]")
 	flag.BoolVar(&autoInstall, "auto_install", GetEnv("tc_auto_install", "") != "", "Auto install the system when tables are not exist")
-	flag.StringVar(&_adminName, "admin_name", GetEnv("tc_admin_name", ""), "Name of admin")
-	flag.StringVar(&_adminEmail, "admin_email", GetEnv("tc_admin_email", ""), "Email of admin")
-	flag.StringVar(&_adminPassword, "admin_password", GetEnv("tc_admin_password", ""), "Password of admin")
+	flag.StringVar(&adminName, "admin_name", GetEnv("tc_admin_name", ""), "Name of admin")
+	flag.StringVar(&adminEmail, "admin_email", GetEnv("tc_admin_email", ""), "Email of admin")
+	flag.StringVar(&adminPassword, "admin_password", GetEnv("tc_admin_password", ""), "Password of admin")
 
 	// --experimental-*
 	// encrypt
@@ -121,7 +121,7 @@ func main() {
 
 	if setup && autoInstall {
 		log.Fatal("ERROR: 不允许自动化覆盖安装!!!")
-	} else if autoInstall && _adminName != "" && _adminEmail != "" && _adminPassword != "" {
+	} else if autoInstall && adminName != "" && adminEmail != "" && adminPassword != "" {
 		log.Println("WARNING: 已启用自动安装")
 	} else if autoInstall {
 		log.Fatal("ERROR: 管理员信息不完整，无法安装")
@@ -149,6 +149,7 @@ func main() {
 	_function.GormDB.LogLevel = logLevel
 	_function.GormDB.ServicePrefix = "tbsign-db"
 	_function.GormDB.WALMode = true
+	_function.GormDB.SetDialTimeout(_function.VPtr(time.Second * 30))
 
 	if share.DBMode == "pgsql" || share.DBMode == db.DBModePostgreSQL {
 		// precheck table
@@ -166,7 +167,7 @@ func main() {
 
 		// setup
 		if setup {
-			_plugin.SetupSystem(dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
+			_plugin.SetupSystem(dbExists, autoInstall, adminName, adminEmail, adminPassword)
 		} else if share.DBName != "postgres" {
 			sqlDB, _ := _function.GormDB.R.DB()
 			sqlDB.Close()
@@ -198,7 +199,7 @@ func main() {
 
 		// setup
 		if setup {
-			_plugin.SetupSystem(dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
+			_plugin.SetupSystem(dbExists, autoInstall, adminName, adminEmail, adminPassword)
 		}
 	} else {
 		// mysql
@@ -222,7 +223,7 @@ func main() {
 
 		// setup
 		if setup {
-			_plugin.SetupSystem(dbExists, autoInstall, _adminName, _adminEmail, _adminPassword)
+			_plugin.SetupSystem(dbExists, autoInstall, adminName, adminEmail, adminPassword)
 		} else {
 			sqlDB, _ := _function.GormDB.R.DB()
 			sqlDB.Close()
@@ -233,12 +234,12 @@ func main() {
 		}
 	}
 
-	_adminEmail = ""
-	_adminName = ""
-	_adminPassword = ""
+	adminEmail = ""
+	adminName = ""
+	adminPassword = ""
 
 	// db version
-	share.DBVersion = _function.GormDB.GetVersion()
+	share.DBVersion = _function.GormDB.Version()
 
 	// init
 	_function.InitOptions()

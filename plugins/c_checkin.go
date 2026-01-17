@@ -1,6 +1,7 @@
 package _plugin
 
 import (
+	"context"
 	"errors"
 	"log"
 	"slices"
@@ -92,7 +93,9 @@ func Dosign(_ string, retry bool) (bool, error) {
 	badBdussPidChan := make(chan int32, len(tiebaList))
 	defer close(badBdussPidChan)
 
-	errs := worker.RunWorkerPool[model.TcTieba, int32, struct{}](tiebaList, int(threadCount), func(task *model.TcTieba, store map[int32]struct{}) error {
+	ctx := context.Background()
+
+	errs := worker.RunWorkerPool[*model.TcTieba, int32, struct{}](ctx, tiebaList, int(threadCount), func(ctx context.Context, task *model.TcTieba, store map[int32]struct{}) error {
 		if _, ok := store[task.Pid]; ok {
 			return nil
 		}
