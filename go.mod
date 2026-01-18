@@ -9,7 +9,7 @@ require (
 	github.com/emersion/go-smtp v0.24.0
 	github.com/google/uuid v1.6.0
 	github.com/jellydator/ttlcache/v3 v3.4.0
-	github.com/kdnetwork/code-snippet/go v0.0.0-20260117133148-aff0bc949144
+	github.com/kdnetwork/code-snippet/go v0.0.0-20260118151947-10e80effb8bc
 	github.com/labstack/echo/v4 v4.15.0
 	golang.org/x/crypto v0.47.0
 	golang.org/x/exp v0.0.0-20260112195511-716be5621a96

@@ -55,8 +55,9 @@ func SetupSystem(dbExists, autoInstall bool, name, email, password string) {
 			fmt.Println("已建立数据库:", dbName)
 		}
 
-		sqlDB, _ := _function.GormDB.R.DB()
-		sqlDB.Close()
+		if err = _function.GormDB.Close(); err != nil {
+			log.Fatal("db close:", err)
+		}
 
 		if err = _function.GormDB.Connect(); err != nil {
 			log.Fatal("db:", err)

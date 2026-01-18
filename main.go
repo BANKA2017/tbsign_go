@@ -169,8 +169,9 @@ func main() {
 		if setup {
 			_plugin.SetupSystem(dbExists, autoInstall, adminName, adminEmail, adminPassword)
 		} else if share.DBName != "postgres" {
-			sqlDB, _ := _function.GormDB.R.DB()
-			sqlDB.Close()
+			if err = _function.GormDB.Close(); err != nil {
+				log.Fatal("db close:", err)
+			}
 
 			if err = _function.GormDB.Connect(); err != nil {
 				log.Fatal("db:", err)
@@ -225,8 +226,9 @@ func main() {
 		if setup {
 			_plugin.SetupSystem(dbExists, autoInstall, adminName, adminEmail, adminPassword)
 		} else {
-			sqlDB, _ := _function.GormDB.R.DB()
-			sqlDB.Close()
+			if err = _function.GormDB.Close(); err != nil {
+				log.Fatal("db close:", err)
+			}
 
 			if err = _function.GormDB.Connect(); err != nil {
 				log.Fatal("db:", err)
