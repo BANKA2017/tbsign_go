@@ -18,7 +18,7 @@ import (
 )
 
 func init() {
-	RegisterPlugin(WenkuTasksPlugin.Name, WenkuTasksPlugin)
+	PluginList.Register(WenkuTasksPlugin)
 }
 
 type WenkuTasksPluginType struct {
@@ -38,7 +38,7 @@ var WenkuTasksPlugin = _function.VPtr(WenkuTasksPluginType{
 			// "kd_wenku_tasks_vip_matrix_id_set": "|",
 			"kd_wenku_tasks_action_limit": "50",
 		},
-		SettingOptions: map[string]PluinSettingOption{
+		SettingOptions: map[string]PluginSettingOption{
 			"kd_wenku_tasks_action_limit": {
 				OptionName:   "kd_wenku_tasks_action_limit",
 				OptionNameCN: "每分钟最大执行数",
@@ -47,7 +47,7 @@ var WenkuTasksPlugin = _function.VPtr(WenkuTasksPluginType{
 				},
 			},
 		},
-		Endpoints: []PluginEndpintStruct{
+		Endpoints: []PluginEndpointStruct{
 			{Method: http.MethodGet, Path: "settings", Function: PluginWenkuTasksGetSettings},
 			{Method: http.MethodPut, Path: "settings", Function: PluginWenkuTasksSetSettings},
 			{Method: http.MethodGet, Path: "list", Function: PluginWenkuTasksGetList},

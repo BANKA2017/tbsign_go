@@ -20,7 +20,7 @@ import (
 )
 
 func init() {
-	RegisterPlugin(LoopBanPlugin.Name, LoopBanPlugin)
+	PluginList.Register(LoopBanPlugin)
 }
 
 type BanAccountResponse struct {
@@ -51,7 +51,7 @@ var LoopBanPlugin = _function.VPtr(LoopBanPluginType{
 			"ver4_ban_limit":        "5",
 			"ver4_ban_action_limit": "50",
 		},
-		SettingOptions: map[string]PluinSettingOption{
+		SettingOptions: map[string]PluginSettingOption{
 			"ver4_ban_break_check": {
 				OptionName:   "ver4_ban_break_check",
 				OptionNameCN: "跳过吧务权限检查",
@@ -74,7 +74,7 @@ var LoopBanPlugin = _function.VPtr(LoopBanPluginType{
 				},
 			},
 		},
-		Endpoints: []PluginEndpintStruct{
+		Endpoints: []PluginEndpointStruct{
 			{Method: http.MethodGet, Path: "switch", Function: PluginLoopBanGetSwitch},
 			{Method: http.MethodPost, Path: "switch", Function: PluginLoopBanSwitch},
 			{Method: http.MethodGet, Path: "reason", Function: PluginLoopBanGetReason},

@@ -18,7 +18,7 @@ import (
 )
 
 func init() {
-	RegisterPlugin(ForumSupportPluginInfo.Name, ForumSupportPluginInfo)
+	PluginList.Register(ForumSupportPluginInfo)
 }
 
 type TypeForumSupportList struct {
@@ -599,7 +599,7 @@ var ForumSupportPluginInfo = _function.VPtr(ForumSupportPluginInfoType{
 			"ver4_rank_id":           "0",
 			"ver4_rank_action_limit": "50",
 		},
-		SettingOptions: map[string]PluinSettingOption{
+		SettingOptions: map[string]PluginSettingOption{
 			"ver4_rank_action_limit": {
 				OptionName:   "ver4_rank_action_limit",
 				OptionNameCN: "每分钟最大执行数",
@@ -608,7 +608,7 @@ var ForumSupportPluginInfo = _function.VPtr(ForumSupportPluginInfoType{
 				},
 			},
 		},
-		Endpoints: []PluginEndpintStruct{
+		Endpoints: []PluginEndpointStruct{
 			{Method: http.MethodGet, Path: "switch", Function: PluginForumSupportGetSwitch},
 			{Method: http.MethodPost, Path: "switch", Function: PluginForumSupportSwitch},
 			{Method: http.MethodGet, Path: "list", Function: PluginForumSupportGetCharactersList},

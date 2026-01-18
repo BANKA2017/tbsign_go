@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	RegisterPlugin(RefreshTiebaListPlugin.Name, RefreshTiebaListPlugin)
+	PluginList.Register(RefreshTiebaListPlugin)
 }
 
 type RefreshTiebaListPluginType struct {
@@ -30,7 +30,7 @@ var RefreshTiebaListPlugin = _function.VPtr(RefreshTiebaListPluginType{
 			"ver4_ref_id":           "0",
 			"ver4_ref_action_limit": "50",
 		},
-		SettingOptions: map[string]PluinSettingOption{
+		SettingOptions: map[string]PluginSettingOption{
 			"ver4_ref_action_limit": {
 				OptionName:   "ver4_ref_action_limit",
 				OptionNameCN: "每分钟最大执行数",
@@ -39,7 +39,7 @@ var RefreshTiebaListPlugin = _function.VPtr(RefreshTiebaListPluginType{
 				},
 			},
 		},
-		Endpoints: []PluginEndpintStruct{
+		Endpoints: []PluginEndpointStruct{
 			{Method: http.MethodGet, Path: "list", Function: PluginRefreshTiebaListGetAccountList},
 			{Method: http.MethodPost, Path: "sync", Function: PluginRefreshTiebaListRefreshTiebaList},
 		},

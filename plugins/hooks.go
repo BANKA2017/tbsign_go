@@ -11,20 +11,22 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-var PluginList = make(map[string]PluginActionHooks)
+type PluginListType map[string]PluginActionHooks
+
+var PluginList = make(PluginListType)
 var PluginOptionValidatorMap = _function.NewKV[string, *_function.OptionRule]()
 
-func RegisterPlugin(name string, plugin PluginActionHooks) {
-	PluginList[name] = plugin
+func (list PluginListType) Register(plugin PluginActionHooks) {
+	list[plugin.(PluginHooks).GetInfo().Name] = plugin
 }
 
-type PluginEndpintStruct struct {
+type PluginEndpointStruct struct {
 	Method   string
 	Path     string
 	Function echo.HandlerFunc
 }
 
-type PluinSettingOption struct {
+type PluginSettingOption struct {
 	OptionName   string
 	OptionNameCN string
 	Validate     *_function.OptionRule
@@ -39,10 +41,10 @@ type PluginInfo struct {
 	Version        string
 	Active         bool
 	Options        map[string]string
-	SettingOptions map[string]PluinSettingOption
+	SettingOptions map[string]PluginSettingOption
 	Info           model.TcPlugin
 	Test           bool
-	Endpoints      []PluginEndpintStruct
+	Endpoints      []PluginEndpointStruct
 	sync.Mutex
 }
 
@@ -54,7 +56,7 @@ type PluginHooks interface {
 	GetSwitch() bool
 	CheckActive() bool
 	SetActive(bool) bool
-	GetEndpoints() []PluginEndpintStruct
+	GetEndpoints() []PluginEndpointStruct
 }
 
 type PluginActionHooks interface {
@@ -113,7 +115,7 @@ func (pluginInfo *PluginInfo) SetActive(v bool) bool {
 	return v
 }
 
-func (pluginInfo *PluginInfo) GetEndpoints() []PluginEndpintStruct {
+func (pluginInfo *PluginInfo) GetEndpoints() []PluginEndpointStruct {
 	return pluginInfo.Endpoints
 }
 

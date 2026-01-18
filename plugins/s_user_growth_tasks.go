@@ -19,7 +19,7 @@ import (
 )
 
 func init() {
-	RegisterPlugin(UserGrowthTasksPlugin.Name, UserGrowthTasksPlugin)
+	PluginList.Register(UserGrowthTasksPlugin)
 }
 
 type UserGrowthTasksPluginType struct {
@@ -38,7 +38,7 @@ var UserGrowthTasksPlugin = _function.VPtr(UserGrowthTasksPluginType{
 			"kd_growth_action_limit": "50",
 			// "kd_growth_client_version": "12.84.3.0",
 		},
-		SettingOptions: map[string]PluinSettingOption{
+		SettingOptions: map[string]PluginSettingOption{
 			"kd_growth_action_limit": {
 				OptionName:   "kd_growth_action_limit",
 				OptionNameCN: "每分钟最大执行数",
@@ -66,7 +66,7 @@ var UserGrowthTasksPlugin = _function.VPtr(UserGrowthTasksPluginType{
 			// 	},
 			// },
 		},
-		Endpoints: []PluginEndpintStruct{
+		Endpoints: []PluginEndpointStruct{
 			{Method: http.MethodGet, Path: "settings", Function: PluginGrowthTasksGetSettings},
 			{Method: http.MethodPut, Path: "settings", Function: PluginGrowthTasksSetSettings},
 			{Method: http.MethodGet, Path: "list", Function: PluginGrowthTasksGetList},

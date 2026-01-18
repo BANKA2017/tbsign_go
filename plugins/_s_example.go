@@ -15,7 +15,7 @@ import (
 
 // 注册插件
 func init() {
-	RegisterPlugin(ExamplePlugin.Name, ExamplePlugin)
+	PluginList.Register(ExamplePlugin)
 }
 
 type ExamplePluginType struct {
@@ -38,7 +38,7 @@ var ExamplePlugin = _function.VPtr(ExamplePluginType{
 		},
 		// SettingOptions 用于允许前端修改的项目，变量以字符串形式传递，如需在前端显示特殊效果，请修改前端页面
 		/// 含有特殊后缀 `_action_limit` 的变量将会在前端自动识别成 number 类型
-		SettingOptions: map[string]PluinSettingOption{
+		SettingOptions: map[string]PluginSettingOption{
 			"key2": {
 				OptionName:   "key2",
 				OptionNameCN: "变量的解释",
@@ -54,7 +54,7 @@ var ExamplePlugin = _function.VPtr(ExamplePluginType{
 			// ...
 		},
 		Test: true,
-		Endpoints: []PluginEndpintStruct{
+		Endpoints: []PluginEndpointStruct{
 			{Method: http.MethodGet, Path: "example", Function: pluginApiSample},
 		},
 	},

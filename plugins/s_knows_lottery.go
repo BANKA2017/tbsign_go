@@ -16,7 +16,7 @@ import (
 )
 
 func init() {
-	RegisterPlugin(LotteryPluginPlugin.Name, LotteryPluginPlugin)
+	PluginList.Register(LotteryPluginPlugin)
 }
 
 type LotteryPluginPluginType struct {
@@ -34,7 +34,7 @@ var LotteryPluginPlugin = _function.VPtr(LotteryPluginPluginType{
 			"ver4_lottery_pid": "0",
 			"ver4_lottery_day": "0",
 		},
-		Endpoints: []PluginEndpintStruct{
+		Endpoints: []PluginEndpointStruct{
 			{Method: http.MethodGet, Path: "switch", Function: PluginKnowsLotteryGetSwitch},
 			{Method: http.MethodPost, Path: "switch", Function: PluginKnowsLotterySwitch},
 			{Method: http.MethodGet, Path: "log", Function: PluginKnowsLotteryGetLogs},

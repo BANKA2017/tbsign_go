@@ -18,7 +18,7 @@ import (
 )
 
 func init() {
-	RegisterPlugin(RenewManager.Name, RenewManager)
+	PluginList.Register(RenewManager)
 }
 
 type RenewManagerType struct {
@@ -36,7 +36,7 @@ var RenewManager = _function.VPtr(RenewManagerType{
 			"kd_renew_manager_id":           "0",
 			"kd_renew_manager_action_limit": "50",
 		},
-		SettingOptions: map[string]PluinSettingOption{
+		SettingOptions: map[string]PluginSettingOption{
 			"kd_renew_manager_action_limit": {
 				OptionName:   "kd_renew_manager_action_limit",
 				OptionNameCN: "每分钟最大执行数",
@@ -46,7 +46,7 @@ var RenewManager = _function.VPtr(RenewManagerType{
 			},
 		},
 		Test: false,
-		Endpoints: []PluginEndpintStruct{
+		Endpoints: []PluginEndpointStruct{
 			{Method: http.MethodGet, Path: "switch", Function: PluginRenewManagerGetSwitch},
 			{Method: http.MethodPost, Path: "switch", Function: PluginRenewManagerSwitch},
 			{Method: http.MethodGet, Path: "settings", Function: PluginRenewManagerGetSettings},
