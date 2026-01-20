@@ -14,7 +14,6 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	"github.com/kdnetwork/code-snippet/go/db"
-	"gorm.io/gorm"
 )
 
 func SetupSystem(dbExists, autoInstall bool, name, email, password string) {
@@ -87,22 +86,19 @@ func SetupSystem(dbExists, autoInstall bool, name, email, password string) {
 	}
 
 	fmt.Println("⌛正在导入默认设置...")
-	err = _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
-		for key, value := range assets.DefaultOptions {
-			if key == "go_ver" {
-				value = "1"
-			}
-			fmt.Printf("%s: %s\n", key, value)
-			err := _function.SetOption(key, value, tx)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
+
+	assets.DefaultOptions["go_ver"] = "1"
+
+	optionArray := make([]*model.TcOption, 0, len(assets.DefaultOptions))
+	for k, v := range assets.DefaultOptions {
+		optionArray = append(optionArray, &model.TcOption{Name: k, Value: v})
+	}
+
+	if err = _function.GormDB.W.Model(&model.TcOption{}).Create(optionArray).Error; err != nil {
 		log.Fatal(err)
 	}
+
+	_function.InitOptions()
 
 	// fmt.Println("⌛正在安装插件...")
 	// for name, plugin := range PluginList {

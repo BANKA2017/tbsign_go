@@ -209,7 +209,16 @@ func main() {
 		}
 		// precheck table
 
-		if err = _function.GormDB.SetDBMode(db.DBModeMySQL).SetDBAuth(share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, share.DBTLSOption).ConnectToDefault(); err != nil {
+		// hook for tls
+		tlsOptionIsTrue := strings.EqualFold(share.DBTLSOption, "true")
+
+		_function.GormDB.SetDBMode(db.DBModeMySQL).SetDBAuth(share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, _function.When(tlsOptionIsTrue, "", share.DBTLSOption))
+
+		if tlsOptionIsTrue {
+			_function.GormDB.SetCertPool(_function.CACertPool)
+		}
+
+		if err = _function.GormDB.ConnectToDefault(); err != nil {
 			log.Fatal("db:", err)
 		}
 		share.DBMode = _function.GormDB.DBMode

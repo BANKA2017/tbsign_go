@@ -91,8 +91,8 @@ MySQL 要求支持 [MySQL 窗口函数](https://dev.mysql.com/doc/refman/8.0/en/
 例如下面的第二项是 Debian/Ubuntu 的目录；如果证书尚未被导入到系统，部署时就需要这样填写证书的实际目录
 
 - 使用 docker 部署时请注意处理好文件目录问题
-
-\* 注：此处的 `db_tls` 类型为 `string`，cli 传参时不能像 `boolean` 类型那样忽略掉 `=true`
+- 当 `db_tls=true` 时（不区分大小写），使用系统证书+Mozilla Root Store
+- `db_tls` 类型为 `string`，cli 传参时不能像 `boolean` 类型那样忽略掉 `=true`
 
 ```shell
 go run main.go -db_tls=true

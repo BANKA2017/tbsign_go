@@ -185,16 +185,16 @@ var clientSignSalt = string([]byte{116, 105, 101, 98, 97, 99, 108, 105, 101, 110
 var pcSignSalt = string([]byte{51, 54, 55, 55, 48, 98, 49, 102, 51, 52, 99, 57, 98, 98, 102, 50, 101, 55, 100, 49, 97, 57, 57, 100, 50, 98, 56, 50, 102, 97, 57, 101})
 var otherSignSalt = string([]byte{48, 48, 51, 57, 100, 55, 57, 100, 99, 51, 99, 99, 50, 48, 55, 53, 49, 50, 57, 55, 52, 53, 97, 51, 48, 50, 51, 55, 97, 51, 99, 52})
 
-func AddSign(form map[string]string, client_type string) {
+func AddSign(form map[string]string, clientType string) {
 	if form == nil {
 		form = make(map[string]string)
 	}
 
 	if ct := form["_client_type"]; ct == "" {
-		if client_type == "" {
-			client_type = "4"
+		if clientType == "" {
+			clientType = "4"
 		}
-		form["_client_type"] = client_type
+		form["_client_type"] = clientType
 	}
 
 	// if form["subapp_type"] == "" {
@@ -254,6 +254,7 @@ func GetTbs(bduss string) (*_type.TbsResponse, error) {
 
 func PostCheckinClient(cookie _type.TypeCookie, kw string, fid int32) (*_type.ClientSignResponse, error) {
 	//log.Println(cookie, kw, fid)
+	// ZnJvbV93aWRnZXQ9MSAtPiBEb3VibGUgU2lnbi1pbiBFeHBlcmllbmNl
 	var form = make(map[string]string)
 	form["BDUSS"] = cookie.Bduss
 	form["stoken"] = cookie.Stoken

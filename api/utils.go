@@ -47,9 +47,9 @@ var RoleList = []string{"deleted", "banned", "user", "vip", "admin"}
 func PreCheckWhiteListExists(path string) bool {
 	if share.EnableFrontend {
 		return slices.Contains(PreCheckWhiteListWithFE, path)
-	} else {
-		return slices.Contains(PreCheckWhiteListWithoutFE, path)
 	}
+
+	return slices.Contains(PreCheckWhiteListWithoutFE, path)
 }
 
 func echoRobots(c echo.Context) error {
@@ -59,57 +59,57 @@ func echoRobots(c echo.Context) error {
 func verifyAuthorization(authorization string) (string, string) {
 	if authorization == "" {
 		return "0", "guest"
-	} else {
-		token := strings.Split(strings.TrimSpace(authorization), ":")
-		// TODO static target
-		if len(token) != 3 {
-			return "0", "guest"
-		}
-
-		uid, err := strconv.ParseInt(token[0], 10, 64)
-		if err != nil || uid <= 0 {
-			return "0", "guest"
-		}
-
-		strUID := strconv.Itoa(int(uid))
-
-		expiredAt, _ := strconv.ParseInt(token[2], 10, 64)
-		expiredAtTime := time.Unix(expiredAt, 0)
-
-		if time.Now().After(expiredAtTime) {
-			return "0", "guest"
-		}
-
-		savedSessionExpiredAt := GetSessionExpiredAt(strUID)
-
-		if savedSessionExpiredAt <= 0 {
-			return "0", "guest"
-		}
-
-		savedSessionExpiredAtTime := time.Unix(savedSessionExpiredAt, 0)
-		if savedSessionExpiredAtTime.After(expiredAtTime) {
-			return "0", "guest"
-		}
-
-		dbPwd := _function.GetPassword(int(uid))
-
-		byteToken, _ := base64.RawURLEncoding.DecodeString(token[1])
-
-		if dbPwd != "" {
-			if !hmac.Equal(HmacSessionToken(strUID, dbPwd, strconv.Itoa(int(savedSessionExpiredAt))), byteToken) {
-				return "0", "guest"
-			}
-			var accountInfo []*model.TcUser
-			_function.GormDB.R.Where("id = ?", uid).Limit(1).Find(&accountInfo)
-			if len(accountInfo) == 1 {
-				return strconv.Itoa(int(accountInfo[0].ID)), accountInfo[0].Role
-			} else {
-				return "0", "guest"
-			}
-		} else {
-			return "0", "guest"
-		}
 	}
+
+	token := strings.Split(strings.TrimSpace(authorization), ":")
+	// TODO static target
+	if len(token) != 3 {
+		return "0", "guest"
+	}
+
+	uid, err := strconv.ParseInt(token[0], 10, 64)
+	if err != nil || uid <= 0 {
+		return "0", "guest"
+	}
+
+	strUID := strconv.Itoa(int(uid))
+
+	expiredAt, _ := strconv.ParseInt(token[2], 10, 64)
+	expiredAtTime := time.Unix(expiredAt, 0)
+
+	if time.Now().After(expiredAtTime) {
+		return "0", "guest"
+	}
+
+	savedSessionExpiredAt := GetSessionExpiredAt(strUID)
+
+	if savedSessionExpiredAt <= 0 {
+		return "0", "guest"
+	}
+
+	savedSessionExpiredAtTime := time.Unix(savedSessionExpiredAt, 0)
+	if savedSessionExpiredAtTime.After(expiredAtTime) {
+		return "0", "guest"
+	}
+
+	dbPwd := _function.GetPassword(int(uid))
+
+	byteToken, _ := base64.RawURLEncoding.DecodeString(token[1])
+
+	if dbPwd != "" {
+		if !hmac.Equal(HmacSessionToken(strUID, dbPwd, strconv.Itoa(int(savedSessionExpiredAt))), byteToken) {
+			return "0", "guest"
+		}
+		var accountInfo []*model.TcUser
+		_function.GormDB.R.Where("id = ?", uid).Limit(1).Find(&accountInfo)
+		if len(accountInfo) == 1 {
+			return strconv.Itoa(int(accountInfo[0].ID)), accountInfo[0].Role
+		}
+
+		return "0", "guest"
+	}
+
+	return "0", "guest"
 }
 
 // func legacyTokenBuilder(uid int32, password string) string {
@@ -252,9 +252,9 @@ func SendResetMessage(uid int32, pushType string, forceMode bool) (string, error
 	if err != nil {
 		log.Println("send-reset-message", err)
 		return "", errors.New("消息发送失败")
-	} else {
-		return v.VerifyCode, nil
 	}
+
+	return v.VerifyCode, nil
 }
 
 func IsArrayMode(c echo.Context) bool {

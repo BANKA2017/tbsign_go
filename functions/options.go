@@ -16,12 +16,11 @@ var SettingsKeys = []string{"ann", "icp", "system_url", "stop_reg", "enable_reg"
 var SettingsFilter = SettingsKeys
 
 func GetOption(keyName string) string {
-	v, ok := Options.Load(keyName)
-	if ok {
+	if v, ok := Options.Load(keyName); ok {
 		return v
-	} else {
-		return ""
 	}
+
+	return ""
 }
 
 func SetOption[T ~string | ~bool | ~int](keyName string, value T, ext ...any) error {
