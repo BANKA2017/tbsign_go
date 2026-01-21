@@ -10,16 +10,18 @@ import (
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/BANKA2017/tbsign_go/share"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 )
 
 func Api(address string) {
 	// api
 	e := echo.New()
 	//e.Use(middleware.Logger())
-	e.Use(SetHeaders)
 
-	e.Pre(middleware.RemoveTrailingSlash())
+	// Why removed this middleware -> https://github.com/labstack/echo/issues/2211
+	// TL;DR -> open embedded static dir in echo@v4 will cause incorrect redirection
+	// e.Pre(middleware.RemoveTrailingSlash())
+
+	e.Use(SetHeaders)
 
 	apiPrefix := ""
 	if share.EnableFrontend {
