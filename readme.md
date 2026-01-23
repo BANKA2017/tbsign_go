@@ -258,6 +258,15 @@ docker run --rm -v $(pwd):/app/tbsign -e EXTERNAL_LDFLAGS="-linkmode external -e
 # not a dynamic executable
 ```
 
+用 [zig](https://ziglang.org/download/) 也不错
+
+```bash
+# https://ziglang.org/download/
+# zig 交叉编译也是可以的
+CC="zig cc -target x86_64-linux-musl" GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -ldflags "-linkmode external -extldflags -static" -tags netgo
+CC="zig cc -target x86_64-windows-gnu -O2" GOOS=windows GOARCH=amd64 CGO_ENABLED=1 go build -tags netgo -ldflags "-linkmode external"
+```
+
 ### build.sh
 
 简单写了个编译脚本，存放在 `~/build.sh`

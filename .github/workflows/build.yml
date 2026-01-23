@@ -13,6 +13,7 @@ env:
   CGO_ENABLED: "1"
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  GOVERSION: "1.25.6"
 
 jobs:
   build-frontend:
@@ -72,42 +73,41 @@ jobs:
       - name: Init env
         run: |
           mkdir build
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
           fe_commit_hash=${{ needs.build-frontend.outputs.fe_commit_hash }}
           echo "fe_commit_hash=${fe_commit_hash}" >> "$GITHUB_ENV"
           commit_hash=$(git rev-parse HEAD)
           echo "commit_hash=${commit_hash}" >> "$GITHUB_ENV"
           short_commit_hash=${commit_hash:0:7}
           short_fe_commit_hash=${fe_commit_hash:0:7}
-          build_prefix="tbsign_go.$(date +'%+4Y%m%d').$short_commit_hash.$short_fe_commit_hash"
+          build_prefix="tbsign_go.$(date +%Y%m%d).$short_commit_hash.$short_fe_commit_hash"
           echo "build_prefix=${build_prefix}" >> "$GITHUB_ENV"
-          build_at="$(date -Iseconds)"
+          build_at="$(date -u "+%Y-%m-%dT%H:%M:%SZ")"
           echo "build_at=${build_at}" >> "$GITHUB_ENV"
-          go_runtime=$(go version | sed 's/go version go[0-9]*\.[0-9]*\.[0-9]* //')
+          go_runtime=$(go env GOOS)/$(go env GOARCH)
           echo "go_runtime=${go_runtime}" >> "$GITHUB_ENV"
       - name: Install tools
         run: |
           go install src.techknowlogick.com/xgo@v1.8.1-0.20250401170454-4b368d8a5afa
-          docker pull ghcr.io/techknowlogick/xgo:go-1.25.6
+          docker pull ghcr.io/techknowlogick/xgo:go-${{ env.GOVERSION }}
           curl -o assets/ca/cacert.pem https://curl.se/ca/cacert.pem
           rm assets/ca/.gitkeep
       - name: Packaging frontend
         run: tar -czf tcfe.tar.gz -C assets/dist/ .
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.25.6"
+          go-version: ${{ env.GOVERSION }}
           cache-dependency-path: "go.sum"
       - name: Backend
         run: |
           cd build
           PUBLISH_TYPE=binary
-          ldflags="\
-          -X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$build_at' \
+          ldflags="-X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$build_at' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash' \
-          -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE' \
-          "
-          $HOME/go/bin/xgo -go go-1.25.6 -out "$build_prefix" -ldflags "$ldflags" -tags netgo --targets=windows/amd64,darwin/amd64,darwin/arm64 ../
+          -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE'"
+          $HOME/go/bin/xgo -go go-${{ env.GOVERSION }} -out "$build_prefix" -ldflags "$ldflags" -tags netgo --targets=windows/amd64,darwin/amd64,darwin/arm64 ../
 
       - name: Rename & SHA-256
         run: |
@@ -149,6 +149,7 @@ jobs:
           tag_name: ${{ env.build_prefix }}
           body: |
             ```yaml
+            build_version: ${{ env.GOVERSION }}
             build_runtime: ${{ env.go_runtime }}
             build_at: ${{ env.build_at }}
             commit_hash: ${{ env.commit_hash }}
@@ -187,7 +188,7 @@ jobs:
           path: assets/dist
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.25.6"
+          go-version: ${{ env.GOVERSION }}
           cache-dependency-path: "go.sum"
       - name: Install musl libc
         run: sudo apt install -y musl-dev
@@ -199,19 +200,17 @@ jobs:
           commit_hash=$(git rev-parse HEAD)
           short_commit_hash=${commit_hash:0:7}
           short_fe_commit_hash=${fe_commit_hash:0:7}
-          build_prefix="tbsign_go.$(date +'%+4Y%m%d').$short_commit_hash.$short_fe_commit_hash"
+          build_prefix="tbsign_go.$(date +%Y%m%d).$short_commit_hash.$short_fe_commit_hash"
           echo "build_prefix=${build_prefix}" >> "$GITHUB_ENV"
-          build_at="$(date -Iseconds)"
-          go_runtime=$(go version | sed 's/go version go[0-9]*\.[0-9]*\.[0-9]* //')
+          build_at="$(date -u "+%Y-%m-%dT%H:%M:%SZ")"
+          go_runtime=$(go env GOOS)/$(go env GOARCH)
           PUBLISH_TYPE=${{ matrix.publish_type }}
-          ldflags="\
-          -X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$build_at' \
+          ldflags="-X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$build_at' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE' \
-          -linkmode external -extldflags -static
-          "
+          -linkmode external -extldflags -static"
           CC=${{ matrix.arch.compiler }} go build -ldflags "$ldflags" -tags netgo
 
       - name: Upload package

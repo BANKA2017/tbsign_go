@@ -34,16 +34,14 @@ rm assets/ca/.gitkeep
 rm -r assets/dist
 cp -R ../tbsign_go_fe/.output/public/ assets/dist
 commit_hash=$(git rev-parse HEAD)
-build_at="$(date -Iseconds)"
-go_runtime=$(go version | sed 's/go version go[0-9]*\.[0-9]*\.[0-9]* //')
+build_at="$(date -u "+%Y-%m-%dT%H:%M:%SZ")"
+go_runtime=$(go env GOOS)/$(go env GOARCH)
 
-CURRENT_LDFLAGS="\
--X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$build_at' \
+CURRENT_LDFLAGS="-X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$build_at' \
 -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime' \
 -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
 -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash' \
--X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE' \
-"
+-X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE'"
 
 if [ -n "$EXTERNAL_LDFLAGS" ]; then
     LDFLAGS="$CURRENT_LDFLAGS $EXTERNAL_LDFLAGS"

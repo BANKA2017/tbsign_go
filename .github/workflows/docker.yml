@@ -13,6 +13,7 @@ env:
   CGO_ENABLED: "1"
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  GOVERSION: "1.25.6"
 
 jobs:
   build-frontend:
@@ -72,7 +73,7 @@ jobs:
           path: assets/dist
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.25.6"
+          go-version: ${{ env.GOVERSION }}
           cache-dependency-path: "go.sum"
       - name: Install musl libc
         run: sudo apt install -y musl-dev
@@ -82,19 +83,17 @@ jobs:
           commit_hash=$(git rev-parse HEAD)
           short_commit_hash=${commit_hash:0:7}
           short_fe_commit_hash=${fe_commit_hash:0:7}
-          build_prefix="tbsign_go.$(date +'%+4Y%m%d').$short_commit_hash.$short_fe_commit_hash"
+          build_prefix="tbsign_go.$(date +%Y%m%d).$short_commit_hash.$short_fe_commit_hash"
           echo "build_prefix=${build_prefix}" >> "$GITHUB_ENV"
-          build_at="$(date -Iseconds)"
-          go_runtime=$(go version | sed 's/go version go[0-9]*\.[0-9]*\.[0-9]* //')
+          build_at="$(date -u "+%Y-%m-%dT%H:%M:%SZ")"
+          go_runtime=$(go env GOOS)/$(go env GOARCH)
           PUBLISH_TYPE=docker
-          ldflags="\
-          -X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$build_at' \
+          ldflags="-X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$build_at' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE' \
-          -linkmode external -extldflags -static
-          "
+          -linkmode external -extldflags -static"
           CC=${{ matrix.arch.compiler }} go build -ldflags "$ldflags" -tags netgo
 
       - name: Upload package
