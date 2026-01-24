@@ -267,6 +267,14 @@ CC="zig cc -target x86_64-linux-musl" GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go b
 CC="zig cc -target x86_64-windows-gnu -O2" GOOS=windows GOARCH=amd64 CGO_ENABLED=1 go build -tags netgo -ldflags "-linkmode external"
 ```
 
+或者使用 [xgo](https://github.com/techknowlogick/xgo)
+
+```bash
+# go install src.techknowlogick.com/xgo@v1.8.1-0.20250401170454-4b368d8a5afa
+# docker pull ghcr.io/techknowlogick/xgo:go-1.25.6
+CGO_ENABLED=1 $HOME/go/bin/xgo -go go-1.25.6 -tags netgo --targets=windows/amd64,darwin/amd64,darwin/arm64 ./
+```
+
 ### build.sh
 
 简单写了个编译脚本，存放在 `~/build.sh`

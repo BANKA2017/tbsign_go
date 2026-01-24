@@ -14,13 +14,18 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   GOVERSION: "1.25.6"
+  mmacosx_version_min: "11.0"
 
 jobs:
   build-frontend:
-    name: Build Frontend
+    name: Build Init && Frontend
     runs-on: ubuntu-24.04
     outputs:
       fe_commit_hash: ${{ steps.build-fe.outputs.fe_commit_hash }}
+      commit_hash: ${{ steps.build-info.outputs.commit_hash }}
+      build_at: ${{ steps.build-info.outputs.build_at }}
+      build_prefix: ${{ steps.build-info.outputs.build_prefix }}
+      ldflags: ${{ steps.build-info.outputs.ldflags }}
     steps:
       - uses: actions/checkout@v6
         name: Clone frontend
@@ -46,78 +51,78 @@ jobs:
           yarn run postinstall
           yarn run generate
 
-      - name: Upload package
+      - name: Upload frontend
         uses: actions/upload-artifact@v4
         with:
           name: "tbsign_go.fe"
           path: tbsign_go_fe/.output/public/
           include-hidden-files: true
           compression-level: 9
-
-  build:
-    runs-on: ubuntu-24.04
-    name: Build
-    permissions:
-      contents: write
-    needs:
-      - build-frontend
-      - build-linux-binary
-    steps:
-      - name: Checkout
-        uses: actions/checkout@master
-      - uses: actions/download-artifact@v4
-        with:
-          name: tbsign_go.fe
-          path: assets/dist
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: tbsign_go.musl.*.binary
-
-      - name: Init env
+      - uses: actions/checkout@v6
+        name: Clone backend
+      - name: Create build info
+        id: build-info
         run: |
-          mkdir build
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-          fe_commit_hash=${{ needs.build-frontend.outputs.fe_commit_hash }}
-          echo "fe_commit_hash=${fe_commit_hash}" >> "$GITHUB_ENV"
+          curl -o assets/ca/cacert.pem https://curl.se/ca/cacert.pem
+          fe_commit_hash=${{ steps.build-fe.outputs.fe_commit_hash }}
           commit_hash=$(git rev-parse HEAD)
-          echo "commit_hash=${commit_hash}" >> "$GITHUB_ENV"
           short_commit_hash=${commit_hash:0:7}
           short_fe_commit_hash=${fe_commit_hash:0:7}
           build_prefix="tbsign_go.$(date +%Y%m%d).$short_commit_hash.$short_fe_commit_hash"
           echo "build_prefix=${build_prefix}" >> "$GITHUB_ENV"
           build_at="$(date -u "+%Y-%m-%dT%H:%M:%SZ")"
-          echo "build_at=${build_at}" >> "$GITHUB_ENV"
-          go_runtime=$(go env GOOS)/$(go env GOARCH)
-          echo "go_runtime=${go_runtime}" >> "$GITHUB_ENV"
-      - name: Install tools
-        run: |
-          go install src.techknowlogick.com/xgo@v1.8.1-0.20250401170454-4b368d8a5afa
-          docker pull ghcr.io/techknowlogick/xgo:go-${{ env.GOVERSION }}
-          curl -o assets/ca/cacert.pem https://curl.se/ca/cacert.pem
-          rm assets/ca/.gitkeep
-      - name: Packaging frontend
-        run: tar -czf "build/${build_prefix}.fe.tar.gz" -C assets/dist/ .
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GOVERSION }}
-          cache-dependency-path: "go.sum"
-      - name: Backend
-        run: |
-          cd build
-          PUBLISH_TYPE=binary
+
           ldflags="-X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$build_at' \
-          -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
-          -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash' \
-          -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE'"
-          $HOME/go/bin/xgo -go go-${{ env.GOVERSION }} -out "$build_prefix" -ldflags "$ldflags" -tags netgo --targets=windows/amd64,darwin/amd64,darwin/arm64 ../
+          -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash'"
+
+          echo "commit_hash=${commit_hash}" >> "$GITHUB_OUTPUT"
+          echo "build_at=${build_at}" >> "$GITHUB_OUTPUT"
+          echo "build_prefix=${build_prefix}" >> "$GITHUB_OUTPUT"
+          echo "ldflags=${ldflags}" >> "$GITHUB_OUTPUT"
+      - name: Upload cacert
+        uses: actions/upload-artifact@v4
+        with:
+          name: "tbsign_go.cacert"
+          path: assets/ca/cacert.pem
+
+  build:
+    runs-on: ubuntu-24.04
+    name: Release
+    permissions:
+      contents: write
+    needs:
+      - build-frontend
+      - build-linux-binary
+      - build-darwin-binary
+      - build-windows-binary
+    env:
+      build_prefix: ${{ needs.build-frontend.outputs.build_prefix }}
+      build_at: ${{ needs.build-frontend.outputs.build_at }}
+      commit_hash: ${{ needs.build-frontend.outputs.commit_hash }}
+      fe_commit_hash: ${{ needs.build-frontend.outputs.fe_commit_hash }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: tbsign_go.fe
+          path: tbsign_go.fe
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: tbsign_go.musl.*.binary
+      - uses: actions/download-artifact@v4
+        with:
+          name: tbsign_go.darwin
+          path: build
+      - uses: actions/download-artifact@v4
+        with:
+          name: tbsign_go.windows
+          path: build
+
+      - name: Packaging frontend
+        run: tar -czf "build/${{ env.build_prefix }}.fe.tar.gz" -C tbsign_go.fe .
 
       - name: Rename & SHA-256
         run: |
-          mv "build/${build_prefix}-windows-4.0-amd64.exe" "build/${build_prefix}.windows-amd64.exe"
-          echo "$(sha256sum build/${build_prefix}.windows-amd64.exe | awk '{print $1}')" >> "build/${build_prefix}.windows-amd64.exe.sha256"
-          echo "windows_amd64_sha256=$(cat build/${build_prefix}.windows-amd64.exe.sha256)" >> "$GITHUB_ENV"
-
           mv "tbsign_go.musl.arm64.binary/tbsign_go" "build/${build_prefix}.linux-arm64"
           echo "$(sha256sum build/${build_prefix}.linux-arm64 | awk '{print $1}')" >> "build/${build_prefix}.linux-arm64.sha256"
           echo "linux_arm64_sha256=$(cat build/${build_prefix}.linux-arm64.sha256)" >> "$GITHUB_ENV"
@@ -126,11 +131,12 @@ jobs:
           echo "$(sha256sum build/${build_prefix}.linux-amd64 | awk '{print $1}')" >> "build/${build_prefix}.linux-amd64.sha256"
           echo "linux_amd64_sha256=$(cat build/${build_prefix}.linux-amd64.sha256)" >> "$GITHUB_ENV"
 
-          mv "build/${build_prefix}-darwin-10.12-arm64" "build/${build_prefix}.darwin-arm64"
+          echo "$(sha256sum build/${build_prefix}.windows-amd64.exe | awk '{print $1}')" >> "build/${build_prefix}.windows-amd64.exe.sha256"
+          echo "windows_amd64_sha256=$(cat build/${build_prefix}.windows-amd64.exe.sha256)" >> "$GITHUB_ENV"
+
           echo "$(sha256sum build/${build_prefix}.darwin-arm64 | awk '{print $1}')" >> "build/${build_prefix}.darwin-arm64.sha256"
           echo "darwin_arm64_sha256=$(cat build/${build_prefix}.darwin-arm64.sha256)" >> "$GITHUB_ENV"
 
-          mv "build/${build_prefix}-darwin-10.12-amd64" "build/${build_prefix}.darwin-amd64"
           echo "$(sha256sum build/${build_prefix}.darwin-amd64 | awk '{print $1}')" >> "build/${build_prefix}.darwin-amd64.sha256"
           echo "darwin_amd64_sha256=$(cat build/${build_prefix}.darwin-amd64.sha256)" >> "$GITHUB_ENV"
 
@@ -152,7 +158,6 @@ jobs:
           body: |
             ```yaml
             build_version: ${{ env.GOVERSION }}
-            build_runtime: ${{ env.go_runtime }}
             build_at: ${{ env.build_at }}
             commit_hash: ${{ env.commit_hash }}
             frontend_hash: ${{ env.fe_commit_hash }}
@@ -181,6 +186,9 @@ jobs:
         publish_type: [binary, docker]
     runs-on: ${{ matrix.arch.runs-on }}
     needs: build-frontend
+    env:
+      ldflags: ${{ needs.build-frontend.outputs.ldflags }}
+      build_prefix: ${{ needs.build-frontend.outputs.build_prefix }}
     steps:
       - name: Checkout
         uses: actions/checkout@master
@@ -188,6 +196,10 @@ jobs:
         with:
           name: tbsign_go.fe
           path: assets/dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: tbsign_go.cacert
+          path: assets/ca/
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GOVERSION }}
@@ -196,22 +208,10 @@ jobs:
         run: sudo apt install -y musl-dev
       - name: Backend
         run: |
-          curl -o assets/ca/cacert.pem https://curl.se/ca/cacert.pem
-          rm assets/ca/.gitkeep
-          fe_commit_hash=${{ needs.build-frontend.outputs.fe_commit_hash }}
-          commit_hash=$(git rev-parse HEAD)
-          short_commit_hash=${commit_hash:0:7}
-          short_fe_commit_hash=${fe_commit_hash:0:7}
-          build_prefix="tbsign_go.$(date +%Y%m%d).$short_commit_hash.$short_fe_commit_hash"
-          echo "build_prefix=${build_prefix}" >> "$GITHUB_ENV"
-          build_at="$(date -u "+%Y-%m-%dT%H:%M:%SZ")"
-          go_runtime=$(go env GOOS)/$(go env GOARCH)
           PUBLISH_TYPE=${{ matrix.publish_type }}
-          ldflags="-X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$build_at' \
+          go_runtime=$(go env GOOS)/$(go env GOARCH)
+          ldflags="$ldflags -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime' \
-          -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
-          -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash' \
-          -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE' \
           -linkmode external -extldflags -static"
           CC=${{ matrix.arch.compiler }} go build -ldflags "$ldflags" -tags netgo
 
@@ -220,6 +220,81 @@ jobs:
         with:
           name: "tbsign_go.musl.${{ matrix.arch.name }}.${{ matrix.publish_type }}"
           path: tbsign_go
+
+  build-darwin-binary:
+    name: Build Binary for MacOS
+    runs-on: macos-latest
+    needs: build-frontend
+    env:
+      PUBLISH_TYPE: binary
+      ldflags: ${{ needs.build-frontend.outputs.ldflags }}
+      build_prefix: ${{ needs.build-frontend.outputs.build_prefix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+      - uses: actions/download-artifact@v4
+        with:
+          name: tbsign_go.fe
+          path: assets/dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: tbsign_go.cacert
+          path: assets/ca/
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GOVERSION }}
+          cache-dependency-path: "go.sum"
+      - name: Backend
+        run: |
+          go_runtime=$(go env GOOS)/$(go env GOARCH)
+          ldflags="$ldflags -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE' \
+          -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime'"
+
+          CGO_CFLAGS="-mmacosx-version-min=${{ env.mmacosx_version_min }}" CGO_LDFLAGS="-mmacosx-version-min=${{ env.mmacosx_version_min }}" GOOS=darwin GOARCH=arm64 go build -o "${{ env.build_prefix }}.darwin-arm64" -ldflags "$ldflags" -tags netgo
+          CGO_CFLAGS="-mmacosx-version-min=${{ env.mmacosx_version_min }} -arch x86_64" CGO_LDFLAGS="-mmacosx-version-min=${{ env.mmacosx_version_min }} -arch x86_64" GOOS=darwin GOARCH=amd64 go build -o "${{ env.build_prefix }}.darwin-amd64" -ldflags "$ldflags" -tags netgo
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: "tbsign_go.darwin"
+          path: |
+            ${{ env.build_prefix }}.darwin-arm64
+            ${{ env.build_prefix }}.darwin-amd64
+  build-windows-binary:
+    name: Build Binary for Windows
+    runs-on: windows-latest
+    needs: build-frontend
+    env:
+      PUBLISH_TYPE: binary
+      ldflags: ${{ needs.build-frontend.outputs.ldflags }}
+      build_prefix: ${{ needs.build-frontend.outputs.build_prefix }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+      - uses: actions/download-artifact@v4
+        with:
+          name: tbsign_go.fe
+          path: assets/dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: tbsign_go.cacert
+          path: assets/ca/
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GOVERSION }}
+          cache-dependency-path: "go.sum"
+      - name: Backend
+        run: |
+          $go_runtime="$(go env GOOS)/$(go env GOARCH)"
+          $ldflags="${{ env.ldflags }} -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=${{ env.PUBLISH_TYPE }}' -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=${go_runtime}'"
+          go build -o "${{ env.build_prefix }}.windows-amd64.exe" -ldflags "$ldflags" -tags netgo
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: "tbsign_go.windows"
+          path: ${{ env.build_prefix }}.windows-amd64.exe
 
   combine-docker:
     name: Docker Build

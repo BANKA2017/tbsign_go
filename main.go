@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -34,6 +35,7 @@ var err error
 func init() {
 	fmt.Println("TbSign➡️\n--- info ---")
 	fmt.Println("build_at:", share.BuiltAt)
+	fmt.Println("build_runtime:", runtime.Version()+" "+share.BuildRuntime)
 	fmt.Println("commit_hash:", share.BuildGitCommitHash)
 	fmt.Println("frontend_hash:", share.BuildEmbeddedFrontendGitCommitHash)
 	fmt.Println("release_type:", share.BuildPublishType)
