@@ -14,6 +14,7 @@ import (
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
+	"github.com/kdnetwork/code-snippet/go/db"
 	"github.com/labstack/echo/v4"
 )
 
@@ -68,6 +69,7 @@ func GetServerStatus(c echo.Context) error {
 			"commit_hash":                   share.BuildGitCommitHash,
 			"embedded_frontend_commit_hash": share.BuildEmbeddedFrontendGitCommitHash,
 			"publish_type":                  share.BuildPublishType,
+			"cgo":                           _function.When(db.CgoEnabled, "1", "0"),
 		},
 		"cron_sign_again": _function.GetOption("cron_sign_again"),
 		"compat":          _function.GetOption("core_version"),

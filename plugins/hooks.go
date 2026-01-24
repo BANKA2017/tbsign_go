@@ -211,13 +211,7 @@ func DeletePluginInfo(name string) error {
 }
 
 func AddToSettingsFilter() {
-	tmpSettingsFilter := _function.SettingsKeys
-	PluginOptionValidatorMap.Range(func(key string, value *_function.OptionRule) bool {
-		tmpSettingsFilter = append(tmpSettingsFilter, key)
-		return true
-	})
-
-	_function.SettingsFilter = tmpSettingsFilter
+	_function.SettingsFilter = append(append([]string(nil), _function.SettingsKeys...), PluginOptionValidatorMap.KV.Keys()...)
 }
 
 func DeleteAccount(_type string, id int32, tx *gorm.DB) error {

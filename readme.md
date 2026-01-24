@@ -240,6 +240,14 @@ go run main.go -db_tls=/etc/ssl/certs/ca-certificates.crt
 
 ## 编译
 
+### *Pure Go
+
+这是一项试验中的功能，可能会引发未知的问题
+
+SQLite 驱动使用 [gitlab.com:cznic/sqlite](https://gitlab.com/cznic/sqlite) (modernc.org/sqlite)，Gorm 包装使用 [glebarez/sqlite](https://github.com/glebarez/sqlite)
+
+[受支持的版本](https://pkg.go.dev/modernc.org/sqlite#hdr-Supported_platforms_and_architectures)在编译时禁用 CGO 即可
+
 ### CGO
 
 > go-sqlite3 is cgo package. If you want to build your app using go-sqlite3, you need gcc. However, after you have built and installed go-sqlite3 with `go install github.com/mattn/go-sqlite3` (which requires gcc), you can build your app without relying on gcc in future.

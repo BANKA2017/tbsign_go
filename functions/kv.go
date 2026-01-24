@@ -10,11 +10,6 @@ type KV[K comparable, T any] struct {
 	KV *ttlcache.Cache[K, T]
 }
 
-// type KVStruct[T any] struct {
-// 	Value    T     `json:"value"`
-// 	ExpireAt int64 `json:"expire_at"`
-// }
-
 func NewKV[K comparable, T any](opts ...ttlcache.Option[K, T]) *KV[K, T] {
 	return &KV[K, T]{
 		KV: ttlcache.New(opts...),

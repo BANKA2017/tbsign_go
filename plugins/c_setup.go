@@ -100,19 +100,6 @@ func SetupSystem(dbExists, autoInstall bool, name, email, password string) {
 
 	_function.InitOptions()
 
-	// fmt.Println("⌛正在安装插件...")
-	// for name, plugin := range PluginList {
-	// 	fmt.Printf("⌛%s...\n", name)
-	// 	err := plugin.Delete()
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	err = plugin.Install()
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// }
-
 	fmt.Println("🔒注册管理员账号...")
 	if !autoInstall {
 		fmt.Print("管理员用户名: ")

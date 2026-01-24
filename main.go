@@ -17,6 +17,7 @@ import (
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/BANKA2017/tbsign_go/share"
 	"github.com/kdnetwork/code-snippet/go/db"
+	"github.com/kdnetwork/code-snippet/go/utils"
 	"gorm.io/gorm/logger"
 )
 
@@ -46,52 +47,45 @@ func init() {
 	}
 }
 
-func GetEnv(key, fallback string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return value
-	}
-	return fallback
-}
-
 func main() {
 	// sqlite
-	flag.StringVar(&share.DBPath, "db_path", GetEnv("tc_db_path", ""), "Database path")
+	flag.StringVar(&share.DBPath, "db_path", utils.GetEnv("tc_db_path", ""), "Database path")
 
 	// mysql
 	var tmpHost string
-	flag.StringVar(&share.DBUsername, "username", GetEnv("tc_username", ""), "Username")
-	flag.StringVar(&share.DBPassword, "pwd", GetEnv("tc_pwd", ""), "Password")
-	flag.StringVar(&tmpHost, "endpoint", GetEnv("tc_endpoint", "127.0.0.1:3306"), "MySQL host:port (deprecated)")
-	flag.StringVar(&share.DBEndpoint, "host", GetEnv("tc_host", "127.0.0.1:3306"), "MySQL host:port")
-	flag.StringVar(&share.DBName, "db", GetEnv("tc_db", "tbsign"), "Database name")
-	flag.StringVar(&share.DBMode, "db_mode", GetEnv("tc_db_mode", "mysql"), "sqlite/mysql/(pgsql|postgresql)")
-	flag.StringVar(&share.DBTLSOption, "db_tls", GetEnv("tc_db_tls", "false"), "Option for CA cert (MySQL/PostgreSQL)")
+	flag.StringVar(&share.DBUsername, "username", utils.GetEnv("tc_username", ""), "Username")
+	flag.StringVar(&share.DBPassword, "pwd", utils.GetEnv("tc_pwd", ""), "Password")
+	flag.StringVar(&tmpHost, "endpoint", utils.GetEnv("tc_endpoint", "127.0.0.1:3306"), "MySQL host:port (deprecated)")
+	flag.StringVar(&share.DBEndpoint, "host", utils.GetEnv("tc_host", "127.0.0.1:3306"), "MySQL host:port")
+	flag.StringVar(&share.DBName, "db", utils.GetEnv("tc_db", "tbsign"), "Database name")
+	flag.StringVar(&share.DBMode, "db_mode", utils.GetEnv("tc_db_mode", "mysql"), "sqlite/mysql/(pgsql|postgresql)")
+	flag.StringVar(&share.DBTLSOption, "db_tls", utils.GetEnv("tc_db_tls", "false"), "Option for CA cert (MySQL/PostgreSQL)")
 
 	//proxy
 	flag.BoolVar(&_function.IgnoreProxy, "no_proxy", false, "Ignore the http proxy config from environment vars")
 
 	// api
-	flag.BoolVar(&share.EnableApi, "api", GetEnv("tc_api", "") != "", "active backend endpoints")
-	flag.BoolVar(&share.EnableFrontend, "fe", GetEnv("tc_fe", "") != "", "active frontend endpoints")
-	flag.BoolVar(&share.EnableBackup, "allow_backup", GetEnv("tc_allow_backup", "") != "", "allow backup (export/import)")
-	flag.StringVar(&share.Address, "address", GetEnv("tc_address", ":1323"), "address :1323")
+	flag.BoolVar(&share.EnableApi, "api", utils.GetEnv("tc_api", "") != "", "active backend endpoints")
+	flag.BoolVar(&share.EnableFrontend, "fe", utils.GetEnv("tc_fe", "") != "", "active frontend endpoints")
+	flag.BoolVar(&share.EnableBackup, "allow_backup", utils.GetEnv("tc_allow_backup", "") != "", "allow backup (export/import)")
+	flag.StringVar(&share.Address, "address", utils.GetEnv("tc_address", ":1323"), "address :1323")
 
 	// setup
 	flag.BoolVar(&setup, "setup", false, "Init the system [force]")
-	flag.BoolVar(&autoInstall, "auto_install", GetEnv("tc_auto_install", "") != "", "Auto install the system when tables are not exist")
-	flag.StringVar(&adminName, "admin_name", GetEnv("tc_admin_name", ""), "Name of admin")
-	flag.StringVar(&adminEmail, "admin_email", GetEnv("tc_admin_email", ""), "Email of admin")
-	flag.StringVar(&adminPassword, "admin_password", GetEnv("tc_admin_password", ""), "Password of admin")
+	flag.BoolVar(&autoInstall, "auto_install", utils.GetEnv("tc_auto_install", "") != "", "Auto install the system when tables are not exist")
+	flag.StringVar(&adminName, "admin_name", utils.GetEnv("tc_admin_name", ""), "Name of admin")
+	flag.StringVar(&adminEmail, "admin_email", utils.GetEnv("tc_admin_email", ""), "Email of admin")
+	flag.StringVar(&adminPassword, "admin_password", utils.GetEnv("tc_admin_password", ""), "Password of admin")
 
 	// --experimental-*
 	// encrypt
 	flag.StringVar(&EncryptDataAction, "data_encrypt_action", "", "Encrypt/Decrypt data in database")
-	flag.StringVar(&share.DataEncryptKeyStr, "data_encrypt_key", GetEnv("tc_data_encrypt_key", ""), "The key to encrypt some user data (base64url)")
+	flag.StringVar(&share.DataEncryptKeyStr, "data_encrypt_key", utils.GetEnv("tc_data_encrypt_key", ""), "The key to encrypt some user data (base64url)")
 	// flag.BoolVar(&share.DisableEmail, "disable-email", false, "disable email")
-	flag.StringVar(&share.DNSAddress, "dns_addr", GetEnv("tc_dns_addr", ""), "DNS Address")
+	flag.StringVar(&share.DNSAddress, "dns_addr", utils.GetEnv("tc_dns_addr", ""), "DNS Address")
 
 	// others
-	flag.BoolVar(&share.TestMode, "test", GetEnv("tc_test", "") != "", "Not send any requests to tieba servers")
+	flag.BoolVar(&share.TestMode, "test", utils.GetEnv("tc_test", "") != "", "Not send any requests to tieba servers")
 
 	flag.Parse()
 
