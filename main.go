@@ -186,7 +186,7 @@ func main() {
 			log.Fatal("db:", err)
 		}
 
-		setup = !dbExists
+		setup = setup || !dbExists
 
 		if err = _function.GormDB.SetDBMode(db.DBModeSQLite).SetDBPath(share.DBPath).Connect(); err != nil {
 			log.Fatal("db:", err)
