@@ -155,7 +155,7 @@ go run main.go -db_tls=/etc/ssl/certs/ca-certificates.crt
 - [❌] MySQL 不支持无法使用 [MySQL 窗口函数](https://dev.mysql.com/doc/refman/8.0/en/window-functions.html) 的发行版，使用了**不支持**的函数 `ROW_NUMBER()`
 - [⚠️] 开发环境使用的 MySQL 版本号为 `8.0` 或更高，其他 MySQL 发行版请自行测试是否可用
 - [⚠️] PostgreSQL 不保证可用
-- [⚠️] xgo 镜像使用的 tag 为 `go-1.25.6`，请自行检查[兼容性](https://tip.golang.org/wiki/MinimumRequirements)
+- [⚠️] Go 版本为 `go1.25.6`，请自行检查[兼容性](https://tip.golang.org/wiki/MinimumRequirements)
 
 ## 前端
 
@@ -303,7 +303,7 @@ docker run -d --restart unless-stopped -v ./db:/app/tbsign/db -p 8080:1323 ghcr.
 
 格式为 `tbsign_go.<YYYYMMDD>.<BACKEND_COMMIT_HASH[0:7]>.<FRONTEND_COMMIT_HASH[0:7]>.<OS>-<ARCH>` ，如果是用于 Windows 系统的可执行文件还会有 `.exe` 拓展名
 
-官方提供的可执行文件包含 linux/amd64, linux/arm64, windows/amd64, darwin/amd64, darwin/arm64 五个版本，后三个版本使用 [xgo](https://github.com/techknowlogick/xgo) 进行交叉编译，手动触发编译的 Actions 任务
+官方提供的可执行文件包含 linux/amd64, linux/arm64, windows/amd64, darwin/amd64, darwin/arm64 五个版本，手动触发编译的 Actions 任务
 
 ~~\* 由于添加 `musl-libc` 静态编译产物比较麻烦，所以不会发布 `musl` 版的可执行文件，如有需要可以解包 Docker 镜像~~
 
