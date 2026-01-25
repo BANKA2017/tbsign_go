@@ -110,6 +110,7 @@ func Api(address string) {
 	api.GET("/admin/server/status", GetServerStatus)
 	api.POST("/admin/server/upgrade", UpgradeSystem)
 	api.POST("/admin/server/shutdown", ShutdownSystem)
+	api.POST("/admin/server/hooks/test", TestModeHooks)
 
 	// tools
 	api.GET("/tools/userinfo/tieba_uid/:tiebauid", GetUserByTiebaUID)

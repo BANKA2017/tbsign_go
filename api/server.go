@@ -101,6 +101,17 @@ func ShutdownSystem(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{}, "tbsign"))
 }
 
+func TestModeHooks(c echo.Context) error {
+	if !share.TestMode {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "Not in test mode", map[string]any{}, "tbsign"))
+	}
+
+	// do something here
+	share.CrontabBypassTimes.Add(1)
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{}, "tbsign"))
+}
+
 func GetPluginsList(c echo.Context) error {
 	isAdmin := c.Get("role").(string) == "admin"
 	var resPluginList = make(map[string]*PluginListContent, len(_plugin.PluginList))

@@ -317,7 +317,11 @@ func main() {
 			_function.UpdateNow()
 		case <-oneMinuteInterval.C:
 			if share.TestMode {
-				continue
+				if share.CrontabBypassTimes.Load() > 0 {
+					share.CrontabBypassTimes.Add(-1)
+				} else {
+					continue
+				}
 			}
 			_plugin.DoCheckinAction()
 			_plugin.DoReCheckinAction()

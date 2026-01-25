@@ -95,7 +95,7 @@ func Dosign(_ string, retry bool) (bool, error) {
 
 	ctx := context.Background()
 
-	errs := worker.RunWorkerPool[*model.TcTieba, int32, struct{}](ctx, tiebaList, int(threadCount), func(ctx context.Context, task *model.TcTieba, store map[int32]struct{}) error {
+	errs := worker.RunWorkerPool(ctx, tiebaList, int(threadCount), func(ctx context.Context, task *model.TcTieba, store map[int32]struct{}) error {
 		if _, ok := store[task.Pid]; ok {
 			return nil
 		}
@@ -131,11 +131,13 @@ func Dosign(_ string, retry bool) (bool, error) {
 			}
 
 			// TODO better sql update
-			_function.GormDB.W.Model(&model.TcTieba{}).Select("status, last_error, latest").Where("id = ?", task.ID).Updates(&model.TcTieba{
+			if err := _function.GormDB.W.Model(&model.TcTieba{}).Select("status", "last_error", "latest").Where("id = ?", task.ID).Updates(&model.TcTieba{
 				Status:    int32(errorCode),
 				LastError: errorMsg,
 				Latest:    int32(today),
-			})
+			}).Error; err != nil {
+				log.Println(err)
+			}
 		}
 
 		log.Println("checkin:", task.Pid, task.Tieba, task.Fid, task.ID, today, time.Now().UnixMilli()-now.UnixMilli())
