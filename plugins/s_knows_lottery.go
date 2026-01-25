@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"time"
@@ -73,7 +74,13 @@ func GetLottery(cookie _type.TypeCookie, token string) (*GetLotteryResponse, err
 		"x-ik-ssl": "1",
 		"Referer":  "https://zhidao.baidu.com/shop/lottery",
 	}
-	response, err := _function.TBFetch("https://zhidao.baidu.com/shop/submit/lottery?type=0&token="+token+"&_="+strconv.Itoa(int(_function.Now.UnixMilli())), http.MethodGet, []byte{}, headersMap)
+
+	body := url.Values{
+		"type":  []string{"0"},
+		"token": []string{token},
+	}
+
+	response, err := _function.TBFetch("https://zhidao.baidu.com/shop/submit/lottery", http.MethodPost, []byte(body.Encode()), headersMap)
 	if err != nil {
 		return nil, err
 	}
