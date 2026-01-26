@@ -62,7 +62,12 @@ func GetServerStatus(c echo.Context) error {
 		"goversion":  fmt.Sprintf("%s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH),
 		"start_time": share.StartTime.UnixMilli(),
 		//"system":          fmt.Sprintf("cpu:%d, mem: [Alloc %d / Sys %d] MiB", runtime.NumCPU(), memstats.Alloc/1024/1024, memstats.Sys/1024/1024),
-		"variables": c.Get("variables"),
+		"variables": map[string]any{
+			"dbmode":    share.DBMode,
+			"dbversion": share.DBVersion,
+			"tlsdb":     share.DBTLSOption != "false" && share.DBTLSOption != "",
+			"testmode":  share.TestMode,
+		},
 		"build": map[string]string{
 			"date":                          share.BuiltAt,
 			"runtime":                       share.BuildRuntime,
@@ -101,12 +106,7 @@ func ShutdownSystem(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{}, "tbsign"))
 }
 
-func TestModeHooks(c echo.Context) error {
-	if !share.TestMode {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "Not in test mode", map[string]any{}, "tbsign"))
-	}
-
-	// do something here
+func HookAddCronTime(c echo.Context) error {
 	share.CrontabBypassTimes.Add(1)
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{}, "tbsign"))

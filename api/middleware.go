@@ -21,6 +21,12 @@ func SetHeaders(next echo.HandlerFunc) echo.HandlerFunc {
 			c.Response().Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,PATCH,OPTIONS")
 			c.Response().Header().Set("Access-Control-Allow-Headers", "Authorization")
 		}
+
+		if c.Request().Method == http.MethodOptions {
+			c.Response().Header().Set("Access-Control-Max-Age", "86400")
+			return c.NoContent(http.StatusNoContent)
+		}
+
 		// c.Response().Header().Add("X-Powered-By", "TbSignGo->")
 		// c.Response().Header().Add("Access-Control-Allow-Credentials", "true")
 		return next(c)
@@ -85,14 +91,19 @@ func PreCheck(next echo.HandlerFunc) echo.HandlerFunc {
 			}
 		}
 
-		// admin
-		if strings.HasPrefix(path, "/admin/") && role != "admin" {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效用户组", _function.EchoEmptyObject, "tbsign"))
-		}
-
 		c.Set("uid", uid)
 		c.Set("role", role)
 
+		return next(c)
+	}
+}
+
+func AdminCheck(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		// admin
+		if role, ok := c.Get("role").(string); !ok || role != "admin" {
+			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效用户组", _function.EchoEmptyObject, "tbsign"))
+		}
 		return next(c)
 	}
 }

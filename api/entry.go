@@ -1,6 +1,7 @@
 package _api
 
 import (
+	"errors"
 	"io/fs"
 	"net/http"
 	"time"
@@ -22,6 +23,20 @@ func Api(address string) {
 	// e.Pre(middleware.RemoveTrailingSlash())
 
 	e.Use(SetHeaders)
+	e.HTTPErrorHandler = func(err error, c echo.Context) {
+		if c.Response().Committed {
+			return
+		}
+
+		var httpError *echo.HTTPError
+		if ok := errors.As(err, &httpError); ok {
+			if httpError.Code == http.StatusNotFound {
+				_ = _function.EchoReject(c)
+				return
+			}
+		}
+		e.DefaultHTTPErrorHandler(err, c)
+	}
 
 	apiPrefix := ""
 	if share.EnableFrontend {
@@ -29,88 +44,79 @@ func Api(address string) {
 	}
 
 	api := e.Group(apiPrefix)
+
+	if !share.EnableFrontend {
+		api.Any("/favicon.ico", _function.EchoNoContent)
+		api.Any("/robots.txt", echoRobots)
+	}
+
 	// pre-check
 	api.Use(PreCheck)
 
-	// set variables
-	api.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			_variable := make(map[string]any)
-			// ext
-			_variable["dbmode"] = share.DBMode
-			_variable["dbversion"] = share.DBVersion
-			_variable["tlsdb"] = share.DBTLSOption != "false" && share.DBTLSOption != ""
-			_variable["testmode"] = share.TestMode
-
-			c.Set("variables", _variable)
-			return next(c)
-		}
-	})
-
-	if !share.EnableFrontend {
-		api.Any("/", _function.EchoReject)
-		api.Any("/*", _function.EchoReject)
-		api.Any("/favicon.ico", _function.EchoNoContent)
-		api.Any("/robots.txt", echoRobots)
-		api.OPTIONS("/*", _function.EchoNoContent)
-	}
-
-	api.GET("/passport", GetAccountInfo)
-	api.POST("/passport/login", Login)
-	api.POST("/passport/logout", Logout)
-	api.POST("/passport/signup", Signup)
+	// passport
+	passport := api.Group("/passport")
+	passport.GET("", GetAccountInfo)
+	passport.POST("/login", Login)
+	passport.POST("/logout", Logout)
+	passport.POST("/signup", Signup)
 
 	if share.EnableBackup {
-		api.POST("/passport/export", ExportAccountData)
-		api.POST("/passport/import", ImportAccountData)
+		passport.POST("/export", ExportAccountData)
+		passport.POST("/import", ImportAccountData)
 	}
 
-	api.DELETE("/passport/delete", DeleteAccount)
-	api.PUT("/passport/update/info", UpdateAccountInfo)
-	api.PUT("/passport/update/password", UpdatePassword)
-	//api.GET("/passport/settings", GetSettings)
-	//api.PUT("/passport/settings", UpdateSettings)
-	api.POST("/passport/reset/password", ResetPassword, RateLimit(2, time.Second))
+	passport.DELETE("/delete", DeleteAccount)
+	passport.PUT("/update/info", UpdateAccountInfo)
+	passport.PUT("/update/password", UpdatePassword)
+	passport.POST("/reset/password", ResetPassword, RateLimit(2, time.Second))
 
 	// tieba account
-	api.GET("/account", GetTiebaAccountList)
-	api.GET("/account/:pid", GetTiebaAccountItem)
-	api.PATCH("/account", AddTiebaAccount)
-	api.DELETE("/account/:pid", RemoveTiebaAccount)
-	api.GET("/account/:pid/status", CheckTiebaAccount)
-	api.GET("/account/qrcode", GetLoginQRCode)
-	api.POST("/account/qrlogin", GetBDUSS)
-	api.GET("/account/check/:pid/is_manager/:fname", CheckIsManager)
+	tiebaAccount := api.Group("/account")
+	tiebaAccount.GET("", GetTiebaAccountList)
+	tiebaAccount.GET("/:pid", GetTiebaAccountItem)
+	tiebaAccount.PATCH("", AddTiebaAccount)
+	tiebaAccount.DELETE("/:pid", RemoveTiebaAccount)
+	tiebaAccount.GET("/:pid/status", CheckTiebaAccount)
+	tiebaAccount.GET("/qrcode", GetLoginQRCode)
+	tiebaAccount.POST("/qrlogin", GetBDUSS)
+	tiebaAccount.GET("/check/:pid/is_manager/:fname", CheckIsManager)
 
 	// tieba list
-	api.POST("/list/sync", RefreshTiebaList, RateLimit(1, time.Second*10))
-	api.GET("/list", GetTiebaList)
-	api.PATCH("/list", AddTieba)
-	api.DELETE("/list", CleanTiebaList)
-	api.DELETE("/list/:pid/:fid", RemoveTieba)
-	api.PATCH("/list/:pid/:fid/ignore", IgnoreTieba)
-	api.DELETE("/list/:pid/:fid/ignore", IgnoreTieba)
-	api.POST("/list/:pid/:fid/reset", ResetTieba)
+	tiebaList := api.Group("/list")
+	tiebaList.GET("", GetTiebaList)
+	tiebaList.PATCH("", AddTieba)
+	tiebaList.DELETE("", CleanTiebaList)
+	tiebaList.POST("/sync", RefreshTiebaList, RateLimit(1, time.Second*10))
+	tiebaList.DELETE("/:pid/:fid", RemoveTieba)
+	tiebaList.PATCH("/:pid/:fid/ignore", IgnoreTieba)
+	tiebaList.DELETE("/:pid/:fid/ignore", IgnoreTieba)
+	tiebaList.POST("/:pid/:fid/reset", ResetTieba)
 
 	// manage
-	api.GET("/admin/settings", GetAdminSettings)
-	api.POST("/admin/settings", UpdateAdminSettings)
-	api.GET("/admin/account", GetAccountsList)
-	api.DELETE("/admin/account/:uid", AdminDeleteAccount)
-	api.PATCH("/admin/account/:uid/modify", AdminModifyAccountInfo)
-	api.DELETE("/admin/account/:uid/token", AdminDeleteAccountToken)
-	api.DELETE("/admin/account/:uid/list", AdminDeleteTiebaAccountList)
-	api.POST("/admin/account/:uid/list/reset", AdminResetTiebaList)
-	api.POST("/admin/account/:uid/password/reset", AdminResetPassword)
-	api.POST("/admin/account/:uid/plugin/:plugin_name/reset", AdminResetAccountPlugin)
-	api.POST("/admin/plugin/:plugin_name/switch", PluginSwitch)
-	api.DELETE("/admin/plugin/:plugin_name", PluginUninstall)
-	api.POST("/admin/service/push/mail/test", SendTestMessage)
+	admin := api.Group("/admin", AdminCheck)
+	admin.GET("/settings", GetAdminSettings)
+	admin.POST("/settings", UpdateAdminSettings)
+	admin.GET("/account", GetAccountsList)
+	admin.DELETE("/account/:uid", AdminDeleteAccount)
+	admin.PATCH("/account/:uid/modify", AdminModifyAccountInfo)
+	admin.DELETE("/account/:uid/token", AdminDeleteAccountToken)
+	admin.DELETE("/account/:uid/list", AdminDeleteTiebaAccountList)
+	admin.POST("/account/:uid/list/reset", AdminResetTiebaList)
+	admin.POST("/account/:uid/password/reset", AdminResetPassword)
+	admin.POST("/account/:uid/plugin/:plugin_name/reset", AdminResetAccountPlugin)
+	admin.POST("/plugin/:plugin_name/switch", PluginSwitch)
+	admin.DELETE("/plugin/:plugin_name", PluginUninstall)
+	admin.POST("/service/push/mail/test", SendTestMessage)
+
 	/// server
-	api.GET("/admin/server/status", GetServerStatus)
-	api.POST("/admin/server/upgrade", UpgradeSystem)
-	api.POST("/admin/server/shutdown", ShutdownSystem)
-	api.POST("/admin/server/hooks/test", TestModeHooks)
+	admin.GET("/server/status", GetServerStatus)
+	admin.POST("/server/upgrade", UpgradeSystem)
+	admin.POST("/server/shutdown", ShutdownSystem)
+
+	if share.TestMode {
+		hooks := admin.Group("/server/hooks")
+		hooks.POST("/test/add-cron-time", HookAddCronTime)
+	}
 
 	// tools
 	api.GET("/tools/userinfo/tieba_uid/:tiebauid", GetUserByTiebaUID)
@@ -121,11 +127,11 @@ func Api(address string) {
 	api.GET("/notifications", GetNotifications)
 
 	// others
-	api.GET("/plugins", GetPluginsList)
 	api.GET("/config/page/login", GetLoginPageConfig)
 
 	// plugins
 	plugin := api.Group("/plugins")
+	plugin.GET("", GetPluginsList)
 	plugin.Use(PluginPathPrecheck)
 	for _, v := range _plugin.PluginList {
 		for _, r := range v.(_plugin.PluginHooks).GetEndpoints() {
