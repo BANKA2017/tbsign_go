@@ -19,7 +19,7 @@ env:
 jobs:
   build-frontend:
     name: Build Init && Frontend
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     outputs:
       fe_commit_hash: ${{ steps.build-fe.outputs.fe_commit_hash }}
       commit_hash: ${{ steps.build-info.outputs.commit_hash }}
@@ -86,8 +86,8 @@ jobs:
           name: "tbsign_go.cacert"
           path: assets/ca/cacert.pem
 
-  build:
-    runs-on: ubuntu-24.04
+  release:
+    runs-on: ubuntu-24.04-arm
     name: Release
     permissions:
       contents: write
@@ -109,6 +109,8 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           pattern: tbsign_go.musl.*.binary
+          path: build
+          merge-multiple: true
       - uses: actions/download-artifact@v4
         with:
           name: tbsign_go.darwin
@@ -123,11 +125,9 @@ jobs:
 
       - name: Rename & SHA-256
         run: |
-          mv "tbsign_go.musl.arm64.binary/tbsign_go" "build/${build_prefix}.linux-arm64"
           echo "$(sha256sum build/${build_prefix}.linux-arm64 | awk '{print $1}')" >> "build/${build_prefix}.linux-arm64.sha256"
           echo "linux_arm64_sha256=$(cat build/${build_prefix}.linux-arm64.sha256)" >> "$GITHUB_ENV"
 
-          mv "tbsign_go.musl.amd64.binary/tbsign_go" "build/${build_prefix}.linux-amd64"
           echo "$(sha256sum build/${build_prefix}.linux-amd64 | awk '{print $1}')" >> "build/${build_prefix}.linux-amd64.sha256"
           echo "linux_amd64_sha256=$(cat build/${build_prefix}.linux-amd64.sha256)" >> "$GITHUB_ENV"
 
@@ -173,7 +173,7 @@ jobs:
             ```
 
   build-linux-binary:
-    name: Build Binary for ${{ matrix.arch.name }}/${{ matrix.publish_type }}
+    name: Build Binary for Linux/${{ matrix.arch.name }}
     strategy:
       matrix:
         arch:
@@ -183,7 +183,6 @@ jobs:
           - name: amd64
             runs-on: ubuntu-24.04
             compiler: /usr/bin/x86_64-linux-musl-gcc
-        publish_type: [binary, docker]
     runs-on: ${{ matrix.arch.runs-on }}
     needs: build-frontend
     env:
@@ -208,17 +207,21 @@ jobs:
         run: sudo apt install -y musl-dev
       - name: Backend
         run: |
-          PUBLISH_TYPE=${{ matrix.publish_type }}
           go_runtime=$(go env GOOS)/$(go env GOARCH)
-          ldflags="$ldflags -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE' \
-          -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime' \
+          ldflags="$ldflags -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime' \
           -linkmode external -extldflags -static"
-          CC=${{ matrix.arch.compiler }} go build -ldflags "$ldflags" -tags netgo
+          CC=${{ matrix.arch.compiler }} go build -o "${{ env.build_prefix }}.linux-${{ matrix.arch.name }}" -ldflags "$ldflags -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=binary'" -tags netgo
+          CC=${{ matrix.arch.compiler }} go build -o "tbsign_go" -ldflags "$ldflags -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=docker'" -tags netgo
 
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: "tbsign_go.musl.${{ matrix.arch.name }}.${{ matrix.publish_type }}"
+          name: "tbsign_go.musl.${{ matrix.arch.name }}.binary"
+          path: ${{ env.build_prefix }}.linux-${{ matrix.arch.name }}
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: "tbsign_go.musl.${{ matrix.arch.name }}.docker"
           path: tbsign_go
 
   build-darwin-binary:
