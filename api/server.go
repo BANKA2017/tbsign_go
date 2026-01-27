@@ -113,7 +113,7 @@ func HookAddCronTime(c echo.Context) error {
 }
 
 func GetPluginsList(c echo.Context) error {
-	isAdmin := c.Get("role").(string) == "admin"
+	isAdmin := c.Get("role").(string) == _function.RoleAdmin
 	var resPluginList = make(map[string]*PluginListContent, len(_plugin.PluginList))
 
 	for name, info := range _plugin.PluginList {

@@ -196,7 +196,7 @@ func AdminModifyAccountInfo(c echo.Context) error {
 	if accountInfo.ID == 0 {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyObject, "tbsign"))
 	}
-	if accountInfo.Role == "admin" && uid != "1" {
+	if accountInfo.Role == _function.RoleAdmin && uid != _function.OwnerUID {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "只有根管理员允许改变管理员状态", _function.EchoEmptyObject, "tbsign"))
 	}
 
@@ -238,7 +238,7 @@ func AdminModifyAccountInfo(c echo.Context) error {
 
 	// role
 	if newRole != "" && accountInfo.Role != newRole {
-		if newRole == "deleted" {
+		if newRole == _function.RoleDeleted {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(400, "请使用 DELETE:/admin/account/:uid 删除用户", _function.EchoEmptyObject, "tbsign"))
 		} else if !slices.Contains(RoleList, newRole) {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "新用户组 "+newRole+" 不存在", _function.EchoEmptyObject, "tbsign"))
@@ -281,7 +281,7 @@ func AdminResetTiebaList(c echo.Context) error {
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
-	if accountInfo.Role == "admin" && uid != "1" && uid != targetUID {
+	if accountInfo.Role == _function.RoleAdmin && uid != _function.OwnerUID && uid != targetUID {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "只有根管理员允许改变其他管理员状态", false, "tbsign"))
 	}
 
@@ -326,7 +326,7 @@ func AdminDeleteTiebaAccountList(c echo.Context) error {
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
-	if accountInfo.Role == "admin" && uid != "1" {
+	if accountInfo.Role == _function.RoleAdmin && uid != _function.OwnerUID {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "只有根管理员允许改变管理员状态", false, "tbsign"))
 	}
 
@@ -401,7 +401,7 @@ func AdminResetPassword(c echo.Context) error {
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", resetCodeResponse, "tbsign"))
 	}
-	if accountInfo.Role == "admin" && uid != "1" {
+	if accountInfo.Role == _function.RoleAdmin && uid != _function.OwnerUID {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "只有根管理员允许改变管理员状态", resetCodeResponse, "tbsign"))
 	}
 
@@ -515,7 +515,7 @@ func AdminDeleteAccount(c echo.Context) error {
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
-	if accountInfo.Role == "admin" && uid != "1" && uid != targetUID {
+	if accountInfo.Role == _function.RoleAdmin && uid != _function.OwnerUID && uid != targetUID {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "只有根管理员允许改变其他管理员状态", false, "tbsign"))
 	}
 
@@ -584,7 +584,7 @@ func AdminResetAccountPlugin(c echo.Context) error {
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
-	if accountInfo.Role == "admin" && uid != "1" && uid != targetUID {
+	if accountInfo.Role == _function.RoleAdmin && uid != _function.OwnerUID && uid != targetUID {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "只有根管理员允许改变其他管理员状态", false, "tbsign"))
 	}
 

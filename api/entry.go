@@ -22,7 +22,6 @@ func Api(address string) {
 	// TL;DR -> open embedded static dir in echo@v4 will cause incorrect redirection
 	// e.Pre(middleware.RemoveTrailingSlash())
 
-	e.Use(SetHeaders)
 	e.HTTPErrorHandler = func(err error, c echo.Context) {
 		if c.Response().Committed {
 			return
@@ -38,27 +37,26 @@ func Api(address string) {
 		e.DefaultHTTPErrorHandler(err, c)
 	}
 
+	e.Use(ParsePath)
+
 	apiPrefix := ""
 	if share.EnableFrontend {
 		apiPrefix = "/api"
 	}
 
-	api := e.Group(apiPrefix)
+	// endpoints need't check
+	noCheckApi := e.Group(apiPrefix, SetHeaders)
+	noCheckApi.POST("/passport/login", Login)
+	noCheckApi.POST("/passport/signup", Signup)
+	noCheckApi.POST("/passport/reset/password", ResetPassword, RateLimit(2, time.Second))
+	noCheckApi.GET("/config/page/login", GetLoginPageConfig) // get site config before login
 
-	if !share.EnableFrontend {
-		api.Any("/favicon.ico", _function.EchoNoContent)
-		api.Any("/robots.txt", echoRobots)
-	}
-
-	// pre-check
-	api.Use(PreCheck)
+	api := e.Group(apiPrefix, SetHeaders, AuthCheck)
 
 	// passport
 	passport := api.Group("/passport")
 	passport.GET("", GetAccountInfo)
-	passport.POST("/login", Login)
 	passport.POST("/logout", Logout)
-	passport.POST("/signup", Signup)
 
 	if share.EnableBackup {
 		passport.POST("/export", ExportAccountData)
@@ -68,7 +66,6 @@ func Api(address string) {
 	passport.DELETE("/delete", DeleteAccount)
 	passport.PUT("/update/info", UpdateAccountInfo)
 	passport.PUT("/update/password", UpdatePassword)
-	passport.POST("/reset/password", ResetPassword, RateLimit(2, time.Second))
 
 	// tieba account
 	tiebaAccount := api.Group("/account")
@@ -126,9 +123,6 @@ func Api(address string) {
 	// notifications
 	api.GET("/notifications", GetNotifications)
 
-	// others
-	api.GET("/config/page/login", GetLoginPageConfig)
-
 	// plugins
 	plugin := api.Group("/plugins")
 	plugin.GET("", GetPluginsList)
@@ -140,7 +134,10 @@ func Api(address string) {
 	}
 
 	// frontend
-	if share.EnableFrontend {
+	if !share.EnableFrontend {
+		e.Any("/favicon.ico", _function.EchoNoContent)
+		e.Any("/robots.txt", echoRobots)
+	} else {
 		fe, _ := fs.Sub(assets.EmbeddedFrontent, "dist")
 		e.GET("/icp.jsonp", func(c echo.Context) error {
 			return c.JSONP(200, "__GetICP", struct {

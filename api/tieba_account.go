@@ -26,7 +26,7 @@ func GetLoginQRCode(c echo.Context) error {
 
 func GetBDUSS(c echo.Context) error {
 	uid := c.Get("uid").(string)
-	isAdmin := strings.EqualFold(c.Get("role").(string), "admin")
+	isAdmin := strings.EqualFold(c.Get("role").(string), _function.RoleAdmin)
 
 	sign := c.FormValue("sign")
 
@@ -143,7 +143,7 @@ func GetBDUSS(c echo.Context) error {
 
 func AddTiebaAccount(c echo.Context) error {
 	uid := c.Get("uid").(string)
-	isAdmin := strings.EqualFold(c.Get("role").(string), "admin")
+	isAdmin := strings.EqualFold(c.Get("role").(string), _function.RoleAdmin)
 
 	bduss := strings.TrimSpace(c.FormValue("bduss"))
 	stoken := strings.TrimSpace(c.FormValue("stoken"))

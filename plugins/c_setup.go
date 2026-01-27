@@ -146,7 +146,7 @@ func SetupSystem(dbExists, autoInstall bool, name, email, password string) {
 		Name:  name,
 		Email: email,
 		Pw:    string(passwordHash),
-		Role:  "admin",
+		Role:  _function.RoleAdmin,
 		T:     "tieba",
 	})
 	if _function.GormDB.DBMode == db.DBModeSQLite {

@@ -68,7 +68,7 @@ func Signup(c echo.Context) error {
 		}
 	}
 
-	role := "user"
+	role := _function.RoleUser
 
 	// pre check
 	var emailOrNameExistsCount int64
@@ -117,7 +117,7 @@ func DeleteAccount(c echo.Context) error {
 	}
 
 	// find root admin
-	if uid == "1" {
+	if uid == _function.OwnerUID {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "您不能删除账号，因为您是根管理员", _function.EchoEmptyObject, "tbsign"))
 	}
 
@@ -194,9 +194,9 @@ func Login(c echo.Context) error {
 	}
 
 	switch accountInfo[0].Role {
-	case "banned":
+	case _function.RoleBanned:
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号已封禁", _function.EchoEmptyObject, "tbsign"))
-	case "deleted":
+	case _function.RoleDeleted:
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "账号已删除", _function.EchoEmptyObject, "tbsign"))
 	}
 
@@ -721,7 +721,7 @@ type TcBackupUploadStruct struct {
 
 func ImportAccountData(c echo.Context) error {
 	uid := c.Get("uid").(string)
-	isAdmin := strings.EqualFold(c.Get("role").(string), "admin")
+	isAdmin := strings.EqualFold(c.Get("role").(string), _function.RoleAdmin)
 
 	// isPureGoMode
 	if _function.GetOption("go_ver") != "1" {

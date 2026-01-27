@@ -13,44 +13,12 @@ import (
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
-	"github.com/BANKA2017/tbsign_go/share"
 	"github.com/jellydator/ttlcache/v3"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slices"
 )
 
-var PreCheckWhiteListWithoutFE = []string{
-	"/",
-	"/*",
-	"/favicon.ico",
-	"/robots.txt",
-	"/passport/login",
-	"/passport/signup",
-	"/passport/reset/password",
-	// "/tools/userinfo/tieba_uid/:tiebauid",
-	// "/tools/userinfo/panel/:query_type/:user_value",
-	// "/tools/tieba/fname_to_fid/:fname",
-	"/config/page/login",
-}
-var PreCheckWhiteListWithFE = []string{
-	"/api/passport/login",
-	"/api/passport/signup",
-	"/api/passport/reset/password",
-	// "/api/tools/userinfo/tieba_uid/:tiebauid",
-	// "/api/tools/userinfo/panel/:query_type/:user_value",
-	// "/api/tools/tieba/fname_to_fid/:fname",
-	"/api/config/page/login",
-}
-
-var RoleList = []string{"deleted", "banned", "user", "vip", "admin"}
-
-func PreCheckWhiteListExists(path string) bool {
-	if share.EnableFrontend {
-		return slices.Contains(PreCheckWhiteListWithFE, path)
-	}
-
-	return slices.Contains(PreCheckWhiteListWithoutFE, path)
-}
+var RoleList = []string{_function.RoleDeleted, _function.RoleBanned, _function.RoleUser, _function.RoleVIP, _function.RoleAdmin}
 
 func echoRobots(c echo.Context) error {
 	return c.String(http.StatusOK, "User-agent: *\nDisallow: /*")
@@ -58,18 +26,18 @@ func echoRobots(c echo.Context) error {
 
 func verifyAuthorization(authorization string) (string, string) {
 	if authorization == "" {
-		return "0", "guest"
+		return "0", _function.RoleGuest
 	}
 
 	token := strings.Split(strings.TrimSpace(authorization), ":")
 	// TODO static target
 	if len(token) != 3 {
-		return "0", "guest"
+		return "0", _function.RoleGuest
 	}
 
 	uid, err := strconv.ParseInt(token[0], 10, 64)
 	if err != nil || uid <= 0 {
-		return "0", "guest"
+		return "0", _function.RoleGuest
 	}
 
 	strUID := strconv.Itoa(int(uid))
@@ -78,18 +46,18 @@ func verifyAuthorization(authorization string) (string, string) {
 	expiredAtTime := time.Unix(expiredAt, 0)
 
 	if time.Now().After(expiredAtTime) {
-		return "0", "guest"
+		return "0", _function.RoleGuest
 	}
 
 	savedSessionExpiredAt := GetSessionExpiredAt(strUID)
 
 	if savedSessionExpiredAt <= 0 {
-		return "0", "guest"
+		return "0", _function.RoleGuest
 	}
 
 	savedSessionExpiredAtTime := time.Unix(savedSessionExpiredAt, 0)
 	if savedSessionExpiredAtTime.After(expiredAtTime) {
-		return "0", "guest"
+		return "0", _function.RoleGuest
 	}
 
 	dbPwd := _function.GetPassword(int(uid))
@@ -98,7 +66,7 @@ func verifyAuthorization(authorization string) (string, string) {
 
 	if dbPwd != "" {
 		if !hmac.Equal(HmacSessionToken(strUID, dbPwd, strconv.Itoa(int(savedSessionExpiredAt))), byteToken) {
-			return "0", "guest"
+			return "0", _function.RoleGuest
 		}
 		var accountInfo []*model.TcUser
 		_function.GormDB.R.Where("id = ?", uid).Limit(1).Find(&accountInfo)
@@ -106,10 +74,10 @@ func verifyAuthorization(authorization string) (string, string) {
 			return strconv.Itoa(int(accountInfo[0].ID)), accountInfo[0].Role
 		}
 
-		return "0", "guest"
+		return "0", _function.RoleGuest
 	}
 
-	return "0", "guest"
+	return "0", _function.RoleGuest
 }
 
 // func legacyTokenBuilder(uid int32, password string) string {

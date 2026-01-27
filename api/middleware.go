@@ -14,6 +14,22 @@ import (
 	"golang.org/x/time/rate"
 )
 
+func ParsePath(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		path := c.Path()
+		method := c.Request().Method
+		log.Println(method, path, c.Request().URL.Path, c.QueryString())
+
+		if share.EnableFrontend && strings.HasPrefix(path, "/api/") {
+			path = strings.TrimPrefix(path, "/api")
+		}
+
+		c.Set("path", path)
+
+		return next(c)
+	}
+}
+
 func SetHeaders(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		if !share.EnableFrontend {
@@ -33,21 +49,8 @@ func SetHeaders(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-func PreCheck(next echo.HandlerFunc) echo.HandlerFunc {
+func AuthCheck(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		c.Set("start_date", _function.Now.UnixNano())
-		method := c.Request().Method
-		path := c.Path()
-		log.Println(method, path, c.Request().URL.Path, c.QueryString())
-
-		if PreCheckWhiteListExists(path) {
-			return next(c)
-		}
-
-		if share.EnableFrontend && strings.HasPrefix(path, "/api/") {
-			path = strings.TrimPrefix(path, "/api")
-		}
-
 		authorization := ""
 		authSource := "header"
 		if share.EnableFrontend {
@@ -65,7 +68,7 @@ func PreCheck(next echo.HandlerFunc) echo.HandlerFunc {
 		uid, role := verifyAuthorization(authorization)
 
 		// login
-		if uid == "0" {
+		if uid == _function.GuestUID || role == _function.RoleGuest {
 			if authSource == "cookie" {
 				c.SetCookie(&http.Cookie{
 					Name:     "tc_auth",
@@ -80,15 +83,14 @@ func PreCheck(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		// deleted
-		if role == "deleted" {
+		/// why this check here?
+		if role == _function.RoleDeleted {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "账号已删除", _function.EchoEmptyObject, "tbsign"))
 		}
 
-		// TODO banned
-		if role == "banned" {
-			if !(path == "/passport" || strings.HasPrefix(path, "/passport/") || path == "/notifications") {
-				return c.JSON(http.StatusOK, _function.ApiTemplate(403, "受限账号", _function.EchoEmptyObject, "tbsign"))
-			}
+		// banned
+		if role == _function.RoleBanned {
+			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "受限账号", _function.EchoEmptyObject, "tbsign"))
 		}
 
 		c.Set("uid", uid)
@@ -101,7 +103,7 @@ func PreCheck(next echo.HandlerFunc) echo.HandlerFunc {
 func AdminCheck(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// admin
-		if role, ok := c.Get("role").(string); !ok || role != "admin" {
+		if role, ok := c.Get("role").(string); !ok || role != _function.RoleAdmin {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效用户组", _function.EchoEmptyObject, "tbsign"))
 		}
 		return next(c)
@@ -110,13 +112,7 @@ func AdminCheck(next echo.HandlerFunc) echo.HandlerFunc {
 
 func PluginPathPrecheck(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		path := c.Path()
-
-		if share.EnableFrontend && strings.HasPrefix(path, "/api/") {
-			path = strings.TrimPrefix(path, "/api/plugins/")
-		} else {
-			path = strings.TrimPrefix(path, "/plugins/")
-		}
+		path := strings.TrimPrefix(c.Get("path").(string), "/plugins/")
 
 		pluginName := strings.SplitN(path, "/", 2)[0]
 
@@ -130,11 +126,11 @@ func PluginPathPrecheck(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-func RateLimit(_rate int, expiersIn time.Duration) echo.MiddlewareFunc {
+func RateLimit(_rate int, expiresIn time.Duration) echo.MiddlewareFunc {
 	config := middleware.RateLimiterConfig{
 		Skipper: middleware.DefaultSkipper,
 		Store: middleware.NewRateLimiterMemoryStoreWithConfig(
-			middleware.RateLimiterMemoryStoreConfig{Rate: rate.Limit(_rate), Burst: 0, ExpiresIn: expiersIn},
+			middleware.RateLimiterMemoryStoreConfig{Rate: rate.Limit(_rate), Burst: 0, ExpiresIn: expiresIn},
 		),
 		IdentifierExtractor: func(ctx echo.Context) (string, error) {
 			id := ctx.RealIP()
