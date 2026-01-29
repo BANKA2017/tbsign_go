@@ -97,6 +97,10 @@ func main() {
 		share.DBTLSOption = "prefer" // default value
 	}
 
+	if share.DBPath == "" && share.DBEndpoint == "" {
+		log.Fatal("ERROR: 无效数据库")
+	}
+
 	if !share.EnableApi && share.EnableFrontend {
 		log.Fatal("ERROR: 不允许关闭 api 的同时又启用前端!!!")
 	}

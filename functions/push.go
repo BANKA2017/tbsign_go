@@ -48,13 +48,19 @@ func SendMessage(_type string, uid int32, _subject, _body string) error {
 
 	switch _type {
 	case "ntfy":
-		ntfyTopic := GetUserOption("go_ntfy_topic", strconv.Itoa(int(uid)), share.DataEncryptKeyByte)
+		ntfyTopic := GetUserOption("go_ntfy_topic", strconv.Itoa(int(uid)), OptionExt{
+			EncryptKey: &share.DataEncryptKeyByte,
+		})
 		return SendNtfy(ntfyTopic, _subject, _body)
 	case "bark":
-		barkKey := GetUserOption("go_bark_key", strconv.Itoa(int(uid)), share.DataEncryptKeyByte)
+		barkKey := GetUserOption("go_bark_key", strconv.Itoa(int(uid)), OptionExt{
+			EncryptKey: &share.DataEncryptKeyByte,
+		})
 		return SendBark(barkKey, _subject, _body)
 	case "pushdeer":
-		barkKey := GetUserOption("go_pushdeer_key", strconv.Itoa(int(uid)), share.DataEncryptKeyByte)
+		barkKey := GetUserOption("go_pushdeer_key", strconv.Itoa(int(uid)), OptionExt{
+			EncryptKey: &share.DataEncryptKeyByte,
+		})
 		return SendPushdeer(barkKey, _subject, _body)
 	default:
 		accountInfo := new(model.TcUser)

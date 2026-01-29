@@ -149,7 +149,7 @@ func AddTiebaAccount(c echo.Context) error {
 	stoken := strings.TrimSpace(c.FormValue("stoken"))
 
 	if bduss == "" || stoken == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(401, "BDUSS 或 Stoken 无效", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "BDUSS 或 Stoken 无效", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// get tieba account info

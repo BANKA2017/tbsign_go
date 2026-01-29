@@ -5,8 +5,7 @@ WORKDIR /app/tbsign
 ARG TARGETARCH
 COPY tbsign_go.musl.${TARGETARCH}.docker/tbsign_go /app/tbsign/
 
-RUN echo -e "#!/bin/sh\nsh -c /app/tbsign/tbsign_go" > /app/tbsign/run.sh &&\
-    chmod +x /app/tbsign/tbsign_go /app/tbsign/run.sh &&\
+RUN chmod +x /app/tbsign/tbsign_go /app/tbsign/run.sh &&\
     mkdir /app/tbsign/db
 
 FROM alpine:3
@@ -17,6 +16,6 @@ ENV tc_db_path="/app/tbsign/db/tbsign_go.db" \
     tc_fe="true" \
     tc_address=":1323"
 
-ENTRYPOINT ["/app/tbsign/run.sh"]
+ENTRYPOINT ["/app/tbsign/tbsign_go"]
 
 EXPOSE 1323

@@ -252,6 +252,8 @@ SQLite 驱动使用 [gitlab.com:cznic/sqlite](https://gitlab.com/cznic/sqlite) (
 
 > go-sqlite3 is cgo package. If you want to build your app using go-sqlite3, you need gcc. However, after you have built and installed go-sqlite3 with `go install github.com/mattn/go-sqlite3` (which requires gcc), you can build your app without relying on gcc in future.
 
+#### musl-gcc
+
 如有静态编译的需求（如下文的 Docker 使用 Alpine 默认不使用 glibc），可以使用 `musl-gcc`，参考命令
 
 ```bash
@@ -266,6 +268,8 @@ docker run --rm -v $(pwd):/app/tbsign -e EXTERNAL_LDFLAGS="-linkmode external -e
 # not a dynamic executable
 ```
 
+#### zig
+
 用 [zig](https://ziglang.org/download/) 也不错
 
 ```bash
@@ -275,12 +279,23 @@ CC="zig cc -target x86_64-linux-musl" GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go b
 CC="zig cc -target x86_64-windows-gnu -O2" GOOS=windows GOARCH=amd64 CGO_ENABLED=1 go build -tags netgo -ldflags "-linkmode external"
 ```
 
+#### xgo
+
 或者使用 [xgo](https://github.com/techknowlogick/xgo)
 
 ```bash
 # go install src.techknowlogick.com/xgo@v1.8.1-0.20250401170454-4b368d8a5afa
 # docker pull ghcr.io/techknowlogick/xgo:go-1.25.6
 CGO_ENABLED=1 $HOME/go/bin/xgo -go go-1.25.6 -tags netgo --targets=windows/amd64,darwin/amd64,darwin/arm64 ./
+```
+
+#### glibc
+
+任何时候都不建议静态编译 glibc，应该找个带旧版本 glibc 的系统来编译，可用版本参考 [pypa/manylinux](https://github.com/pypa/manylinux)，不建议做交叉编译
+
+```bash
+# 这里做静态编译
+GOOS=linux GOARCH=arm64 CGO_LDFLAGS="-static" CGO_ENABLED=1 go build -ldflags "-linkmode external -extldflags -static" -tags "netgo sqlite_omit_load_extension osusergo"
 ```
 
 ### build.sh

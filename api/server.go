@@ -106,12 +106,6 @@ func ShutdownSystem(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{}, "tbsign"))
 }
 
-func HookAddCronTime(c echo.Context) error {
-	share.CrontabBypassTimes.Add(1)
-
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{}, "tbsign"))
-}
-
 func GetPluginsList(c echo.Context) error {
 	isAdmin := c.Get("role").(string) == _function.RoleAdmin
 	var resPluginList = make(map[string]*PluginListContent, len(_plugin.PluginList))

@@ -168,7 +168,7 @@ func Login(c echo.Context) error {
 	password := strings.TrimSpace(c.FormValue("password"))
 
 	if account == "" || password == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(401, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// check
@@ -176,7 +176,7 @@ func Login(c echo.Context) error {
 	_function.GormDB.R.Where("name = ? OR email = ?", account, account).Limit(1).Find(&accountInfo)
 
 	if len(accountInfo) == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(401, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	dbPwd := accountInfo[0].Pw
@@ -187,10 +187,10 @@ func Login(c echo.Context) error {
 	if err != nil && _function.GetOption("go_ver") != "1" {
 		// Compatible with older versions -> md5(md5(md5($pwd)))
 		if _function.Md5(_function.Md5(_function.Md5(password))) != dbPwd {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(401, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusOK, _function.ApiTemplate(400, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
 		}
 	} else if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(401, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	switch accountInfo[0].Role {
@@ -322,19 +322,31 @@ func UpdateAccountInfo(c echo.Context) error {
 	}
 
 	// push
-	localPushNtfyTopic := _function.GetUserOption("go_ntfy_topic", uid, share.DataEncryptKeyByte)
+	localPushNtfyTopic := _function.GetUserOption("go_ntfy_topic", uid, _function.OptionExt{
+		EncryptKey: &share.DataEncryptKeyByte,
+	})
 	if localPushNtfyTopic != ntfyTopic {
-		_function.SetUserOption("go_ntfy_topic", ntfyTopic, uid, nil, share.DataEncryptKeyByte)
+		_function.SetUserOption("go_ntfy_topic", ntfyTopic, uid, _function.OptionExt{
+			EncryptKey: &share.DataEncryptKeyByte,
+		})
 		localPushNtfyTopic = ntfyTopic
 	}
-	localPushBarkKey := _function.GetUserOption("go_bark_key", uid, share.DataEncryptKeyByte)
+	localPushBarkKey := _function.GetUserOption("go_bark_key", uid, _function.OptionExt{
+		EncryptKey: &share.DataEncryptKeyByte,
+	})
 	if localPushBarkKey != barkKey {
-		_function.SetUserOption("go_bark_key", barkKey, uid, nil, share.DataEncryptKeyByte)
+		_function.SetUserOption("go_bark_key", barkKey, uid, _function.OptionExt{
+			EncryptKey: &share.DataEncryptKeyByte,
+		})
 		localPushBarkKey = barkKey
 	}
-	localPushPushdeerKey := _function.GetUserOption("go_pushdeer_key", uid, share.DataEncryptKeyByte)
+	localPushPushdeerKey := _function.GetUserOption("go_pushdeer_key", uid, _function.OptionExt{
+		EncryptKey: &share.DataEncryptKeyByte,
+	})
 	if localPushPushdeerKey != pushdeerKey {
-		_function.SetUserOption("go_pushdeer_key", pushdeerKey, uid, nil, share.DataEncryptKeyByte)
+		_function.SetUserOption("go_pushdeer_key", pushdeerKey, uid, _function.OptionExt{
+			EncryptKey: &share.DataEncryptKeyByte,
+		})
 		localPushPushdeerKey = pushdeerKey
 	}
 	localPushType := _function.GetUserOption("go_message_type", uid)
@@ -397,7 +409,7 @@ func UpdatePassword(c echo.Context) error {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "旧密码错误", _function.EchoEmptyObject, "tbsign"))
 		}
 	} else if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(401, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// create new password
@@ -456,9 +468,15 @@ func GetAccountInfo(c echo.Context) error {
 			Avatar: _function.GetGravatarLink(accountInfo[0].Email),
 			Role:   accountInfo[0].Role,
 
-			NtfyTopic:   _function.GetUserOption("go_ntfy_topic", uid, share.DataEncryptKeyByte),
-			BarkKey:     _function.GetUserOption("go_bark_key", uid, share.DataEncryptKeyByte),
-			PushDeerKey: _function.GetUserOption("go_pushdeer_key", uid, share.DataEncryptKeyByte),
+			NtfyTopic: _function.GetUserOption("go_ntfy_topic", uid, _function.OptionExt{
+				EncryptKey: &share.DataEncryptKeyByte,
+			}),
+			BarkKey: _function.GetUserOption("go_bark_key", uid, _function.OptionExt{
+				EncryptKey: &share.DataEncryptKeyByte,
+			}),
+			PushDeerKey: _function.GetUserOption("go_pushdeer_key", uid, _function.OptionExt{
+				EncryptKey: &share.DataEncryptKeyByte,
+			}),
 
 			PushType:    _function.GetUserOption("go_message_type", uid),
 			DailyReport: _function.GetUserOption("go_daily_report", uid),

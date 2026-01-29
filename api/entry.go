@@ -44,7 +44,7 @@ func Api(address string) {
 		apiPrefix = "/api"
 	}
 
-	// endpoints need't check
+	// endpoints needn't check
 	noCheckApi := e.Group(apiPrefix, SetHeaders)
 	noCheckApi.POST("/passport/login", Login)
 	noCheckApi.POST("/passport/signup", Signup)

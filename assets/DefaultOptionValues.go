@@ -43,5 +43,7 @@ var DefaultOptions = map[string]string{
 	"go_re_check_in_max_interval": "1",
 	"go_daily_report_hour":        "-1",
 
-	"go_plugin_batch_tasks": "0",
+	// should be edited in future versions
+	"go_plugin_batch_tasks":              "0",
+	"go_create_user_option_if_not_exist": "1",
 }

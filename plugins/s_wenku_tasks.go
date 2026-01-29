@@ -661,7 +661,9 @@ func (pluginInfo *WenkuTasksPluginType) RemoveAccount(_type string, id int32, tx
 			vipMatrixSet.Init()
 			vipMatrixSet.Import(_function.GetUserOption("kd_wenku_tasks_vip_matrix_id_set", uid), uid)
 			vipMatrixSet.DelID(int32(task.ID))
-			err = _function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", vipMatrixSet.Export(uid), uid, tx)
+			err = _function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", vipMatrixSet.Export(uid), uid, _function.OptionExt{
+				Tx: tx,
+			})
 			if err != nil {
 				return err
 			}
@@ -669,7 +671,9 @@ func (pluginInfo *WenkuTasksPluginType) RemoveAccount(_type string, id int32, tx
 	case "uid":
 		uid := strconv.Itoa(int(id))
 		if !slices.Contains([]string{"", "0"}, _function.GetUserOption("kd_wenku_tasks_vip_matrix", uid)) {
-			err = _function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", "|", uid, tx)
+			err = _function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", "|", uid, _function.OptionExt{
+				Tx: tx,
+			})
 			if err != nil {
 				return err
 			}

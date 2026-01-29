@@ -478,10 +478,14 @@ func PluginRenewManagerUpdateSettings(c echo.Context) error {
 	}
 
 	err := _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
-		if err := _function.SetUserOption("kd_renew_manager_alert", reportStatus, uid, tx); err != nil {
+		if err := _function.SetUserOption("kd_renew_manager_alert", reportStatus, uid, _function.OptionExt{
+			Tx: tx,
+		}); err != nil {
 			return err
 		}
-		if err := _function.SetUserOption("kd_renew_manager_interval", int(interval), uid, tx); err != nil {
+		if err := _function.SetUserOption("kd_renew_manager_interval", int(interval), uid, _function.OptionExt{
+			Tx: tx,
+		}); err != nil {
 			return err
 		}
 		return nil
