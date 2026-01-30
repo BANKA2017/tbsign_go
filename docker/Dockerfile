@@ -5,7 +5,7 @@ WORKDIR /app/tbsign
 ARG TARGETARCH
 COPY tbsign_go.musl.${TARGETARCH}.docker/tbsign_go /app/tbsign/
 
-RUN chmod +x /app/tbsign/tbsign_go /app/tbsign/run.sh &&\
+RUN chmod +x /app/tbsign/tbsign_go &&\
     mkdir /app/tbsign/db
 
 FROM alpine:3
