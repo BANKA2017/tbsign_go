@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/BANKA2017/tbsign_go/model"
-	_type "github.com/BANKA2017/tbsign_go/types"
 	"golang.org/x/exp/slices"
 	"golang.org/x/sync/singleflight"
 )
@@ -32,7 +31,7 @@ func ScanTiebaByPid(pid int32) {
 
 		var pn int64 = 1
 
-		wholeTiebaFidList := []int32{}
+		var wholeTiebaFidList []int32
 
 		for {
 			//log.Println(pid, pn)
@@ -45,7 +44,7 @@ func ScanTiebaByPid(pid int32) {
 			if response.ErrorCode != 0 || len(response.LikeForum) == 0 {
 				break
 			}
-			var tiebaList = []*_type.TcTieba{}
+			var tiebaList []*model.TcTieba
 			for _, tiebaInfo := range response.LikeForum {
 				if tiebaInfo.ForumID == 0 || tiebaInfo.IsForbidden == 1 {
 					continue
@@ -63,16 +62,14 @@ func ScanTiebaByPid(pid int32) {
 					latest = Now.Day()
 				}
 
-				tmpTcTieba := &_type.TcTieba{
-					TcTieba: model.TcTieba{
-						Pid:    pid,
-						Fid:    int32(tiebaInfo.ForumID),
-						UID:    account.UID,
-						Latest: int32(latest),
-					},
-					Tieba:     VPtr(tiebaInfo.ForumName),
-					Status:    VPtr(int32(0)),
-					LastError: VPtr(""),
+				tmpTcTieba := &model.TcTieba{
+					Pid:       pid,
+					Fid:       int32(tiebaInfo.ForumID),
+					UID:       account.UID,
+					Latest:    int32(latest),
+					Tieba:     tiebaInfo.ForumName,
+					Status:    0,
+					LastError: "",
 				}
 
 				if !slices.Contains(localTiebaFidList, tiebaInfo.ForumID) {
@@ -99,7 +96,7 @@ func ScanTiebaByPid(pid int32) {
 		}
 
 		if (GetOption("go_forum_sync_policy") == "add_delete" || GetOption("go_forum_sync_policy") == "delete_only") && len(wholeTiebaFidList) != len(localTiebaFidList) {
-			delList := []int32{}
+			var delList []int32
 			for _, v := range localTiebaList {
 				if !slices.Contains(wholeTiebaFidList, v.Fid) && v.Fid != 0 {
 					delList = append(delList, v.ID)

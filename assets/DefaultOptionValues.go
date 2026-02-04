@@ -46,4 +46,6 @@ var DefaultOptions = map[string]string{
 	// should be edited in future versions
 	"go_plugin_batch_tasks":              "0",
 	"go_create_user_option_if_not_exist": "1",
+	"go_next_upgrade_func":               "0",
+	"go_allow_downgrade":                 "0",
 }

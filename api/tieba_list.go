@@ -7,7 +7,6 @@ import (
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
-	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
@@ -42,17 +41,15 @@ func AddTieba(c echo.Context) error {
 	}
 
 	// TOO STUPID!
-	newTieba := _type.TcTieba{
-		TcTieba: model.TcTieba{
-			UID:    int32(numUID),
-			Pid:    int32(numPid),
-			Fid:    int32(fid),
-			No:     0,
-			Latest: 0,
-		},
-		Tieba:     _function.VPtr(fname),
-		Status:    _function.VPtr(int32(0)),
-		LastError: _function.VPtr(""),
+	newTieba := model.TcTieba{
+		UID:       int32(numUID),
+		Pid:       int32(numPid),
+		Fid:       int32(fid),
+		No:        0,
+		Latest:    0,
+		Tieba:     fname,
+		Status:    0,
+		LastError: "",
 	}
 
 	_function.GormDB.W.Create(&newTieba)

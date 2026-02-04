@@ -89,7 +89,13 @@ func GetServerStatus(c echo.Context) error {
 
 func UpgradeSystem(c echo.Context) error {
 	version := c.FormValue("version")
-	err := _function.Upgrade(strings.TrimSpace(version))
+	var err error
+
+	if _function.GetOption("go_next_upgrade_func") == "1" {
+		err = _function.Upgrade2("tbsign_go." + strings.TrimSpace(version))
+	} else {
+		err = _function.Upgrade(strings.TrimSpace(version))
+	}
 
 	if err != nil {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
