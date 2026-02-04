@@ -29,6 +29,9 @@ func GetUserByUsernameOrPortrait(c echo.Context) error {
 	if err != nil {
 		log.Println(err)
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyObject, "tbsign"))
+	} else if response.No == 1130025 {
+		log.Println(response)
+		return c.JSON(http.StatusOK, _function.ApiTemplate(response.No, response.Error, _function.EchoEmptyObject, "tbsign"))
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", response, "tbsign"))

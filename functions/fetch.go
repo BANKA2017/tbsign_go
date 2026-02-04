@@ -537,6 +537,8 @@ func GetUserInfoByTiebaUID(tbuid string) (*tbpb.GetUserByTiebaUidResIdl_DataRes,
 	return res.GetData(), nil
 }
 
+var phpArrayDataInObjectResponse = []byte(",\"data\":[]}")
+
 func GetUserInfoByUsernameOrPortrait(requestType string, value string) (*_type.TiebaPanelUserInfoResponse, error) {
 	query := "ie=utf-8"
 	if requestType == "portrait" && strings.HasPrefix(value, "tb.1.") {
@@ -551,6 +553,11 @@ func GetUserInfoByUsernameOrPortrait(requestType string, value string) (*_type.T
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	// {"no":1130025,"error":"\u83b7\u53d6\u7528\u6237\u4fe1\u606f\u5931\u8d25","data":[]}
+	if bytes.HasSuffix(resp, phpArrayDataInObjectResponse) {
+		resp = bytes.ReplaceAll(resp, phpArrayDataInObjectResponse, []byte(",\"data\":{}}"))
 	}
 
 	var res _type.TiebaPanelUserInfoResponse
