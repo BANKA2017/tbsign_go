@@ -1,8 +1,19 @@
 package share
 
-import "time"
+import (
+	"runtime"
+	"time"
+)
 
 func init() {
+	if MockReleasedVersion && BuildPublishType == "source" {
+		BuiltAt = time.Now().Format(time.RFC3339)
+		BuildRuntime = runtime.GOOS + "/" + runtime.GOARCH
+		BuildGitCommitHash = "be27116224bfea617de0c7f1f00d6dff0afd5d62"
+		BuildEmbeddedFrontendGitCommitHash = "0dc1f57e3495e21803152460588e1fd010dcf5c0"
+		BuildPublishType = "binary"
+	}
+
 	t, err := time.Parse(time.RFC3339, BuiltAt)
 	if err != nil {
 		BuildAtTime = time.Now()
