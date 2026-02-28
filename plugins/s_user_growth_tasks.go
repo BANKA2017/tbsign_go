@@ -117,7 +117,10 @@ type UserGrowthTasksListResponse struct {
 			IsTiebaVip bool   `json:"is_tieba_vip,omitempty"`
 		} `json:"user,omitempty"`
 		LevelInfo []LevelInfo `json:"level_info,omitempty"`
-		TabList   []struct {
+		Tmoney    struct {
+			Current int `json:"current,omitempty"`
+		} `json:"tmoney,omitempty"`
+		TabList []struct {
 			TabName      string `json:"tab_name,omitempty"`
 			Name         string `json:"name,omitempty"`
 			Text         string `json:"text,omitempty"`
