@@ -1,4 +1,4 @@
-FROM alpine:3 AS build
+FROM busybox:1.37-uclibc AS build
 
 WORKDIR /app/tbsign
 
@@ -8,7 +8,8 @@ COPY docker/tbsign_go.linux-${TARGETARCH} /app/tbsign/tbsign_go
 RUN chmod +x /app/tbsign/tbsign_go &&\
     mkdir /app/tbsign/db
 
-FROM alpine:3
+FROM busybox:1.37-uclibc
+
 COPY --from=build /app/tbsign/ /app/tbsign/
 
 ENV tc_db_path="/app/tbsign/db/tbsign_go.db" \
