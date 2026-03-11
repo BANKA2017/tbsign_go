@@ -17,6 +17,7 @@ services:
     ## 使用 SQLite 时建议取消注释，便于备份数据库
     # volumes:
     #   - /path/to/db/file:/app/tbsign/db  # 将 `/path/to/db/file` 改成数据库所在的目录（不含文件名）
+    #   - tc_db:/app/tbsign/db             # 跟上一行二选一，启用本行需要取消文件末尾 volumes 相关配置的注释
 
     ports:
       - "8080:1323"                     # 宿主机端口:容器内端口，根据实际情况修改
@@ -26,3 +27,5 @@ services:
       options:
         max-size: 11m                 # 根据实际情况填写，max-size * max-file = 最大占用空间
         max-file: "20"                # 根据实际情况填写，max-size * max-file = 最大占用空间
+# volumes:
+#   tc_db:

@@ -1,6 +1,7 @@
 package share
 
 import (
+	"os"
 	"runtime"
 	"time"
 )
@@ -19,6 +20,11 @@ func init() {
 		BuildAtTime = time.Now()
 	} else {
 		BuildAtTime = t
+	}
+
+	// docker
+	if _, err := os.Stat("/.dockerenv"); err == nil && os.Getenv("tc_docker_mode") == "true" {
+		BuildPublishType = "docker"
 	}
 }
 

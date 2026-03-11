@@ -211,18 +211,12 @@ jobs:
           ldflags="$ldflags -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime' \
           -linkmode external -extldflags -static"
           CC=${{ matrix.arch.compiler }} go build -o "${{ env.build_prefix }}.linux-${{ matrix.arch.name }}" -ldflags "$ldflags -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=binary'" -tags netgo
-          CC=${{ matrix.arch.compiler }} go build -o "tbsign_go" -ldflags "$ldflags -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=docker'" -tags netgo
 
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
           name: "tbsign_go.musl.${{ matrix.arch.name }}.binary"
           path: ${{ env.build_prefix }}.linux-${{ matrix.arch.name }}
-      - name: Upload package
-        uses: actions/upload-artifact@v4
-        with:
-          name: "tbsign_go.musl.${{ matrix.arch.name }}.docker"
-          path: tbsign_go
 
   build-darwin-binary:
     name: Build Binary for MacOS
@@ -310,13 +304,21 @@ jobs:
 
     needs:
       - build-linux-binary
+    env:
+      build_prefix: ${{ needs.build-frontend.outputs.build_prefix }}
     steps:
       - name: Checkout
         uses: actions/checkout@master
 
       - uses: actions/download-artifact@v4
         with:
-          pattern: tbsign_go.musl.*.docker
+          pattern: tbsign_go.musl.*.binary
+          path: docker
+          merge-multiple: true
+      - name: Rename
+        run: |
+          mv docker/${build_prefix}.linux-arm64 docker/tbsign_go.linux-arm64
+          mv docker/${build_prefix}.linux-amd64 docker/tbsign_go.linux-amd64
 
       # - name: Set Date Tag
       #   run: echo "DATE_TAG=$(date +'%Y%m%d')" >> "$GITHUB_ENV"
