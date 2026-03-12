@@ -3,11 +3,12 @@ package _api
 import (
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
@@ -295,7 +296,7 @@ func AdminResetTiebaList(c echo.Context) error {
 			err = _function.GormDB.W.Model(&model.TcTieba{}).Where("uid = ?", targetUID).Update("latest", 0).Error
 		}
 		if err != nil {
-			log.Println(err)
+			slog.Error("admin.reset.tieba-list.find", "error", err)
 		}
 
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", err == nil, "tbsign"))
@@ -429,12 +430,12 @@ func GetAccountsList(c echo.Context) error {
 	}
 	numPage, err := strconv.ParseInt(page, 10, 64)
 	if err != nil || numPage <= 0 {
-		log.Println(err, page)
+		slog.Debug("admin.account.list", "page", page, "error", err)
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "Invalid page", respAccountInfo, "tbsign"))
 	}
 	numCount, err := strconv.ParseInt(count, 10, 64)
 	if err != nil || numCount <= 0 {
-		log.Println(err, count)
+		slog.Debug("admin.account.list", "count", count, "error", err)
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "Invalid count", respAccountInfo, "tbsign"))
 	}
 
@@ -449,7 +450,7 @@ func GetAccountsList(c echo.Context) error {
 		Select("uid, COUNT(*) AS pid_count").
 		Group("uid")
 
-	today := strconv.Itoa(_function.Now.Day())
+	today := strconv.Itoa(time.Now().Day())
 	forumCountQuery := _function.GormDB.R.Model(&model.TcTieba{}).
 		Select("uid, COUNT(*) AS forum_count, SUM(CASE WHEN (no = 0) AND status = 0 AND latest = ? THEN 1 ELSE 0 END) AS success, SUM(CASE WHEN (no = 0) AND status <> 0 AND latest = ? THEN 1 ELSE 0 END) AS failed, SUM(CASE WHEN (no = 0) AND latest <> ? THEN 1 ELSE 0 END) AS waiting, SUM(CASE WHEN no <> 0 THEN 1 ELSE 0 END) AS is_ignore", today, today, today).
 		Group("uid")

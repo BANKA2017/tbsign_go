@@ -1,7 +1,7 @@
 package _api
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
@@ -14,7 +14,7 @@ func GetUserByTiebaUID(c echo.Context) error {
 	response, err := _function.GetUserInfoByTiebaUID(tiebauid)
 
 	if err != nil {
-		log.Println(err)
+		slog.Debug("tool.user-tieba-uid", "error", err)
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
@@ -27,10 +27,10 @@ func GetUserByUsernameOrPortrait(c echo.Context) error {
 
 	response, err := _function.GetUserInfoByUsernameOrPortrait(queryType, userValue)
 	if err != nil {
-		log.Println(err)
+		slog.Debug("tool.user-username-portrait", "error", err)
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyObject, "tbsign"))
 	} else if response.No == 1130025 {
-		log.Println(response)
+		slog.Debug("tool.user-username-portrait-user-deleted", "response", response)
 		return c.JSON(http.StatusOK, _function.ApiTemplate(response.No, response.Error, _function.EchoEmptyObject, "tbsign"))
 	}
 

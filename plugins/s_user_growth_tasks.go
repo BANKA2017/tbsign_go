@@ -3,7 +3,7 @@ package _plugin
 import (
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -348,8 +348,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 		if accountStatusList[taskUserItem.UID] != "0" {
 			tasksResponse, err := GetUserGrowthTasksList(cookie)
 			if err != nil {
-				log.Println(err)
-				log.Println("user_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "Unable to fetch tasks list")
+				slog.Error("plugin.user-growth-tasks.get-list", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", err)
 				continue
 			}
 
@@ -443,7 +442,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 					Status:  1,
 					Msg:     "success",
 				})
-			} else if task.SortStatus == 1 && (task.ExpireTime == 0 || task.ExpireTime > int(_function.Now.Unix())) {
+			} else if task.SortStatus == 1 && (task.ExpireTime == 0 || task.ExpireTime > int(time.Now().Unix())) {
 				response, err := PostGrowthTaskByWeb(cookie, task.ActType)
 				if err != nil {
 					result = append(result, UserGrowthTaskToSave{
@@ -494,15 +493,15 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 
 		if len(result) > 0 {
 			jsonResult, _ := _function.JsonEncode(result)
-			tmpLog := ""
+			var tmpLog strings.Builder
 			for i, r := range result {
 				if i > 0 {
-					tmpLog += ","
+					tmpLog.WriteString(",")
 				}
-				tmpLog += r.ActType + ":" + strconv.Itoa(r.Status)
+				tmpLog.WriteString(r.ActType + ":" + strconv.Itoa(r.Status))
 			}
 
-			log.Println("user_tasks:", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, string(jsonResult))
+			slog.Debug("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "result", string(jsonResult))
 
 			// previous logs
 			previousLogs := []string{}
@@ -516,8 +515,8 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 
 			_function.GormDB.W.Model(&model.TcKdGrowth{}).Where("id = ?", taskUserItem.ID).Updates(model.TcKdGrowth{
 				Status: string(jsonResult),
-				Log:    fmt.Sprintf("%s: %s<br/>%s", _function.Now.Format(time.DateOnly), tmpLog, strings.Join(previousLogs, "<br/>")),
-				Date:   int32(_function.Now.Unix()),
+				Log:    fmt.Sprintf("%s: %s<br/>%s", time.Now().Format(time.DateOnly), tmpLog.String(), strings.Join(previousLogs, "<br/>")),
+				Date:   int32(time.Now().Unix()),
 			})
 		}
 
@@ -610,7 +609,7 @@ func PluginGrowthTasksGetSettings(c echo.Context) error {
 	} else {
 		err := _function.JsonDecode([]byte(extTasks), &extTasksMap)
 		if err != nil {
-			log.Println("ext tasks/read decode error: ", err)
+			slog.Error("plugin.user-growth-tasks.settings.ext-tasks.read", "error", err)
 			extTasks = "{}"
 			_function.SetUserOption("kd_growth_ext_tasks", extTasks, uid)
 			extTasksMap = map[string]string{}
@@ -641,7 +640,7 @@ func PluginGrowthTasksSetSettings(c echo.Context) error {
 	if extTasks != "" {
 		err := _function.JsonDecode([]byte(extTasks), &extTasksMap)
 		if err != nil {
-			log.Println("ext tasks/write decode error: ", err)
+			slog.Error("plugin.user-growth-tasks.settings.ext-tasks.write", "error", err)
 			extTasks = "{}"
 		}
 	} else {

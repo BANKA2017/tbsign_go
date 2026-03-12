@@ -3,7 +3,7 @@ package _plugin
 import (
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -73,7 +73,7 @@ func (pluginInfo *RenewManagerType) Action() {
 	if err != nil {
 		id = 0
 	}
-	now := _function.Now
+	now := time.Now()
 	otime := now.Add(time.Hour * -24).Unix()
 
 	limit := _function.GetOption("kd_renew_manager_action_limit")
@@ -111,11 +111,11 @@ func (pluginInfo *RenewManagerType) Action() {
 		var extInterval int32 = 0
 		res2, err := _function.GetManagerTasks(_function.GetCookie(renewItem.Pid), int64(renewItem.Fid))
 		if err != nil {
-			log.Println("renew_manager (sync_tasks):", err)
+			slog.Error("renew_manager.action.sync_tasks", "error", err)
 			tmpLog = append(tmpLog, "sync: failed")
 		} else {
 			if res2.No != 0 {
-				log.Println("renew_manager (sync):", res2.ErrCode, res2.Error)
+				slog.Error("renew_manager.action.sync_tasks", "code", res2.ErrCode, "error", res2.Error)
 				tmpLog = append(tmpLog, fmt.Sprintf("sync: %d#%s", res2.ErrCode, res2.Error))
 			} else {
 				tmpLog = append(tmpLog, "sync: done")
@@ -141,12 +141,12 @@ func (pluginInfo *RenewManagerType) Action() {
 			res, err := PluginRenewManagerCancelTop(_function.GetCookie(renewItem.Pid), renewItem.Fname, renewItem.Tid)
 
 			if err != nil {
-				log.Println("renew_manager (cancel_top):", res, err)
+				slog.Error("renew_manager.action.cancel_top", "response", res, "error", err)
 				renewItem.Status = "failed"
 				tmpLog = append(tmpLog, "cacnel_top: failed")
 			} else {
 				if res.No != 0 {
-					log.Println("renew_manager (cancel_top):", res.ErrCode, res.Error)
+					slog.Error("renew_manager.action.cancel_top", "code", res.ErrCode, "error", res.Error)
 					renewItem.Status = "failed"
 					tmpLog = append(tmpLog, fmt.Sprintf("cacnel_top: %d#%s", res.ErrCode, res.Error))
 				} else {
@@ -156,7 +156,7 @@ func (pluginInfo *RenewManagerType) Action() {
 			}
 
 			// new Date
-			renewItem.Date = int32(_function.Now.Unix())
+			renewItem.Date = int32(time.Now().Unix())
 		} else {
 			tmpLog = append(tmpLog, "cacnel_top: skip")
 
@@ -173,7 +173,7 @@ func (pluginInfo *RenewManagerType) Action() {
 				break
 			}
 		}
-		renewItem.Log = fmt.Sprintf("%s: %s<br />%s", _function.Now.Format(time.DateOnly), strings.Join(tmpLog, ", "), strings.Join(previousLogs, "<br />"))
+		renewItem.Log = fmt.Sprintf("%s: %s<br />%s", time.Now().Format(time.DateOnly), strings.Join(tmpLog, ", "), strings.Join(previousLogs, "<br />"))
 
 		_function.GormDB.W.Model(&model.TcKdRenewManager{}).Where("id = ?", renewItem.ID).Updates(renewItem)
 		if !batchMode {
@@ -330,7 +330,7 @@ func PluginRenewManagerCancelTop(cookie _type.TypeCookie, fname string, tid stri
 		return nil, err
 	}
 
-	// log.Println(string(res))
+	// slog.Debug("renew_manager.cancel_top", "response", string(res))
 
 	resp := new(PluginRenewManagerCancelTopResponse)
 
@@ -408,7 +408,7 @@ func PluginRenewManagerGetThreadInfo(cookie _type.TypeCookie, tid int64, fid int
 		return nil, err
 	}
 
-	// log.Println(string(res))
+	// slog.Debug("renew_manager.get_thread_info", "response", string(res))
 
 	resp := new(PluginRenewManagerGetThreadInfoResponse)
 
@@ -435,7 +435,7 @@ func PluginRenewManagerSwitch(c echo.Context) error {
 	err := _function.SetUserOption("kd_renew_manager_open", !status, uid)
 
 	if err != nil {
-		log.Println(err)
+		slog.Debug("plugin.renew-manager.switch", "uid", uid, "current_status", status, "error", err)
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法启用吧主考核功能", status, "tbsign"))
 	}
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", !status, "tbsign"))
@@ -492,7 +492,7 @@ func PluginRenewManagerUpdateSettings(c echo.Context) error {
 	})
 
 	if err != nil {
-		log.Println("renew_manager:", err)
+		slog.Error("plugin.renew-manager.update_settings", "uid", uid, "report_status", reportStatus, "action_interval", interval, "error", err)
 		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "设置保存失败", PluginRenewManagerUpdateSettingsResponseStruct{}, "tbsign"))
 	}
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", PluginRenewManagerUpdateSettingsResponseStruct{
@@ -640,7 +640,7 @@ func PluginRenewManagerPreCheckStatus(c echo.Context) error {
 	}
 	resp, err := _function.GetManagerTasks(_function.GetCookie(pidCheck[0].ID), fid)
 	if err != nil {
-		log.Println("renew_manager:", err)
+		slog.Error("plugin.renew-manager.pre_check_status", "uid", uid, "pid", pid, "fname", fname, "error", err)
 	}
 
 	if err != nil || resp.No != 0 {

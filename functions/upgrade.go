@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -99,7 +99,7 @@ func Upgrade(version string) error {
 	if err != nil {
 		return err
 	}
-	log.Println("更新将会替换掉当前运行文件:", execPath)
+	slog.Info("replace file", "path", execPath)
 	execDir := filepath.Dir(execPath)
 
 	// Path to the new version temporary file
@@ -146,7 +146,7 @@ func Upgrade(version string) error {
 		return err
 	}
 
-	log.Println(s.Size(), strings.TrimSpace(hashString), strings.TrimSpace(string(sha256Str)))
+	slog.Info("File info", "size", s.Size(), "calculated-sha256", strings.TrimSpace(hashString), "expected-sha256", strings.TrimSpace(string(sha256Str)))
 
 	if strings.TrimSpace(hashString) == strings.TrimSpace(string(sha256Str)) {
 		if _os != "windows" {
@@ -171,7 +171,7 @@ func Upgrade(version string) error {
 			}
 		}
 
-		fmt.Println("更新完成！")
+		slog.Info("更新完成")
 	} else {
 		os.Remove(tmpFile)
 		return errors.New("更新失败！sha256 记录不正确")
@@ -266,7 +266,7 @@ func Upgrade2(tagName string) error {
 	if err != nil {
 		return err
 	}
-	log.Println("更新将会替换掉当前运行文件:", execPath)
+	slog.Info("replace file", "path", execPath)
 	execDir := filepath.Dir(execPath)
 
 	// Path to the new tagName temporary file
@@ -306,7 +306,7 @@ func Upgrade2(tagName string) error {
 	hashString := hex.EncodeToString(hashBytes)
 	s, _ := file.Stat()
 
-	log.Println(s.Size(), strings.TrimSpace(hashString), fileSha256)
+	slog.Info("File info", "size", s.Size(), "calculated-sha256", strings.TrimSpace(hashString), "expected-sha256", fileSha256)
 
 	if strings.TrimSpace(hashString) == fileSha256 && s.Size() == int64(fileSize) {
 		if _os != "windows" {
@@ -331,7 +331,7 @@ func Upgrade2(tagName string) error {
 			}
 		}
 
-		fmt.Println("更新完成！")
+		slog.Info("更新完成")
 	} else {
 		os.Remove(tmpFile)
 		return errors.New("更新失败！sha256 记录或文件大小不正确")

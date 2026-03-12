@@ -3,7 +3,7 @@ package _plugin
 import (
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -695,7 +695,7 @@ func (pluginInfo *ForumSupportPluginInfoType) Action() {
 				}
 			}
 
-			log.Println("support:", forumSupportItem.Tieba, forumSupportItem.Name, message)
+			slog.Debug(message+" (plugin.forum-support.action)", "tieba", forumSupportItem.Tieba, "name", forumSupportItem.Name, "code", response.No, "error", response.Error, "pid", forumSupportItem.Pid)
 
 			// previous logs
 			previousLogs := []string{}
@@ -708,8 +708,8 @@ func (pluginInfo *ForumSupportPluginInfoType) Action() {
 			}
 
 			_function.GormDB.W.Model(&model.TcVer4RankLog{}).Where("id = ?", forumSupportItem.ID).Updates(model.TcVer4RankLog{
-				Log:  fmt.Sprintf("<br/>%s #%d,%s%s", _function.Now.Format(time.DateOnly), response.No, message, strings.Join(previousLogs, "<br/>")),
-				Date: int32(_function.Now.Unix()),
+				Log:  fmt.Sprintf("<br/>%s #%d,%s%s", time.Now().Format(time.DateOnly), response.No, message, strings.Join(previousLogs, "<br/>")),
+				Date: int32(time.Now().Unix()),
 			})
 
 			if !batchMode {
@@ -913,7 +913,7 @@ func PluginForumSupportSwitch(c echo.Context) error {
 	err := _function.SetUserOption("ver4_rank_check", !status, uid)
 
 	if err != nil {
-		log.Println(err)
+		slog.Debug("plugin.forum-support.switch", "uid", uid, "current_status", status, "error", err)
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法修改名人堂助攻插件状态", status, "tbsign"))
 	}
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", !status, "tbsign"))

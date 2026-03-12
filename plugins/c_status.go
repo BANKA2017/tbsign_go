@@ -2,7 +2,7 @@ package _plugin
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -44,11 +44,11 @@ func DailyReportAction() {
 
 	signHour, _ := strconv.ParseInt(_function.GetOption("sign_hour"), 10, 64)
 	if dailyReportHour < signHour {
-		// log.Println("daily-report: 不可在签到开始前生成报告")
+		// slog.Warn("不可在签到开始前生成报告 (core.daily-report)")
 		return
 	}
 
-	if _function.Now.Hour() < int(dailyReportHour) {
+	if time.Now().Hour() < int(dailyReportHour) {
 		// not work now
 		return
 	}
@@ -83,7 +83,7 @@ func DailyReportAction() {
 				// send
 				dailyStatus, err := GetForumCheckInStatus([]int32{data.UID})
 				if err != nil {
-					log.Println(err, data.UID)
+					slog.Error("core.daily-report.get-checkin-status", "uid", data.UID, "error", err)
 					continue
 				}
 				// check-in
@@ -106,11 +106,11 @@ func DailyReportAction() {
 
 				err = _function.SendMessage(data.GoMessageType, data.UID, messageObject.Title, messageObject.Body)
 				if err != nil {
-					log.Println(err, data.UID)
+					slog.Error("core.daily-report.send-message", "uid", data.UID, "error", err)
 				}
-				err = _function.SetUserOption("go_daily_report_status", int(_function.Now.Unix()), strconv.Itoa(int(data.UID)))
+				err = _function.SetUserOption("go_daily_report_status", int(time.Now().Unix()), strconv.Itoa(int(data.UID)))
 				if err != nil {
-					log.Println(err, data.UID)
+					slog.Error("core.daily-report.set-daily-report-status", "uid", data.UID, "error", err)
 				}
 			}
 		}
@@ -132,7 +132,7 @@ type AccountStatusStruct struct {
 func GetForumCheckInStatus(uid []int32) ([]*AccountStatusStruct, error) {
 	var Status []*AccountStatusStruct
 
-	today := strconv.Itoa(_function.Now.Day())
+	today := strconv.Itoa(time.Now().Day())
 
 	err := _function.GormDB.R.Select("tc_baiduid.id, tc_baiduid.name, tc_baiduid.portrait, tc_tieba.is_logout, tc_tieba.success, tc_tieba.failed, tc_tieba.waiting, tc_tieba.is_ignore").Table("(?) AS tc_baiduid", _function.GormDB.R.Model(&model.TcBaiduid{}).Select("id, uid, name, portrait")).Joins("INNER JOIN (?) AS tc_tieba ON tc_tieba.pid=tc_baiduid.id", _function.GormDB.R.Model(&model.TcTieba{}).Select(`pid, MAX(CASE WHEN no = 0 AND latest = ? AND status = 110000 THEN 1 ELSE 0 END) AS is_logout, SUM(CASE WHEN (no = 0) AND status = 0 AND latest = ? THEN 1 ELSE 0 END) AS success, SUM(CASE WHEN (no = 0) AND status <> 0 AND latest = ? THEN 1 ELSE 0 END) AS failed, SUM(CASE WHEN (no = 0) AND latest <> ? THEN 1 ELSE 0 END) AS waiting, SUM(CASE WHEN no <> 0 THEN 1 ELSE 0 END) AS is_ignore`, today, today, today, today).Group("pid")).Where("uid IN (?)", uid).Order("tc_baiduid.id ASC").Scan(&Status).Error
 
@@ -140,7 +140,7 @@ func GetForumCheckInStatus(uid []int32) ([]*AccountStatusStruct, error) {
 }
 
 func PushMessageTemplateDailyReport(username string, accountStatus []*AccountStatusStruct) _function.PushMessageTemplateStruct {
-	now := _function.Now.Format(time.DateOnly)
+	now := time.Now().Format(time.DateOnly)
 
 	msg := []string{}
 

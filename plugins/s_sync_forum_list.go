@@ -3,6 +3,7 @@ package _plugin
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
@@ -56,12 +57,12 @@ func (pluginInfo *RefreshTiebaListPluginType) Action() {
 
 	// day, _ := strconv.ParseInt(_function.GetOption("ver4_ref_day"), 10, 64)
 
-	// if day != int64(_function.Now.Day()) {
+	// if day != int64(time.Now().Day()) {
 	lastdo, _ := strconv.ParseInt(_function.GetOption("ver4_ref_lastdo"), 10, 64)
 	refID := _function.GetOption("ver4_ref_id")
 
 	// 4 hours
-	if refID != "0" || _function.Now.Unix() > lastdo+60*60*4 {
+	if refID != "0" || time.Now().Unix() > lastdo+60*60*4 {
 		var accounts []*model.TcBaiduid
 
 		limit := _function.GetOption("ver4_ref_action_limit")
@@ -70,12 +71,12 @@ func (pluginInfo *RefreshTiebaListPluginType) Action() {
 
 		if len(accounts) == 0 {
 			_function.SetOption("ver4_ref_id", "0")
-			_function.SetOption("ver4_ref_day", strconv.Itoa(_function.Now.Day()))
+			_function.SetOption("ver4_ref_day", strconv.Itoa(time.Now().Day()))
 		} else {
 			for _, account := range accounts {
 				_function.ScanTiebaByPid(account.ID)
 				_function.SetOption("ver4_ref_id", strconv.Itoa(int(account.ID)))
-				_function.SetOption("ver4_ref_lastdo", strconv.Itoa(int(_function.Now.Unix())))
+				_function.SetOption("ver4_ref_lastdo", strconv.Itoa(int(time.Now().Unix())))
 			}
 		}
 	}

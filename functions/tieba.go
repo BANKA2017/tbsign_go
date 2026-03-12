@@ -1,8 +1,9 @@
 package _function
 
 import (
-	"log"
+	"log/slog"
 	"strconv"
+	"time"
 
 	"github.com/BANKA2017/tbsign_go/model"
 	"golang.org/x/exp/slices"
@@ -16,7 +17,7 @@ func ScanTiebaByPid(pid int32) {
 		account := GetCookie(pid)
 
 		// if !account.IsLogin {
-		// 	log.Println("scanTiebaByPid:", errors.New("account "+strconv.Itoa(int(pid))+" login status failed"))
+		// 	fmt.Println("scanTiebaByPid:", errors.New("account "+strconv.Itoa(int(pid))+" login status failed"))
 		// 	return
 		// }
 
@@ -34,11 +35,11 @@ func ScanTiebaByPid(pid int32) {
 		var wholeTiebaFidList []int32
 
 		for {
-			//log.Println(pid, pn)
+			//fmt.Println(pid, pn)
 			response, err := GetForumList2(account, pn)
-			//log.Println(rc, err)
+			//fmt.Println(rc, err)
 			if err != nil {
-				log.Println("scanTiebaByPid:", err)
+				slog.Error("scan forum list(scanTiebaByPid) failed", "pid", pid, "error", err)
 				break
 			}
 			if response.ErrorCode != 0 || len(response.LikeForum) == 0 {
@@ -49,7 +50,7 @@ func ScanTiebaByPid(pid int32) {
 				if tiebaInfo.ForumID == 0 || tiebaInfo.IsForbidden == 1 {
 					continue
 				}
-				//log.Println(tiebaInfo)
+				//fmt.Println(tiebaInfo)
 				//合并或被封禁的贴吧会怎样?
 				/// - 被封的现在有 is_forbidden
 				/// - 被合并的暂时没有办法直接判断
@@ -59,7 +60,7 @@ func ScanTiebaByPid(pid int32) {
 
 				latest := 0
 				if tiebaInfo.IsSign == 1 {
-					latest = Now.Day()
+					latest = time.Now().Day()
 				}
 
 				tmpTcTieba := &model.TcTieba{
@@ -83,7 +84,7 @@ func ScanTiebaByPid(pid int32) {
 			if len(tiebaList) > 0 {
 				err := GormDB.W.Create(tiebaList).Error
 				if err != nil {
-					log.Println("scanTiebaByPid:", err)
+					slog.Error("update forum list(scanTiebaByPid) failed", "pid", pid, "error", err)
 				}
 			}
 

@@ -3,7 +3,7 @@ package _plugin
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"slices"
 	"strconv"
 	"strings"
@@ -47,10 +47,10 @@ func Dosign(_ string, retry bool) (bool, error) {
 	//signMode := _function.GetOption("sign_mode")// client mode only
 	hasFailed := false
 	signHour, _ := strconv.ParseInt(_function.GetOption("sign_hour"), 10, 64)
-	h := _function.Now.Hour()
+	h := time.Now().Hour()
 	if int64(h) <= signHour {
 		if h != LastBreakHour {
-			log.Println("checkin:", strconv.FormatInt(signHour, 10)+"点时忽略签到")
+			slog.Info("忽略签到 (checkin.skip)", "hour", signHour)
 			LastBreakHour = h
 		}
 
@@ -64,7 +64,7 @@ func Dosign(_ string, retry bool) (bool, error) {
 		limit = -1
 	}
 
-	today := _function.Now.Day()
+	today := time.Now().Day()
 	if retry {
 		// 重签
 		_function.GormDB.R.Where("no = ? AND latest = ? AND status IN ?", 0, today, recheckinErrorID).Limit(int(limit)).Find(&tiebaList)
@@ -73,11 +73,11 @@ func Dosign(_ string, retry bool) (bool, error) {
 	}
 
 	if len(tiebaList) <= 0 {
-		//log.Println("checkin: Empty list")
+		slog.Debug("List empty (checkin.action)")
 		return hasFailed, nil
 	}
 
-	//log.Println(tiebaList)
+	//fmt.Println(tiebaList)
 	sleep, _ := strconv.ParseInt(_function.GetOption("sign_sleep"), 10, 64)
 
 	//force sleep
@@ -100,14 +100,14 @@ func Dosign(_ string, retry bool) (bool, error) {
 			return nil
 		}
 
-		now := _function.Now
+		now := time.Now()
 		ck := _function.GetCookie(task.Pid)
 		if ck.Bduss == "" {
-			log.Println("checkin: Failed, no such account", task.Pid, task.Tieba, task.Fid, task.ID, today)
+			slog.Error("no such account (checkin.pre-check)", "pid", task.Pid, "tieba", task.Tieba, "fid", task.Fid, "id", task.ID, "day", today)
 			return nil
 		} else if !ck.IsLogin {
 			store[task.Pid] = struct{}{}
-			log.Println("checkin: Failed, account login status failed", task.Pid, task.Tieba, task.Fid, task.ID, today)
+			slog.Error("login status failed (checkin.pre-check)", "pid", task.Pid, "tieba", task.Tieba, "fid", task.Fid, "id", task.ID, "today", today)
 
 			// tc err && today
 			if !(task.Status == 110000 && task.Latest == int32(today)) {
@@ -119,7 +119,7 @@ func Dosign(_ string, retry bool) (bool, error) {
 		response, err := _function.PostCheckinClient(ck, task.Tieba, task.Fid)
 
 		if err != nil {
-			log.Println(err)
+			slog.Error("checkin.request failed", "pid", task.Pid, "tieba", task.Tieba, "fid", task.Fid, "id", task.ID, "today", today, "error", err)
 		} else if response.ErrorCode != "" {
 			var errorCode int64 = 0
 			errorMsg := "NULL"
@@ -136,11 +136,11 @@ func Dosign(_ string, retry bool) (bool, error) {
 				LastError: errorMsg,
 				Latest:    int32(today),
 			}).Error; err != nil {
-				log.Println(err)
+				slog.Error("checkin.update-db", "pid", task.Pid, "tieba", task.Tieba, "fid", task.Fid, "id", task.ID, "today", today, "error", err)
 			}
 		}
 
-		log.Println("checkin:", task.Pid, task.Tieba, task.Fid, task.ID, today, time.Now().UnixMilli()-now.UnixMilli())
+		slog.Debug("checkin", "pid", task.Pid, "tieba", task.Tieba, "fid", task.Fid, "id", task.ID, "today", today, "duration", time.Now().UnixMilli()-now.UnixMilli())
 		time.Sleep(time.Millisecond * time.Duration(sleep))
 		return err
 	})
@@ -170,7 +170,7 @@ func Dosign(_ string, retry bool) (bool, error) {
 		})
 	}
 
-	log.Println("checkin: done!")
+	slog.Debug("done (checkin.action)")
 	return hasFailed, nil
 }
 
@@ -226,7 +226,7 @@ func (st *CronSignAgainType) Encode() string {
 func DoBatchCheckinAction() {}
 
 func DoCheckinAction() {
-	checkinToday = _function.Now.Format(time.DateOnly)
+	checkinToday = time.Now().Format(time.DateOnly)
 	// a:2:{s:3:"num";i:0;s:6:"lastdo";s:10:"2000-01-01";}
 	cronSignAgain := _function.GetOption("cron_sign_again")
 	cronSignAgainInterface.Decode(cronSignAgain)
@@ -239,8 +239,6 @@ func DoCheckinAction() {
 		cronSignAgainEncoded := cronSignAgainInterface.Encode()
 
 		_function.SetOption("cron_sign_again", cronSignAgainEncoded)
-
-		//log.Println(string(cronSignAgainEncoded))
 	}
 
 	for _, table := range tableList {
@@ -256,7 +254,7 @@ var RecheckInStatus struct {
 func DoReCheckinAction() {
 	retryMax, _ := strconv.ParseInt(_function.GetOption("retry_max"), 10, 64)
 
-	if RecheckInStatus.UnixTimestamp > 0 && _function.Now.Add(time.Minute*-1*time.Duration(RecheckInStatus.NowInterval)).Unix() < RecheckInStatus.UnixTimestamp {
+	if RecheckInStatus.UnixTimestamp > 0 && time.Now().Add(time.Minute*-1*time.Duration(RecheckInStatus.NowInterval)).Unix() < RecheckInStatus.UnixTimestamp {
 		return
 	}
 
@@ -272,10 +270,10 @@ func DoReCheckinAction() {
 		FailedCount int
 	}{}
 
-	_function.GormDB.R.Model(&model.TcTieba{}).Select("COUNT(CASE WHEN latest != ? THEN 1 END) AS un_done_count, COUNT(CASE WHEN status IN (?) THEN 1 END) as failed_count", _function.Now.Day(), recheckinErrorID).Where("no = 0").Scan(&checkinStatus)
+	_function.GormDB.R.Model(&model.TcTieba{}).Select("COUNT(CASE WHEN latest != ? THEN 1 END) AS un_done_count, COUNT(CASE WHEN status IN (?) THEN 1 END) as failed_count", time.Now().Day(), recheckinErrorID).Where("no = 0").Scan(&checkinStatus)
 
 	if checkinStatus.UnDoneCount == 0 && checkinStatus.FailedCount > 0 {
-		RecheckInStatus.UnixTimestamp = _function.Now.Unix()
+		RecheckInStatus.UnixTimestamp = time.Now().Unix()
 		ReCheckInCaps, _ := strconv.ParseInt(_function.GetOption("go_re_check_in_max_interval"), 10, 64)
 		if ReCheckInCaps < 1 {
 			ReCheckInCaps = 1
@@ -292,7 +290,7 @@ func DoReCheckinAction() {
 		for _, table := range tableList {
 			_, err := Dosign(table, true)
 			if err != nil {
-				log.Println(err)
+				slog.Error("checkin.re-checkin", "error", err)
 			}
 		}
 		retryNum++

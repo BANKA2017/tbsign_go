@@ -52,7 +52,7 @@ func GetServerStatus(c echo.Context) error {
 	/// forums
 	checkinStatus := new(_type.StatusStruct)
 
-	today := strconv.Itoa(_function.Now.Day())
+	today := strconv.Itoa(time.Now().Day())
 	_function.GormDB.R.Model(&model.TcTieba{}).Select("SUM(CASE WHEN (no = 0) AND status = 0 AND latest = ? THEN 1 ELSE 0 END) AS success, SUM(CASE WHEN (no = 0) AND status <> 0 AND latest = ? THEN 1 ELSE 0 END) AS failed, SUM(CASE WHEN (no = 0) AND latest <> ? THEN 1 ELSE 0 END) AS waiting, SUM(CASE WHEN no <> 0 THEN 1 ELSE 0 END) AS is_ignore", today, today, today).Scan(checkinStatus)
 
 	ForumCount := checkinStatus.Success + checkinStatus.Failed + checkinStatus.Waiting + checkinStatus.IsIgnore

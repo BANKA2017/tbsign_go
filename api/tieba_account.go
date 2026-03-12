@@ -2,7 +2,7 @@ package _api
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -243,7 +243,7 @@ func RemoveTiebaAccount(c echo.Context) error {
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "Pid 不存在", _function.EchoEmptyObject, "tbsign"))
 	} else if err != nil {
-		log.Println("remove-tieba-account", uid, pid, err)
+		slog.Debug("tieba.remove-tieba-account.find", "uid", uid, "pid", pid, "error", err)
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
@@ -264,7 +264,7 @@ func RemoveTiebaAccount(c echo.Context) error {
 	})
 
 	if err != nil {
-		log.Println("remove-tieba-account", uid, pid, err)
+		slog.Debug("tieba.remove-tieba-account.delete", "uid", uid, "pid", pid, "error", err)
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
@@ -363,7 +363,7 @@ func CheckIsManager(c echo.Context) error {
 	}
 	resp, err := _function.GetManagerStatus(pidCheck[0].Portrait, fid)
 	if err != nil {
-		log.Println(err)
+		slog.Debug("tieba.is-manager", "pid", pid, "error", err)
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))

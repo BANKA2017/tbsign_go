@@ -6,7 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io/fs"
-	"log"
+	"log/slog"
 	"os"
 	"runtime"
 	"strings"
@@ -34,6 +34,7 @@ var EncryptDataAction string
 var err error
 
 func init() {
+	_function.InitLogger()
 	fmt.Println("TbSign➡️\n--- info ---")
 	fmt.Println("build_at:", share.BuiltAt)
 	fmt.Println("build_runtime:", runtime.Version()+" "+share.BuildRuntime)
@@ -98,33 +99,33 @@ func main() {
 	}
 
 	if share.DBPath == "" && share.DBEndpoint == "" {
-		log.Fatal("ERROR: 无效数据库")
+		_function.Fatal("无效数据库")
 	}
 
 	if !share.EnableApi && share.EnableFrontend {
-		log.Fatal("ERROR: 不允许关闭 api 的同时又启用前端!!!")
+		_function.Fatal("不允许关闭 api 的同时又启用前端!!!")
 	}
 
 	if share.DataEncryptKeyStr != "" {
 		share.DataEncryptKeyByte, err = _function.Base64URLDecode(share.DataEncryptKeyStr)
 		if err != nil {
-			log.Fatal(err)
+			_function.Fatal("密钥不可用", "error", err)
 		}
 		if len(share.DataEncryptKeyByte) != 32 {
-			log.Fatal("ERROR: 密钥长度无效")
+			_function.Fatal("密钥长度无效")
 		}
 	}
 
 	if setup {
-		log.Println("WARNING: 覆盖安装已启用，会覆盖现有数据，请做好备份")
+		slog.Warn("覆盖安装已启用，会覆盖现有数据，请做好备份")
 	}
 
 	if setup && autoInstall {
-		log.Fatal("ERROR: 不允许自动化覆盖安装!!!")
+		_function.Fatal("不允许自动化覆盖安装!!!")
 	} else if autoInstall && adminName != "" && adminEmail != "" && adminPassword != "" {
-		log.Println("WARNING: 已启用自动安装")
+		slog.Warn("已启用自动安装")
 	} else if autoInstall {
-		log.Fatal("ERROR: 管理员信息不完整，无法安装")
+		_function.Fatal("管理员信息不完整，无法安装")
 	}
 
 	// TODO setup slog
@@ -133,15 +134,10 @@ func main() {
 	// slogLevel := slog.LevelError
 	if share.TestMode {
 		logLevel = logger.Info
-		// slogLevel = slog.LevelInfo
+		_function.SlogLevel = slog.LevelDebug
 	}
 
-	//slog.SetDefault(slog.New(
-	//	slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-	//		Level:     slogLevel,
-	//		AddSource: true,
-	//	}),
-	//))
+	_function.InitLogger()
 
 	// connect to db
 	dbExists := true
@@ -154,27 +150,29 @@ func main() {
 	if share.DBMode == "pgsql" || share.DBMode == db.DBModePostgreSQL {
 		// precheck table
 		if err = _function.GormDB.SetDBMode(db.DBModePostgreSQL).SetDBAuth(share.DBUsername, share.DBPassword, share.DBEndpoint, share.DBName, share.DBTLSOption).ConnectToDefault(); err != nil {
-			log.Fatal("db:", err)
+			_function.Fatal("db", "error", err)
 		}
 
 		dbExists, err = _function.GormDB.FastDBCheck(share.DBName)
 		if err != nil {
-			log.Fatal("db:", err)
+			_function.Fatal("db", "error", err)
 		} else if !dbExists {
-			log.Println("db:", share.DBName, "is not exists")
+			slog.Warn("db", "dbname", share.DBName, "status", "not exists")
 			setup = true
 		}
 
 		// setup
 		if setup {
-			_plugin.SetupSystem(dbExists, autoInstall, adminName, adminEmail, adminPassword)
+			if !_plugin.SetupSystem(dbExists, autoInstall, adminName, adminEmail, adminPassword) {
+				os.Exit(1)
+			}
 		} else if share.DBName != "postgres" {
 			if err = _function.GormDB.Close(); err != nil {
-				log.Fatal("db close:", err)
+				_function.Fatal("db.close", "error", err)
 			}
 
 			if err = _function.GormDB.Connect(); err != nil {
-				log.Fatal("db:", err)
+				_function.Fatal("db", "error", err)
 			}
 		}
 	} else if share.DBPath != "" {
@@ -182,30 +180,32 @@ func main() {
 		dbStat, err := os.Stat(share.DBPath)
 		if err == nil {
 			if dbStat.IsDir() {
-				log.Fatal("db: `", share.DBPath, "` is a directory")
+				_function.Fatal("db.sqlite", "error", share.DBPath+" is a directory")
 			}
 		} else if errors.Is(err, fs.ErrNotExist) {
 			dbExists = false
 		} else {
-			log.Fatal("db:", err)
+			_function.Fatal("db", "error", err)
 		}
 
 		setup = setup || !dbExists
 
 		if err = _function.GormDB.SetDBMode(db.DBModeSQLite).SetDBPath(share.DBPath).Connect(); err != nil {
-			log.Fatal("db:", err)
+			_function.Fatal("db", "error", err)
 		}
 
 		share.DBMode = _function.GormDB.DBMode
 
 		// setup
 		if setup {
-			_plugin.SetupSystem(dbExists, autoInstall, adminName, adminEmail, adminPassword)
+			if !_plugin.SetupSystem(dbExists, autoInstall, adminName, adminEmail, adminPassword) {
+				os.Exit(1)
+			}
 		}
 	} else {
 		// mysql
 		if share.DBUsername == "" {
-			log.Fatal("global: Empty username")
+			_function.Fatal("Empty MySQL username")
 		}
 		// precheck table
 
@@ -219,28 +219,30 @@ func main() {
 		}
 
 		if err = _function.GormDB.ConnectToDefault(); err != nil {
-			log.Fatal("db:", err)
+			_function.Fatal("db", "error", err)
 		}
 		share.DBMode = _function.GormDB.DBMode
 
 		dbExists, err = _function.GormDB.FastDBCheck(share.DBName)
 		if err != nil {
-			log.Fatal("db:", err)
+			_function.Fatal("db", "error", err)
 		} else if !dbExists {
-			log.Println("db:", share.DBName, "is not exists")
+			slog.Warn("db", "dbname", share.DBName, "status", "not exists")
 			setup = true
 		}
 
 		// setup
 		if setup {
-			_plugin.SetupSystem(dbExists, autoInstall, adminName, adminEmail, adminPassword)
+			if !_plugin.SetupSystem(dbExists, autoInstall, adminName, adminEmail, adminPassword) {
+				os.Exit(1)
+			}
 		} else {
 			if err = _function.GormDB.Close(); err != nil {
-				log.Fatal("db close:", err)
+				_function.Fatal("db.close", "error", err)
 			}
 
 			if err = _function.GormDB.Connect(); err != nil {
-				log.Fatal("db:", err)
+				_function.Fatal("db", "error", err)
 			}
 		}
 	}
@@ -261,20 +263,20 @@ func main() {
 	// encrypt/decrypt init
 	if share.IsPureGO && EncryptDataAction != "" {
 		if len(share.DataEncryptKeyByte) != 32 {
-			log.Fatal("ERROR: 无效密钥，无法加密/解密")
+			_function.FmtFatal("❌无效密钥，无法处理加密内容")
 		} else if strings.EqualFold(EncryptDataAction, "encrypt") && len(share.DataEncryptKeyByte) > 0 {
 			err := _plugin.EncryptBaiduIDData()
 			if err != nil {
-				log.Fatal(err)
+				_function.FmtFatal("❌crypto.encrypt", err)
 			}
-			log.Println("INFO: 加密完成")
+			fmt.Println("✅crypto.encrypt: 加密完成")
 			os.Exit(0)
 		} else if strings.EqualFold(EncryptDataAction, "decrypt") && len(share.DataEncryptKeyByte) > 0 {
 			err := _plugin.DecryptBaiduIDData()
 			if err != nil {
-				log.Fatal(err)
+				_function.FmtFatal("❌crypto.decrypt", err)
 			}
-			log.Println("INFO: 解密完成")
+			fmt.Println("✅crypto.decrypt: 解密完成")
 			os.Exit(0)
 		}
 	} else if len(share.DataEncryptKeyByte) == 32 && !share.IsPureGO {
@@ -282,20 +284,18 @@ func main() {
 		share.DataEncryptKeyByte = []byte{}
 		share.DataEncryptKeyStr = ""
 
-		log.Println("WARNING: 兼容模式下不支持加密，已恢复使用明文")
+		slog.Warn("兼容模式下不支持加密，已恢复使用明文")
 	}
 
 	if share.IsEncrypt && len(share.DataEncryptKeyByte) != 32 {
-		log.Fatal("ERROR: 无效密钥，无法加密/解密数据")
+		_function.Fatal("无效密钥，无法处理加密内容")
 	}
 	if !share.IsEncrypt && len(share.DataEncryptKeyByte) > 0 {
 		share.DataEncryptKeyByte = []byte{}
 		share.DataEncryptKeyStr = ""
 
-		log.Println("WARNING: 数据未加密，已恢复使用明文")
+		slog.Warn("数据未加密，已恢复使用明文")
 	}
-
-	// log.Println(share.DBVersion)
 
 	/// client
 	/// DO NOT EXEC _function.InitClient BEFORE READING FLAGS AND ENV!!!!!
@@ -307,8 +307,6 @@ func main() {
 	}
 
 	// Interval
-	oneSecondInterval := time.NewTicker(time.Second)
-	defer oneSecondInterval.Stop()
 	oneMinuteInterval := time.NewTicker(time.Minute)
 	defer oneMinuteInterval.Stop()
 	fourHoursInterval := time.NewTicker(time.Hour * 4)
@@ -317,8 +315,6 @@ func main() {
 	// cron
 	for {
 		select {
-		case <-oneSecondInterval.C:
-			_function.UpdateNow()
 		case <-oneMinuteInterval.C:
 			if share.TestMode {
 				if share.CrontabBypassTimes.Load() > 0 {

@@ -3,7 +3,7 @@ package _plugin
 import (
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -158,7 +158,7 @@ func GetWenkuTaskList(cookie _type.TypeCookie, _type string) (*GetWenkuTaskListR
 		return nil, err
 	}
 
-	// log.Println(string(response))
+	// slog.Debug("wenku-tasks.get-task-list", "response", string(response))
 
 	resp := new(GetWenkuTaskListResponse)
 	err = _function.JsonDecode(response, resp)
@@ -188,7 +188,7 @@ func UpdateWenkuTask(cookie _type.TypeCookie, taskID int, minVersion string, isC
 		return nil, err
 	}
 
-	// log.Println(string(response))
+	// slog.Debug("wenku-tasks.update-task", "response", string(response))
 
 	resp := new(UpdateWenkuTaskResponse)
 	err = _function.JsonDecode(response, resp)
@@ -202,12 +202,12 @@ func ClaimWenku7DaySignVIP(cookie _type.TypeCookie) (*ClaimWenku7DaySignVIPRespo
 		"Referrer":   string([]byte{104, 116, 116, 112, 115, 58, 47, 47, 116, 97, 110, 98, 105, 46, 98, 97, 105, 100, 117, 46, 99, 111, 109, 47, 104, 53, 97, 112, 112, 116, 111, 112, 105, 99, 47, 98, 114, 111, 119, 115, 101, 47, 108, 111, 116, 116, 101, 114, 121, 118, 105, 112, 50, 48, 50, 50, 49, 49}),
 	}
 
-	response, err := _function.TBFetch(fmt.Sprintf(claimWenku7DaySignVIPLink, _function.Now.UnixMilli()), http.MethodGet, []byte{}, headersMap)
+	response, err := _function.TBFetch(fmt.Sprintf(claimWenku7DaySignVIPLink, time.Now().UnixMilli()), http.MethodGet, []byte{}, headersMap)
 	if err != nil {
 		return nil, err
 	}
 
-	// log.Println(string(response))
+	// slog.Debug(string(response))
 
 	resp := new(ClaimWenku7DaySignVIPResponse)
 	err = _function.JsonDecode(response, resp)
@@ -260,7 +260,7 @@ func (m *WenkuTasksPluginVipMatrixIDSet) Export(uid string) string {
 
 	for _, arrayValue := range m.MatrixIDMap {
 		if uid == "*" || len(arrayValue) == 4 && arrayValue[3] == uid || len(arrayValue) == 3 {
-			// log.Println(arrayValue)
+			// slog.Debug("wenku-tasks.export", "value", arrayValue)
 			tmpStr = append(tmpStr, strings.Join(arrayValue[0:3], ","))
 		}
 	}
@@ -399,7 +399,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 				vipMatrixIDSet = _vipMatrixIDSet
 			}
 		}
-		if isVipMatrix && vipMatrixIDSet[1] == strconv.Itoa(int(_function.Now.Weekday())) && vipMatrixIDSet[2] == "0" {
+		if isVipMatrix && vipMatrixIDSet[1] == strconv.Itoa(int(time.Now().Weekday())) && vipMatrixIDSet[2] == "0" {
 			result = append(result, WenkuTaskToSave{
 				TaskName:   "VIP 账号组自动跳过",
 				TaskID:     -100,
@@ -418,12 +418,10 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 
 			signinTasksResponse, err := GetWenkuTaskList(cookie, "signin")
 			if err != nil {
-				log.Println(err)
-				log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "Unable to fetch signin list")
+				slog.Error("plugin.wenku-tasks.action.get-signin-list", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", err)
 				//continue
 			} else if signinTasksResponse.Status.Code != 0 {
-				log.Println(&signinTasksResponse)
-				log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, signinTasksResponse.Status.Msg)
+				slog.Error("plugin.wenku-tasks.action.get-signin-list", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", signinTasksResponse.Status.Msg, "response", signinTasksResponse)
 			} else {
 				for _, v := range signinTasksResponse.Data.TaskList {
 					if !tasksIDList[v.TaskID] && !slices.Contains(wenkuPassTasks, v.TaskID) && v.TaskStatus >= 1 && v.TaskStatus <= 3 {
@@ -435,12 +433,10 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 			if accountStatusList[taskUserItem.UID] != "1" {
 				tasksListResponse, err := GetWenkuTaskList(cookie, "tasklist")
 				if err != nil {
-					log.Println(err)
-					log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "Unable to fetch tasklist list")
+					slog.Error("plugin.wenku-tasks.action.get-task-list", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", err)
 					//continue
 				} else if tasksListResponse.Status.Code != 0 {
-					log.Println(&tasksListResponse)
-					log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, tasksListResponse.Status.Msg)
+					slog.Error("plugin.wenku-tasks.action.get-task-list", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", tasksListResponse.Status.Msg, "response", tasksListResponse)
 				} else {
 					for _, v := range tasksListResponse.Data.TaskList {
 						if !tasksIDList[v.TaskID] && !slices.Contains(wenkuPassTasks, v.TaskID) && v.TaskStatus >= 1 && v.TaskStatus <= 3 {
@@ -471,7 +467,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 							// RewardType: task.RewardType,
 							// RewardNum:  task.RewardNum,
 						})
-						log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "task_status1", err.Error())
+						slog.Error("未知错误 (plugin.wenku-tasks.action.type1)", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", err)
 					} else if doTask.Status.Code == 9 {
 						hasError = true
 						result = append(result, WenkuTaskToSave{
@@ -482,7 +478,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 							// RewardType: task.RewardType,
 							// RewardNum:  task.RewardNum,
 						})
-						log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "task_status9", task)
+						slog.Error("账号被封禁 (plugin.wenku-tasks.action.type9)", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "task", task)
 					} else if doTask.Status.Code != 0 {
 						hasError = true
 						result = append(result, WenkuTaskToSave{
@@ -509,7 +505,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 							// RewardType: task.RewardType,
 							// RewardNum:  task.RewardNum,
 						})
-						log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "task_status2", err.Error())
+						slog.Error("未知错误 (plugin.wenku-tasks.action.type2)", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", err)
 					} else if claimResponse.Status.Code != 0 {
 						hasError = true
 						result = append(result, WenkuTaskToSave{
@@ -547,12 +543,12 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 						// RewardType: task.RewardType,
 						// RewardNum:  task.RewardNum,
 					})
-					log.Println("wenku_tasks: ", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, "task_status3", task)
+					slog.Error("未知错误 (plugin.wenku-tasks.action.type3)", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "task", task)
 				}
 
 				if isVipMatrix && task.TaskID == 1 && vipMatrixIDSet[2] == "1" {
 					since, _ := strconv.ParseInt(vipMatrixIDSet[1], 10, 64)
-					verifyDay := (int64(_function.Now.Weekday()) + 7 - since) % 7
+					verifyDay := (int64(time.Now().Weekday()) + 7 - since) % 7
 					if verifyDay == 0 {
 						verifyDay = 7
 					}
@@ -578,7 +574,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 				tmpLog += fmt.Sprintf("%s#%d:%d", r.TaskName, r.TaskID, r.TaskStatus)
 			}
 
-			log.Println("wenku_tasks:", taskUserItem.ID, taskUserItem.Pid, taskUserItem.UID, string(jsonResult))
+			slog.Debug("plugin.wenku-tasks.result", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "result", string(jsonResult))
 
 			// previous logs
 			previousLogs := []string{}
@@ -592,8 +588,8 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 
 			_function.GormDB.W.Model(&model.TcKdWenkuTask{}).Where("id = ?", taskUserItem.ID).Updates(model.TcKdWenkuTask{
 				Status: string(jsonResult),
-				Log:    fmt.Sprintf("%s: %s<br/>%s", _function.Now.Format(time.DateOnly), tmpLog, strings.Join(previousLogs, "<br/>")),
-				Date:   int32(_function.Now.Unix()),
+				Log:    fmt.Sprintf("%s: %s<br/>%s", time.Now().Format(time.DateOnly), tmpLog, strings.Join(previousLogs, "<br/>")),
+				Date:   int32(time.Now().Unix()),
 			})
 		}
 
@@ -892,12 +888,10 @@ func PluginWenkuTasksGetTasksStatus(c echo.Context) error {
 
 		signinTasksResponse, err := GetWenkuTaskList(cookie, "signin")
 		if err != nil {
-			log.Println(err)
-			log.Println("wenku_tasks_api: ", cookie.ID, cookie.UID, "Unable to fetch signin list")
+			slog.Error("plugin.wenku-tasks.api.get-signin-list", "id", cookie.ID, "pid", numPid, "uid", cookie.UID, "error", err)
 			//continue
 		} else if signinTasksResponse.Status.Code != 0 {
-			log.Println(&signinTasksResponse)
-			log.Println("wenku_tasks_api: ", cookie.ID, cookie.UID, "Unable to fetch signin list", signinTasksResponse.Status.Msg)
+			slog.Error("plugin.wenku-tasks.api.get-signin-list", "id", cookie.ID, "pid", numPid, "uid", cookie.UID, "error", signinTasksResponse.Status.Msg, "response", signinTasksResponse)
 		} else {
 			for _, v := range signinTasksResponse.Data.TaskList {
 				if !tasksIDList[v.TaskID] {
@@ -908,12 +902,10 @@ func PluginWenkuTasksGetTasksStatus(c echo.Context) error {
 		}
 		tasksListResponse, err := GetWenkuTaskList(cookie, "tasklist")
 		if err != nil {
-			log.Println(err)
-			log.Println("wenku_tasks_api: ", cookie.ID, cookie.UID, "Unable to fetch tasklist list")
+			slog.Error("plugin.wenku-tasks.api.get-task-list", "id", cookie.ID, "pid", numPid, "uid", cookie.UID, "error", err)
 			//continue
 		} else if tasksListResponse.Status.Code != 0 {
-			log.Println(&tasksListResponse)
-			log.Println("wenku_tasks_api: ", cookie.ID, cookie.UID, "Unable to fetch tasklist list", tasksListResponse.Status.Msg)
+			slog.Error("plugin.wenku-tasks.api.get-task-list", "id", cookie.ID, "pid", numPid, "uid", cookie.UID, "error", tasksListResponse.Status.Msg, "response", tasksListResponse)
 		} else {
 			for _, v := range tasksListResponse.Data.TaskList {
 				if !tasksIDList[v.TaskID] {
@@ -944,7 +936,7 @@ func PluginWenkuTasksClaim7DaySignVIP(c echo.Context) error {
 		res, err := ClaimWenku7DaySignVIP(cookie)
 
 		if err != nil {
-			log.Println("wenku_tasks_api: claim 7days vip", pid, err, res)
+			slog.Error("7天VIP领取失败 (plugin.wenku-tasks.api.claim-7days-vip)", "pid", pid, "response", res, "error", err)
 			c.JSON(http.StatusOK, _function.ApiTemplate(500, "领取失败", ClaimWenku7DaySignVIPResponse{}, "tbsign"))
 		}
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", res, "tbsign"))

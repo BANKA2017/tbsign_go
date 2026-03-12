@@ -3,7 +3,7 @@ package _plugin
 import (
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -178,16 +178,16 @@ func (pluginInfo *LoopBanPluginType) Action() {
 	if err != nil {
 		id = 0
 	}
-	otime := _function.Now.Add(time.Hour * -24).Unix()
+	otime := time.Now().Add(time.Hour * -24).Unix()
 	var localBanAccountList []*model.TcVer4BanList
 	subQuery := _function.GormDB.R.Model(&model.TcUsersOption{}).Select("uid").Where("name = 'ver4_ban_open' AND value = '1'")
 
 	limit := _function.GetOption("ver4_ban_action_limit")
 	numLimit, _ := strconv.ParseInt(limit, 10, 64)
 	if batchMode {
-		BatchPluginQuery(_function.GormDB.R.Model(&model.TcVer4BanList{}).Where("date < ? AND stime < ? AND etime > ? AND uid IN (?)", otime, _function.Now.Unix(), _function.Now.Unix(), subQuery), int(numLimit), 3, []string{"*"}, &localBanAccountList)
+		BatchPluginQuery(_function.GormDB.R.Model(&model.TcVer4BanList{}).Where("date < ? AND stime < ? AND etime > ? AND uid IN (?)", otime, time.Now().Unix(), time.Now().Unix(), subQuery), int(numLimit), 3, []string{"*"}, &localBanAccountList)
 	} else {
-		_function.GormDB.R.Model(&model.TcVer4BanList{}).Where("id > ? AND date < ? AND stime < ? AND etime > ? AND uid IN (?)", id, otime, _function.Now.Unix(), _function.Now.Unix(), subQuery).Order("id ASC").Limit(int(numLimit)).Find(&localBanAccountList)
+		_function.GormDB.R.Model(&model.TcVer4BanList{}).Where("id > ? AND date < ? AND stime < ? AND etime > ? AND uid IN (?)", id, otime, time.Now().Unix(), time.Now().Unix(), subQuery).Order("id ASC").Limit(int(numLimit)).Find(&localBanAccountList)
 	}
 
 	var reasonList []*model.TcVer4BanUserset
@@ -206,26 +206,26 @@ func (pluginInfo *LoopBanPluginType) Action() {
 		//get fid
 		fid := _function.GetFid(banAccountInfo.Tieba)
 		if fid == 0 {
-			log.Println("fname: ", banAccountInfo.Tieba, "is not exists!")
+			slog.Error("forum not exists (plugin.loop-ban.get-fid)", "fname", banAccountInfo.Tieba)
 			continue
 		}
 
 		// !!! warning: unable to check permission !!!
 		response, err := PostClientBan(_function.GetCookie(banAccountInfo.Pid), int32(fid), banAccountInfo.Portrait, 1, reason)
 		if err != nil {
-			log.Println("ban:", err)
+			slog.Error("plugin.loop-ban.action", "fname", banAccountInfo.Tieba, "pid", banAccountInfo.Pid, "portrait", banAccountInfo.Portrait, "error", err)
 			continue
 		}
 		msg := banAccountInfo.Log
 		if response.ErrorMsg != "" {
-			msg += _function.Now.Format(time.DateTime) + " 执行结果：<font color=\"red\">操作失败</font>#" + response.ErrorCode + " " + response.ErrorMsg + "<br>"
+			msg += time.Now().Format(time.DateTime) + " 执行结果：<font color=\"red\">操作失败</font>#" + response.ErrorCode + " " + response.ErrorMsg + "<br>"
 		} else {
-			msg += _function.Now.Format(time.DateTime) + " 执行结果：<font color=\"green\">操作成功</font><br>"
+			msg += time.Now().Format(time.DateTime) + " 执行结果：<font color=\"green\">操作成功</font><br>"
 		}
 
 		_function.GormDB.W.Model(&model.TcVer4BanList{}).Where("id = ?", banAccountInfo.ID).Updates(model.TcVer4BanList{
 			Log:  msg,
-			Date: int32(_function.Now.Unix()),
+			Date: int32(time.Now().Unix()),
 		})
 		if !batchMode {
 			_function.SetOption("ver4_ban_id", strconv.Itoa(int(banAccountInfo.ID)))
@@ -334,7 +334,7 @@ func PluginLoopBanSwitch(c echo.Context) error {
 	err := _function.SetUserOption("ver4_ban_open", !status, uid)
 
 	if err != nil {
-		log.Println(err)
+		slog.Debug("plugin.loop-ban.switch", "uid", uid, "current_status", status, "error", err)
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法启用循环封禁功能", status, "tbsign"))
 	}
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", !status, "tbsign"))
@@ -367,7 +367,7 @@ func PluginLoopBanSetReason(c echo.Context) error {
 
 	err := _function.GormDB.W.Model(&model.TcVer4BanUserset{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcVer4BanUserset{UID: int32(numUID), C: reason}).Error
 	if err != nil {
-		log.Println(err)
+		slog.Debug("plugin.loop-ban.set-reason", "uid", uid, "reason", reason, "error", err)
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法更新封禁理由", map[string]string{
 			"reason": reason,
 		}, "tbsign"))

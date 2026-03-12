@@ -2,7 +2,7 @@ package _plugin
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -85,7 +85,7 @@ func GetLottery(cookie _type.TypeCookie, token string) (*GetLotteryResponse, err
 		return nil, err
 	}
 
-	log.Println(string(response))
+	// slog.Debug("plugin.knows-lottery.get-lottery", "response", string(response))
 
 	resp := new(GetLotteryResponse)
 	err = _function.JsonDecode(response, resp)
@@ -105,7 +105,7 @@ func (pluginInfo *LotteryPluginPluginType) Action() {
 	// 10 am gmt+8
 	stime := _function.LocaleTimeDiff(10)
 
-	queryLotteryLogs := _function.GormDB.R.Model(&model.TcVer4LotteryLog{}).Select("pid").Where("date >= ?", stime).Where("pid > ?", id).Group("pid").Having("max(date) >= ? OR COUNT(*) >= ?", _function.Now.Add(time.Minute*-10).Unix(), 2)
+	queryLotteryLogs := _function.GormDB.R.Model(&model.TcVer4LotteryLog{}).Select("pid").Where("date >= ?", stime).Where("pid > ?", id).Group("pid").Having("max(date) >= ? OR COUNT(*) >= ?", time.Now().Add(time.Minute*-10).Unix(), 2)
 
 	queryUserOptions := _function.GormDB.R.Model(&model.TcUsersOption{}).Select("uid").Where("name='ver4_lottery_check' AND value = '1'")
 
@@ -130,14 +130,14 @@ func (pluginInfo *LotteryPluginPluginType) Action() {
 			dataToInsert := model.TcVer4LotteryLog{
 				UID:   cookie.UID,
 				Pid:   account.ID,
-				Date:  int32(_function.Now.Unix()),
+				Date:  int32(time.Now().Unix()),
 				Prize: "-",
 			}
 
 			token, err := GetLotteryToken(cookie)
 			if err != nil || token == "" {
 				dataToInsert.Result = "无法获取 token"
-				log.Println(err)
+				slog.Error("无法获取 token (plugin.knows-lottery.get-lottery-token)", "error", err)
 			}
 
 			_, hasNotCompleted := notCompleteActionPid[account.ID]
@@ -148,13 +148,14 @@ func (pluginInfo *LotteryPluginPluginType) Action() {
 				if hasNotCompleted {
 					delete(notCompleteActionPid, account.ID)
 				}
-				log.Println(err, resp)
+				slog.Error("无法解析物品信息 (plugin.knows-lottery.get-lottery)", "response", resp, "error", err)
 			} else if err != nil && resp.Errno == 0 && len(resp.Data.PrizeList) == 0 {
 				if hasNotCompleted {
 					dataToInsert.Result = "未完成抽奖"
 					delete(notCompleteActionPid, account.ID)
+					slog.Error("第二次未完成抽奖 (plugin.knows-lottery.get-lottery)", "id", account.ID, "name", account.Name, "portrait", account.Portrait)
 				} else {
-					log.Printf("knows_lottery: %d:%s[ %s ] 第一次未完成抽奖\n", account.ID, account.Name, account.Portrait)
+					slog.Error("第一次未完成抽奖 (plugin.knows-lottery.get-lottery)", "id", account.ID, "name", account.Name, "portrait", account.Portrait)
 					notCompleteActionPid[account.ID] = struct{}{}
 				}
 			} else if resp.Errno != 0 {
@@ -177,11 +178,11 @@ func (pluginInfo *LotteryPluginPluginType) Action() {
 	}
 
 	latestDay := _function.GetOption("ver4_lottery_day")
-	nowDate := _function.Now.Day()
+	nowDate := time.Now().Day()
 	if latestDay != strconv.Itoa(nowDate) {
-		err := _function.GormDB.W.Where("date <= ?", _function.Now.Add(time.Hour*-24*30).Unix()).Delete(&model.TcVer4LotteryLog{}).Error
+		err := _function.GormDB.W.Where("date <= ?", time.Now().Add(time.Hour*-24*30).Unix()).Delete(&model.TcVer4LotteryLog{}).Error
 		if err != nil {
-			log.Println(err)
+			slog.Error("plugin.knows-lottery.reset-logs", "error", err)
 		}
 		_function.SetOption("ver4_lottery_day", nowDate)
 	}
@@ -265,7 +266,7 @@ func PluginKnowsLotterySwitch(c echo.Context) error {
 	err := _function.SetUserOption("ver4_lottery_check", !status, uid)
 
 	if err != nil {
-		log.Println(err)
+		slog.Debug("plugin.knows-lottery.switch", "uid", uid, "current_status", status, "error", err)
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法修改知道商城抽奖插件状态", status, "tbsign"))
 	}
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", !status, "tbsign"))

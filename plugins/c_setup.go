@@ -3,7 +3,6 @@ package _plugin
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"math/rand"
 	"os"
 	"regexp"
@@ -16,7 +15,7 @@ import (
 	"github.com/kdnetwork/code-snippet/go/db"
 )
 
-func SetupSystem(dbExists, autoInstall bool, name, email, password string) {
+func SetupSystem(dbExists, autoInstall bool, name, email, password string) bool {
 	reader := bufio.NewReader(os.Stdin)
 	var err error
 
@@ -33,7 +32,7 @@ func SetupSystem(dbExists, autoInstall bool, name, email, password string) {
 		verifyText = strings.TrimSpace(verifyText)
 		if verifyText != randValue {
 			fmt.Println("❌输入错误，请重试")
-			os.Exit(0)
+			return false
 		}
 	}
 
@@ -42,24 +41,28 @@ func SetupSystem(dbExists, autoInstall bool, name, email, password string) {
 	if _function.GormDB.DBMode == db.DBModeMySQL || _function.GormDB.DBMode == db.DBModePostgreSQL {
 		if !dbExists {
 			if !regexp.MustCompile(`^[a-zA-Z0-9_]+$`).MatchString(dbName) {
-				log.Fatal("❌数据库名称无法用于 TbSign➡️")
+				fmt.Println("❌数据库名称无法用于 TbSign➡️")
+				return false
 			}
 
 			fmt.Println("⌛正在建立数据库:", dbName)
 			err = _function.GormDB.W.Exec(fmt.Sprintf("CREATE DATABASE `%s`;", dbName)).Error
 			if err != nil {
-				log.Fatal(err)
+				fmt.Println("❌创建数据库失败", err)
+				return false
 			}
 
 			fmt.Println("已建立数据库:", dbName)
 		}
 
 		if err = _function.GormDB.Close(); err != nil {
-			log.Fatal("db close:", err)
+			fmt.Println("❌关闭数据库失败", err)
+			return false
 		}
 
 		if err = _function.GormDB.Connect(); err != nil {
-			log.Fatal("db:", err)
+			fmt.Println("❌连接数据库失败", err)
+			return false
 		}
 	}
 
@@ -82,7 +85,8 @@ func SetupSystem(dbExists, autoInstall bool, name, email, password string) {
 		&model.TcUser{},
 	)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("❌创建数据表失败", err)
+		return false
 	}
 
 	fmt.Println("⌛正在导入默认设置...")
@@ -95,7 +99,8 @@ func SetupSystem(dbExists, autoInstall bool, name, email, password string) {
 	}
 
 	if err = _function.GormDB.W.Model(&model.TcOption{}).Create(optionArray).Error; err != nil {
-		log.Fatal(err)
+		fmt.Println("❌导入默认设置失败", err)
+		return false
 	}
 
 	_function.InitOptions()
@@ -105,39 +110,46 @@ func SetupSystem(dbExists, autoInstall bool, name, email, password string) {
 		fmt.Print("管理员用户名: ")
 		name, err = reader.ReadString('\n')
 		if err != nil {
-			log.Fatal("❌无效用户名", err)
+			fmt.Println("❌无效用户名", err)
+			return false
 		}
 		name = strings.TrimSpace(name)
 		if name == "" || strings.Contains(name, "@") {
-			log.Fatal("❌无效用户名")
+			fmt.Println("❌无效用户名")
+			return false
 		}
 		fmt.Print("管理员邮箱: ")
 		email, err = reader.ReadString('\n')
 		if err != nil {
-			log.Fatal("❌无效邮箱", err)
+			fmt.Println("❌无效邮箱", err)
+			return false
 		}
 		email = strings.TrimSpace(email)
 		if !_function.VerifyEmail(email) {
-			log.Fatal("❌无效邮箱")
+			fmt.Println("❌无效邮箱")
+			return false
 		}
 		fmt.Print("管理员密码 (自动清理空格): ")
 		password, err = reader.ReadString('\n')
 		if err != nil {
-			log.Fatal("❌无效密码", err)
+			fmt.Println("❌无效密码", err)
+			return false
 		}
 		password = strings.TrimSpace(password)
 		if password == "" {
-			log.Fatal("❌无效密码")
+			fmt.Println("❌无效密码")
+			return false
 		}
 	} else {
 		fmt.Println("管理员用户名:", name)
 		fmt.Println("管理员邮箱:", email)
-		fmt.Println("管理员密码:", password)
+		fmt.Println("管理员密码:", strings.Repeat("*", len(password)))
 	}
 
 	passwordHash, err := _function.CreatePasswordHash(password)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("❌保存密码失败", err)
+		return false
 	}
 
 	fmt.Println("⌛正在注册管理员账号...")
@@ -152,9 +164,11 @@ func SetupSystem(dbExists, autoInstall bool, name, email, password string) {
 	if _function.GormDB.DBMode == db.DBModeSQLite {
 		err := _function.GormDB.W.Exec("VACUUM;").Error
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println("❌清理数据库失败", err)
+			return false
 		}
 	}
 
-	fmt.Println("🎉安装成功！")
+	fmt.Println("✅安装成功")
+	return true
 }

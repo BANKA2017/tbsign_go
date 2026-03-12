@@ -4,7 +4,7 @@ import (
 	"crypto/hmac"
 	"encoding/base64"
 	"errors"
-	"log"
+	"log/slog"
 	"math"
 	"net/http"
 	"strconv"
@@ -158,7 +158,7 @@ func ResetMessageBuilder(uid int32, forceMode bool) *_function.VerifyCodeStruct 
 
 	if !ok || _v == nil {
 		v = &_function.VerifyCodeStruct{
-			Expire: _function.Now.Add(time.Second * time.Duration(_function.ResetPwdExpire)).Unix(),
+			Expire: time.Now().Add(time.Second * time.Duration(_function.ResetPwdExpire)).Unix(),
 		}
 	} else {
 		v = _v
@@ -218,7 +218,7 @@ func SendResetMessage(uid int32, pushType string, forceMode bool) (string, error
 
 	err := _function.SendMessage(userMessageType, uid, mailObject.Title, mailObject.Body)
 	if err != nil {
-		log.Println("send-reset-message", err)
+		slog.Error("passport.reset-password", "uid", uid, "error", err)
 		return "", errors.New("消息发送失败")
 	}
 

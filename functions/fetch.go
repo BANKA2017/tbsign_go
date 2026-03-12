@@ -6,8 +6,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"mime"
 	"mime/multipart"
 	"net"
@@ -33,7 +34,7 @@ func init() {
 	var err error
 	CACertPool, err = x509.SystemCertPool()
 	if err != nil {
-		log.Println("Unable to load system CA Cert Pool:", err)
+		slog.Warn("Load system CA failed", "error", err)
 
 	}
 
@@ -43,7 +44,7 @@ func init() {
 
 	caFile, err := assets.EmbeddedCACert.ReadFile("ca/cacert.pem")
 	if err != nil {
-		log.Println("Unable to load embedded CA Cert file")
+		slog.Warn("Load embedded CA failed", "error", err)
 	} else {
 		CACertPool.AppendCertsFromPEM(caFile)
 	}
@@ -113,7 +114,7 @@ func Fetch(_url string, _method string, _body []byte, _headers map[string]string
 	}
 	req, err := http.NewRequest(_method, _url, body)
 	if err != nil {
-		log.Println("fetch:", err)
+		slog.Debug("fetch.init-request", "error", err)
 		return nil, err
 	}
 	req.Header.Set("User-Agent", ClientUserAgent)
@@ -127,13 +128,13 @@ func Fetch(_url string, _method string, _body []byte, _headers map[string]string
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Println("fetch:", err)
+		slog.Debug("fetch.do-request", "error", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 	response, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("fetch:", err)
+		slog.Debug("fetch.read-response", "error", err)
 		return nil, err
 	}
 
@@ -146,7 +147,24 @@ func Fetch(_url string, _method string, _body []byte, _headers map[string]string
 			}
 		}
 
-		log.Printf("\n---TEST MODE FETCH-vvv\nurl: %s\nmethod: %s\nbody: %v\nheaders: %v\n------\nres code: %d\nres headers: %v\nres str: %s\n---TEST MODE FETCH-^^^\n\n", _url, _method, _body, _headers, resp.StatusCode, resp.Header, strResponse)
+		fmt.Printf(`
+===== TEST MODE FETCH =====
+
+Request
+  URL:     %s
+  Method:  %s
+  Body:    %v
+  Headers: %v
+
+Response
+  Status:  %d
+  Headers: %v
+  Body:
+%s
+
+===========================
+
+`, _url, _method, _body, _headers, resp.StatusCode, resp.Header, strResponse)
 	}
 
 	return response, err
@@ -224,7 +242,7 @@ func AddSign(form map[string]string, clientType string) {
 	for _, v := range formKeys {
 		payload.WriteString(v + "=" + form[v])
 	}
-	//log.Println("payload", payload)
+	//fmt.Println("payload", payload)
 	form["sign"] = strings.ToUpper(Md5(payload.String() + signSalt))
 }
 
@@ -253,7 +271,7 @@ func GetTbs(bduss string) (*_type.TbsResponse, error) {
 }
 
 func PostCheckinClient(cookie _type.TypeCookie, kw string, fid int32) (*_type.ClientSignResponse, error) {
-	//log.Println(cookie, kw, fid)
+	//fmt.Println(cookie, kw, fid)
 	// ZnJvbV93aWRnZXQ9MSAtPiBEb3VibGUgU2lnbi1pbiBFeHBlcmllbmNl
 	var form = make(map[string]string)
 	form["BDUSS"] = cookie.Bduss
@@ -527,7 +545,7 @@ func GetUserInfoByTiebaUID(tbuid string) (*tbpb.GetUserByTiebaUidResIdl_DataRes,
 	if err != nil {
 		return nil, err
 	}
-	//log.Println(resp, string(resp))
+	//fmt.Println(resp, string(resp))
 	var res tbpb.GetUserByTiebaUidResIdl
 	err = proto.Unmarshal(resp, &res)
 	if err != nil {
@@ -605,7 +623,7 @@ func GetLoginQRCode() (*_type.LoginQRCode, error) {
 }
 
 func GetUnicastResponse(sign string) (*_type.WrapUnicastResponse, error) {
-	callbackName := "tangram_guid_" + strconv.Itoa(int(Now.UnixMilli()))
+	callbackName := "tangram_guid_" + strconv.Itoa(int(time.Now().UnixMilli()))
 
 	res, err := TBFetch("https://passport.baidu.com/channel/unicast?channel_id="+sign+"&tpl=mn&_sdkFrom=1&callback="+callbackName+"&apiver=v3", http.MethodGet, nil, EmptyHeaders)
 	if err != nil {
@@ -707,7 +725,7 @@ func GetManagerInfo(fid uint64) (*tbpb.GetBawuInfoResIdl_DataRes, error) {
 	if err != nil {
 		return nil, err
 	}
-	// log.Println(resp, string(resp))
+	// fmt.Println(resp, string(resp))
 	var res tbpb.GetBawuInfoResIdl
 	err = proto.Unmarshal(resp, &res)
 	if err != nil {

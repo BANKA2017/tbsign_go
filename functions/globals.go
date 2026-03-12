@@ -3,7 +3,7 @@ package _function
 import (
 	crypto_rand "crypto/rand"
 	"encoding/base64"
-	"log"
+	"log/slog"
 	"math/rand/v2"
 	"net/url"
 	"strconv"
@@ -22,6 +22,12 @@ import (
 	_ "time/tzdata"
 )
 
+// Tieba works in GMT+8
+func init() {
+	loc, _ := time.LoadLocation("Asia/Shanghai")
+	time.Local = loc
+}
+
 var Options = NewKV[string, string]() //  make(map[string]string)
 var CookieList = NewKV(
 	ttlcache.WithCapacity[int32, _type.TypeCookie](100),
@@ -32,15 +38,6 @@ var FidList = NewKV(
 
 const ResetPwdMaxTimes = 5
 const ResetPwdExpire = 60 * 5 // 5 mins
-
-// Tieba works in GMT+8
-var LocalTime, _ = time.LoadLocation("Asia/Shanghai")
-
-var Now = time.Now().In(LocalTime)
-
-func UpdateNow() {
-	Now = time.Now().In(LocalTime)
-}
 
 var syncCookieTasks singleflight.Group
 
@@ -106,7 +103,7 @@ func GetFid(name string) int64 {
 			if _fid == 0 {
 				forumNameInfo, err := GetForumNameShare(name)
 				if err != nil {
-					log.Println("fid:", err)
+					slog.Error("get-fid", "name", name, "error", err)
 				}
 				_fid = int64(forumNameInfo.Data.Fid)
 			}
@@ -143,9 +140,10 @@ func InitOptions() {
 
 // for GMT+8
 func LocaleTimeDiff(hour int64) int64 {
-	targetTime := time.Date(Now.Year(), Now.Month(), Now.Day(), int(hour), 0, 0, 0, LocalTime)
+	now := time.Now()
+	targetTime := time.Date(now.Year(), now.Month(), now.Day(), int(hour), 0, 0, 0, now.Location())
 
-	if targetTime.After(Now) {
+	if now.Before(targetTime) {
 		targetTime = targetTime.Add(-24 * time.Hour)
 	}
 

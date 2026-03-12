@@ -2,7 +2,7 @@ package _function
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"mime"
 	"net/http"
 	"net/url"
@@ -227,7 +227,7 @@ func SendEmail(_to, title, body string) error {
 
 	if share.TestMode {
 		m, i, err := client.Start()
-		log.Println("mail client:", m, string(i), err)
+		slog.Debug("mail-client", "mech", m, "initial_response", string(i), "error", err)
 	}
 
 	to := []string{_to}
@@ -236,11 +236,11 @@ func SendEmail(_to, title, body string) error {
 		"MIME-Version: 1.0\r\n" +
 		"Content-Type: text/html; charset=UTF-8\r\n" +
 		"Subject: " + mime.QEncoding.Encode("UTF-8", title) + " \r\n" +
-		"Date: " + Now.Format(time.RFC3339) + "\r\n" +
+		"Date: " + time.Now().Format(time.RFC3339) + "\r\n" +
 		"Content-Transfer-Encoding: 8bit\r\n" +
-		"Message-ID: <" + Now.Format("20060102150405") + "." + strconv.Itoa(Now.Nanosecond()) + "." + mail + ">\r\n" +
+		"Message-ID: <" + time.Now().Format("20060102150405") + "." + strconv.Itoa(time.Now().Nanosecond()) + "." + mail + ">\r\n" +
 		"\r\n" +
-		body + "<br /><br />" + Now.Format(time.DateOnly) + "\r\n")
+		body + "<br /><br />" + time.Now().Format(time.DateOnly) + "\r\n")
 	return smtp.SendMail(smtp_host+":"+smtp_port, client, mail, to, msg)
 }
 

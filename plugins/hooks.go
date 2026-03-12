@@ -1,7 +1,7 @@
 package _plugin
 
 import (
-	"log"
+	"log/slog"
 	"sync"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
@@ -139,7 +139,7 @@ func InitPluginList() {
 		// sync option
 		for option, optionValue := range PluginList[pluginStatus.Name].(PluginHooks).GetInfo().Options {
 			if optionValue != "" && _function.GetOption(option) == "" {
-				log.Println("plugin:option:sync:", option, optionValue)
+				slog.Info("plugin.option.sync", option, optionValue)
 				_function.SetOption(option, optionValue)
 			}
 		}
