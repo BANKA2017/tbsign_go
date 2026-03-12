@@ -1,9 +1,13 @@
 package share
 
 import (
+	"log/slog"
 	"os"
+	"regexp"
 	"runtime"
 	"time"
+
+	"github.com/BANKA2017/tbsign_go/assets"
 )
 
 func init() {
@@ -26,12 +30,31 @@ func init() {
 	if _, err := os.Stat("/.dockerenv"); err == nil && os.Getenv("tc_docker_mode") == "true" {
 		BuildPublishType = "docker"
 	}
+
+	// fe-hash
+	indexFile, err := assets.EmbeddedFrontend.ReadFile("dist/index.html")
+
+	if err != nil {
+		return
+	}
+
+	re := regexp.MustCompile(`NUXT_COMMIT_HASH:"([0-9a-f]+)"`)
+	m := re.FindStringSubmatch(string(indexFile))
+
+	if len(m) > 1 {
+		BuildEmbeddedFrontendGitCommitHash2 = m[1]
+	}
+
+	if BuildEmbeddedFrontendGitCommitHash2 == "" || BuildEmbeddedFrontendGitCommitHash2 != BuildEmbeddedFrontendGitCommitHash {
+		slog.Warn("Frontend invalid or not built by current source code (share.build)", "embedded_fe_commit_hash", BuildEmbeddedFrontendGitCommitHash, "actual_fe_commit_hash", BuildEmbeddedFrontendGitCommitHash2)
+	}
 }
 
 var BuiltAt = "Now"
 var BuildRuntime = "Dev"
 var BuildGitCommitHash = "N/A"
 var BuildEmbeddedFrontendGitCommitHash = "N/A"
+var BuildEmbeddedFrontendGitCommitHash2 = ""
 var BuildPublishType = "source"
 
 var BuildAtTime time.Time

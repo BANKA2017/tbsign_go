@@ -8,7 +8,7 @@ import (
 var EmbeddedCACert embed.FS
 
 //go:embed all:dist/*
-var EmbeddedFrontent embed.FS
+var EmbeddedFrontend embed.FS
 
 //go:embed sql/*
 var EmbeddedSQL embed.FS

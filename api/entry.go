@@ -138,7 +138,7 @@ func Api(address string) {
 		e.Any("/favicon.ico", _function.EchoNoContent)
 		e.Any("/robots.txt", echoRobots)
 	} else {
-		fe, _ := fs.Sub(assets.EmbeddedFrontent, "dist")
+		fe, _ := fs.Sub(assets.EmbeddedFrontend, "dist")
 		e.GET("/icp.jsonp", func(c echo.Context) error {
 			return c.JSONP(200, "__GetICP", struct {
 				ICP string `json:"icp"`
