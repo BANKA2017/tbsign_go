@@ -306,6 +306,14 @@ func main() {
 		go _api.Api(share.Address)
 	}
 
+	// wait for next minute
+	if _function.GetOption("go_wait_for_next_minute_on_startup") != "0" {
+		slog.Info("等待到下一个整分钟以启动")
+		now := time.Now()
+		nextMinute := now.Truncate(time.Minute).Add(time.Minute)
+		time.Sleep(nextMinute.Sub(now))
+	}
+
 	// Interval
 	oneMinuteInterval := time.NewTicker(time.Minute)
 	defer oneMinuteInterval.Stop()

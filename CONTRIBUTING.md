@@ -6,7 +6,9 @@
 
 ## Pull requests
 
-保持 pull request 开启仅因为 GitHub 不支持关闭此功能，本项目**不接受**任何外部来源的 pull request。
+~~保持 pull request 开启仅因为 GitHub 不支持关闭此功能，本项目**不接受**任何外部来源的 pull request。~~
+
+已关闭功能
 
 ## Issues
 

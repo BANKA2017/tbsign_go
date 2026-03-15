@@ -48,4 +48,5 @@ var DefaultOptions = map[string]string{
 	"go_create_user_option_if_not_exist": "1",
 	"go_next_upgrade_func":               "0",
 	"go_allow_downgrade":                 "0",
+	"go_wait_for_next_minute_on_startup": "0",
 }
