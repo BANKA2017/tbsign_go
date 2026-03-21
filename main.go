@@ -306,11 +306,11 @@ func main() {
 		go _api.Api(share.Address)
 	}
 
-	// wait for next minute
+	// wait for the next minute
 	if _function.GetOption("go_wait_for_next_minute_on_startup") != "0" {
-		slog.Info("等待到下一个整分钟以启动")
 		now := time.Now()
 		nextMinute := now.Truncate(time.Minute).Add(time.Minute)
+		slog.Info("等待到下一个整分钟以启动", "next_minute", nextMinute)
 		time.Sleep(nextMinute.Sub(now))
 	}
 
@@ -336,7 +336,7 @@ func main() {
 
 			// plugins
 			for _, info := range _plugin.PluginList {
-				if _function.TinyIntToBool(info.(_plugin.PluginHooks).GetDBInfo().Status) {
+				if _function.TinyIntToBool(info.GetDBInfo().Status) {
 					go info.Action()
 				}
 			}

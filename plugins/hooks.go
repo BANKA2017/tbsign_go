@@ -11,13 +11,13 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type PluginListType map[string]PluginActionHooks
+type PluginListType map[string]Plugin
 
 var PluginList = make(PluginListType)
 var PluginOptionValidatorMap = _function.NewKV[string, *_function.OptionRule]()
 
-func (list PluginListType) Register(plugin PluginActionHooks) {
-	list[plugin.(PluginHooks).GetInfo().Name] = plugin
+func (list PluginListType) Register(plugin Plugin) {
+	list[plugin.GetInfo().Name] = plugin
 }
 
 type PluginEndpointStruct struct {
@@ -46,6 +46,11 @@ type PluginInfo struct {
 	Test           bool
 	Endpoints      []PluginEndpointStruct
 	sync.Mutex
+}
+
+type Plugin interface {
+	PluginHooks
+	PluginActionHooks
 }
 
 type PluginHooks interface {
@@ -134,10 +139,10 @@ func InitPluginList() {
 
 	for _, pluginStatus := range pluginListDB {
 		delete(pluginNameSet, pluginStatus.Name)
-		PluginList[pluginStatus.Name].(PluginHooks).SetDBInfo(pluginStatus)
+		PluginList[pluginStatus.Name].SetDBInfo(pluginStatus)
 
 		// sync option
-		for option, optionValue := range PluginList[pluginStatus.Name].(PluginHooks).GetInfo().Options {
+		for option, optionValue := range PluginList[pluginStatus.Name].GetInfo().Options {
 			if optionValue != "" && _function.GetOption(option) == "" {
 				slog.Info("plugin.option.sync", option, optionValue)
 				_function.SetOption(option, optionValue)
@@ -145,13 +150,13 @@ func InitPluginList() {
 		}
 
 		// option validator
-		for optionKey, optionValidator := range PluginList[pluginStatus.Name].(PluginHooks).GetInfo().SettingOptions {
+		for optionKey, optionValidator := range PluginList[pluginStatus.Name].GetInfo().SettingOptions {
 			PluginOptionValidatorMap.Store(optionKey, optionValidator.Validate, -1)
 		}
 	}
 	for key := range pluginNameSet {
 		delete(pluginNameSet, key)
-		PluginList[key].(PluginHooks).SetDBInfo(&model.TcPlugin{
+		PluginList[key].SetDBInfo(&model.TcPlugin{
 			Name:    key,
 			Status:  0,
 			Ver:     "-1",
@@ -175,8 +180,8 @@ func UpdatePluginInfo(name string, version string, status bool, options string) 
 	}
 
 	// memory cache
-	info := PluginList[name].(PluginHooks).GetInfo()
-	PluginList[name].(PluginHooks).SetDBInfo(&model.TcPlugin{
+	info := PluginList[name].GetInfo()
+	PluginList[name].SetDBInfo(&model.TcPlugin{
 		Name:    name,
 		Status:  0,
 		Ver:     info.Version,
@@ -184,7 +189,7 @@ func UpdatePluginInfo(name string, version string, status bool, options string) 
 	})
 
 	// option validator
-	for optionKey, optionValidator := range PluginList[name].(PluginHooks).GetInfo().SettingOptions {
+	for optionKey, optionValidator := range PluginList[name].GetInfo().SettingOptions {
 		PluginOptionValidatorMap.Store(optionKey, optionValidator.Validate, -1)
 	}
 	AddToSettingsFilter()
@@ -194,7 +199,7 @@ func UpdatePluginInfo(name string, version string, status bool, options string) 
 
 func DeletePluginInfo(name string) error {
 	// memory cache
-	PluginList[name].(PluginHooks).SetDBInfo(&model.TcPlugin{
+	PluginList[name].SetDBInfo(&model.TcPlugin{
 		Name:    name,
 		Status:  0,
 		Ver:     "-1",
@@ -202,7 +207,7 @@ func DeletePluginInfo(name string) error {
 	})
 
 	// option validator
-	for optionKey := range PluginList[name].(PluginHooks).GetInfo().SettingOptions {
+	for optionKey := range PluginList[name].GetInfo().SettingOptions {
 		PluginOptionValidatorMap.Delete(optionKey)
 	}
 	AddToSettingsFilter()
@@ -216,7 +221,7 @@ func AddToSettingsFilter() {
 
 func DeleteAccount(_type string, id int32, tx *gorm.DB) error {
 	for _, p := range PluginList {
-		if p.(PluginHooks).GetDBInfo().Ver != "-1" {
+		if p.GetDBInfo().Ver != "-1" {
 			if err := p.RemoveAccount(_type, id, tx); err != nil {
 				return err
 			}

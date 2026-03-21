@@ -565,7 +565,7 @@ func AdminResetAccountPlugin(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "插件不存在", false, "tbsign"))
 	}
 
-	if _pluginInfo.(_plugin.PluginHooks).GetDBInfo().Ver == "-1" {
+	if _pluginInfo.GetDBInfo().Ver == "-1" {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "插件尚未安装", false, "tbsign"))
 	}
 
@@ -613,7 +613,7 @@ func PluginSwitch(c echo.Context) error {
 	}
 
 	// auto install
-	if _pluginInfo.(_plugin.PluginHooks).GetDBInfo().Ver == "-1" {
+	if _pluginInfo.GetDBInfo().Ver == "-1" {
 		// TODO more flexible?
 		_pluginInfo.Delete()
 		err := _pluginInfo.Install()
@@ -627,13 +627,13 @@ func PluginSwitch(c echo.Context) error {
 		}
 	}
 
-	newPluginStatus := _pluginInfo.(_plugin.PluginHooks).Switch()
+	newPluginStatus := _pluginInfo.Switch()
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
 		"name":    pluginName,
 		"exists":  true,
 		"status":  newPluginStatus,
-		"version": _pluginInfo.(_plugin.PluginHooks).GetDBInfo().Ver,
+		"version": _pluginInfo.GetDBInfo().Ver,
 	}, "tbsign"))
 }
 
@@ -651,7 +651,7 @@ func PluginUninstall(c echo.Context) error {
 		}, "tbsign"))
 	}
 
-	if _pluginInfo.(_plugin.PluginHooks).GetDBInfo().Ver == "-1" {
+	if _pluginInfo.GetDBInfo().Ver == "-1" {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "插件尚未安装", map[string]any{
 			"name":    pluginName,
 			"exists":  false,

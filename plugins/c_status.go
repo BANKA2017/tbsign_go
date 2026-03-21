@@ -91,7 +91,7 @@ func DailyReportAction() {
 
 				// plugins
 				for _, _pluginInfo := range PluginList {
-					if _pluginInfo.(PluginHooks).GetSwitch() {
+					if _pluginInfo.GetSwitch() {
 						// TDOO disable endpoint before install?
 						message, err := _pluginInfo.Report(data.UID, nil)
 						if err != nil || message == "" {

@@ -128,8 +128,8 @@ func Api(address string) {
 	plugin.GET("", GetPluginsList)
 	plugin.Use(PluginPathPrecheck)
 	for _, v := range _plugin.PluginList {
-		for _, r := range v.(_plugin.PluginHooks).GetEndpoints() {
-			plugin.Match([]string{r.Method}, "/"+v.(_plugin.PluginHooks).GetInfo().Name+"/"+r.Path, r.Function)
+		for _, r := range v.GetEndpoints() {
+			plugin.Match([]string{r.Method}, "/"+v.GetInfo().Name+"/"+r.Path, r.Function)
 		}
 	}
 

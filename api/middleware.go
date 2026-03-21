@@ -118,7 +118,7 @@ func PluginPathPrecheck(next echo.HandlerFunc) echo.HandlerFunc {
 
 		_pluginInfo, ok := _plugin.PluginList[pluginName]
 
-		if !ok || !_pluginInfo.(_plugin.PluginHooks).GetSwitch() {
+		if !ok || !_pluginInfo.GetSwitch() {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "插件不可用", _function.EchoEmptyObject, "tbsign"))
 		}
 
