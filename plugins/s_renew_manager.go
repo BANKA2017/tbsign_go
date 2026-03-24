@@ -13,6 +13,7 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	_type "github.com/BANKA2017/tbsign_go/types"
+	"github.com/kdnetwork/code-snippet/go/utils"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
@@ -87,28 +88,25 @@ func (pluginInfo *RenewManagerType) Action() {
 		_function.GormDB.R.Model(&model.TcKdRenewManager{}).Where("id > ? AND date < ? AND uid IN (?)", id, otime, subQuery).Order("id ASC").Limit(int(numLimit)).Find(&localRenewList)
 	}
 
-	intervalMap := map[int32]time.Time{}
+	userDurationMap := map[int32]time.Duration{}
 
 	for _, renewItem := range localRenewList {
-		if _, ok := intervalMap[renewItem.UID]; !ok {
+		userDuration, ok := userDurationMap[renewItem.UID]
+		if !ok {
 			strInterval := _function.GetUserOption("kd_renew_manager_interval", strconv.Itoa(int(renewItem.UID)))
 			interval, _ := strconv.ParseInt(strInterval, 10, 64)
-			if interval <= 0 {
-				interval = 1
-			} else if interval >= 30 {
-				interval = 29
-			}
-			intervalMap[renewItem.UID] = now.Add(time.Hour * -24 * time.Duration(interval))
+			userDuration = time.Hour * 24 * time.Duration(utils.Clamp(interval, 1, 29))
+			userDurationMap[renewItem.UID] = userDuration
 		}
 
-		if intervalMap[renewItem.UID].Before(time.Unix(int64(renewItem.Date), 0)) {
+		if now.Before(time.Unix(int64(renewItem.Date), 0).Add(userDuration)) {
 			continue
 		}
 
 		tmpLog := []string{}
 
 		// sync tasks
-		var extInterval int32 = 0
+		var endDuration int32 = 0
 		res2, err := _function.GetManagerTasks(_function.GetCookie(renewItem.Pid), int64(renewItem.Fid))
 		if err != nil {
 			slog.Error("renew_manager.action.sync_tasks", "error", err)
@@ -120,9 +118,13 @@ func (pluginInfo *RenewManagerType) Action() {
 			} else {
 				tmpLog = append(tmpLog, "sync: done")
 
-				if renewItem.End < int32(res2.Data.BawuTask.EndTime) {
-					extInterval = int32(res2.Data.BawuTask.EndTime) - renewItem.End
-					renewItem.End = int32(res2.Data.BawuTask.EndTime)
+				remoteEnd := int32(res2.Data.BawuTask.EndTime)
+
+				if renewItem.End < remoteEnd {
+					endDuration = remoteEnd - renewItem.End
+					renewItem.End = remoteEnd
+					// new Date
+					renewItem.Date += endDuration
 				}
 			}
 
@@ -136,32 +138,32 @@ func (pluginInfo *RenewManagerType) Action() {
 			// }
 		}
 
-		if !intervalMap[renewItem.UID].Add(time.Duration(extInterval) * time.Second).Before(time.Unix(int64(renewItem.Date), 0)) {
+		if !now.Before(time.Unix(int64(renewItem.Date), 0).Add(userDuration)) {
 			// send cancel top package
 			res, err := PluginRenewManagerCancelTop(_function.GetCookie(renewItem.Pid), renewItem.Fname, renewItem.Tid)
 
 			if err != nil {
 				slog.Error("renew_manager.action.cancel_top", "response", res, "error", err)
 				renewItem.Status = "failed"
-				tmpLog = append(tmpLog, "cacnel_top: failed")
+				tmpLog = append(tmpLog, "cancel_top: failed")
 			} else {
 				if res.No != 0 {
 					slog.Error("renew_manager.action.cancel_top", "code", res.ErrCode, "error", res.Error)
 					renewItem.Status = "failed"
-					tmpLog = append(tmpLog, fmt.Sprintf("cacnel_top: %d#%s", res.ErrCode, res.Error))
+					tmpLog = append(tmpLog, fmt.Sprintf("cancel_top: %d#%s", res.ErrCode, res.Error))
 				} else {
 					renewItem.Status = "success"
-					tmpLog = append(tmpLog, "cacnel_top: done")
+					tmpLog = append(tmpLog, "cancel_top: done")
 				}
 			}
 
 			// new Date
 			renewItem.Date = int32(time.Now().Unix())
 		} else {
-			tmpLog = append(tmpLog, "cacnel_top: skip")
+			tmpLog = append(tmpLog, "cancel_top: skip")
 
 			// new Date
-			renewItem.Date += extInterval
+			// need not update
 		}
 
 		// previous logs

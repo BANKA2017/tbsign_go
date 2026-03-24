@@ -533,27 +533,29 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 		}
 
 		// check exists
-		banUserInfo, err := _function.GetUserInfoByUsernameOrPortrait("portrait", portrait)
-		if err != nil && banUserInfo.No != 0 {
+		// 一些 bot 账号无法使用旧接口查询 -> https://tieba.baidu.com/f?kw=%E6%8A%93%E8%99%BE
+		banUserInfo, err := _function.GetNewPCUserCard(portrait)
+		if err != nil || banUserInfo.No != 0 {
 			accountsResult = append(accountsResult, addAccountsResponseList{
 				PID:      int32(numPid),
 				Portrait: portrait,
 				Success:  false,
-				Msg:      "账号不存在",
+				Msg:      "无法获取账号信息",
+			})
+		} else {
+			successPortraitList = append(successPortraitList, portrait)
+			accountsToInsert = append(accountsToInsert, &model.TcVer4BanList{
+				UID:      int32(numUID),
+				Pid:      int32(numPid),
+				Name:     "", //banUserInfo.Data.Name,// new pc endpoint doesn't provide this
+				NameShow: banUserInfo.Data.UserInfo.NameShow,
+				Portrait: portrait,
+				Tieba:    fname,
+				Stime:    int32(startTime.Unix()),
+				Etime:    int32(endTime.Unix()),
+				Date:     0,
 			})
 		}
-		successPortraitList = append(successPortraitList, portrait)
-		accountsToInsert = append(accountsToInsert, &model.TcVer4BanList{
-			UID:      int32(numUID),
-			Pid:      int32(numPid),
-			Name:     banUserInfo.Data.Name,
-			NameShow: banUserInfo.Data.NameShow,
-			Portrait: portrait,
-			Tieba:    fname,
-			Stime:    int32(startTime.Unix()),
-			Etime:    int32(endTime.Unix()),
-			Date:     0,
-		})
 	}
 
 	if len(accountsToInsert) > 0 {
