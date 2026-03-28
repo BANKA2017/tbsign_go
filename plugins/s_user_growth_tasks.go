@@ -78,7 +78,7 @@ var UserGrowthTasksPlugin = _function.VPtr(UserGrowthTasksPluginType{
 	},
 })
 
-var UserGrowthTasksPluginClientVersion = "12.84.3.0"
+var UserGrowthTasksPluginClientVersion = "22.3.3"
 
 var UserGrowthTasksBreakList = []string{"open_push_switch"}
 
@@ -151,7 +151,7 @@ type UserGrowthTask struct {
 	// TaskDoneNum  int   `json:"task_done_num,omitempty"`
 	// TaskThreadID []any `json:"task_thread_id,omitempty"`
 	// TargetKw           string `json:"target_kw,omitempty"`
-	// TargetScheme       string `json:"target_scheme,omitempty"`
+	TargetScheme string `json:"target_scheme,omitempty"`
 	// TargetChatroomName string `json:"target_chatroom_name,omitempty"`
 	// TargetChatroomID   int    `json:"target_chatroom_id,omitempty"`
 }
