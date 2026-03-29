@@ -33,7 +33,7 @@ jobs:
           repository: "BANKA2017/tbsign_go_fe"
           path: tbsign_go_fe
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         name: Setup Node
         with:
           node-version: 22
@@ -52,7 +52,7 @@ jobs:
           yarn run generate
 
       - name: Upload frontend
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "tbsign_go.fe"
           path: tbsign_go_fe/.output/public/
@@ -81,7 +81,7 @@ jobs:
           echo "build_prefix=${build_prefix}" >> "$GITHUB_OUTPUT"
           echo "ldflags=${ldflags}" >> "$GITHUB_OUTPUT"
       - name: Upload cacert
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "tbsign_go.cacert"
           path: assets/ca/cacert.pem
@@ -102,20 +102,20 @@ jobs:
       commit_hash: ${{ needs.build-frontend.outputs.commit_hash }}
       fe_commit_hash: ${{ needs.build-frontend.outputs.fe_commit_hash }}
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: tbsign_go.fe
           path: tbsign_go.fe
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: tbsign_go.musl.*.binary
           path: build
           merge-multiple: true
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: tbsign_go.darwin
           path: build
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: tbsign_go.windows
           path: build
@@ -144,7 +144,7 @@ jobs:
           echo "fe_sha256=$(cat build/${build_prefix}.fe.tar.gz.sha256)" >> "$GITHUB_ENV"
 
       # - name: Upload package
-      #   uses: actions/upload-artifact@v4
+      #   uses: actions/upload-artifact@v7
       #   with:
       #     name: 'tbsign_go.all'
       #     path: build/*
@@ -191,15 +191,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@master
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: tbsign_go.fe
           path: assets/dist
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: tbsign_go.cacert
           path: assets/ca/
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GOVERSION }}
           cache-dependency-path: "go.sum"
@@ -213,7 +213,7 @@ jobs:
           CC=${{ matrix.arch.compiler }} go build -o "${{ env.build_prefix }}.linux-${{ matrix.arch.name }}" -ldflags "$ldflags -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=binary'" -tags netgo
 
       - name: Upload package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "tbsign_go.musl.${{ matrix.arch.name }}.binary"
           path: ${{ env.build_prefix }}.linux-${{ matrix.arch.name }}
@@ -229,15 +229,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@master
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: tbsign_go.fe
           path: assets/dist
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: tbsign_go.cacert
           path: assets/ca/
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GOVERSION }}
           cache-dependency-path: "go.sum"
@@ -251,7 +251,7 @@ jobs:
           CGO_CFLAGS="-mmacosx-version-min=${{ env.mmacosx_version_min }} -arch x86_64" CGO_LDFLAGS="-mmacosx-version-min=${{ env.mmacosx_version_min }} -arch x86_64" GOOS=darwin GOARCH=amd64 go build -o "${{ env.build_prefix }}.darwin-amd64" -ldflags "$ldflags" -tags netgo
 
       - name: Upload package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "tbsign_go.darwin"
           path: |
@@ -269,15 +269,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@master
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: tbsign_go.fe
           path: assets/dist
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: tbsign_go.cacert
           path: assets/ca/
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GOVERSION }}
           cache-dependency-path: "go.sum"
@@ -288,7 +288,7 @@ jobs:
           go build -o "${{ env.build_prefix }}.windows-amd64.exe" -ldflags "$ldflags" -tags netgo
 
       - name: Upload package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "tbsign_go.windows"
           path: ${{ env.build_prefix }}.windows-amd64.exe
@@ -303,6 +303,7 @@ jobs:
       id-token: write
 
     needs:
+      - build-frontend
       - build-linux-binary
     env:
       build_prefix: ${{ needs.build-frontend.outputs.build_prefix }}
@@ -310,7 +311,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@master
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: tbsign_go.musl.*.binary
           path: docker
