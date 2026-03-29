@@ -1,11 +1,14 @@
 package _plugin
 
 import (
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -78,9 +81,11 @@ var UserGrowthTasksPlugin = _function.VPtr(UserGrowthTasksPluginType{
 	},
 })
 
-var UserGrowthTasksPluginClientVersion = "22.3.3"
+var UserGrowthTasksPluginClientVersion = "22.4.1.0"
 
+var activeTasks = []string{"daily_task", "live_task", "exchange_flow_task"}
 var UserGrowthTasksBreakList = []string{"open_push_switch"}
+var UserGrowthTasksExchangeFlowTaskIDs = []int{591}
 
 type UserGrowthTasksWebResponse struct {
 	No    int    `json:"no"`
@@ -88,13 +93,9 @@ type UserGrowthTasksWebResponse struct {
 }
 
 type UserGrowthTasksClientResponse struct {
-	ServerTime string `json:"server_time,omitempty"`
-	Time       int    `json:"time,omitempty"`
-	Ctime      int    `json:"ctime,omitempty"`
-	Logid      int64  `json:"logid,omitempty"`
-	ErrorCode  string `json:"error_code,omitempty"`
-	ErrorMsg   string `json:"error_msg,omitempty"`
-	Info       []any  `json:"info,omitempty"`
+	No    int    `json:"no,omitempty"`
+	Error string `json:"error,omitempty"`
+	Data  any    `json:"data,omitempty"`
 }
 
 type LevelInfo struct {
@@ -157,6 +158,7 @@ type UserGrowthTask struct {
 }
 
 type UserGrowthTaskToSave struct {
+	TaskID  int    `json:"task_id"`
 	Name    string `json:"name"`
 	ActType string `json:"act_type"`
 	Status  int    `json:"status"`
@@ -191,14 +193,15 @@ func PostGrowthTaskByWeb(cookie _type.TypeCookie, task string) (*UserGrowthTasks
 }
 
 // share_thread page_sign
-// seems tieba removed this endpoint
-func PostGrowthTaskByClient(cookie _type.TypeCookie, task string) (*UserGrowthTasksClientResponse, error) {
+func PostGrowthTaskByClient(cookie _type.TypeCookie, task string, taskID int) (*UserGrowthTasksClientResponse, error) {
 	form := map[string]string{
-		"BDUSS":           cookie.Bduss,
 		"act_type":        task,
 		"cuid":            "-",
 		"tbs":             cookie.Tbs,
 		"_client_version": UserGrowthTasksPluginClientVersion,
+
+		"subapp_type":       "hybrid",
+		"act_data[task_id]": strconv.Itoa(taskID),
 	}
 	_function.AddSign(form, "2")
 	_body := url.Values{}
@@ -208,7 +211,10 @@ func PostGrowthTaskByClient(cookie _type.TypeCookie, task string) (*UserGrowthTa
 		}
 	}
 
-	response, err := _function.TBFetch("https://tiebac.baidu.com/c/c/user/commitUGTaskInfo", http.MethodPost, []byte(_body.Encode()+"&sign="+form["sign"]), _function.EmptyHeaders)
+	response, err := _function.TBFetch("https://tieba.baidu.com/mo/q/usertask/commitUGTaskInfo", http.MethodPost, []byte(_body.Encode()+"&sign="+form["sign"]), map[string]string{
+		"Cookie":      "BDUSS=" + cookie.Bduss,
+		"Subapp-Type": "hybrid",
+	})
 
 	if err != nil {
 		return nil, err
@@ -278,8 +284,6 @@ func GetUserGrowthTasksList(cookie _type.TypeCookie) (*UserGrowthTasksListRespon
 	return resp, err
 }
 
-var activeTasks = []string{"daily_task", "live_task"} // "exchange_flow_task"
-
 // TODO redo growth tasks(?)
 func (pluginInfo *UserGrowthTasksPluginType) Action() {
 	if !pluginInfo.PluginInfo.CheckActive() {
@@ -330,6 +334,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 		cookie := accountCookiesList[taskUserItem.Pid]
 
 		// ext tasks
+		// TODO should add task_id
 		if extTasks, ok := extTasksList[taskUserItem.UID]; !ok {
 			if err := _function.JsonDecode([]byte(_function.GetUserOption("kd_growth_ext_tasks", strconv.Itoa(int(taskUserItem.UID)))), &extTasks); err != nil {
 				extTasksList[taskUserItem.UID] = make(map[string]string)
@@ -364,7 +369,15 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 				if taskTypeListList.TabName == "basic" {
 					for _, taskTypeList := range taskTypeListList.TaskTypeList {
 						if slices.Contains(activeTasks, taskTypeList.TaskType) {
-							tasksList = append(tasksList, taskTypeList.TaskList...)
+							if taskTypeList.TaskType == "exchange_flow_task" {
+								for _, taskItem := range taskTypeList.TaskList {
+									if slices.Contains(UserGrowthTasksExchangeFlowTaskIDs, taskItem.ID) {
+										tasksList = append(tasksList, taskItem)
+									}
+								}
+							} else {
+								tasksList = append(tasksList, taskTypeList.TaskList...)
+							}
 						}
 						if taskTypeList.TaskType == "icon_task" && slices.Contains([]string{"0", ""}, _function.GetUserOption("kd_growth_break_icon_tasks", strconv.Itoa(int(taskUserItem.UID)))) {
 							for _, iconTaskItem := range taskTypeList.TaskList {
@@ -373,6 +386,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 									postCollectStampRES, err := PostCollectStamp(cookie, iconTaskItem.ID)
 									if err != nil {
 										result = append(result, UserGrowthTaskToSave{
+											TaskID:  iconTaskItem.ID,
 											Name:    iconTaskItem.Name,
 											ActType: iconTaskItem.ActType,
 											Status:  0,
@@ -381,6 +395,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 									} else {
 										if postCollectStampRES.No == 0 {
 											result = append(result, UserGrowthTaskToSave{
+												TaskID:  iconTaskItem.ID,
 												Name:    iconTaskItem.Name,
 												ActType: iconTaskItem.ActType,
 												Status:  1,
@@ -388,6 +403,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 											})
 										} else {
 											result = append(result, UserGrowthTaskToSave{
+												TaskID:  iconTaskItem.ID,
 												Name:    iconTaskItem.Name,
 												ActType: iconTaskItem.ActType,
 												Status:  0,
@@ -406,6 +422,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 			}
 		} else {
 			tasksList = append(tasksList, UserGrowthTask{
+				ID:         20,
 				Name:       "每日签到",
 				ActType:    "page_sign",
 				SortStatus: 1,
@@ -437,15 +454,47 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 				continue
 			} else if task.SortStatus == 2 {
 				result = append(result, UserGrowthTaskToSave{
+					TaskID:  task.ID,
 					Name:    task.Name,
 					ActType: task.ActType,
 					Status:  1,
 					Msg:     "success",
 				})
 			} else if task.SortStatus == 1 && (task.ExpireTime == 0 || task.ExpireTime > int(time.Now().Unix())) {
-				response, err := PostGrowthTaskByWeb(cookie, task.ActType)
+				var response *UserGrowthTasksWebResponse
+
+				switch task.ActType {
+				case "task_entry_page":
+					// task_entry_page -> 前往某些手游官方贴吧并**预约**
+					// 使用插件完成任务不会触发预约行为，但在本日完成前**不要**在客户端点击对应任务，会自动**预约**
+					// !!! **预约**无法取消，请注意
+					var res *UserGrowthTasksClientResponse
+					res, err = PostGrowthTaskByClient(cookie, task.ActType, task.ID)
+					if err == nil {
+						response = &UserGrowthTasksWebResponse{
+							No:    res.No,
+							Error: res.Error,
+						}
+					}
+				case "task_wake_third_app":
+					if task.ID == 591 {
+						var res *growthTasks591ExecuteResponse
+						res, err = growthTasks591(task.TargetScheme)
+						if err == nil {
+							response = &UserGrowthTasksWebResponse{
+								No:    res.Errno,
+								Error: res.Errmsg,
+							}
+						}
+					}
+				default:
+					response, err = PostGrowthTaskByWeb(cookie, task.ActType)
+				}
+
 				if err != nil {
+					slog.Debug("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", err)
 					result = append(result, UserGrowthTaskToSave{
+						TaskID:  task.ID,
 						Name:    task.Name,
 						ActType: task.ActType,
 						Status:  0,
@@ -454,6 +503,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 				} else {
 					if response.No == 0 {
 						result = append(result, UserGrowthTaskToSave{
+							TaskID:  task.ID,
 							Name:    task.Name,
 							ActType: task.ActType,
 							Status:  1,
@@ -461,6 +511,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 						})
 					} else {
 						result = append(result, UserGrowthTaskToSave{
+							TaskID:  task.ID,
 							Name:    task.Name,
 							ActType: task.ActType,
 							Status:  0,
@@ -498,7 +549,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 				if i > 0 {
 					tmpLog.WriteString(",")
 				}
-				tmpLog.WriteString(r.ActType + ":" + strconv.Itoa(r.Status))
+				tmpLog.WriteString(strconv.Itoa(r.TaskID) + ":" + r.Name + ":" + r.ActType + ":" + strconv.Itoa(r.Status))
 			}
 
 			slog.Debug("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "result", string(jsonResult))
@@ -749,4 +800,110 @@ func PluginGrowthTasksGetTasksStatus(c echo.Context) error {
 	} else {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "账号不存在", _function.EchoEmptyObject, "tbsign"))
 	}
+}
+
+// special tasks
+
+// 591
+var growthTasks591Request1 = string([]byte{104, 116, 116, 112, 115, 58, 47, 47, 101, 111, 112, 97, 46, 98, 97, 105, 100, 117, 46, 99, 111, 109, 47, 97, 112, 105, 47, 116, 97, 115, 107, 47, 101, 120, 116, 101, 114, 110, 97, 108, 47, 98, 105, 122, 116, 97, 115, 107, 47, 99, 111, 109, 112, 108, 101, 116, 101})
+var growthTasks591RequestReferrer = string([]byte{104, 116, 116, 112, 115, 58, 47, 47, 97, 99, 116, 105, 118, 105, 116, 121, 46, 98, 97, 105, 100, 117, 46, 99, 111, 109, 47})
+
+var growthTasks591SecretMap = map[string]string{
+	"1309": string([]byte{109, 118, 82, 83, 55, 100, 106, 90, 81, 122, 101, 99, 117, 109, 84, 90, 49, 110, 88, 112, 81, 79, 65, 50, 113, 120, 89, 107, 118, 101, 49, 117}),
+	"578":  string([]byte{110, 114, 115, 114, 107, 108, 114, 55, 68, 121, 69, 88, 86, 53, 65, 97, 115, 117, 51, 105, 88, 113, 104, 108, 80, 48, 71, 98, 84, 67, 111, 49}),
+	"798":  string([]byte{82, 107, 49, 43, 50, 100, 88, 75, 43, 100, 52, 116, 108, 105, 98, 103, 103, 108, 100, 77, 52, 87, 82, 117, 119, 84, 112, 97, 65, 85, 107, 89, 79, 105, 49, 109, 109, 112, 76, 107, 105, 110, 107, 61}),
+	"799":  string([]byte{57, 106, 73, 52, 101, 122, 83, 72, 68, 85, 69, 81, 85, 85, 70, 78, 86, 105, 107, 118, 99, 51, 102, 78, 87, 102, 109, 105, 118, 87, 86, 83, 113, 75, 77, 53, 79, 106, 89, 68, 104, 72, 52, 61}),
+	"800":  string([]byte{100, 81, 69, 87, 70, 98, 81, 120, 66, 104, 68, 113, 106, 101, 69, 109, 99, 117, 90, 57, 57, 101, 54, 50, 113, 54, 85, 112, 75, 54, 98, 116, 90, 98, 75, 75, 71, 103, 108, 112, 101, 66, 65, 61}),
+	"983":  string([]byte{56, 97, 49, 54, 48, 51, 49, 100, 45, 57, 49, 99, 99, 45, 52, 51, 50, 56, 45, 55, 57, 54, 56, 45, 102, 57, 51, 49, 57, 51, 97, 52, 98, 48, 101, 51}),
+	"1150": string([]byte{49, 86, 122, 105, 105, 52, 106, 90, 99, 76, 78, 50, 80, 122, 100, 56, 118, 79, 102, 70, 75, 120, 89, 108, 74, 89, 71, 53, 73, 66, 110, 80}),
+}
+
+type growthTasks591TaskInfo struct {
+	ID        string         `json:"id"`
+	SDKParams map[string]any `json:"sdkParams"`
+}
+
+type growthTasks591ExecuteResponse struct {
+	Errno  int    `json:"errno"`
+	Errmsg string `json:"errmsg"`
+}
+
+func growthTasks591GenerateSign(body map[string]string, secret string) map[string]string {
+	if secret == "" {
+		return body
+	}
+
+	keys := make([]string, 0, len(body))
+	for k := range body {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	// build sign payload
+	var parts []string
+	for _, k := range keys {
+		parts = append(parts, fmt.Sprintf("%s=%s", k, body[k]))
+	}
+	data := strings.Join(parts, "&")
+
+	body["sign"] = hex.EncodeToString(_function.GenHMAC256([]byte(data), []byte(secret)))
+	return body
+}
+
+func growthTasks591(uri string) (*growthTasks591ExecuteResponse, error) {
+	schemeURL, err := url.Parse(uri)
+	if err != nil {
+		return nil, fmt.Errorf("解析 uri 失败: %v", err)
+	}
+
+	innerURL := schemeURL.Query().Get("url")
+	innerParsed, err := url.Parse(innerURL)
+	if err != nil {
+		return nil, fmt.Errorf("解析内部 URL 失败: %v", err)
+	}
+
+	taskInfoStr := innerParsed.Query().Get("taskInfo")
+	var taskInfo growthTasks591TaskInfo
+	if err := json.Unmarshal([]byte(taskInfoStr), &taskInfo); err != nil {
+		return nil, fmt.Errorf("解析 taskInfo 失败: %v", err)
+	}
+
+	body := make(map[string]string)
+	for k, v := range taskInfo.SDKParams {
+		switch val := v.(type) {
+		case string:
+			body[k] = val
+		default:
+			jsonVal, _ := json.Marshal(val)
+			body[k] = string(jsonVal)
+		}
+	}
+
+	body["taskId"] = taskInfo.ID
+	body["timestamp"] = strconv.FormatInt(time.Now().Unix()*1000, 10)
+
+	growthTasks591GenerateSign(body, growthTasks591SecretMap[taskInfo.ID])
+
+	formData := url.Values{}
+	for k, v := range body {
+		formData.Set(k, v)
+	}
+
+	res, err := _function.TBFetch(
+		growthTasks591Request1, http.MethodPost,
+		[]byte(formData.Encode()), map[string]string{
+			"Content-Type": "application/x-www-form-urlencoded",
+			"Referer":      growthTasks591RequestReferrer,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var result growthTasks591ExecuteResponse
+	if err := json.Unmarshal(res, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }
