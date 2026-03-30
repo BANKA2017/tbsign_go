@@ -66,6 +66,9 @@ func Api(address string) {
 	passport.DELETE("/delete", DeleteAccount)
 	passport.PUT("/update/info", UpdateAccountInfo)
 	passport.PUT("/update/password", UpdatePassword)
+	passport.POST("/plugin/:plugin_name/reset", ResetAccountPlugin)
+	passport.POST("/plugin/:plugin_name/reset/:pid", ResetAccountPlugin)
+	passport.POST("/plugin/:plugin_name/reset/:pid/:tid", ResetAccountPlugin)
 
 	// tieba account
 	tiebaAccount := api.Group("/account")

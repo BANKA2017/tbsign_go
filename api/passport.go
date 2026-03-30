@@ -929,3 +929,44 @@ func ImportAccountData(c echo.Context) error {
 		"tc_baiduid": len(newTcBaiduID),
 	}, "tbsign"))
 }
+
+type ResetAccountPluginParams struct {
+	PluginName string `param:"plugin_name"`
+	Pid        uint64 `param:"pid"`
+	Tid        uint64 `param:"tid"`
+}
+
+func ResetAccountPlugin(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	params := new(ResetAccountPluginParams)
+	if err := c.Bind(params); err != nil {
+		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "error", false, "tbsign"))
+	}
+
+	pluginName := params.PluginName
+
+	// plugin
+	_pluginInfo, ok := _plugin.PluginList[pluginName]
+	if !ok {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "插件不存在", false, "tbsign"))
+	}
+
+	if _pluginInfo.GetDBInfo().Ver == "-1" {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "插件不存在", false, "tbsign"))
+	}
+
+	numUID, err := strconv.ParseInt(uid, 10, 64)
+	if numUID <= 0 || err != nil {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
+	}
+
+	err = _pluginInfo.Reset(int32(numUID), int32(params.Pid), int32(params.Tid))
+
+	if err != nil {
+		slog.Error("passport.reset-account-plugin", "uid", uid, "plugin_name", _pluginInfo.GetInfo().Name, "error", err)
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, _pluginInfo.GetInfo().Name+" 插件重置失败", false, "tbsign"))
+	}
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
+}

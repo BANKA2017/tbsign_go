@@ -555,7 +555,6 @@ func AdminDeleteAccount(c echo.Context) error {
 func AdminResetAccountPlugin(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	c.Request().ParseForm()
 	pluginName := c.Param("plugin_name")
 	targetUID := c.Param("uid")
 
@@ -599,7 +598,6 @@ func AdminResetAccountPlugin(c echo.Context) error {
 }
 
 func PluginSwitch(c echo.Context) error {
-	c.Request().ParseForm()
 	pluginName := c.Param("plugin_name")
 
 	_pluginInfo, ok := _plugin.PluginList[pluginName]
@@ -638,7 +636,6 @@ func PluginSwitch(c echo.Context) error {
 }
 
 func PluginUninstall(c echo.Context) error {
-	c.Request().ParseForm()
 	pluginName := c.Param("plugin_name")
 
 	_pluginInfo, ok := _plugin.PluginList[pluginName]
