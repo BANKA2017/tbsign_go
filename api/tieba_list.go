@@ -178,7 +178,20 @@ func IgnoreTieba(c echo.Context) error {
 func CleanTiebaList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	_function.GormDB.W.Where("uid = ?", uid).Delete(&model.TcTieba{})
+	pid := c.Param("pid")
+
+	var numPid int64
+	if pid != "" {
+		numPid, _ = strconv.ParseInt(pid, 10, 64)
+	}
+
+	tx := _function.GormDB.W.Where("uid = ?", uid)
+
+	if numPid > 0 {
+		tx = tx.Where("pid = ?", numPid)
+	}
+
+	tx.Delete(&model.TcTieba{})
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]string{
 		"uid": uid,
 	}, "tbsign"))
@@ -187,6 +200,13 @@ func CleanTiebaList(c echo.Context) error {
 func RefreshTiebaList(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
+	pid := c.Param("pid")
+
+	var numPid int64
+	if pid != "" {
+		numPid, _ = strconv.ParseInt(pid, 10, 64)
+	}
+
 	arrayMode := IsArrayMode(c)
 
 	var tiebaAccounts []*model.TcBaiduid
@@ -194,7 +214,9 @@ func RefreshTiebaList(c echo.Context) error {
 
 	// get account list
 	for _, v := range tiebaAccounts {
-		_function.ScanTiebaByPid(v.ID)
+		if (numPid > 0 && v.ID == int32(numPid)) || numPid == 0 {
+			_function.ScanTiebaByPid(v.ID)
+		}
 	}
 
 	var tiebaList []*model.TcTieba
@@ -202,13 +224,20 @@ func RefreshTiebaList(c echo.Context) error {
 
 	if arrayMode {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", ForumListObj2Arr(tiebaList), "tbsign"))
-	} else {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaList, "tbsign"))
 	}
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaList, "tbsign"))
 }
 
 func GetTiebaList(c echo.Context) error {
 	uid := c.Get("uid").(string)
+
+	pid := c.Param("pid")
+
+	var numPid int64
+	if pid != "" {
+		numPid, _ = strconv.ParseInt(pid, 10, 64)
+	}
 
 	arrayMode := IsArrayMode(c)
 
@@ -216,16 +245,22 @@ func GetTiebaList(c echo.Context) error {
 	var tiebaListBatchQueryList []*model.TcTieba
 	// _function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaList)
 
-	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").FindInBatches(&tiebaListBatchQueryList, 1000, func(tx *gorm.DB, batch int) error {
+	tx := _function.GormDB.R.Where("uid = ?", uid).Order("id ASC")
+
+	if numPid > 0 {
+		tx = tx.Where("pid = ?", numPid)
+	}
+
+	tx.FindInBatches(&tiebaListBatchQueryList, 1000, func(tx *gorm.DB, batch int) error {
 		tiebaList = append(tiebaList, tiebaListBatchQueryList...)
 		return nil
 	})
 
 	if arrayMode {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", ForumListObj2Arr(tiebaList), "tbsign"))
-	} else {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaList, "tbsign"))
 	}
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaList, "tbsign"))
 }
 
 func ForumListObj2Arr(tiebaList []*model.TcTieba) [][9]any {

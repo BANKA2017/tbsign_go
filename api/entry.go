@@ -81,13 +81,16 @@ func Api(address string) {
 	// tieba list
 	tiebaList := api.Group("/list")
 	tiebaList.GET("", GetTiebaList)
+	tiebaList.GET("/:pid", GetTiebaList)
 	tiebaList.PATCH("", AddTieba)
 	tiebaList.DELETE("", CleanTiebaList)
+	tiebaList.DELETE("/:pid", CleanTiebaList)
 	tiebaList.POST("/sync", RefreshTiebaList, RateLimit(1, time.Second*10))
 	tiebaList.DELETE("/:pid/:fid", RemoveTieba)
 	tiebaList.PATCH("/:pid/:fid/ignore", IgnoreTieba)
 	tiebaList.DELETE("/:pid/:fid/ignore", IgnoreTieba)
 	tiebaList.POST("/:pid/:fid/reset", ResetTieba)
+	tiebaList.POST("/:pid/sync", RefreshTiebaList, RateLimit(1, time.Second*10))
 
 	// manage
 	admin := api.Group("/admin", AdminCheck)
