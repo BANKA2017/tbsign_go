@@ -213,14 +213,21 @@ func RefreshTiebaList(c echo.Context) error {
 	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
 
 	// get account list
+	synced := false
 	for _, v := range tiebaAccounts {
 		if (numPid > 0 && v.ID == int32(numPid)) || numPid == 0 {
 			_function.ScanTiebaByPid(v.ID)
+			synced = true
 		}
 	}
 
 	var tiebaList []*model.TcTieba
-	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaList)
+
+	if numPid == 0 {
+		_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaList)
+	} else if synced {
+		_function.GormDB.R.Where("uid = ? AND pid = ?", uid, numPid).Order("id ASC").Find(&tiebaList)
+	}
 
 	if arrayMode {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", ForumListObj2Arr(tiebaList), "tbsign"))
@@ -280,3 +287,8 @@ func ForumListObj2Arr(tiebaList []*model.TcTieba) [][9]any {
 	}
 	return listArray
 }
+
+// func GetForumStatus(c echo.Context) error {
+// 	uid := c.Get("uid").(string)
+// 	return nil
+// }
