@@ -94,6 +94,8 @@ func Api(address string) {
 	tiebaList.DELETE("/:pid/:fid/ignore", IgnoreTieba)
 	tiebaList.POST("/:pid/:fid/reset", ResetTieba)
 	tiebaList.POST("/:pid/sync", RefreshTiebaList, RateLimit(1, time.Second*10))
+	tiebaList.GET("/status", GetForumStatus)
+	tiebaList.GET("/status/:pid", GetForumStatus)
 
 	// manage
 	admin := api.Group("/admin", AdminCheck)

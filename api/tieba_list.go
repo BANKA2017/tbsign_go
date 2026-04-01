@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
@@ -288,7 +289,40 @@ func ForumListObj2Arr(tiebaList []*model.TcTieba) [][9]any {
 	return listArray
 }
 
-// func GetForumStatus(c echo.Context) error {
-// 	uid := c.Get("uid").(string)
-// 	return nil
-// }
+func GetForumStatus(c echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	pid := c.Param("pid")
+
+	var numPid int64
+	if pid != "" {
+		numPid, _ = strconv.ParseInt(pid, 10, 64)
+	}
+
+	var status struct {
+		Uid        int32 `json:"uid"`
+		Pid        int32 `json:"pid,omitempty"`
+		ForumCount int   `json:"forum_count"`
+		Success    int   `json:"success"`
+		Failed     int   `json:"failed"`
+		Waiting    int   `json:"waiting"`
+		IsIgnore   int   `json:"ignore"`
+	}
+
+	today := strconv.Itoa(time.Now().Day())
+	tx := _function.GormDB.R.Model(&model.TcTieba{}).
+		Select("uid, pid, COUNT(*) AS forum_count, SUM(CASE WHEN (no = 0) AND status = 0 AND latest = ? THEN 1 ELSE 0 END) AS success, SUM(CASE WHEN (no = 0) AND status <> 0 AND latest = ? THEN 1 ELSE 0 END) AS failed, SUM(CASE WHEN (no = 0) AND latest <> ? THEN 1 ELSE 0 END) AS waiting, SUM(CASE WHEN no <> 0 THEN 1 ELSE 0 END) AS is_ignore", today, today, today).
+		Where("uid = ?", uid)
+
+	if numPid > 0 {
+		tx = tx.Where("pid = ?", numPid)
+	}
+
+	tx.Scan(&status)
+
+	if numPid <= 0 {
+		status.Pid = 0
+	}
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", status, "tbsign"))
+}
