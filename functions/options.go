@@ -25,6 +25,7 @@ func GetOption(keyName string) string {
 }
 
 type OptionExt struct {
+	KeyName    string
 	Tx         *gorm.DB
 	EncryptKey *[]byte
 }
@@ -101,6 +102,44 @@ func GetUserOption(keyName string, uid string, ext ...OptionExt) string {
 		}
 	}
 	return tmpUserOption.Value
+}
+
+func GetUserOptionBatch(uid string, keyOptions ...OptionExt) map[string]string {
+	keys := make(map[string]OptionExt, len(keyOptions))
+	keyNames := make([]string, 0, len(keyOptions))
+	values := make(map[string]string, len(keyOptions))
+	for _, v := range keyOptions {
+		if v.KeyName != "" {
+			keys[v.KeyName] = v
+			keyNames = append(keyNames, v.KeyName)
+		}
+	}
+
+	if len(keyNames) == 0 {
+		return values
+	}
+
+	var tmpUserOption []*model.TcUsersOption
+	err := GormDB.R.Model(&model.TcUsersOption{}).Where("uid = ? AND name IN ?", uid, keyNames).Find(&tmpUserOption).Error
+
+	if err != nil || len(tmpUserOption) == 0 {
+		return values
+	}
+
+	for _, option := range tmpUserOption {
+		if ext, ok := keys[option.Name]; ok {
+			if ext.EncryptKey != nil {
+				if len(*ext.EncryptKey) == 32 && option.Value != "" {
+					newDecryptedValue, err := AES256GCMDecrypt(option.Value, *ext.EncryptKey)
+					if err == nil && newDecryptedValue != nil {
+						option.Value = string(newDecryptedValue)
+					}
+				}
+			}
+			values[option.Name] = option.Value
+		}
+	}
+	return values
 }
 
 func SetUserOption[T ~string | ~bool | ~int](keyName string, value T, uid string, ext ...OptionExt) error {

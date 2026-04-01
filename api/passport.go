@@ -322,40 +322,50 @@ func UpdateAccountInfo(c echo.Context) error {
 	}
 
 	// push
-	localPushNtfyTopic := _function.GetUserOption("go_ntfy_topic", uid, _function.OptionExt{
+
+	userPushOptions := _function.GetUserOptionBatch(uid, _function.OptionExt{
+		KeyName:    "go_ntfy_topic",
 		EncryptKey: &share.DataEncryptKeyByte,
+	}, _function.OptionExt{
+		KeyName:    "go_bark_key",
+		EncryptKey: &share.DataEncryptKeyByte,
+	}, _function.OptionExt{
+		KeyName:    "go_pushdeer_key",
+		EncryptKey: &share.DataEncryptKeyByte,
+	}, _function.OptionExt{
+		KeyName: "go_message_type",
+	}, _function.OptionExt{
+		KeyName: "go_daily_report",
 	})
+
+	localPushNtfyTopic := userPushOptions["go_ntfy_topic"]
 	if localPushNtfyTopic != ntfyTopic {
 		_function.SetUserOption("go_ntfy_topic", ntfyTopic, uid, _function.OptionExt{
 			EncryptKey: &share.DataEncryptKeyByte,
 		})
 		localPushNtfyTopic = ntfyTopic
 	}
-	localPushBarkKey := _function.GetUserOption("go_bark_key", uid, _function.OptionExt{
-		EncryptKey: &share.DataEncryptKeyByte,
-	})
+	localPushBarkKey := userPushOptions["go_bark_key"]
 	if localPushBarkKey != barkKey {
 		_function.SetUserOption("go_bark_key", barkKey, uid, _function.OptionExt{
 			EncryptKey: &share.DataEncryptKeyByte,
 		})
 		localPushBarkKey = barkKey
 	}
-	localPushPushdeerKey := _function.GetUserOption("go_pushdeer_key", uid, _function.OptionExt{
-		EncryptKey: &share.DataEncryptKeyByte,
-	})
+	localPushPushdeerKey := userPushOptions["go_pushdeer_key"]
 	if localPushPushdeerKey != pushdeerKey {
 		_function.SetUserOption("go_pushdeer_key", pushdeerKey, uid, _function.OptionExt{
 			EncryptKey: &share.DataEncryptKeyByte,
 		})
 		localPushPushdeerKey = pushdeerKey
 	}
-	localPushType := _function.GetUserOption("go_message_type", uid)
+	localPushType := userPushOptions["go_message_type"]
 	if localPushType != pushType && slices.Contains(_function.MessageTypeList, pushType) {
 		_function.SetUserOption("go_message_type", pushType, uid)
 		localPushType = pushType
 	}
 
-	localDailyReport := _function.GetUserOption("go_daily_report", uid) == "1"
+	localDailyReport := userPushOptions["go_daily_report"] == "1"
 	if localDailyReport != dailyReport {
 		_function.SetUserOption("go_daily_report", !localDailyReport, uid)
 		localDailyReport = dailyReport
@@ -460,6 +470,21 @@ func GetAccountInfo(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
+	userPushOptions := _function.GetUserOptionBatch(uid, _function.OptionExt{
+		KeyName:    "go_ntfy_topic",
+		EncryptKey: &share.DataEncryptKeyByte,
+	}, _function.OptionExt{
+		KeyName:    "go_bark_key",
+		EncryptKey: &share.DataEncryptKeyByte,
+	}, _function.OptionExt{
+		KeyName:    "go_pushdeer_key",
+		EncryptKey: &share.DataEncryptKeyByte,
+	}, _function.OptionExt{
+		KeyName: "go_message_type",
+	}, _function.OptionExt{
+		KeyName: "go_daily_report",
+	})
+
 	var resp = userInfoWithSettingsStruct{
 		userInfoStruct{
 			UID:    accountInfo[0].ID,
@@ -468,18 +493,12 @@ func GetAccountInfo(c echo.Context) error {
 			Avatar: _function.GetGravatarLink(accountInfo[0].Email),
 			Role:   accountInfo[0].Role,
 
-			NtfyTopic: _function.GetUserOption("go_ntfy_topic", uid, _function.OptionExt{
-				EncryptKey: &share.DataEncryptKeyByte,
-			}),
-			BarkKey: _function.GetUserOption("go_bark_key", uid, _function.OptionExt{
-				EncryptKey: &share.DataEncryptKeyByte,
-			}),
-			PushDeerKey: _function.GetUserOption("go_pushdeer_key", uid, _function.OptionExt{
-				EncryptKey: &share.DataEncryptKeyByte,
-			}),
+			NtfyTopic:   userPushOptions["go_ntfy_topic"],
+			BarkKey:     userPushOptions["go_bark_key"],
+			PushDeerKey: userPushOptions["go_pushdeer_key"],
 
-			PushType:    _function.GetUserOption("go_message_type", uid),
-			DailyReport: _function.GetUserOption("go_daily_report", uid),
+			PushType:    userPushOptions["go_message_type"],
+			DailyReport: userPushOptions["go_daily_report"],
 		},
 		make(map[string]string),
 	}
