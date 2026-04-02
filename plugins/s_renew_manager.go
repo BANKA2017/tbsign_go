@@ -106,7 +106,6 @@ func (pluginInfo *RenewManagerType) Action() {
 		tmpLog := []string{}
 
 		// sync tasks
-		var endDuration int32 = 0
 		res2, err := _function.GetManagerTasks(_function.GetCookie(renewItem.Pid), int64(renewItem.Fid))
 		if err != nil {
 			slog.Error("renew_manager.action.sync_tasks", "error", err)
@@ -121,10 +120,10 @@ func (pluginInfo *RenewManagerType) Action() {
 				remoteEnd := int32(res2.Data.BawuTask.EndTime)
 
 				if renewItem.End < remoteEnd {
-					endDuration = remoteEnd - renewItem.End
+					endDuration := remoteEnd - renewItem.End
 					renewItem.End = remoteEnd
-					// new Date
-					renewItem.Date += endDuration
+					// new Date // value of Date should not exceed now
+					renewItem.Date = min(renewItem.Date+endDuration, int32(now.Unix()))
 				}
 			}
 

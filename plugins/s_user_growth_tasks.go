@@ -95,7 +95,10 @@ type UserGrowthTasksWebResponse struct {
 type UserGrowthTasksClientResponse struct {
 	No    int    `json:"no,omitempty"`
 	Error string `json:"error,omitempty"`
-	Data  any    `json:"data,omitempty"`
+	Data  struct {
+		Toast          any   `json:"toast"` // they use PHP, so empty array `[]` means do nothing, an object and `success_task_ids` not empty means success
+		SuccessTaskIds []int `json:"success_task_ids"`
+	} `json:"data"`
 }
 
 type LevelInfo struct {
