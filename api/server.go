@@ -118,11 +118,16 @@ func GetPluginsList(c echo.Context) error {
 
 	for name, info := range _plugin.PluginList {
 		value := info.GetInfo()
+		status := _function.TinyIntToBool(value.Info.Status)
+
+		if !isAdmin && !status {
+			continue
+		}
 
 		resPluginList[name] = _function.VPtr(PluginListContent{
 			Name:   value.Name,
 			Ver:    value.Info.Ver,
-			Status: _function.TinyIntToBool(value.Info.Status),
+			Status: status,
 
 			PluginNameCN:      value.PluginNameCN,
 			PluginNameCNShort: value.PluginNameCNShort,
