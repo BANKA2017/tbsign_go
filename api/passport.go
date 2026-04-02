@@ -790,7 +790,7 @@ func ImportAccountData(c echo.Context) error {
 	decodedData := new(TcBackupUploadStruct)
 	err := _function.JsonDecode([]byte(backupData), decodedData)
 	if err != nil {
-		slog.Debug("passport.import-account-data.decode", "uid", uid, "error", err)
+		slog.Error("passport.import-account-data.decode", "uid", uid, "error", err)
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "备份数据读取失败", _function.EchoEmptyObject, "tbsign"))
 	}
 
@@ -901,7 +901,7 @@ func ImportAccountData(c echo.Context) error {
 	})
 
 	if err != nil {
-		slog.Debug("passport.import-account-data.import1", "uid", uid, "error", err)
+		slog.Error("passport.import-account-data.import1", "uid", uid, "error", err)
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "备份数据导入失败", _function.EchoEmptyObject, "tbsign"))
 	}
 
@@ -937,7 +937,7 @@ func ImportAccountData(c echo.Context) error {
 
 		if len(newTcTiebaWithoutAccountToInsert) > 0 {
 			if err := _function.GormDB.W.Create(&newTcTiebaWithoutAccountToInsert).Error; err != nil {
-				slog.Debug("passport.import-account-data.import2", "uid", uid, "error", err)
+				slog.Error("passport.import-account-data.import2", "uid", uid, "error", err)
 				return c.JSON(http.StatusOK, _function.ApiTemplate(500, "部分贴吧列表导入失败", _function.EchoEmptyObject, "tbsign"))
 			}
 		}

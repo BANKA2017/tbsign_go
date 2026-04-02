@@ -243,7 +243,7 @@ func RemoveTiebaAccount(c echo.Context) error {
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "Pid 不存在", _function.EchoEmptyObject, "tbsign"))
 	} else if err != nil {
-		slog.Debug("tieba.remove-tieba-account.find", "uid", uid, "pid", pid, "error", err)
+		slog.Error("tieba.remove-tieba-account.find", "uid", uid, "pid", pid, "error", err)
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
@@ -264,7 +264,7 @@ func RemoveTiebaAccount(c echo.Context) error {
 	})
 
 	if err != nil {
-		slog.Debug("tieba.remove-tieba-account.delete", "uid", uid, "pid", pid, "error", err)
+		slog.Error("tieba.remove-tieba-account.delete", "uid", uid, "pid", pid, "error", err)
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyObject, "tbsign"))
 	}
 

@@ -461,7 +461,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 					Msg:     "success",
 				})
 			} else if task.SortStatus == 1 && (task.ExpireTime == 0 || task.ExpireTime > int(time.Now().Unix())) {
-				var response *UserGrowthTasksWebResponse
+				response := new(UserGrowthTasksWebResponse)
 
 				switch task.ActType {
 				case "task_entry_page":
@@ -492,7 +492,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 				}
 
 				if err != nil {
-					slog.Debug("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", err)
+					slog.Error("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", err)
 					result = append(result, UserGrowthTaskToSave{
 						TaskID:  task.ID,
 						Name:    task.Name,
@@ -510,6 +510,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 							Msg:     "success",
 						})
 					} else {
+						slog.Error("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "code", response.No, "error", response.Error)
 						result = append(result, UserGrowthTaskToSave{
 							TaskID:  task.ID,
 							Name:    task.Name,
@@ -853,19 +854,19 @@ func growthTasks591GenerateSign(body map[string]string, secret string) map[strin
 func growthTasks591(uri string) (*growthTasks591ExecuteResponse, error) {
 	schemeURL, err := url.Parse(uri)
 	if err != nil {
-		return nil, fmt.Errorf("解析 uri 失败: %v", err)
+		return nil, fmt.Errorf("解析 uri 失败: %v (%s)", err, uri)
 	}
 
 	innerURL := schemeURL.Query().Get("url")
 	innerParsed, err := url.Parse(innerURL)
 	if err != nil {
-		return nil, fmt.Errorf("解析内部 URL 失败: %v", err)
+		return nil, fmt.Errorf("解析内部 URL 失败: %v (%s)", err, uri)
 	}
 
 	taskInfoStr := innerParsed.Query().Get("taskInfo")
 	var taskInfo growthTasks591TaskInfo
 	if err := json.Unmarshal([]byte(taskInfoStr), &taskInfo); err != nil {
-		return nil, fmt.Errorf("解析 taskInfo 失败: %v", err)
+		return nil, fmt.Errorf("解析 taskInfo 失败: %v (%s)", err, uri)
 	}
 
 	body := make(map[string]string)

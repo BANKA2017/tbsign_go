@@ -680,6 +680,7 @@ func (pluginInfo *ForumSupportPluginInfoType) Action() {
 			message := ""
 			if err != nil {
 				message = "助攻失败，发生了一些未知错误~"
+				slog.Error(message+" (plugin.forum-support.action)", "tieba", forumSupportItem.Tieba, "name", forumSupportItem.Name, "error", err, "pid", forumSupportItem.Pid)
 			} else {
 				switch response.No {
 				case 0:
@@ -693,9 +694,11 @@ func (pluginInfo *ForumSupportPluginInfoType) Action() {
 				default:
 					message = "抽风了~"
 				}
-			}
 
-			slog.Debug(message+" (plugin.forum-support.action)", "tieba", forumSupportItem.Tieba, "name", forumSupportItem.Name, "code", response.No, "error", response.Error, "pid", forumSupportItem.Pid)
+				if response.No != 0 {
+					slog.Error(message+" (plugin.forum-support.action)", "tieba", forumSupportItem.Tieba, "name", forumSupportItem.Name, "code", response.No, "error", response.Error, "pid", forumSupportItem.Pid)
+				}
+			}
 
 			// previous logs
 			previousLogs := []string{}
