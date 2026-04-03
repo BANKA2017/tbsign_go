@@ -203,9 +203,13 @@ func PostGrowthTaskByClient(cookie _type.TypeCookie, task string, taskID int) (*
 		"tbs":             cookie.Tbs,
 		"_client_version": UserGrowthTasksPluginClientVersion,
 
-		"subapp_type":       "hybrid",
-		"act_data[task_id]": strconv.Itoa(taskID),
+		"subapp_type": "hybrid",
 	}
+
+	if taskID > 0 {
+		form["act_data[task_id]"] = strconv.Itoa(taskID)
+	}
+
 	_function.AddSign(form, "2")
 	_body := url.Values{}
 	for k, v := range form {
@@ -464,38 +468,37 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 					Msg:     "success",
 				})
 			} else if task.SortStatus == 1 && (task.ExpireTime == 0 || task.ExpireTime > int(time.Now().Unix())) {
-				response := new(UserGrowthTasksWebResponse)
+				response := new(UserGrowthTasksClientResponse)
 
-				switch task.ActType {
-				case "task_entry_page":
-					// task_entry_page -> 前往某些手游官方贴吧并**预约**
-					// 使用插件完成任务不会触发预约行为，但在本日完成前**不要**在客户端点击对应任务，会自动**预约**
-					// !!! **预约**无法取消，请注意
-					var res *UserGrowthTasksClientResponse
-					res, err = PostGrowthTaskByClient(cookie, task.ActType, task.ID)
-					if err == nil {
-						response = &UserGrowthTasksWebResponse{
-							No:    res.No,
-							Error: res.Error,
-						}
-					}
-				case "task_wake_third_app":
+				if task.ActType == "task_wake_third_app" && task.ID > 0 {
 					if task.ID == 591 {
 						var res *growthTasks591ExecuteResponse
 						res, err = growthTasks591(task.TargetScheme)
 						if err == nil {
-							response = &UserGrowthTasksWebResponse{
-								No:    res.Errno,
-								Error: res.Errmsg,
+							response.No = res.Errno
+							response.Error = res.Errmsg
+							if res.Errno == 0 {
+								response.Data.SuccessTaskIds = []int{task.ID}
 							}
 						}
+					} else {
+						err = fmt.Errorf("unknown task_wake_third_app name: %s, act_type: %s, task_id: %d", task.Name, task.ActType, task.ID)
 					}
-				default:
-					response, err = PostGrowthTaskByWeb(cookie, task.ActType)
+				} else {
+					response, err = PostGrowthTaskByClient(cookie, task.ActType, task.ID)
 				}
+				// else {
+				// 	var res *UserGrowthTasksWebResponse
+				// 	res, err = PostGrowthTaskByWeb(cookie, task.ActType)
+				// 	// web api only return success or failed
+				// 	if err == nil {
+				// 		response.No = res.No
+				// 		response.Error = res.Error
+				// 	}
+				// }
 
 				if err != nil {
-					slog.Error("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", err)
+					slog.Error("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "task_id", task.ID, "task_name", task.Name, "act_type", task.ActType, "error", err)
 					result = append(result, UserGrowthTaskToSave{
 						TaskID:  task.ID,
 						Name:    task.Name,
@@ -505,15 +508,26 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 					})
 				} else {
 					if response.No == 0 {
-						result = append(result, UserGrowthTaskToSave{
-							TaskID:  task.ID,
-							Name:    task.Name,
-							ActType: task.ActType,
-							Status:  1,
-							Msg:     "success",
-						})
+						if len(response.Data.SuccessTaskIds) > 0 && slices.Contains(response.Data.SuccessTaskIds, task.ID) {
+							result = append(result, UserGrowthTaskToSave{
+								TaskID:  task.ID,
+								Name:    task.Name,
+								ActType: task.ActType,
+								Status:  1,
+								Msg:     "success",
+							})
+						} else {
+							slog.Error("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "task_id", task.ID, "task_name", task.Name, "act_type", task.ActType, "error", "received, but not successfully")
+							result = append(result, UserGrowthTaskToSave{
+								TaskID:  task.ID,
+								Name:    task.Name,
+								ActType: task.ActType,
+								Status:  0,
+								Msg:     "received, but not successfully",
+							})
+						}
 					} else {
-						slog.Error("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "code", response.No, "error", response.Error)
+						slog.Error("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "task_id", task.ID, "task_name", task.Name, "act_type", task.ActType, "code", response.No, "error", response.Error)
 						result = append(result, UserGrowthTaskToSave{
 							TaskID:  task.ID,
 							Name:    task.Name,
