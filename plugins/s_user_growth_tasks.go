@@ -484,18 +484,18 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 					} else {
 						err = fmt.Errorf("unknown task_wake_third_app name: %s, act_type: %s, task_id: %d", task.Name, task.ActType, task.ID)
 					}
-				} else {
+				} else if task.ID > 0 {
 					response, err = PostGrowthTaskByClient(cookie, task.ActType, task.ID)
+				} else {
+					// ext tasks should use web api because we can't verify whether success
+					var res *UserGrowthTasksWebResponse
+					res, err = PostGrowthTaskByWeb(cookie, task.ActType)
+					// web api only return success or failed
+					if err == nil {
+						response.No = res.No
+						response.Error = res.Error
+					}
 				}
-				// else {
-				// 	var res *UserGrowthTasksWebResponse
-				// 	res, err = PostGrowthTaskByWeb(cookie, task.ActType)
-				// 	// web api only return success or failed
-				// 	if err == nil {
-				// 		response.No = res.No
-				// 		response.Error = res.Error
-				// 	}
-				// }
 
 				if err != nil {
 					slog.Error("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "task_id", task.ID, "task_name", task.Name, "act_type", task.ActType, "error", err)
@@ -508,7 +508,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 					})
 				} else {
 					if response.No == 0 {
-						if len(response.Data.SuccessTaskIds) > 0 && slices.Contains(response.Data.SuccessTaskIds, task.ID) {
+						if task.ID == 0 || len(response.Data.SuccessTaskIds) > 0 && slices.Contains(response.Data.SuccessTaskIds, task.ID) {
 							result = append(result, UserGrowthTaskToSave{
 								TaskID:  task.ID,
 								Name:    task.Name,
@@ -545,14 +545,14 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 			_, err := _function.PostSync(cookie)
 			if err != nil {
 				result = append(result, UserGrowthTaskToSave{
-					Name:    "签到类集章任务",
+					Name:    "印记任务签到",
 					ActType: "active",
 					Status:  0,
 					Msg:     "failed",
 				})
 			} else {
 				result = append(result, UserGrowthTaskToSave{
-					Name:    "签到类集章任务",
+					Name:    "印记任务签到",
 					ActType: "active",
 					Status:  1,
 					Msg:     "success",

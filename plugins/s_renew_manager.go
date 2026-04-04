@@ -106,6 +106,11 @@ func (pluginInfo *RenewManagerType) Action() {
 		tmpLog := []string{}
 
 		// sync tasks
+		// endtime 不是实时更新的，并且时分秒永远都是 23:59:59
+		// bawutask 是实时更新，只要完成 taskstatus 就是 1
+
+		// todayDone := false
+
 		res2, err := _function.GetManagerTasks(_function.GetCookie(renewItem.Pid), int64(renewItem.Fid))
 		if err != nil {
 			slog.Error("renew_manager.action.sync_tasks", "error", err)
@@ -125,16 +130,20 @@ func (pluginInfo *RenewManagerType) Action() {
 					// new Date // value of Date should not exceed now
 					renewItem.Date = min(renewItem.Date+endDuration, int32(now.Unix()))
 				}
-			}
 
-			// done?
-			// done := false
-			// for _,remoteTask := range res2.Data.BawuTask.TaskList{
-			// 	if remoteTask.TaskStatus == "1" {
-			//
-			// 		break
-			// 	}
-			// }
+				// for _, remoteTask := range res2.Data.BawuTask.TaskList {
+				// 	if remoteTask.TaskStatus == "1" {
+				// 		todayDone = true
+				// 		break
+				// 	}
+				// }
+				//
+				// if todayDone {
+				// 	renewItem.Date = int32(now.Unix())
+				// 	renewItem.Status = "success"
+				// 	tmpLog = append(tmpLog, "cancel_top: skip")
+				// }
+			}
 		}
 
 		if !now.Before(time.Unix(int64(renewItem.Date), 0).Add(userDuration)) {
@@ -159,6 +168,7 @@ func (pluginInfo *RenewManagerType) Action() {
 			// new Date
 			renewItem.Date = int32(time.Now().Unix())
 		} else {
+			renewItem.Status = "success"
 			tmpLog = append(tmpLog, "cancel_top: skip")
 
 			// new Date
