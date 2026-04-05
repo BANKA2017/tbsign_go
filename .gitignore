@@ -11,3 +11,5 @@
 bom.json
 **/*.txt
 tbc-private/
+
+test/

@@ -41,7 +41,7 @@ var tcPrivateErrorID = map[int]string{
 var tableList = []string{"tieba"}
 var checkinToday string
 
-var LastBreakHour = 0
+var lastBreakHour = 0
 
 func Dosign(_ string, retry bool) (bool, error) {
 	//signMode := _function.GetOption("sign_mode")// client mode only
@@ -49,9 +49,9 @@ func Dosign(_ string, retry bool) (bool, error) {
 	signHour, _ := strconv.ParseInt(_function.GetOption("sign_hour"), 10, 64)
 	h := time.Now().Hour()
 	if int64(h) <= signHour {
-		if h != LastBreakHour {
+		if h != lastBreakHour {
 			slog.Info("忽略签到 (checkin.skip)", "hour", signHour)
-			LastBreakHour = h
+			lastBreakHour = h
 		}
 
 		return hasFailed, nil
