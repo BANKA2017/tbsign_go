@@ -103,6 +103,8 @@ func GetBDUSS(c echo.Context) error {
 				LastError: "等待重签",
 			})
 
+			_function.GetCookie(tiebaAccounts[0].ID, false, true)
+
 			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "已更新 BDUSS", newData, "tbsign"))
 		} else if tiebaAccounts[0].Bduss == bduss && tiebaAccounts[0].Stoken == stoken {
 			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "贴吧账号已存在", tiebaAccounts[0], "tbsign"))
@@ -188,6 +190,8 @@ func AddTiebaAccount(c echo.Context) error {
 				Latest:    0,
 				LastError: "等待重签",
 			})
+
+			_function.GetCookie(tiebaAccounts[0].ID, false, true)
 
 			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "已更新 BDUSS", newData, "tbsign"))
 		} else if tiebaAccounts[0].Bduss == bduss && tiebaAccounts[0].Stoken == stoken {

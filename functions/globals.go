@@ -73,6 +73,11 @@ func GetCookie(pid int32, ext ...bool) _type.TypeCookie {
 				return _cookie, nil
 			}
 
+			// not login
+			if ok && !forceSync && cookieDB.Bduss == cookie.Bduss && !cookie.IsLogin {
+				return cookie, nil
+			}
+
 			tbsResponse, err := GetTbs(cookieDB.Bduss)
 			if err != nil {
 				return _cookie, nil

@@ -210,31 +210,35 @@ func RefreshTiebaList(c echo.Context) error {
 
 	arrayMode := IsArrayMode(c)
 
-	var tiebaAccounts []*model.TcBaiduid
-	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
+	forumList, _, _ := RequestSingleFlight.Do(uid+":"+strconv.Itoa(int(numPid))+":/list/sync", func() (any, error) {
+		var tiebaAccounts []*model.TcBaiduid
+		_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
 
-	// get account list
-	synced := false
-	for _, v := range tiebaAccounts {
-		if (numPid > 0 && v.ID == int32(numPid)) || numPid == 0 {
-			_function.ScanTiebaByPid(v.ID)
-			synced = true
+		// get account list
+		synced := false
+		for _, v := range tiebaAccounts {
+			if (numPid > 0 && v.ID == int32(numPid)) || numPid == 0 {
+				_function.ScanTiebaByPid(v.ID)
+				synced = true
+			}
 		}
-	}
 
-	var tiebaList []*model.TcTieba
+		var tiebaList []*model.TcTieba
 
-	if numPid == 0 {
-		_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaList)
-	} else if synced {
-		_function.GormDB.R.Where("uid = ? AND pid = ?", uid, numPid).Order("id ASC").Find(&tiebaList)
-	}
+		if numPid == 0 {
+			_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaList)
+		} else if synced {
+			_function.GormDB.R.Where("uid = ? AND pid = ?", uid, numPid).Order("id ASC").Find(&tiebaList)
+		}
+
+		return tiebaList, nil
+	})
 
 	if arrayMode {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", ForumListObj2Arr(tiebaList), "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", ForumListObj2Arr(forumList.([]*model.TcTieba)), "tbsign"))
 	}
 
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaList, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", forumList.([]*model.TcTieba), "tbsign"))
 }
 
 func GetTiebaList(c echo.Context) error {
@@ -249,26 +253,30 @@ func GetTiebaList(c echo.Context) error {
 
 	arrayMode := IsArrayMode(c)
 
-	var tiebaList []*model.TcTieba
-	var tiebaListBatchQueryList []*model.TcTieba
-	// _function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaList)
+	forumList, _, _ := RequestSingleFlight.Do(uid+":"+strconv.Itoa(int(numPid))+":/list", func() (any, error) {
+		var tiebaList []*model.TcTieba
+		var tiebaListBatchQueryList []*model.TcTieba
+		// _function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaList)
 
-	tx := _function.GormDB.R.Where("uid = ?", uid).Order("id ASC")
+		tx := _function.GormDB.R.Where("uid = ?", uid).Order("id ASC")
 
-	if numPid > 0 {
-		tx = tx.Where("pid = ?", numPid)
-	}
+		if numPid > 0 {
+			tx = tx.Where("pid = ?", numPid)
+		}
 
-	tx.FindInBatches(&tiebaListBatchQueryList, 1000, func(tx *gorm.DB, batch int) error {
-		tiebaList = append(tiebaList, tiebaListBatchQueryList...)
-		return nil
+		tx.FindInBatches(&tiebaListBatchQueryList, 10000, func(tx *gorm.DB, batch int) error {
+			tiebaList = append(tiebaList, tiebaListBatchQueryList...)
+			return nil
+		})
+
+		return tiebaList, nil
 	})
 
 	if arrayMode {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", ForumListObj2Arr(tiebaList), "tbsign"))
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", ForumListObj2Arr(forumList.([]*model.TcTieba)), "tbsign"))
 	}
 
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaList, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", forumList.([]*model.TcTieba), "tbsign"))
 }
 
 func ForumListObj2Arr(tiebaList []*model.TcTieba) [][9]any {
@@ -289,6 +297,16 @@ func ForumListObj2Arr(tiebaList []*model.TcTieba) [][9]any {
 	return listArray
 }
 
+type forumStatus struct {
+	Uid        int32 `json:"uid"`
+	Pid        int32 `json:"pid,omitempty"`
+	ForumCount int   `json:"forum_count"`
+	Success    int   `json:"success"`
+	Failed     int   `json:"failed"`
+	Waiting    int   `json:"waiting"`
+	IsIgnore   int   `json:"ignore"`
+}
+
 func GetForumStatus(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
@@ -299,26 +317,23 @@ func GetForumStatus(c echo.Context) error {
 		numPid, _ = strconv.ParseInt(pid, 10, 64)
 	}
 
-	var status struct {
-		Uid        int32 `json:"uid"`
-		Pid        int32 `json:"pid,omitempty"`
-		ForumCount int   `json:"forum_count"`
-		Success    int   `json:"success"`
-		Failed     int   `json:"failed"`
-		Waiting    int   `json:"waiting"`
-		IsIgnore   int   `json:"ignore"`
-	}
+	anyStatus, _, _ := RequestSingleFlight.Do(uid+":"+strconv.Itoa(int(numPid))+":/list/status", func() (any, error) {
+		var status forumStatus
+		today := strconv.Itoa(time.Now().Day())
+		tx := _function.GormDB.R.Model(&model.TcTieba{}).
+			Select("uid, pid, COUNT(*) AS forum_count, SUM(CASE WHEN (no = 0) AND status = 0 AND latest = ? THEN 1 ELSE 0 END) AS success, SUM(CASE WHEN (no = 0) AND status <> 0 AND latest = ? THEN 1 ELSE 0 END) AS failed, SUM(CASE WHEN (no = 0) AND latest <> ? THEN 1 ELSE 0 END) AS waiting, SUM(CASE WHEN no <> 0 THEN 1 ELSE 0 END) AS is_ignore", today, today, today).
+			Where("uid = ?", uid)
 
-	today := strconv.Itoa(time.Now().Day())
-	tx := _function.GormDB.R.Model(&model.TcTieba{}).
-		Select("uid, pid, COUNT(*) AS forum_count, SUM(CASE WHEN (no = 0) AND status = 0 AND latest = ? THEN 1 ELSE 0 END) AS success, SUM(CASE WHEN (no = 0) AND status <> 0 AND latest = ? THEN 1 ELSE 0 END) AS failed, SUM(CASE WHEN (no = 0) AND latest <> ? THEN 1 ELSE 0 END) AS waiting, SUM(CASE WHEN no <> 0 THEN 1 ELSE 0 END) AS is_ignore", today, today, today).
-		Where("uid = ?", uid)
+		if numPid > 0 {
+			tx = tx.Where("pid = ?", numPid)
+		}
 
-	if numPid > 0 {
-		tx = tx.Where("pid = ?", numPid)
-	}
+		tx.Scan(&status)
 
-	tx.Scan(&status)
+		return status, nil
+	})
+
+	status := anyStatus.(forumStatus)
 
 	if numPid <= 0 {
 		status.Pid = 0

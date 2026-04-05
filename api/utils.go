@@ -16,6 +16,7 @@ import (
 	"github.com/jellydator/ttlcache/v3"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slices"
+	"golang.org/x/sync/singleflight"
 )
 
 var RoleList = []string{_function.RoleDeleted, _function.RoleBanned, _function.RoleUser, _function.RoleVIP, _function.RoleAdmin}
@@ -229,3 +230,5 @@ func IsArrayMode(c echo.Context) bool {
 	arrayModeValue := c.QueryParam("array_mode")
 	return arrayModeValue != "" && arrayModeValue != "0" && arrayModeValue != "false"
 }
+
+var RequestSingleFlight singleflight.Group
