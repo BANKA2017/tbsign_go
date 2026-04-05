@@ -75,9 +75,9 @@ func (pluginInfo *RenewManagerType) Action() {
 	d := now.Day()
 
 	// 2:00 开始重置
-	if now.Hour() == 2 && now.Minute() <= 5 {
+	if now.Hour() == 2 && now.Minute() < 30 {
 		if d != lastBreakDay {
-			slog.Info("renew_manager.action.skip", "time", "2:00~2:05", "date", d)
+			slog.Info("renew_manager.action.skip", "time", "2:00~2:30", "date", d)
 			lastBreakDay = d
 		}
 
@@ -121,7 +121,7 @@ func (pluginInfo *RenewManagerType) Action() {
 		tmpLog := []string{}
 
 		// sync tasks
-		// endtime 不是实时更新的，每天 2:00 以后重置，但不准点，可能是重置队列的先后顺序导致的
+		// endtime 不是实时更新的，每天 2:00 开始，根据未知的排列顺序进队列重置，2:00 开始每隔 1 秒请求一次，到重置时会因为锁表而卡住
 		// 新的 endtime 是重置当天 0:00 开始计算的 29天23小时59分钟59秒 后
 		// bawutask 是实时更新，只要完成 taskstatus 就是 1，重置 endtime 时同时重置 bawutask
 
@@ -149,7 +149,7 @@ func (pluginInfo *RenewManagerType) Action() {
 
 				if todayDone {
 					// 由于重置有延迟，这里极小概率会有 1 天的误差
-					// 2:00~2:05 不运行以尽量规避误差
+					// 2:00~2:30 不运行以尽量规避误差
 					today2clock := time.Date(now.Year(), now.Month(), now.Day(), 2, 0, 0, 0, now.Location())
 					if now.Before(today2clock) {
 						// today 0:00
