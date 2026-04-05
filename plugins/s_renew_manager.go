@@ -168,10 +168,15 @@ func (pluginInfo *RenewManagerType) Action() {
 						renewItem.Date = int32(now.Unix())
 					} else {
 						// new Date // value of Date should not exceed now
-						// TODO when lastTaskDate is 0
-						lastTaskDate := time.Unix(int64(renewItem.Date), 0)
+						var toHms time.Time
+						if renewItem.Date > 0 {
+							toHms = time.Unix(int64(renewItem.Date), 0)
+						} else {
+							toHms = now
+						}
+
 						remoteLastTaskDate := time.Unix(int64(renewItem.End), 0).Add(-time.Hour * 24 * 30)
-						renewItem.Date = int32(min(time.Date(remoteLastTaskDate.Year(), remoteLastTaskDate.Month(), remoteLastTaskDate.Day(), lastTaskDate.Hour(), lastTaskDate.Minute(), lastTaskDate.Second(), 0, now.Location()).Unix(), now.Unix()))
+						renewItem.Date = int32(min(time.Date(remoteLastTaskDate.Year(), remoteLastTaskDate.Month(), remoteLastTaskDate.Day(), toHms.Hour(), toHms.Minute(), toHms.Second(), 0, now.Location()).Unix(), now.Unix()))
 					}
 				} else if renewItem.Date == 0 && todayDone {
 					renewItem.Date = int32(now.Unix())
