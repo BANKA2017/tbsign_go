@@ -629,6 +629,7 @@ func PostForumSupport(cookie _type.TypeCookie, fid int32, nid string) (*TypeForu
 		"Cookie": "BDUSS=" + cookie.Bduss,
 	}
 
+	// when login is invalid, 302 to http://static.tieba.baidu.com/tb/error.html
 	supportResponse, err := _function.TBFetch("https://tieba.baidu.com/celebrity/submit/support", http.MethodPost, []byte(_body.Encode()), headersMap)
 
 	if err != nil {
@@ -676,27 +677,39 @@ func (pluginInfo *ForumSupportPluginInfoType) Action() {
 			_function.GormDB.W.Where("uid = ?", forumSupportItem.UID).Delete(&model.TcVer4RankLog{})
 			accountStatusList[forumSupportItem.UID] = "NOT_EXISTS"
 		} else if accountStatusList[forumSupportItem.UID] == "1" {
-			response, err := PostForumSupport(_function.GetCookie(forumSupportItem.Pid), forumSupportItem.Fid, forumSupportItem.Nid)
+			cookie := _function.GetCookie(forumSupportItem.Pid)
 			message := ""
-			if err != nil {
-				message = "助攻失败，发生了一些未知错误~"
-				slog.Error(message+" (plugin.forum-support.action)", "tieba", forumSupportItem.Tieba, "name", forumSupportItem.Name, "error", err, "pid", forumSupportItem.Pid)
-			} else {
-				switch response.No {
-				case 0:
-					message = "助攻成功啦~明天记得继续呦~"
-				case 340027:
-					message = "很抱歉，封禁用户无法助攻"
-				case 3110004:
-					message = "你还未关注当前吧哦, 快去关注吧~"
-				case 2280006:
-					message = "今日已助攻过了，或者度受抽风了~"
-				default:
-					message = "抽风了~"
-				}
+			errno := 0 // response.No / -1(login) / -2(request error)
 
-				if response.No != 0 {
-					slog.Error(message+" (plugin.forum-support.action)", "tieba", forumSupportItem.Tieba, "name", forumSupportItem.Name, "code", response.No, "error", response.Error, "pid", forumSupportItem.Pid)
+			if !cookie.IsLogin {
+				errno = -1
+				message = "账号未登录，跳过助攻~"
+				slog.Error("账号未登录，跳过助攻 (plugin.forum-support.action.login)", "tieba", forumSupportItem.Tieba, "name", forumSupportItem.Name, "pid", forumSupportItem.Pid)
+			} else {
+				response, err := PostForumSupport(cookie, forumSupportItem.Fid, forumSupportItem.Nid)
+
+				if err != nil {
+					errno = -2
+					message = "助攻失败，发生了一些未知错误~"
+					slog.Error(message+" (plugin.forum-support.action)", "tieba", forumSupportItem.Tieba, "name", forumSupportItem.Name, "error", err, "pid", forumSupportItem.Pid)
+				} else {
+					errno = response.No
+					switch response.No {
+					case 0:
+						message = "助攻成功啦~明天记得继续呦~"
+					case 340027:
+						message = "很抱歉，封禁用户无法助攻"
+					case 3110004:
+						message = "你还未关注当前吧哦, 快去关注吧~"
+					case 2280006:
+						message = "今日已助攻过了，或者度受抽风了~"
+					default:
+						message = "抽风了~"
+					}
+
+					if response.No != 0 {
+						slog.Error(message+" (plugin.forum-support.action)", "tieba", forumSupportItem.Tieba, "name", forumSupportItem.Name, "code", response.No, "error", response.Error, "pid", forumSupportItem.Pid)
+					}
 				}
 			}
 
@@ -711,7 +724,7 @@ func (pluginInfo *ForumSupportPluginInfoType) Action() {
 			}
 
 			_function.GormDB.W.Model(&model.TcVer4RankLog{}).Where("id = ?", forumSupportItem.ID).Updates(model.TcVer4RankLog{
-				Log:  fmt.Sprintf("<br/>%s #%d,%s%s", time.Now().Format(time.DateOnly), response.No, message, strings.Join(previousLogs, "<br/>")),
+				Log:  fmt.Sprintf("<br/>%s #%d,%s%s", time.Now().Format(time.DateOnly), errno, message, strings.Join(previousLogs, "<br/>")),
 				Date: int32(time.Now().Unix()),
 			})
 

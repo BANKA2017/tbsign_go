@@ -343,7 +343,7 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 	// status list
 	var accountStatusList = make(map[int64]string)
 	// cookie list
-	var accountCookiesList = make(map[int64]_type.TypeCookie)
+	// var accountCookiesList = make(map[int64]_type.TypeCookie)
 
 	// get list
 	todayBeginning := _function.LocaleTimeDiff(0) //GMT+8
@@ -411,155 +411,160 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 
 			_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", wenkuTasksPluginVipMatrixIDSetMap.Export(strUID), strUID)
 		} else {
-			if _, ok := accountCookiesList[taskUserItem.Pid]; !ok {
-				accountCookiesList[taskUserItem.Pid] = _function.GetCookie(int32(taskUserItem.Pid))
-			}
-			cookie := accountCookiesList[taskUserItem.Pid]
+			cookie := _function.GetCookie(int32(taskUserItem.Pid))
 
-			signinTasksResponse, err := GetWenkuTaskList(cookie, "signin")
-			if err != nil {
-				slog.Error("plugin.wenku-tasks.action.get-signin-list", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", err)
-				//continue
-			} else if signinTasksResponse.Status.Code != 0 {
-				slog.Error("plugin.wenku-tasks.action.get-signin-list", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", signinTasksResponse.Status.Msg, "response", signinTasksResponse)
+			if !cookie.IsLogin {
+				result = append(result, WenkuTaskToSave{
+					TaskName:   "未登录账号跳过",
+					TaskID:     -200,
+					TaskStatus: -998,
+					Msg:        "跳过",
+				})
 			} else {
-				for _, v := range signinTasksResponse.Data.TaskList {
-					if !tasksIDList[v.TaskID] && !slices.Contains(wenkuPassTasks, v.TaskID) && v.TaskStatus >= 1 && v.TaskStatus <= 3 {
-						tasksIDList[v.TaskID] = true
-						tasksList = append(tasksList, v)
-					}
-				}
-			}
-			if accountStatusList[taskUserItem.UID] != "1" {
-				tasksListResponse, err := GetWenkuTaskList(cookie, "tasklist")
+				signinTasksResponse, err := GetWenkuTaskList(cookie, "signin")
 				if err != nil {
-					slog.Error("plugin.wenku-tasks.action.get-task-list", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", err)
+					slog.Error("plugin.wenku-tasks.action.get-signin-list", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", err)
 					//continue
-				} else if tasksListResponse.Status.Code != 0 {
-					slog.Error("plugin.wenku-tasks.action.get-task-list", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", tasksListResponse.Status.Msg, "response", tasksListResponse)
+				} else if signinTasksResponse.Status.Code != 0 {
+					slog.Error("plugin.wenku-tasks.action.get-signin-list", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", signinTasksResponse.Status.Msg, "response", signinTasksResponse)
 				} else {
-					for _, v := range tasksListResponse.Data.TaskList {
+					for _, v := range signinTasksResponse.Data.TaskList {
 						if !tasksIDList[v.TaskID] && !slices.Contains(wenkuPassTasks, v.TaskID) && v.TaskStatus >= 1 && v.TaskStatus <= 3 {
 							tasksIDList[v.TaskID] = true
 							tasksList = append(tasksList, v)
 						}
 					}
 				}
-			}
-
-			for _, _task := range tasksList {
-				if accountStatusList[taskUserItem.UID] == "1" && _task.TaskID != 1 {
-					continue
+				if accountStatusList[taskUserItem.UID] != "1" {
+					tasksListResponse, err := GetWenkuTaskList(cookie, "tasklist")
+					if err != nil {
+						slog.Error("plugin.wenku-tasks.action.get-task-list", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", err)
+						//continue
+					} else if tasksListResponse.Status.Code != 0 {
+						slog.Error("plugin.wenku-tasks.action.get-task-list", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", tasksListResponse.Status.Msg, "response", tasksListResponse)
+					} else {
+						for _, v := range tasksListResponse.Data.TaskList {
+							if !tasksIDList[v.TaskID] && !slices.Contains(wenkuPassTasks, v.TaskID) && v.TaskStatus >= 1 && v.TaskStatus <= 3 {
+								tasksIDList[v.TaskID] = true
+								tasksList = append(tasksList, v)
+							}
+						}
+					}
 				}
 
-				task := _task
-				hasError := false
+				for _, _task := range tasksList {
+					if accountStatusList[taskUserItem.UID] == "1" && _task.TaskID != 1 {
+						continue
+					}
 
-				if task.TaskStatus == 1 {
-					doTask, err := UpdateWenkuTask(cookie, task.TaskID, task.MinAppVer, false)
-					if err != nil {
-						hasError = true
+					task := _task
+					hasError := false
+
+					if task.TaskStatus == 1 {
+						doTask, err := UpdateWenkuTask(cookie, task.TaskID, task.MinAppVer, false)
+						if err != nil {
+							hasError = true
+							result = append(result, WenkuTaskToSave{
+								TaskName:   task.TaskName,
+								TaskID:     task.TaskID,
+								TaskStatus: -999,
+								Msg:        "未知错误",
+								// RewardType: task.RewardType,
+								// RewardNum:  task.RewardNum,
+							})
+							slog.Error("未知错误 (plugin.wenku-tasks.action.type1)", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", err)
+						} else if doTask.Status.Code == 9 {
+							hasError = true
+							result = append(result, WenkuTaskToSave{
+								TaskName:   task.TaskName,
+								TaskID:     task.TaskID,
+								TaskStatus: 9,
+								Msg:        "您的账号因涉嫌刷分作弊而被封禁，不能进行此项操作",
+								// RewardType: task.RewardType,
+								// RewardNum:  task.RewardNum,
+							})
+							slog.Error("账号被封禁 (plugin.wenku-tasks.action.type9)", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "task", task)
+						} else if doTask.Status.Code != 0 {
+							hasError = true
+							result = append(result, WenkuTaskToSave{
+								TaskName:   task.TaskName,
+								TaskID:     task.TaskID,
+								TaskStatus: doTask.Status.Code,
+								Msg:        doTask.Status.Msg,
+								// RewardType: task.RewardType,
+								// RewardNum:  task.RewardNum,
+							})
+						} else {
+							task = doTask.Data.Task
+						}
+					}
+					if !hasError && task.TaskStatus == 2 {
+						claimResponse, err := UpdateWenkuTask(cookie, task.TaskID, task.MinAppVer, true)
+						if err != nil {
+							hasError = true
+							result = append(result, WenkuTaskToSave{
+								TaskName:   task.TaskName,
+								TaskID:     task.TaskID,
+								TaskStatus: -999,
+								Msg:        "未知错误",
+								// RewardType: task.RewardType,
+								// RewardNum:  task.RewardNum,
+							})
+							slog.Error("未知错误 (plugin.wenku-tasks.action.type2)", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", err)
+						} else if claimResponse.Status.Code != 0 {
+							hasError = true
+							result = append(result, WenkuTaskToSave{
+								TaskName:   task.TaskName,
+								TaskID:     task.TaskID,
+								TaskStatus: claimResponse.Status.Code,
+								Msg:        claimResponse.Status.Msg,
+								// RewardType: task.RewardType,
+								// RewardNum:  task.RewardNum,
+							})
+						} else {
+							task = claimResponse.Data.Task
+						}
+					}
+
+					if !hasError && task.TaskStatus == 3 {
+						r := WenkuTaskToSave{
+							TaskName:   task.TaskName,
+							TaskID:     task.TaskID,
+							TaskStatus: task.TaskStatus,
+							Msg:        "success",
+							// RewardType: task.RewardType,
+							// RewardNum:  task.RewardNum,
+						}
+						if task.TaskID == 1 {
+							r.SignDay = int64(task.TaskExtra.SignDay)
+						}
+						result = append(result, r)
+					} else if !hasError && task.TaskStatus != 3 {
 						result = append(result, WenkuTaskToSave{
 							TaskName:   task.TaskName,
 							TaskID:     task.TaskID,
-							TaskStatus: -999,
+							TaskStatus: task.TaskStatus,
 							Msg:        "未知错误",
 							// RewardType: task.RewardType,
 							// RewardNum:  task.RewardNum,
 						})
-						slog.Error("未知错误 (plugin.wenku-tasks.action.type1)", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", err)
-					} else if doTask.Status.Code == 9 {
-						hasError = true
-						result = append(result, WenkuTaskToSave{
-							TaskName:   task.TaskName,
-							TaskID:     task.TaskID,
-							TaskStatus: 9,
-							Msg:        "您的账号因涉嫌刷分作弊而被封禁，不能进行此项操作",
-							// RewardType: task.RewardType,
-							// RewardNum:  task.RewardNum,
-						})
-						slog.Error("账号被封禁 (plugin.wenku-tasks.action.type9)", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "task", task)
-					} else if doTask.Status.Code != 0 {
-						hasError = true
-						result = append(result, WenkuTaskToSave{
-							TaskName:   task.TaskName,
-							TaskID:     task.TaskID,
-							TaskStatus: doTask.Status.Code,
-							Msg:        doTask.Status.Msg,
-							// RewardType: task.RewardType,
-							// RewardNum:  task.RewardNum,
-						})
-					} else {
-						task = doTask.Data.Task
-					}
-				}
-				if !hasError && task.TaskStatus == 2 {
-					claimResponse, err := UpdateWenkuTask(cookie, task.TaskID, task.MinAppVer, true)
-					if err != nil {
-						hasError = true
-						result = append(result, WenkuTaskToSave{
-							TaskName:   task.TaskName,
-							TaskID:     task.TaskID,
-							TaskStatus: -999,
-							Msg:        "未知错误",
-							// RewardType: task.RewardType,
-							// RewardNum:  task.RewardNum,
-						})
-						slog.Error("未知错误 (plugin.wenku-tasks.action.type2)", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", err)
-					} else if claimResponse.Status.Code != 0 {
-						hasError = true
-						result = append(result, WenkuTaskToSave{
-							TaskName:   task.TaskName,
-							TaskID:     task.TaskID,
-							TaskStatus: claimResponse.Status.Code,
-							Msg:        claimResponse.Status.Msg,
-							// RewardType: task.RewardType,
-							// RewardNum:  task.RewardNum,
-						})
-					} else {
-						task = claimResponse.Data.Task
-					}
-				}
-
-				if !hasError && task.TaskStatus == 3 {
-					r := WenkuTaskToSave{
-						TaskName:   task.TaskName,
-						TaskID:     task.TaskID,
-						TaskStatus: task.TaskStatus,
-						Msg:        "success",
-						// RewardType: task.RewardType,
-						// RewardNum:  task.RewardNum,
-					}
-					if task.TaskID == 1 {
-						r.SignDay = int64(task.TaskExtra.SignDay)
-					}
-					result = append(result, r)
-				} else if !hasError && task.TaskStatus != 3 {
-					result = append(result, WenkuTaskToSave{
-						TaskName:   task.TaskName,
-						TaskID:     task.TaskID,
-						TaskStatus: task.TaskStatus,
-						Msg:        "未知错误",
-						// RewardType: task.RewardType,
-						// RewardNum:  task.RewardNum,
-					})
-					slog.Error("未知错误 (plugin.wenku-tasks.action.type3)", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "task", task)
-				}
-
-				if isVipMatrix && task.TaskID == 1 && vipMatrixIDSet[2] == "1" {
-					since, _ := strconv.ParseInt(vipMatrixIDSet[1], 10, 64)
-					verifyDay := (int64(time.Now().Weekday()) + 7 - since) % 7
-					if verifyDay == 0 {
-						verifyDay = 7
+						slog.Error("未知错误 (plugin.wenku-tasks.action.type3)", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "task", task)
 					}
 
-					if task.TaskStatus != 3 || task.TaskExtra.SignDay != int(verifyDay) {
-						vipMatrixIDSet[2] = "0"
-						wenkuTasksPluginVipMatrixIDSetMap.MatrixIDMap[vipMatrixIDSet[0]] = vipMatrixIDSet
+					if isVipMatrix && task.TaskID == 1 && vipMatrixIDSet[2] == "1" {
+						since, _ := strconv.ParseInt(vipMatrixIDSet[1], 10, 64)
+						verifyDay := (int64(time.Now().Weekday()) + 7 - since) % 7
+						if verifyDay == 0 {
+							verifyDay = 7
+						}
 
-						_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", wenkuTasksPluginVipMatrixIDSetMap.Export(strUID), strUID)
+						if task.TaskStatus != 3 || task.TaskExtra.SignDay != int(verifyDay) {
+							vipMatrixIDSet[2] = "0"
+							wenkuTasksPluginVipMatrixIDSetMap.MatrixIDMap[vipMatrixIDSet[0]] = vipMatrixIDSet
+
+							_function.SetUserOption("kd_wenku_tasks_vip_matrix_id_set", wenkuTasksPluginVipMatrixIDSetMap.Export(strUID), strUID)
+						}
 					}
-
 				}
 			}
 		}

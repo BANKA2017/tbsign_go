@@ -126,7 +126,7 @@ func (pluginInfo *LotteryPluginPluginType) Action() {
 			if i > 0 {
 				time.Sleep(time.Second * time.Duration(waitSeconds))
 			}
-			cookie := _function.GetCookie(account.ID, true)
+			cookie := _function.GetCookie(account.ID)
 			dataToInsert := model.TcVer4LotteryLog{
 				UID:   cookie.UID,
 				Pid:   account.ID,
@@ -134,39 +134,45 @@ func (pluginInfo *LotteryPluginPluginType) Action() {
 				Prize: "-",
 			}
 
-			token, err := GetLotteryToken(cookie)
-			if err != nil || token == "" {
-				dataToInsert.Result = "无法获取 token"
-				slog.Error("无法获取 token (plugin.knows-lottery.get-lottery-token)", "error", err)
-			}
-
-			_, hasNotCompleted := notCompleteActionPid[account.ID]
-
-			resp, err := GetLottery(cookie, token)
-			if err != nil && (resp == nil || resp.Data == nil) {
-				dataToInsert.Result = "无法解析物品信息"
-				if hasNotCompleted {
-					delete(notCompleteActionPid, account.ID)
-				}
-				slog.Error("无法解析物品信息 (plugin.knows-lottery.get-lottery)", "response", resp, "error", err)
-			} else if err != nil && resp.Errno == 0 && len(resp.Data.PrizeList) == 0 {
-				if hasNotCompleted {
-					dataToInsert.Result = "未完成抽奖"
-					delete(notCompleteActionPid, account.ID)
-					slog.Error("第二次未完成抽奖 (plugin.knows-lottery.get-lottery)", "id", account.ID, "name", account.Name, "portrait", account.Portrait)
-				} else {
-					slog.Error("第一次未完成抽奖 (plugin.knows-lottery.get-lottery)", "id", account.ID, "name", account.Name, "portrait", account.Portrait)
-					notCompleteActionPid[account.ID] = struct{}{}
-				}
-			} else if resp.Errno != 0 {
-				dataToInsert.Result = resp.Errmsg
-				if hasNotCompleted {
-					delete(notCompleteActionPid, account.ID)
-				}
+			if !cookie.IsLogin {
+				dataToInsert.Result = "请先登录~"
+				slog.Error("请先登录~ (plugin.knows-lottery.login)", "uid", dataToInsert.UID, "pid", dataToInsert.Pid)
+				delete(notCompleteActionPid, account.ID)
 			} else {
-				dataToInsert.Prize = resp.Data.PrizeList[0].GoodsName
-				if hasNotCompleted {
-					delete(notCompleteActionPid, account.ID)
+				token, err := GetLotteryToken(cookie)
+				if err != nil || token == "" {
+					dataToInsert.Result = "无法获取 token"
+					slog.Error("无法获取 token (plugin.knows-lottery.get-lottery-token)", "error", err)
+				}
+
+				_, hasNotCompleted := notCompleteActionPid[account.ID]
+
+				resp, err := GetLottery(cookie, token)
+				if err != nil && (resp == nil || resp.Data == nil) {
+					dataToInsert.Result = "无法解析物品信息"
+					if hasNotCompleted {
+						delete(notCompleteActionPid, account.ID)
+					}
+					slog.Error("无法解析物品信息 (plugin.knows-lottery.get-lottery)", "response", resp, "error", err)
+				} else if err != nil && resp.Errno == 0 && len(resp.Data.PrizeList) == 0 {
+					if hasNotCompleted {
+						dataToInsert.Result = "未完成抽奖"
+						delete(notCompleteActionPid, account.ID)
+						slog.Error("第二次未完成抽奖 (plugin.knows-lottery.get-lottery)", "id", account.ID, "name", account.Name, "portrait", account.Portrait)
+					} else {
+						slog.Error("第一次未完成抽奖 (plugin.knows-lottery.get-lottery)", "id", account.ID, "name", account.Name, "portrait", account.Portrait)
+						notCompleteActionPid[account.ID] = struct{}{}
+					}
+				} else if resp.Errno != 0 {
+					dataToInsert.Result = resp.Errmsg
+					if hasNotCompleted {
+						delete(notCompleteActionPid, account.ID)
+					}
+				} else {
+					dataToInsert.Prize = resp.Data.PrizeList[0].GoodsName
+					if hasNotCompleted {
+						delete(notCompleteActionPid, account.ID)
+					}
 				}
 			}
 

@@ -120,94 +120,102 @@ func (pluginInfo *RenewManagerType) Action() {
 
 		tmpLog := []string{}
 
-		// sync tasks
-		// endtime 不是实时更新的，每天 2:00 开始，根据未知的排列顺序进队列重置，2:00 开始每隔 1 秒请求一次，到重置时会因为锁表而卡住
-		// 新的 endtime 是重置当天 0:00 开始计算的 29天23小时59分钟59秒 后
-		// bawutask 是实时更新，只要完成 taskstatus 就是 1，重置 endtime 时同时重置 bawutask
+		cookie := _function.GetCookie(renewItem.Pid)
 
-		todayDone := false
-
-		res2, err := _function.GetManagerTasks(_function.GetCookie(renewItem.Pid), int64(renewItem.Fid))
-		if err != nil {
-			slog.Error("renew_manager.action.sync_tasks", "error", err)
-			tmpLog = append(tmpLog, "sync: failed")
+		if !cookie.IsLogin {
+			renewItem.Status = "未登录"
+			tmpLog = append(tmpLog, "sync: failed", "cancel_top: failed")
+			slog.Error("renew_manager.action.login", "uid", renewItem.UID, "pid", renewItem.Pid, "fid", renewItem.Fid, "fname", renewItem.Fname)
 		} else {
-			if res2.No != 0 {
-				slog.Error("renew_manager.action.sync_tasks", "code", res2.ErrCode, "error", res2.Error)
-				tmpLog = append(tmpLog, fmt.Sprintf("sync: %d#%s", res2.ErrCode, res2.Error))
-			} else {
-				tmpLog = append(tmpLog, "sync: done")
+			// sync tasks
+			// endtime 不是实时更新的，每天 2:00 开始，根据未知的排列顺序进队列重置，2:00 开始每隔 1 秒请求一次，到重置时会因为锁表而卡住
+			// 新的 endtime 是重置当天 0:00 开始计算的 29天23小时59分钟59秒 后
+			// bawutask 是实时更新，只要完成 taskstatus 就是 1，重置 endtime 时同时重置 bawutask
 
-				remoteEnd := int32(res2.Data.BawuTask.EndTime)
+			todayDone := false
 
-				for _, remoteTask := range res2.Data.BawuTask.TaskList {
-					if remoteTask.TaskStatus == "1" {
-						todayDone = true
-						break
-					}
-				}
-
-				if todayDone {
-					// 由于重置有延迟，这里极小概率会有 1 天的误差
-					// 2:00~2:30 不运行以尽量规避误差
-					today2clock := time.Date(now.Year(), now.Month(), now.Day(), 2, 0, 0, 0, now.Location())
-					if now.Before(today2clock) {
-						// today 0:00
-						today2clock = today2clock.Add(-time.Hour * 2)
-					} else {
-						// next 0:00, not 2:00
-						today2clock = today2clock.Add(time.Hour * 22)
-					}
-					remoteEnd = int32(today2clock.Add(time.Hour*24*30 - time.Second).Unix())
-				}
-
-				if renewItem.End < remoteEnd {
-					renewItem.End = remoteEnd
-
-					if renewItem.Date > 0 && todayDone {
-						renewItem.Date = int32(now.Unix())
-					} else {
-						// new Date // value of Date should not exceed now
-						var toHms time.Time
-						if renewItem.Date > 0 {
-							toHms = time.Unix(int64(renewItem.Date), 0)
-						} else {
-							toHms = now
-						}
-
-						remoteLastTaskDate := time.Unix(int64(renewItem.End), 0).Add(-time.Hour * 24 * 30)
-						renewItem.Date = int32(min(time.Date(remoteLastTaskDate.Year(), remoteLastTaskDate.Month(), remoteLastTaskDate.Day(), toHms.Hour(), toHms.Minute(), toHms.Second(), 0, now.Location()).Unix(), now.Unix()))
-					}
-				} else if renewItem.Date == 0 && todayDone {
-					renewItem.Date = int32(now.Unix())
-				}
-			}
-		}
-
-		if !todayDone && !now.Before(time.Unix(int64(renewItem.Date), 0).Add(userDuration)) {
-			// send cancel top package
-			res, err := PluginRenewManagerCancelTop(_function.GetCookie(renewItem.Pid), renewItem.Fname, renewItem.Tid)
-
+			res2, err := _function.GetManagerTasks(cookie, int64(renewItem.Fid))
 			if err != nil {
-				slog.Error("renew_manager.action.cancel_top", "response", res, "error", err)
-				renewItem.Status = "failed"
-				tmpLog = append(tmpLog, "cancel_top: failed")
+				slog.Error("renew_manager.action.sync_tasks", "error", err)
+				tmpLog = append(tmpLog, "sync: failed")
 			} else {
-				if res.No != 0 {
-					slog.Error("renew_manager.action.cancel_top", "code", res.ErrCode, "error", res.Error)
-					renewItem.Status = "failed"
-					tmpLog = append(tmpLog, fmt.Sprintf("cancel_top: %d#%s", res.ErrCode, res.Error))
+				if res2.No != 0 {
+					slog.Error("renew_manager.action.sync_tasks", "code", res2.ErrCode, "error", res2.Error)
+					tmpLog = append(tmpLog, fmt.Sprintf("sync: %d#%s", res2.ErrCode, res2.Error))
 				} else {
-					renewItem.Status = "success"
-					tmpLog = append(tmpLog, "cancel_top: done")
+					tmpLog = append(tmpLog, "sync: done")
+
+					remoteEnd := int32(res2.Data.BawuTask.EndTime)
+
+					for _, remoteTask := range res2.Data.BawuTask.TaskList {
+						if remoteTask.TaskStatus == "1" {
+							todayDone = true
+							break
+						}
+					}
+
+					if todayDone {
+						// 由于重置有延迟，这里极小概率会有 1 天的误差
+						// 2:00~2:30 不运行以尽量规避误差
+						today2clock := time.Date(now.Year(), now.Month(), now.Day(), 2, 0, 0, 0, now.Location())
+						if now.Before(today2clock) {
+							// today 0:00
+							today2clock = today2clock.Add(-time.Hour * 2)
+						} else {
+							// next 0:00, not 2:00
+							today2clock = today2clock.Add(time.Hour * 22)
+						}
+						remoteEnd = int32(today2clock.Add(time.Hour*24*30 - time.Second).Unix())
+					}
+
+					if renewItem.End < remoteEnd {
+						renewItem.End = remoteEnd
+
+						if renewItem.Date > 0 && todayDone {
+							renewItem.Date = int32(now.Unix())
+						} else {
+							// new Date // value of Date should not exceed now
+							var toHms time.Time
+							if renewItem.Date > 0 {
+								toHms = time.Unix(int64(renewItem.Date), 0)
+							} else {
+								toHms = now
+							}
+
+							remoteLastTaskDate := time.Unix(int64(renewItem.End), 0).Add(-time.Hour * 24 * 30)
+							renewItem.Date = int32(min(time.Date(remoteLastTaskDate.Year(), remoteLastTaskDate.Month(), remoteLastTaskDate.Day(), toHms.Hour(), toHms.Minute(), toHms.Second(), 0, now.Location()).Unix(), now.Unix()))
+						}
+					} else if renewItem.Date == 0 && todayDone {
+						renewItem.Date = int32(now.Unix())
+					}
 				}
 			}
 
-			// new Date
-			renewItem.Date = int32(now.Unix())
-		} else {
-			renewItem.Status = "success"
-			tmpLog = append(tmpLog, "cancel_top: skip")
+			if !todayDone && !now.Before(time.Unix(int64(renewItem.Date), 0).Add(userDuration)) {
+				// send cancel top package
+				res, err := PluginRenewManagerCancelTop(cookie, renewItem.Fname, renewItem.Tid)
+
+				if err != nil {
+					slog.Error("renew_manager.action.cancel_top", "response", res, "error", err)
+					renewItem.Status = "失败"
+					tmpLog = append(tmpLog, "cancel_top: failed")
+				} else {
+					if res.No != 0 {
+						slog.Error("renew_manager.action.cancel_top", "code", res.ErrCode, "error", res.Error)
+						renewItem.Status = "失败"
+						tmpLog = append(tmpLog, fmt.Sprintf("cancel_top: %d#%s", res.ErrCode, res.Error))
+					} else {
+						renewItem.Status = "成功"
+						tmpLog = append(tmpLog, "cancel_top: done")
+					}
+				}
+
+				// new Date
+				renewItem.Date = int32(now.Unix())
+			} else {
+				renewItem.Status = "成功"
+				tmpLog = append(tmpLog, "cancel_top: skip")
+			}
 		}
 
 		// previous logs
@@ -293,16 +301,17 @@ func (pluginInfo *RenewManagerType) Report(uid int32, tx *gorm.DB) (string, erro
 		return "", err
 	}
 
-	message := "---\n插件：" + pluginInfo.PluginNameCN + "\n\n"
+	var message strings.Builder
+	message.WriteString("---\n插件：" + pluginInfo.PluginNameCN + "\n\n")
 
 	for _, status := range renewStatus {
 		// - xxx吧 (fid:12121121) @yyyyy [ LATEST:01-01/NEXT:01-03/END:02-01 ]
-		message += fmt.Sprintf("- %s吧 (fid:%d) @%s [ %s/%s/%s ]\n", status.Fname, status.Fid, _function.GetCookie(status.Pid).Name, time.Unix(int64(status.Date), 0).Format("01-02"), time.Unix(int64(status.Date), 0).Add(time.Hour*24*time.Duration(numInterval)).Format("01-02"), time.Unix(int64(status.End), 0).Format("01-02"))
+		message.WriteString(fmt.Sprintf("- %s吧 (fid:%d) @%s [ %s/%s/%s ]\n", status.Fname, status.Fid, _function.GetCookie(status.Pid, true).Name, time.Unix(int64(status.Date), 0).Format("01-02"), time.Unix(int64(status.Date), 0).Add(time.Hour*24*time.Duration(numInterval)).Format("01-02"), time.Unix(int64(status.End), 0).Format("01-02")))
 	}
 
-	message += "\n格式说明：[ 上次执行/下次检查/截止日期 ]\n---"
+	message.WriteString("\n格式说明：[ 上次执行/下次检查/截止日期 ]\n---")
 
-	return message, nil
+	return message.String(), nil
 }
 
 func (pluginInfo *RenewManagerType) Reset(uid, pid, tid int32) error {

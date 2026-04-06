@@ -211,16 +211,22 @@ func (pluginInfo *LoopBanPluginType) Action() {
 		}
 
 		// !!! warning: unable to check permission !!!
-		response, err := PostClientBan(_function.GetCookie(banAccountInfo.Pid), int32(fid), banAccountInfo.Portrait, 1, reason)
-		if err != nil {
-			slog.Error("plugin.loop-ban.action", "fname", banAccountInfo.Tieba, "pid", banAccountInfo.Pid, "portrait", banAccountInfo.Portrait, "error", err)
-			continue
-		}
+		cookie := _function.GetCookie(banAccountInfo.Pid)
 		msg := banAccountInfo.Log
-		if response.ErrorMsg != "" {
-			msg += time.Now().Format(time.DateTime) + " 执行结果：<font color=\"red\">操作失败</font>#" + response.ErrorCode + " " + response.ErrorMsg + "<br>"
+		if !cookie.IsLogin {
+			msg += time.Now().Format(time.DateTime) + " 执行结果：<font color=\"red\">操作失败</font>#-1 账号未登录<br>"
 		} else {
-			msg += time.Now().Format(time.DateTime) + " 执行结果：<font color=\"green\">操作成功</font><br>"
+			response, err := PostClientBan(cookie, int32(fid), banAccountInfo.Portrait, 1, reason)
+			if err != nil {
+				slog.Error("plugin.loop-ban.action", "fname", banAccountInfo.Tieba, "pid", banAccountInfo.Pid, "portrait", banAccountInfo.Portrait, "error", err)
+				continue
+			}
+
+			if response.ErrorMsg != "" {
+				msg += time.Now().Format(time.DateTime) + " 执行结果：<font color=\"red\">操作失败</font>#" + response.ErrorCode + " " + response.ErrorMsg + "<br>"
+			} else {
+				msg += time.Now().Format(time.DateTime) + " 执行结果：<font color=\"green\">操作成功</font><br>"
+			}
 		}
 
 		_function.GormDB.W.Model(&model.TcVer4BanList{}).Where("id = ?", banAccountInfo.ID).Updates(model.TcVer4BanList{
