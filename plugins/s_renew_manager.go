@@ -526,11 +526,7 @@ func PluginRenewManagerUpdateSettings(c echo.Context) error {
 	reportStatus := c.FormValue("report_switch") != "0" && c.FormValue("report_switch") != ""
 	interval, _ := strconv.ParseInt(strings.TrimSpace(c.FormValue("action_interval")), 10, 64)
 
-	if interval >= 30 {
-		interval = 29
-	} else if interval <= 0 {
-		interval = 1
-	}
+	interval = utils.Clamp(interval, 1, 29)
 
 	err := _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
 		if err := _function.SetUserOption("kd_renew_manager_alert", reportStatus, uid, _function.OptionExt{

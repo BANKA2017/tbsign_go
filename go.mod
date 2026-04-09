@@ -5,6 +5,7 @@ go 1.25.6
 replace github.com/emersion/go-sasl => github.com/kdnetwork/go-sasl v0.0.0-20251119095512-40c81e6be4a2
 
 require (
+	github.com/OneOfOne/xxhash v1.2.8
 	github.com/emersion/go-sasl v0.0.0-20241020182733-b788ff22d5a6
 	github.com/emersion/go-smtp v0.24.0
 	github.com/google/uuid v1.6.0
