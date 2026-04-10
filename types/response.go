@@ -437,3 +437,14 @@ type GetNewPCForumCardResponse struct {
 	// ServerTime int    `json:"server_time"`
 	Time int `json:"time"`
 }
+
+type PostSyncResponse struct {
+	ClientIP string `json:"client_ip"`
+	Client   struct {
+		ClientID string `json:"client_id"`
+	} `json:"client"`
+	Portrait string `json:"portrait"`
+	WlConfig struct {
+		SampleID string `json:"sample_id"`
+	} `json:"wl_config"`
+}

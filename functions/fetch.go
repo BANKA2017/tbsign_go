@@ -491,6 +491,48 @@ func GetForumNameShare(name string) (*_type.ForumNameShareResponse, error) {
 	return &forumNameShareDecode, err
 }
 
+func GetForumDetail(fid int64) (*tbpb.GetForumDetailResIdl_DataRes, error) {
+	pbBytes, err := proto.Marshal(&tbpb.GetForumDetailReqIdl_DataReq{
+		Common: &tbpb.CommonReq{
+			XClientVersion: ClientVersion,
+		},
+		ForumId: fid,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	pbBytesLen := make([]byte, 8)
+	binary.BigEndian.PutUint64(pbBytesLen, uint64(len(pbBytes)))
+
+	body, contentType, err := MultipartBodyBuilder(map[string][]byte{}, MultipartBodyBinaryFileType{
+		Fieldname: "data",
+		Filename:  "file",
+		Binary:    bytes.Join([][]byte{[]byte("\n"), RemoveLeadingZeros(pbBytesLen), pbBytes}, []byte{}),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := TBFetch("http://tiebac.baidu.com/c/f/forum/getforumdetail?cmd=303021", http.MethodPost, body, map[string]string{
+		"Content-Type":   contentType,
+		"x_bd_data_type": "protobuf",
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	// fmt.Println(resp, string(resp))
+	var res tbpb.GetForumDetailResIdl
+	err = proto.Unmarshal(resp, &res)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.GetData(), nil
+}
+
 func GetBaiduUserInfo(cookie _type.TypeCookie) (*_type.BaiduUserInfoResponse, error) {
 	var form = make(map[string]string)
 	form["bdusstoken"] = cookie.Bduss
@@ -584,8 +626,7 @@ func GetUserInfoByUsernameOrPortrait(requestType string, value string) (*_type.T
 }
 
 // !!! Calling this api will change the IP location !!!
-// / DO NOT ASK ME WHY THE RESPONSE IS `ANY`!!!
-func PostSync(cookie _type.TypeCookie) (any, error) {
+func PostSync(cookie _type.TypeCookie) (*_type.PostSyncResponse, error) {
 	form := map[string]string{
 		"BDUSS": cookie.Bduss,
 		"cuid":  "-", // TODO cuid
@@ -604,7 +645,7 @@ func PostSync(cookie _type.TypeCookie) (any, error) {
 		return nil, err
 	}
 
-	var resp any
+	var resp _type.PostSyncResponse
 	err = JsonDecode(response, &resp)
 	return &resp, err
 }
