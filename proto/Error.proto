@@ -1,0 +1,9 @@
+// tbclient.Error
+syntax = "proto3";
+
+option go_package = ".";
+
+message Error {
+    int32 errorno = 1;
+    string errmsg = 2;
+}

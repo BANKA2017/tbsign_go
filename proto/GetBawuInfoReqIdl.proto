@@ -1,0 +1,14 @@
+// tbclient.GetBawuInfo.GetBawuInfoReqIdl
+syntax = "proto3";
+
+import "CommonReq.proto";
+
+option go_package = ".";
+
+message GetBawuInfoReqIdl {
+    message DataReq {
+        CommonReq common = 1;
+        uint64 fid = 2;
+    }
+    DataReq data = 1;
+}
