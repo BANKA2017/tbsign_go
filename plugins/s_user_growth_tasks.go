@@ -173,7 +173,7 @@ type UserGrowthTaskCollectStampResponse struct {
 	Error string `json:"error,omitempty"`
 }
 
-func PostGrowthTaskByWeb(cookie _type.TypeCookie, task string) (*UserGrowthTasksWebResponse, error) {
+func PostGrowthTaskByWeb(cookie *_type.TypeCookie, task string) (*UserGrowthTasksWebResponse, error) {
 	_body := url.Values{}
 	_body.Set("tbs", cookie.Tbs)
 	_body.Set("act_type", task)
@@ -196,7 +196,7 @@ func PostGrowthTaskByWeb(cookie _type.TypeCookie, task string) (*UserGrowthTasks
 }
 
 // share_thread page_sign
-func PostGrowthTaskByClient(cookie _type.TypeCookie, task string, taskID int) (*UserGrowthTasksClientResponse, error) {
+func PostGrowthTaskByClient(cookie *_type.TypeCookie, task string, taskID int) (*UserGrowthTasksClientResponse, error) {
 	form := map[string]string{
 		"act_type":        task,
 		"cuid":            "-",
@@ -232,7 +232,7 @@ func PostGrowthTaskByClient(cookie _type.TypeCookie, task string, taskID int) (*
 	return resp, err
 }
 
-func PostUserTaskInfoWidget(cookie _type.TypeCookie) (any, error) {
+func PostUserTaskInfoWidget(cookie *_type.TypeCookie) (any, error) {
 	_body := url.Values{
 		"BDUSS":           {cookie.Bduss},
 		"push_switch":     {"1"},
@@ -252,7 +252,7 @@ func PostUserTaskInfoWidget(cookie _type.TypeCookie) (any, error) {
 	return string(taskInfoResponse), err
 }
 
-func PostCollectStamp(cookie _type.TypeCookie, task_id int) (*UserGrowthTaskCollectStampResponse, error) {
+func PostCollectStamp(cookie *_type.TypeCookie, task_id int) (*UserGrowthTaskCollectStampResponse, error) {
 	headersMap := map[string]string{
 		"Cookie":     "BDUSS=" + cookie.Bduss,
 		"User-Agent": "tieba/" + UserGrowthTasksPluginClientVersion,
@@ -275,7 +275,7 @@ func PostCollectStamp(cookie _type.TypeCookie, task_id int) (*UserGrowthTaskColl
 	return resp, err
 }
 
-func GetUserGrowthTasksList(cookie _type.TypeCookie) (*UserGrowthTasksListResponse, error) {
+func GetUserGrowthTasksList(cookie *_type.TypeCookie) (*UserGrowthTasksListResponse, error) {
 	headersMap := map[string]string{
 		"Cookie": "BDUSS=" + cookie.Bduss,
 	}

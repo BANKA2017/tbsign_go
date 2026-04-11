@@ -53,7 +53,7 @@ type GetLotteryResponse struct {
 	Errmsg string `json:"errmsg,omitempty"`
 }
 
-func GetLotteryToken(cookie _type.TypeCookie) (string, error) {
+func GetLotteryToken(cookie *_type.TypeCookie) (string, error) {
 	headersMap := map[string]string{
 		"Cookie": "BDUSS=" + cookie.Bduss,
 	}
@@ -68,7 +68,7 @@ func GetLotteryToken(cookie _type.TypeCookie) (string, error) {
 	return "", errors.New("get_lottery_token: No token")
 }
 
-func GetLottery(cookie _type.TypeCookie, token string) (*GetLotteryResponse, error) {
+func GetLottery(cookie *_type.TypeCookie, token string) (*GetLotteryResponse, error) {
 	headersMap := map[string]string{
 		"Cookie":   "BDUSS=" + cookie.Bduss,
 		"x-ik-ssl": "1",

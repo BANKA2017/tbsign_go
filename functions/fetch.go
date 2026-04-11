@@ -270,7 +270,7 @@ func GetTbs(bduss string) (*_type.TbsResponse, error) {
 	/// }
 }
 
-func PostCheckinClient(cookie _type.TypeCookie, kw string, fid int32) (*_type.ClientSignResponse, error) {
+func PostCheckinClient(cookie *_type.TypeCookie, kw string, fid int32) (*_type.ClientSignResponse, error) {
 	//fmt.Println(cookie, kw, fid)
 	// ZnJvbV93aWRnZXQ9MSAtPiBEb3VibGUgU2lnbi1pbiBFeHBlcmllbmNl
 	var form = make(map[string]string)
@@ -299,7 +299,7 @@ func PostCheckinClient(cookie _type.TypeCookie, kw string, fid int32) (*_type.Cl
 	return &signDecode, err
 }
 
-func PostForumInfoWidget(cookie _type.TypeCookie, fid int32) (any, error) {
+func PostForumInfoWidget(cookie *_type.TypeCookie, fid int32) (any, error) {
 	var form = make(map[string]string)
 	form["BDUSS"] = cookie.Bduss
 	form["forum_id"] = strconv.Itoa(int(fid))
@@ -323,7 +323,7 @@ func PostForumInfoWidget(cookie _type.TypeCookie, fid int32) (any, error) {
 	return string(forumListResponse), err
 }
 
-func GetWebForumList(cookie _type.TypeCookie, page int64) (*_type.WebForumListResponse, error) {
+func GetWebForumList(cookie *_type.TypeCookie, page int64) (*_type.WebForumListResponse, error) {
 	headersMap := map[string]string{
 		"Cookie": "BDUSS=" + cookie.Bduss + ";STOKEN=" + cookie.Stoken,
 	}
@@ -338,7 +338,7 @@ func GetWebForumList(cookie _type.TypeCookie, page int64) (*_type.WebForumListRe
 	return &forumListDecode, err
 }
 
-func GetForumList(cookie _type.TypeCookie, uid string, page int64) (*_type.ForumListResponse[*_type.ForumList], error) {
+func GetForumList(cookie *_type.TypeCookie, uid string, page int64) (*_type.ForumListResponse[*_type.ForumList], error) {
 	var form = make(map[string]string)
 	form["BDUSS"] = cookie.Bduss
 	form["stoken"] = cookie.Stoken
@@ -385,7 +385,7 @@ func GetForumList(cookie _type.TypeCookie, uid string, page int64) (*_type.Forum
 	return forumListDecode, err
 }
 
-func GetForumList2(cookie _type.TypeCookie, page int64) (*_type.ForumGuideResponse, error) {
+func GetForumList2(cookie *_type.TypeCookie, page int64) (*_type.ForumGuideResponse, error) {
 	var form = make(map[string]string)
 	form["BDUSS"] = cookie.Bduss
 	form["stoken"] = cookie.Stoken
@@ -419,7 +419,7 @@ func GetForumList2(cookie _type.TypeCookie, page int64) (*_type.ForumGuideRespon
 	return &forumListDecode, err
 }
 
-func PostClientBatchCheckinForumList(cookie _type.TypeCookie) (*_type.BatchCheckinForumListResponse, error) {
+func PostClientBatchCheckinForumList(cookie *_type.TypeCookie) (*_type.BatchCheckinForumListResponse, error) {
 	var form = make(map[string]string)
 	form["BDUSS"] = cookie.Bduss
 	form["stoken"] = cookie.Stoken
@@ -444,7 +444,7 @@ func PostClientBatchCheckinForumList(cookie _type.TypeCookie) (*_type.BatchCheck
 	return forumListDecode, err
 }
 
-func PostClientBatchCheckin(cookie _type.TypeCookie, fid []string) (*_type.BatchCheckinActionResponse, error) {
+func PostClientBatchCheckin(cookie *_type.TypeCookie, fid []string) (*_type.BatchCheckinActionResponse, error) {
 	var form = make(map[string]string)
 	form["BDUSS"] = cookie.Bduss
 	form["stoken"] = cookie.Stoken
@@ -533,7 +533,7 @@ func GetForumDetail(fid int64) (*tbpb.GetForumDetailResIdl_DataRes, error) {
 	return res.GetData(), nil
 }
 
-func GetBaiduUserInfo(cookie _type.TypeCookie) (*_type.BaiduUserInfoResponse, error) {
+func GetBaiduUserInfo(cookie *_type.TypeCookie) (*_type.BaiduUserInfoResponse, error) {
 	var form = make(map[string]string)
 	form["bdusstoken"] = cookie.Bduss
 	AddSign(form, "4")
@@ -626,7 +626,7 @@ func GetUserInfoByUsernameOrPortrait(requestType string, value string) (*_type.T
 }
 
 // !!! Calling this api will change the IP location !!!
-func PostSync(cookie _type.TypeCookie) (*_type.PostSyncResponse, error) {
+func PostSync(cookie *_type.TypeCookie) (*_type.PostSyncResponse, error) {
 	form := map[string]string{
 		"BDUSS": cookie.Bduss,
 		"cuid":  "-", // TODO cuid
@@ -716,7 +716,7 @@ func GetLoginResponse(tmpBDUSS string) (*_type.LoginResponse, error) {
 	return &parsed, err
 }
 
-func GetManagerTasks(cookie _type.TypeCookie, fid int64) (*_type.ManagerTasksResponse, error) {
+func GetManagerTasks(cookie *_type.TypeCookie, fid int64) (*_type.ManagerTasksResponse, error) {
 	headersMap := map[string]string{
 		"Cookie": "BDUSS=" + cookie.Bduss + ";STOKEN=" + cookie.Stoken,
 	}

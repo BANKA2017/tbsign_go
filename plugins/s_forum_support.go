@@ -618,7 +618,7 @@ var ForumSupportPluginInfo = _function.VPtr(ForumSupportPluginInfoType{
 	},
 })
 
-func PostForumSupport(cookie _type.TypeCookie, fid int32, nid string) (*TypeForumSupportResponse, error) {
+func PostForumSupport(cookie *_type.TypeCookie, fid int32, nid string) (*TypeForumSupportResponse, error) {
 	_body := url.Values{
 		"tbs":      {cookie.Tbs},
 		"forum_id": {strconv.Itoa(int(fid))},

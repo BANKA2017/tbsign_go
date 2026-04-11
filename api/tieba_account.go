@@ -67,7 +67,7 @@ func GetBDUSS(c echo.Context) error {
 	stoken := stokenKV["tb"]
 
 	// get tieba account info
-	baiduAccountInfo, err := _function.GetBaiduUserInfo(_type.TypeCookie{Bduss: bduss})
+	baiduAccountInfo, err := _function.GetBaiduUserInfo(&_type.TypeCookie{Bduss: bduss})
 	if err != nil || baiduAccountInfo.User.Portrait == "" {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无法验证登录状态 BDUSS", _function.EchoEmptyObject, "tbsign"))
 	}
@@ -155,7 +155,7 @@ func AddTiebaAccount(c echo.Context) error {
 	}
 
 	// get tieba account info
-	baiduAccountInfo, err := _function.GetBaiduUserInfo(_type.TypeCookie{Bduss: bduss})
+	baiduAccountInfo, err := _function.GetBaiduUserInfo(&_type.TypeCookie{Bduss: bduss})
 	if err != nil || baiduAccountInfo.User.Portrait == "" {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无法验证登录状态 BDUSS", _function.EchoEmptyObject, "tbsign"))
 	}

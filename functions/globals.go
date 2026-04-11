@@ -30,7 +30,7 @@ func init() {
 
 var Options = NewKV[string, string]() //  make(map[string]string)
 var CookieList = NewKV(
-	ttlcache.WithCapacity[int32, _type.TypeCookie](100),
+	ttlcache.WithCapacity[int32, *_type.TypeCookie](100),
 ) //= make(map[int32]_type.TypeCookie)
 var FidList = NewKV(
 	ttlcache.WithCapacity[string, int64](500),
@@ -42,14 +42,14 @@ const ResetPwdExpire = 60 * 5 // 5 mins
 var syncCookieTasks singleflight.Group
 
 // ext [bduss_only, force_sync]
-func GetCookie(pid int32, ext ...bool) _type.TypeCookie {
+func GetCookie(pid int32, ext ...bool) *_type.TypeCookie {
 	cookie, ok := CookieList.Load(pid)
 	bdussOnly := len(ext) >= 1 && ext[0]
 	forceSync := len(ext) >= 2 && ext[1]
 
 	if !ok || forceSync {
 		_cookie, _, _ := syncCookieTasks.Do(strconv.Itoa(int(pid))+When(forceSync, "1", "0"), func() (any, error) {
-			var _cookie _type.TypeCookie
+			var _cookie = new(_type.TypeCookie)
 			var cookieDB model.TcBaiduid
 			GormDB.R.Model(&model.TcBaiduid{}).Where("id = ?", pid).Take(&cookieDB)
 
@@ -89,7 +89,7 @@ func GetCookie(pid int32, ext ...bool) _type.TypeCookie {
 			CookieList.Store(pid, _cookie, 60*60*4)
 			return _cookie, nil
 		})
-		return _cookie.(_type.TypeCookie)
+		return _cookie.(*_type.TypeCookie)
 	}
 
 	return cookie
@@ -164,7 +164,7 @@ func VPtr[T any](anyValue T) *T {
 }
 
 func GetGravatarLink(email string) string {
-	return "https://www.gravatar.com/avatar/" + Sha256([]byte(email))
+	return "https://www.gravatar.com/avatar/" + Sha256(email)
 }
 
 func NewerSemver(cur, ver2 string) string {

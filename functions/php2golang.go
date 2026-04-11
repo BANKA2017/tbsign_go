@@ -44,15 +44,13 @@ func Md5(str string) string {
 }
 
 func Sha1(str string) string {
-	hash := sha1.New()
-	hash.Write([]byte(str))
-	return hex.EncodeToString(hash.Sum(nil))
+	sha1Value := sha1.Sum([]byte(str))
+	return hex.EncodeToString(sha1Value[:])
 }
 
-func Sha256(str []byte) string {
-	hash := sha256.New()
-	hash.Write(str)
-	return hex.EncodeToString(hash.Sum(nil))
+func Sha256(str string) string {
+	sha256Value := sha256.Sum256([]byte(str))
+	return hex.EncodeToString(sha256Value[:])
 }
 
 func GenHMAC256(ciphertext, key []byte) []byte {

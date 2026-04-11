@@ -89,7 +89,7 @@ var LoopBanPlugin = _function.VPtr(LoopBanPluginType{
 
 var banDays = []int32{1, 3, 10}
 
-func PostClientBan(cookie _type.TypeCookie, fid int32, portrait string, day int32, reason string) (*BanAccountResponse, error) {
+func PostClientBan(cookie *_type.TypeCookie, fid int32, portrait string, day int32, reason string) (*BanAccountResponse, error) {
 	isSvipBlock := "0"
 	if day <= 90 && !slices.Contains(banDays, day) {
 		isSvipBlock = "1"
@@ -125,7 +125,7 @@ func PostClientBan(cookie _type.TypeCookie, fid int32, portrait string, day int3
 	return &banDecode, err
 }
 
-func PostNewPCBan(cookie _type.TypeCookie, fid int32, portrait string, day int32, reason string) (*any, error) {
+func PostNewPCBan(cookie *_type.TypeCookie, fid int32, portrait string, day int32, reason string) (*any, error) {
 	// isSvipBlock := "0"
 	banDaysIndex := 0
 	if ndi := slices.Index(banDays, day); ndi != -1 {

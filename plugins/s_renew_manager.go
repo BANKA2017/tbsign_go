@@ -364,7 +364,7 @@ type PluginRenewManagerCancelTopResponse struct {
 	// } `json:"data,omitempty"`
 }
 
-func PluginRenewManagerCancelTop(cookie _type.TypeCookie, fname string, tid string) (*PluginRenewManagerCancelTopResponse, error) {
+func PluginRenewManagerCancelTop(cookie *_type.TypeCookie, fname string, tid string) (*PluginRenewManagerCancelTopResponse, error) {
 	headersMap := map[string]string{
 		"Cookie":       "BDUSS=" + cookie.Bduss + ";STOKEN=" + cookie.Stoken,
 		"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -445,7 +445,7 @@ type PluginRenewManagerGetThreadInfoResponse struct {
 
 var managerGetThreadInfoLink = string([]byte{104, 116, 116, 112, 115, 58, 47, 47, 116, 105, 101, 98, 97, 46, 98, 97, 105, 100, 117, 46, 99, 111, 109, 47, 109, 111, 47, 113, 47, 98, 97, 119, 117, 47, 103, 101, 116, 82, 101, 99, 111, 118, 101, 114, 73, 110, 102, 111, 63})
 
-func PluginRenewManagerGetThreadInfo(cookie _type.TypeCookie, tid int64, fid int64) (*PluginRenewManagerGetThreadInfoResponse, error) {
+func PluginRenewManagerGetThreadInfo(cookie *_type.TypeCookie, tid int64, fid int64) (*PluginRenewManagerGetThreadInfoResponse, error) {
 	headersMap := map[string]string{
 		"Cookie": "BDUSS=" + cookie.Bduss + ";STOKEN=" + cookie.Stoken,
 	}

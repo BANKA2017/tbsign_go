@@ -147,7 +147,7 @@ type ClaimWenku7DaySignVIPResponse struct {
 }
 
 // type: tasklist, signin
-func GetWenkuTaskList(cookie _type.TypeCookie, _type string) (*GetWenkuTaskListResponse, error) {
+func GetWenkuTaskList(cookie *_type.TypeCookie, _type string) (*GetWenkuTaskListResponse, error) {
 	headersMap := map[string]string{
 		"Cookie":     "BDUSS=" + cookie.Bduss,
 		"User-Agent": WenkuUserAgent,
@@ -166,7 +166,7 @@ func GetWenkuTaskList(cookie _type.TypeCookie, _type string) (*GetWenkuTaskListR
 }
 
 // isClaim = false -> do task
-func UpdateWenkuTask(cookie _type.TypeCookie, taskID int, minVersion string, isClaim bool) (*UpdateWenkuTaskResponse, error) {
+func UpdateWenkuTask(cookie *_type.TypeCookie, taskID int, minVersion string, isClaim bool) (*UpdateWenkuTaskResponse, error) {
 	naUncheckStr := "&extra=%7B%0A%20%20%22app_ver%22%20%3A%20%22" + minVersion + "%22%0A%7D"
 	if isClaim {
 		naUncheckStr = "&na_uncheck=1"
@@ -195,7 +195,7 @@ func UpdateWenkuTask(cookie _type.TypeCookie, taskID int, minVersion string, isC
 	return resp, err
 }
 
-func ClaimWenku7DaySignVIP(cookie _type.TypeCookie) (*ClaimWenku7DaySignVIPResponse, error) {
+func ClaimWenku7DaySignVIP(cookie *_type.TypeCookie) (*ClaimWenku7DaySignVIPResponse, error) {
 	headersMap := map[string]string{
 		"Cookie":     "BDUSS=" + cookie.Bduss,
 		"User-Agent": WenkuUserAgent,
