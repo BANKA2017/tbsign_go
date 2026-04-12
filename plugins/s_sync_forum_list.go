@@ -7,6 +7,7 @@ import (
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
+	"github.com/kdnetwork/code-snippet/go/utils"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
@@ -25,11 +26,12 @@ var RefreshTiebaListPlugin = _function.VPtr(RefreshTiebaListPluginType{
 		PluginNameCN:      "自动同步贴吧列表",
 		PluginNameCNShort: "自动同步贴吧列表",
 		PluginNameFE:      "",
-		Version:           "1.0",
+		Version:           "1.1",
 		Options: map[string]string{
 			"ver4_ref_day":          "1",
 			"ver4_ref_id":           "0",
 			"ver4_ref_action_limit": "50",
+			"ver4_ref_interval":     "240", // mins
 		},
 		SettingOptions: map[string]PluginSettingOption{
 			"ver4_ref_action_limit": {
@@ -39,10 +41,19 @@ var RefreshTiebaListPlugin = _function.VPtr(RefreshTiebaListPluginType{
 					Min: _function.VPtr(int64(0)),
 				},
 			},
+			"ver4_ref_interval": {
+				OptionName:   "ver4_ref_interval",
+				OptionNameCN: "每轮同步任务间隔（分钟）",
+				Validate: &_function.OptionRule{
+					Min: _function.VPtr(int64(1)),
+				},
+			},
 		},
 		Endpoints: []PluginEndpointStruct{
-			{Method: http.MethodGet, Path: "list", Function: PluginRefreshTiebaListGetAccountList},
-			{Method: http.MethodPost, Path: "sync", Function: PluginRefreshTiebaListRefreshTiebaList},
+			// duplicate endpoints /list/sync ...
+			// {Method: http.MethodGet, Path: "list", Function: PluginRefreshTiebaListGetAccountList},
+			// {Method: http.MethodPost, Path: "sync", Function: PluginRefreshTiebaListRefreshTiebaList},
+			{Method: http.MethodGet, Path: "status", Function: PluginRefreshTiebaListStatus},
 		},
 	},
 })
@@ -59,24 +70,33 @@ func (pluginInfo *RefreshTiebaListPluginType) Action() {
 
 	// if day != int64(time.Now().Day()) {
 	lastdo, _ := strconv.ParseInt(_function.GetOption("ver4_ref_lastdo"), 10, 64)
-	refID := _function.GetOption("ver4_ref_id")
+	numRefID, _ := strconv.ParseInt(_function.GetOption("ver4_ref_id"), 10, 64)
+
+	numInterval, _ := strconv.ParseInt(_function.GetOption("ver4_ref_interval"), 10, 64)
+
+	if numInterval < 1 {
+		numInterval = 1
+	}
 
 	// 4 hours
-	if refID != "0" || time.Now().Unix() > lastdo+60*60*4 {
+	if numRefID > 0 || time.Now().Unix() > lastdo+60*numInterval {
 		var accounts []*model.TcBaiduid
 
-		limit := _function.GetOption("ver4_ref_action_limit")
-		numLimit, _ := strconv.ParseInt(limit, 10, 64)
-		_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id > ?", refID).Limit(int(numLimit)).Find(&accounts)
+		numLimit, _ := strconv.ParseInt(_function.GetOption("ver4_ref_action_limit"), 10, 64)
+
+		// hard code limit 1000
+		numLimit = utils.Clamp(numLimit, 0, 1000)
+
+		_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id > ?", numRefID).Limit(int(numLimit)).Find(&accounts)
 
 		if len(accounts) == 0 {
 			_function.SetOption("ver4_ref_id", "0")
-			_function.SetOption("ver4_ref_day", strconv.Itoa(time.Now().Day()))
+			_function.SetOption("ver4_ref_day", time.Now().Day())
 		} else {
 			for _, account := range accounts {
 				_function.ScanTiebaByPid(account.ID)
-				_function.SetOption("ver4_ref_id", strconv.Itoa(int(account.ID)))
-				_function.SetOption("ver4_ref_lastdo", strconv.Itoa(int(time.Now().Unix())))
+				_function.SetOption("ver4_ref_id", int(account.ID))
+				_function.SetOption("ver4_ref_lastdo", int(time.Now().Unix()))
 			}
 		}
 	}
@@ -114,64 +134,13 @@ func (pluginInfo *RefreshTiebaListPluginType) Report(int32, *gorm.DB) (string, e
 func (pluginInfo *RefreshTiebaListPluginType) Reset(int32, int32, int32) error { return nil }
 
 // endpoint
-func PluginRefreshTiebaListGetAccountList(c echo.Context) error {
-	uid := c.Get("uid").(string)
 
-	var tiebaAccounts []*model.TcBaiduid
-	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
+func PluginRefreshTiebaListStatus(c echo.Context) error {
+	numLastDo, _ := strconv.ParseInt(_function.GetOption("ver4_ref_lastdo"), 10, 64)
+	numInterval, _ := strconv.ParseInt(_function.GetOption("ver4_ref_interval"), 10, 64)
 
-	var tiebaList []*model.TcTieba
-	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaList)
-
-	type accountListResponse struct {
-		PID      int32  `json:"pid"`
-		Name     string `json:"name"`
-		Portrait string `json:"portrait"`
-		Count    int32  `json:"count"`
-	}
-
-	var response []accountListResponse
-	for _, v := range tiebaAccounts {
-		var count int32
-		for _, v1 := range tiebaList {
-			if v1.Pid == v.ID {
-				count++
-			}
-		}
-		response = append(response, accountListResponse{
-			PID:      v.ID,
-			Name:     v.Name,
-			Portrait: v.Portrait,
-			Count:    count,
-		})
-	}
-
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", response, "tbsign"))
-
-}
-
-func PluginRefreshTiebaListRefreshTiebaList(c echo.Context) error {
-	uid := c.Get("uid").(string)
-
-	pid := c.FormValue("pid")
-
-	numPid, err := strconv.ParseInt(pid, 10, 64)
-	if err != nil || numPid <= 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
-	}
-
-	var tiebaAccounts []*model.TcBaiduid
-	_function.GormDB.R.Where("uid = ?", uid).Order("id ASC").Find(&tiebaAccounts)
-
-	// get account list
-	for _, v := range tiebaAccounts {
-		if v.ID == int32(numPid) {
-			_function.ScanTiebaByPid(v.ID)
-			var tiebaList []*model.TcTieba
-			_function.GormDB.R.Where("uid = ? AND pid = ?", uid, pid).Order("id ASC").Find(&tiebaList)
-			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaList, "tbsign"))
-		}
-	}
-
-	return c.JSON(http.StatusOK, _function.ApiTemplate(404, "找不到 pid:"+pid, _function.EchoEmptyObject, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]int64{
+		"last_do":  numLastDo,
+		"interval": numInterval,
+	}, "tbsign"))
 }

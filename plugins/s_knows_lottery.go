@@ -113,8 +113,9 @@ func (pluginInfo *LotteryPluginPluginType) Action() {
 
 	waitSeconds := 2 // wait 2s// should not <=1
 	limit := 60
-	if waitSeconds <= 0 {
-		waitSeconds = 0
+
+	if waitSeconds < 1 {
+		waitSeconds = 1
 	} else {
 		limit = limit / waitSeconds
 	}
