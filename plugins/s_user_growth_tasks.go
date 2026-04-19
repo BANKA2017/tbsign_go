@@ -275,6 +275,7 @@ func PostCollectStamp(cookie *_type.TypeCookie, task_id int) (*UserGrowthTaskCol
 	return resp, err
 }
 
+// {"no":110003,"error":"fail to call service","data":{}}
 func GetUserGrowthTasksList(cookie *_type.TypeCookie) (*UserGrowthTasksListResponse, error) {
 	headersMap := map[string]string{
 		"Cookie": "BDUSS=" + cookie.Bduss,
@@ -348,7 +349,6 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 			})
 		} else {
 			// ext tasks
-			// TODO should add task_id
 			if extTasks, ok := extTasksList[taskUserItem.UID]; !ok {
 				if err := _function.JsonDecode([]byte(_function.GetUserOption("kd_growth_ext_tasks", strconv.Itoa(int(taskUserItem.UID)))), &extTasks); err != nil {
 					extTasksList[taskUserItem.UID] = make(map[string]string)
@@ -367,6 +367,9 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 				tasksResponse, err := GetUserGrowthTasksList(cookie)
 				if err != nil {
 					slog.Error("plugin.user-growth-tasks.get-list", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", err)
+					continue
+				} else if tasksResponse.No != 0 {
+					slog.Error("plugin.user-growth-tasks.get-list", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "code", tasksResponse.No, "error", tasksResponse.Error)
 					continue
 				}
 
@@ -518,15 +521,28 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 						}
 					}
 
+					// {"no":110003,"error":"fail to call service","data":"\u4efb\u52a1\u5931\u8d25"}
+					// WTF string in struct
 					if err != nil {
-						slog.Error("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "task_id", task.ID, "task_name", task.Name, "act_type", task.ActType, "error", err)
-						result = append(result, UserGrowthTaskToSave{
-							TaskID:  task.ID,
-							Name:    task.Name,
-							ActType: task.ActType,
-							Status:  0,
-							Msg:     "failed",
-						})
+						if _function.JsonIsUnmarshalTypeError(err) && response.No > 0 {
+							slog.Error("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "task_id", task.ID, "task_name", task.Name, "act_type", task.ActType, "code", response.No, "error", response.Error)
+							result = append(result, UserGrowthTaskToSave{
+								TaskID:  task.ID,
+								Name:    task.Name,
+								ActType: task.ActType,
+								Status:  0,
+								Msg:     response.Error,
+							})
+						} else {
+							slog.Error("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "task_id", task.ID, "task_name", task.Name, "act_type", task.ActType, "error", err)
+							result = append(result, UserGrowthTaskToSave{
+								TaskID:  task.ID,
+								Name:    task.Name,
+								ActType: task.ActType,
+								Status:  0,
+								Msg:     "failed",
+							})
+						}
 					} else {
 						if response.No == 0 {
 							if task.ID == 0 || len(response.Data.SuccessTaskIds) > 0 && slices.Contains(response.Data.SuccessTaskIds, task.ID) {
