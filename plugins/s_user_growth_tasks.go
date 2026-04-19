@@ -452,7 +452,19 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 				}
 				for actType, taskName := range extTasks {
 					if actType != "" && taskName != "" && !slices.Contains(tasksActTypeList, actType) {
+						var taskID int
+
+						// acttype:123
+						// acttype
+						if strings.Contains(actType, ":") {
+							actTypeSplit := strings.Split(actType, ":")
+							actType = actTypeSplit[0]
+							strTaskID := actTypeSplit[1]
+							taskID, _ = strconv.Atoi(strTaskID)
+						}
+
 						tasksList = append(tasksList, UserGrowthTask{
+							ID:         taskID,
 							Name:       taskName,
 							ActType:    actType,
 							SortStatus: 1,
@@ -476,8 +488,9 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 				} else if task.SortStatus == 1 && (task.ExpireTime == 0 || task.ExpireTime > int(time.Now().Unix())) {
 					response := new(UserGrowthTasksClientResponse)
 
-					if task.ActType == "task_wake_third_app" && task.ID > 0 {
-						if task.ID == 591 {
+					if slices.Contains(UserGrowthTasksExchangeFlowTaskIDs, task.ID) {
+						switch task.ID {
+						case 591:
 							var res *growthTasks591ExecuteResponse
 							res, err = growthTasks591(task.TargetScheme)
 							if err == nil {
@@ -487,8 +500,10 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 									response.Data.SuccessTaskIds = []int{task.ID}
 								}
 							}
-						} else {
-							err = fmt.Errorf("unknown task_wake_third_app name: %s, act_type: %s, task_id: %d", task.Name, task.ActType, task.ID)
+						// case 563:
+						// 	response, err = PostGrowthTaskByClient(cookie, task.ActType, task.ID)
+						default:
+							err = fmt.Errorf("unknown exchange_flow_task name: %s, act_type: %s, task_id: %d", task.Name, task.ActType, task.ID)
 						}
 					} else if task.ID > 0 {
 						response, err = PostGrowthTaskByClient(cookie, task.ActType, task.ID)

@@ -201,7 +201,9 @@ func MultipartBodyBuilder(_body map[string][]byte, files ...MultipartBodyBinaryF
 
 var clientSignSalt = string([]byte{116, 105, 101, 98, 97, 99, 108, 105, 101, 110, 116, 33, 33, 33})
 var pcSignSalt = string([]byte{51, 54, 55, 55, 48, 98, 49, 102, 51, 52, 99, 57, 98, 98, 102, 50, 101, 55, 100, 49, 97, 57, 57, 100, 50, 98, 56, 50, 102, 97, 57, 101})
-var otherSignSalt = string([]byte{48, 48, 51, 57, 100, 55, 57, 100, 99, 51, 99, 99, 50, 48, 55, 53, 49, 50, 57, 55, 52, 53, 97, 51, 48, 50, 51, 55, 97, 51, 99, 52})
+
+// ['newwise','shoubai_ugc','smallapp','smallapp_weixin','smallapp_qq']
+var miniAppSignSalt = string([]byte{48, 48, 51, 57, 100, 55, 57, 100, 99, 51, 99, 99, 50, 48, 55, 53, 49, 50, 57, 55, 52, 53, 97, 51, 48, 50, 51, 55, 97, 51, 99, 52})
 
 func AddSign(form map[string]string, clientType string) {
 	if form == nil {
