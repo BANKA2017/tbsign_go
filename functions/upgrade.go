@@ -84,13 +84,15 @@ func Upgrade(version string) error {
 
 	//get releases "https://api.github.com/repos/banka2017/tbsign_go/releases?per_page=5"
 
-	binPath := ReleaseFilesPath + "/tbsign_go." + version + "/tbsign_go." + version + "." + _os + "-" + _arch
+	releasePath, _ := url.JoinPath(ReleaseFilesPath, "tbsign_go."+version)
+
+	binPath, _ := url.JoinPath(releasePath, "tbsign_go."+version+"."+_os+"-"+_arch)
 
 	if _os == "windows" {
 		binPath += ".exe"
 	}
 
-	sha256Path := ReleaseFilesPath + "/tbsign_go." + version + "/tbsign_go." + version + "." + _os + "-" + _arch + ".sha256"
+	sha256Path, _ := url.JoinPath(releasePath, "tbsign_go."+version+"."+_os+"-"+_arch+".sha256")
 	if _os == "windows" {
 		sha256Path = strings.ReplaceAll(sha256Path, ".sha256", ".exe.sha256")
 	}
@@ -100,15 +102,14 @@ func Upgrade(version string) error {
 		return err
 	}
 	slog.Info("replace file", "path", execPath)
-	execDir := filepath.Dir(execPath)
 
 	// Path to the new version temporary file
-	tmpFile := filepath.Join(execDir, "__tmp__tbsign.tmp")
+	tmpFile := filepath.Join(os.TempDir(), "tbsign-binary.tmp")
 
 	// get binary
 	binary, err := Fetch(binPath, http.MethodGet, nil, map[string]string{
 		"User-Agent": "tbsign_go/upgrader",
-	}, DefaultCient)
+	}, DefaultClient)
 	if err != nil {
 		return err
 	}
@@ -141,7 +142,7 @@ func Upgrade(version string) error {
 
 	sha256Str, err := Fetch(sha256Path, http.MethodGet, nil, map[string]string{
 		"User-Agent": "tbsign_go/upgrader",
-	}, DefaultCient)
+	}, DefaultClient)
 	if err != nil {
 		return err
 	}
@@ -222,7 +223,7 @@ func Upgrade2(tagName string) error {
 	// get info
 	binInfo, err := Fetch(share.ReleaseApiBase+tagName, http.MethodGet, nil, map[string]string{
 		"User-Agent": "tbsign_go/upgrader2",
-	}, DefaultCient)
+	}, DefaultClient)
 
 	var info releaseInfoStruct
 
@@ -267,15 +268,14 @@ func Upgrade2(tagName string) error {
 		return err
 	}
 	slog.Info("replace file", "path", execPath)
-	execDir := filepath.Dir(execPath)
 
 	// Path to the new tagName temporary file
-	tmpFile := filepath.Join(execDir, "__tmp__tbsign.tmp")
+	tmpFile := filepath.Join(os.TempDir(), "tbsign-binary.tmp")
 
 	// get binary
 	binary, err := Fetch(binPath, http.MethodGet, nil, map[string]string{
 		"User-Agent": "tbsign_go/upgrader2",
-	}, DefaultCient)
+	}, DefaultClient)
 	if err != nil {
 		return err
 	}
@@ -298,12 +298,8 @@ func Upgrade2(tagName string) error {
 	}
 
 	// diff sha256
-	hasher := sha256.New()
-	if _, err := io.Copy(hasher, file); err != nil {
-		return err
-	}
-	hashBytes := hasher.Sum(nil)
-	hashString := hex.EncodeToString(hashBytes)
+	hasher := sha256.Sum256(binary)
+	hashString := hex.EncodeToString(hasher[:])
 	s, _ := file.Stat()
 
 	slog.Info("File info", "size", s.Size(), "calculated-sha256", strings.TrimSpace(hashString), "expected-sha256", fileSha256)

@@ -92,7 +92,7 @@ func SendNtfy(_to, title, body string) error {
 		"Title":        title,
 		"Content-Type": "text/plain",
 		"Tags":         "tbsign",
-	}, DefaultCient)
+	}, DefaultClient)
 
 	if err != nil {
 		return err
@@ -134,7 +134,7 @@ func SendBark(_to, title, body string) error {
 	_body.Set("device_key", _to)
 	_body.Set("group", "tbsign")
 
-	res, err := Fetch(barkAddr+"/push", http.MethodPost, []byte(_body.Encode()), map[string]string{}, DefaultCient)
+	res, err := Fetch(barkAddr+"/push", http.MethodPost, []byte(_body.Encode()), map[string]string{}, DefaultClient)
 	if err != nil {
 		return err
 	}
@@ -173,7 +173,7 @@ func SendPushdeer(_to, title, body string) error {
 	_body.Set("desp", strings.ReplaceAll(body, "<br />", "\n"))
 	_body.Set("pushkey", _to)
 
-	res, err := Fetch(pushdeerAddr+"/message/push", http.MethodPost, []byte(_body.Encode()), map[string]string{}, DefaultCient)
+	res, err := Fetch(pushdeerAddr+"/message/push", http.MethodPost, []byte(_body.Encode()), map[string]string{}, DefaultClient)
 	if err != nil {
 		return err
 	}

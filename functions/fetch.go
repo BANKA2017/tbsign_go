@@ -52,7 +52,7 @@ func init() {
 
 var IgnoreProxy bool
 
-var DefaultCient *http.Client
+var DefaultClient *http.Client
 var TBClient *http.Client
 
 var CACertPool *x509.CertPool

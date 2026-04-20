@@ -48,6 +48,10 @@ func init() {
 	}
 }
 
+var (
+	buildInReleaseFileBasePath = share.ReleaseFilesPath
+)
+
 func main() {
 	// sqlite
 	flag.StringVar(&share.DBPath, "db_path", utils.GetEnv("tc_db_path", ""), "Database path")
@@ -84,11 +88,18 @@ func main() {
 	flag.StringVar(&share.DataEncryptKeyStr, "data_encrypt_key", utils.GetEnv("tc_data_encrypt_key", ""), "The key to encrypt some user data (base64url)")
 	// flag.BoolVar(&share.DisableEmail, "disable-email", false, "disable email")
 	flag.StringVar(&share.DNSAddress, "dns_addr", utils.GetEnv("tc_dns_addr", ""), "DNS Address")
+	// releases
+	flag.StringVar(&share.ReleaseFilesPath, "release_file_base", utils.GetEnv("tc_release_file_base", buildInReleaseFileBasePath), "Base path for release files")
+	flag.StringVar(&share.ReleaseApiBase, "release_api_base", utils.GetEnv("tc_release_api_base", share.ReleaseApiBase), "Base path for release API")
 
 	// others
 	flag.BoolVar(&share.TestMode, "test", utils.GetEnv("tc_test", "") != "", "Not send any requests to tieba servers")
 
 	flag.Parse()
+
+	if share.ReleaseFilesPath != buildInReleaseFileBasePath {
+		_function.ReleaseFilesPath = share.ReleaseFilesPath
+	}
 
 	if share.DBEndpoint == "127.0.0.1:3306" && tmpHost != "127.0.0.1:3306" {
 		share.DBEndpoint = tmpHost
@@ -299,7 +310,7 @@ func main() {
 
 	/// client
 	/// DO NOT EXEC _function.InitClient BEFORE READING FLAGS AND ENV!!!!!
-	_function.DefaultCient = _function.InitClient(300 * time.Second)
+	_function.DefaultClient = _function.InitClient(30 * time.Minute)
 	_function.TBClient = _function.InitClient(10 * time.Second)
 
 	if share.EnableApi {
