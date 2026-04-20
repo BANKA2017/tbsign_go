@@ -210,7 +210,8 @@ func PostGrowthTaskByClient(cookie *_type.TypeCookie, task string, taskID int) (
 		form["act_data[task_id]"] = strconv.Itoa(taskID)
 	}
 
-	_function.AddSign(form, "2")
+	_function.ClientTypeFallBack(form, "android")
+	_function.AddSign(form, "android")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {

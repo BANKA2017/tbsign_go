@@ -107,7 +107,9 @@ func PostClientBan(cookie *_type.TypeCookie, fid int32, portrait string, day int
 		"word":        "-",
 		"z":           "6",
 	}
-	_function.AddSign(form, "4")
+
+	_function.ClientTypeFallBack(form, "android")
+	_function.AddSign(form, "android")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
@@ -149,7 +151,7 @@ func PostNewPCBan(cookie *_type.TypeCookie, fid int32, portrait string, day int3
 		"un":          "",
 		"subapp_type": "pc",
 	}
-	_function.AddSign(form, "20")
+	_function.AddSign(form, "pc")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {

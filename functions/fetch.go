@@ -199,37 +199,68 @@ func MultipartBodyBuilder(_body map[string][]byte, files ...MultipartBodyBinaryF
 	return body.Bytes(), writer.FormDataContentType(), nil
 }
 
-var clientSignSalt = string([]byte{116, 105, 101, 98, 97, 99, 108, 105, 101, 110, 116, 33, 33, 33})
-var pcSignSalt = string([]byte{51, 54, 55, 55, 48, 98, 49, 102, 51, 52, 99, 57, 98, 98, 102, 50, 101, 55, 100, 49, 97, 57, 57, 100, 50, 98, 56, 50, 102, 97, 57, 101})
+const (
+	SubappTypeHarmony        = "client_fe"
+	SubappTypePC             = "pc"
+	SubappTypeClient         = "client_fe"
+	SubappTypeWise           = "newwise"
+	SubappTypeShoubaiUgc     = "shoubai_ugc"
+	SubappTypeSmallappBaidu  = "smallapp"
+	SubappTypeSmallappWeixin = "smallapp_weixin"
+	SubappTypeSmallappQq     = "smallapp_qq"
+
+	ClientTypeHarmony = "8"
+	ClientTypePC      = "20"
+	ClientTypeAndroid = "2"
+	ClientTypeIOS     = "1"
+
+	// dead clients
+	ClientTypeWindowsPhone = "3" // Windows Phone
+	ClientTypeUWP          = "4" // Windows 8
+)
+
+var ClientTypeKV = map[string]string{
+	"harmony": ClientTypeHarmony,
+	"pc":      ClientTypePC,
+	"android": ClientTypeAndroid,
+	"ios":     ClientTypeIOS,
+	"wp":      ClientTypeWindowsPhone,
+	"uwp":     ClientTypeUWP,
+}
+
+var ClientSignSalt = string([]byte{116, 105, 101, 98, 97, 99, 108, 105, 101, 110, 116, 33, 33, 33})
+var PCSignSalt = string([]byte{51, 54, 55, 55, 48, 98, 49, 102, 51, 52, 99, 57, 98, 98, 102, 50, 101, 55, 100, 49, 97, 57, 57, 100, 50, 98, 56, 50, 102, 97, 57, 101})
 
 // ['newwise','shoubai_ugc','smallapp','smallapp_weixin','smallapp_qq']
-var miniAppSignSalt = string([]byte{48, 48, 51, 57, 100, 55, 57, 100, 99, 51, 99, 99, 50, 48, 55, 53, 49, 50, 57, 55, 52, 53, 97, 51, 48, 50, 51, 55, 97, 51, 99, 52})
+var MiniAppSignSalt = string([]byte{48, 48, 51, 57, 100, 55, 57, 100, 99, 51, 99, 99, 50, 48, 55, 53, 49, 50, 57, 55, 52, 53, 97, 51, 48, 50, 51, 55, 97, 51, 99, 52})
 
-func AddSign(form map[string]string, clientType string) {
+func ClientTypeFallBack(form map[string]string, clientTypeKey string) {
 	if form == nil {
-		form = make(map[string]string)
+		return
 	}
 
-	if ct := form["_client_type"]; ct == "" {
-		if clientType == "" {
-			clientType = "4"
-		}
-		form["_client_type"] = clientType
+	if form["client_version"] == "" && form["_client_version"] == "" && form["subapp_type"] != "pc" {
+		form["_client_version"] = ClientVersion
 	}
 
-	// if form["subapp_type"] == "" {
-	// 	form["subapp_type"] = "client"
-	// }
+	if form["client_type"] == "" && form["_client_type"] == "" {
+		form["_client_type"] = ClientTypeKV[clientTypeKey]
+	}
+}
 
-	var signSalt = clientSignSalt
-	switch form["subapp_type"] {
-	case "pc":
-		signSalt = pcSignSalt
-	default:
-		if v := form["_client_version"]; v == "" {
-			form["_client_version"] = ClientVersion
-		}
-		// signSalt = clientSignSalt
+func AddSign(form map[string]string, subappType string) {
+	if form == nil {
+		return
+	}
+
+	var signSalt string
+
+	if subappType == SubappTypePC {
+		signSalt = PCSignSalt
+	} else if slices.Contains([]string{SubappTypeWise, SubappTypeShoubaiUgc, SubappTypeSmallappBaidu, SubappTypeSmallappWeixin, SubappTypeSmallappQq}, subappType) {
+		signSalt = MiniAppSignSalt
+	} else {
+		signSalt = ClientSignSalt
 	}
 
 	var formKeys []string
@@ -282,7 +313,9 @@ func PostCheckinClient(cookie *_type.TypeCookie, kw string, fid int32) (*_type.C
 	form["kw"] = kw
 	form["tbs"] = cookie.Tbs
 	form["from_widget"] = "1"
-	AddSign(form, "2")
+
+	ClientTypeFallBack(form, "android")
+	AddSign(form, "android")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
@@ -306,7 +339,8 @@ func PostForumInfoWidget(cookie *_type.TypeCookie, fid int32) (any, error) {
 	form["BDUSS"] = cookie.Bduss
 	form["forum_id"] = strconv.Itoa(int(fid))
 
-	AddSign(form, "2")
+	ClientTypeFallBack(form, "android")
+	AddSign(form, "android")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
@@ -349,7 +383,8 @@ func GetForumList(cookie *_type.TypeCookie, uid string, page int64) (*_type.Foru
 	form["page_size"] = "200"
 	form["tbs"] = cookie.Tbs
 
-	AddSign(form, "2")
+	ClientTypeFallBack(form, "android")
+	AddSign(form, "android")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
@@ -398,7 +433,7 @@ func GetForumList2(cookie *_type.TypeCookie, page int64) (*_type.ForumGuideRespo
 	form["tbs"] = cookie.Tbs
 	//form["top_forum_num"] = "0"
 
-	AddSign(form, "4")
+	AddSign(form, "android")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
@@ -427,7 +462,8 @@ func PostClientBatchCheckinForumList(cookie *_type.TypeCookie) (*_type.BatchChec
 	form["stoken"] = cookie.Stoken
 	form["tbs"] = cookie.Tbs
 
-	AddSign(form, "2")
+	ClientTypeFallBack(form, "android")
+	AddSign(form, "android")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
@@ -458,7 +494,8 @@ func PostClientBatchCheckin(cookie *_type.TypeCookie, fid []string) (*_type.Batc
 
 	form["forum_ids"] = strings.Join(fid, ",")
 
-	AddSign(form, "2")
+	ClientTypeFallBack(form, "android")
+	AddSign(form, "android")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
@@ -538,7 +575,7 @@ func GetForumDetail(fid int64) (*tbpb.GetForumDetailResIdl_DataRes, error) {
 func GetBaiduUserInfo(cookie *_type.TypeCookie) (*_type.BaiduUserInfoResponse, error) {
 	var form = make(map[string]string)
 	form["bdusstoken"] = cookie.Bduss
-	AddSign(form, "4")
+	AddSign(form, "android")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
@@ -633,7 +670,7 @@ func PostSync(cookie *_type.TypeCookie) (*_type.PostSyncResponse, error) {
 		"BDUSS": cookie.Bduss,
 		"cuid":  "-", // TODO cuid
 	}
-	AddSign(form, "4")
+	AddSign(form, "android")
 	_body := url.Values{}
 	for k, v := range form {
 		if k != "sign" {
@@ -803,7 +840,8 @@ func GetNewPCUserCard(portrait string) (*_type.GetNewPCUserCardResponse, error) 
 		"subapp_type":  "pc",
 		"_client_type": "20",
 	}
-	AddSign(query, "20")
+
+	AddSign(query, "pc")
 	_query := url.Values{}
 	for k, v := range query {
 		if k != "sign" {
@@ -828,7 +866,7 @@ func GetNewPCForumCard(fid int) (*_type.GetNewPCForumCardResponse, error) {
 		"subapp_type":  "pc",
 		"_client_type": "20",
 	}
-	AddSign(query, "20")
+	AddSign(query, "pc")
 	_query := url.Values{}
 	for k, v := range query {
 		if k != "sign" {
