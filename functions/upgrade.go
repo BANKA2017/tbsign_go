@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"maps"
 	"net/http"
 	"net/url"
 	"os"
@@ -15,7 +16,9 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/BANKA2017/tbsign_go/assets"
@@ -62,6 +65,109 @@ func IsBinaryType() bool {
 
 var ReleaseFilesPath = share.ReleaseFilesPath
 
+type chunk struct {
+	start int
+	end   int
+	index int
+	data  []byte
+	err   error
+}
+
+// by chatgpt
+func upgradeDownloader(_url string, _client *http.Client) ([]byte, error) {
+	// get response headers
+	req, err := http.NewRequest("HEAD", _url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	headers := make(map[string]string)
+	headers["User-Agent"] = "tbsign_go/upgrader"
+
+	resp, err := _client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	lengthStr := resp.Header.Get("Content-Length")
+	if lengthStr == "" {
+		return Fetch(_url, http.MethodGet, nil, headers, _client)
+	}
+
+	length, err := strconv.Atoi(lengthStr)
+	if err != nil || length <= 0 {
+		return Fetch(_url, http.MethodGet, nil, headers, _client)
+	}
+
+	// Range?
+	if resp.Header.Get("Accept-Ranges") != "bytes" {
+		return Fetch(_url, http.MethodGet, nil, headers, _client)
+	}
+
+	workers := runtime.NumCPU()
+	if workers > 8 {
+		workers = 8
+	}
+
+	chunkSize := length / workers
+
+	chunks := make([]*chunk, workers)
+
+	var wg sync.WaitGroup
+	wg.Add(workers)
+
+	// concurrent
+	for i := 0; i < workers; i++ {
+		start := i * chunkSize
+		end := start + chunkSize - 1
+
+		if i == workers-1 {
+			end = length - 1
+		}
+
+		chunks[i] = &chunk{
+			start: start,
+			end:   end,
+			index: i,
+		}
+
+		go func(c *chunk) {
+			defer wg.Done()
+
+			rangeHeader := make(map[string]string)
+			maps.Copy(headers, rangeHeader)
+			rangeHeader["Range"] = fmt.Sprintf("bytes=%d-%d", c.start, c.end)
+
+			data, err := Fetch(_url, http.MethodGet, nil, rangeHeader, _client)
+
+			if err != nil {
+				c.err = err
+				return
+			}
+
+			c.data = data
+		}(chunks[i])
+	}
+
+	wg.Wait()
+
+	// check
+	for _, c := range chunks {
+		if c.err != nil {
+			return nil, c.err
+		}
+	}
+
+	// concat chunks
+	var buf bytes.Buffer
+	for _, c := range chunks {
+		buf.Write(c.data)
+	}
+
+	return buf.Bytes(), nil
+}
+
 // version = "20240707.c7990c7.6a6db54"
 func Upgrade(version string) error {
 	_os := runtime.GOOS
@@ -107,9 +213,7 @@ func Upgrade(version string) error {
 	tmpFile := filepath.Join(os.TempDir(), "tbsign-binary.tmp")
 
 	// get binary
-	binary, err := Fetch(binPath, http.MethodGet, nil, map[string]string{
-		"User-Agent": "tbsign_go/upgrader",
-	}, DefaultClient)
+	binary, err := upgradeDownloader(binPath, DefaultClient)
 	if err != nil {
 		return err
 	}
@@ -140,9 +244,7 @@ func Upgrade(version string) error {
 	hashString := hex.EncodeToString(hashBytes)
 	s, _ := file.Stat()
 
-	sha256Str, err := Fetch(sha256Path, http.MethodGet, nil, map[string]string{
-		"User-Agent": "tbsign_go/upgrader",
-	}, DefaultClient)
+	sha256Str, err := upgradeDownloader(sha256Path, DefaultClient)
 	if err != nil {
 		return err
 	}
@@ -273,9 +375,7 @@ func Upgrade2(tagName string) error {
 	tmpFile := filepath.Join(os.TempDir(), "tbsign-binary.tmp")
 
 	// get binary
-	binary, err := Fetch(binPath, http.MethodGet, nil, map[string]string{
-		"User-Agent": "tbsign_go/upgrader2",
-	}, DefaultClient)
+	binary, err := upgradeDownloader(binPath, DefaultClient)
 	if err != nil {
 		return err
 	}
