@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"maps"
 	"net/http"
 	"net/url"
 	"os"
@@ -23,6 +22,7 @@ import (
 
 	"github.com/BANKA2017/tbsign_go/assets"
 	"github.com/BANKA2017/tbsign_go/share"
+	"github.com/kdnetwork/code-snippet/go/utils"
 	"golang.org/x/exp/slices"
 )
 
@@ -73,7 +73,19 @@ type chunk struct {
 	err   error
 }
 
+var defaultHeaders = map[string]string{
+	"User-Agent": "tbsign_go/upgrader",
+}
+
 // by chatgpt
+
+func formatSpeedMB(bytes int64, duration time.Duration) string {
+	if duration <= 0 {
+		return "∞ MB/s"
+	}
+	mbPerSec := float64(bytes) / 1024 / 1024 / duration.Seconds()
+	return fmt.Sprintf("%.2f MB/s", mbPerSec)
+}
 func upgradeDownloader(_url string, _client *http.Client) ([]byte, error) {
 	// get response headers
 	req, err := http.NewRequest("HEAD", _url, nil)
@@ -81,8 +93,7 @@ func upgradeDownloader(_url string, _client *http.Client) ([]byte, error) {
 		return nil, err
 	}
 
-	headers := make(map[string]string)
-	headers["User-Agent"] = "tbsign_go/upgrader"
+	req.Header.Set("User-Agent", defaultHeaders["User-Agent"])
 
 	resp, err := _client.Do(req)
 	if err != nil {
@@ -92,23 +103,20 @@ func upgradeDownloader(_url string, _client *http.Client) ([]byte, error) {
 
 	lengthStr := resp.Header.Get("Content-Length")
 	if lengthStr == "" {
-		return Fetch(_url, http.MethodGet, nil, headers, _client)
+		return Fetch(_url, http.MethodGet, nil, defaultHeaders, _client)
 	}
 
 	length, err := strconv.Atoi(lengthStr)
 	if err != nil || length <= 0 {
-		return Fetch(_url, http.MethodGet, nil, headers, _client)
+		return Fetch(_url, http.MethodGet, nil, defaultHeaders, _client)
 	}
 
 	// Range?
 	if resp.Header.Get("Accept-Ranges") != "bytes" {
-		return Fetch(_url, http.MethodGet, nil, headers, _client)
+		return Fetch(_url, http.MethodGet, nil, defaultHeaders, _client)
 	}
 
-	workers := runtime.NumCPU()
-	if workers > 8 {
-		workers = 8
-	}
+	workers := utils.Clamp(runtime.NumCPU(), 4, 8)
 
 	chunkSize := length / workers
 
@@ -118,7 +126,7 @@ func upgradeDownloader(_url string, _client *http.Client) ([]byte, error) {
 	wg.Add(workers)
 
 	// concurrent
-	for i := 0; i < workers; i++ {
+	for i := range workers {
 		start := i * chunkSize
 		end := start + chunkSize - 1
 
@@ -135,11 +143,10 @@ func upgradeDownloader(_url string, _client *http.Client) ([]byte, error) {
 		go func(c *chunk) {
 			defer wg.Done()
 
-			rangeHeader := make(map[string]string)
-			maps.Copy(headers, rangeHeader)
-			rangeHeader["Range"] = fmt.Sprintf("bytes=%d-%d", c.start, c.end)
-
-			data, err := Fetch(_url, http.MethodGet, nil, rangeHeader, _client)
+			data, err := Fetch(_url, http.MethodGet, nil, map[string]string{
+				"User-Agent": defaultHeaders["User-Agent"],
+				"Range":      fmt.Sprintf("bytes=%d-%d", c.start, c.end),
+			}, _client)
 
 			if err != nil {
 				c.err = err
@@ -213,10 +220,14 @@ func Upgrade(version string) error {
 	tmpFile := filepath.Join(os.TempDir(), "tbsign-binary.tmp")
 
 	// get binary
+	since := time.Now()
 	binary, err := upgradeDownloader(binPath, DefaultClient)
 	if err != nil {
 		return err
 	}
+
+	duration := time.Since(since)
+	slog.Info("download status", "duration", int(duration.Seconds()), "avg-speed", formatSpeedMB(int64(len(binary)), duration))
 
 	out, err := os.Create(tmpFile)
 	if err != nil {
@@ -244,7 +255,7 @@ func Upgrade(version string) error {
 	hashString := hex.EncodeToString(hashBytes)
 	s, _ := file.Stat()
 
-	sha256Str, err := upgradeDownloader(sha256Path, DefaultClient)
+	sha256Str, err := Fetch(sha256Path, http.MethodGet, nil, defaultHeaders, DefaultClient)
 	if err != nil {
 		return err
 	}
@@ -375,10 +386,14 @@ func Upgrade2(tagName string) error {
 	tmpFile := filepath.Join(os.TempDir(), "tbsign-binary.tmp")
 
 	// get binary
+	since := time.Now()
 	binary, err := upgradeDownloader(binPath, DefaultClient)
 	if err != nil {
 		return err
 	}
+
+	duration := time.Since(since)
+	slog.Info("download status", "duration", int(duration.Seconds()), "avg-speed", formatSpeedMB(int64(len(binary)), duration))
 
 	out, err := os.Create(tmpFile)
 	if err != nil {

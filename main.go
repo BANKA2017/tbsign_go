@@ -48,10 +48,6 @@ func init() {
 	}
 }
 
-var (
-	buildInReleaseFileBasePath = share.ReleaseFilesPath
-)
-
 func main() {
 	// sqlite
 	flag.StringVar(&share.DBPath, "db_path", utils.GetEnv("tc_db_path", ""), "Database path")
@@ -89,7 +85,7 @@ func main() {
 	// flag.BoolVar(&share.DisableEmail, "disable-email", false, "disable email")
 	flag.StringVar(&share.DNSAddress, "dns_addr", utils.GetEnv("tc_dns_addr", ""), "DNS Address")
 	// releases
-	flag.StringVar(&share.ReleaseFilesPath, "release_file_base", utils.GetEnv("tc_release_file_base", buildInReleaseFileBasePath), "Base path for release files")
+	flag.StringVar(&share.ReleaseFilesPath, "release_file_base", utils.GetEnv("tc_release_file_base", share.ReleaseFilesPath), "Base path for release files")
 	flag.StringVar(&share.ReleaseApiBase, "release_api_base", utils.GetEnv("tc_release_api_base", share.ReleaseApiBase), "Base path for release API")
 
 	// others
@@ -97,7 +93,7 @@ func main() {
 
 	flag.Parse()
 
-	if share.ReleaseFilesPath != buildInReleaseFileBasePath {
+	if share.ReleaseFilesPath != _function.ReleaseFilesPath {
 		_function.ReleaseFilesPath = share.ReleaseFilesPath
 	}
 
