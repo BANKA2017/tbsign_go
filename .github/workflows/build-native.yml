@@ -2,6 +2,11 @@ name: Build Native
 
 on:
   workflow_dispatch:
+    inputs:
+      prerelease:
+        description: "Publish as prerelease"
+        type: boolean
+        default: true
 
 concurrency:
   group: build-all-${{ github.ref }}
@@ -152,7 +157,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: build/*
-          prerelease: true
+          prerelease: ${{ inputs.prerelease }}
           fail_on_unmatched_files: true
           tag_name: ${{ env.build_prefix }}
           body: |
