@@ -218,7 +218,7 @@ func SendEmail(_to, title, body string) error {
 	case "2":
 		client = sasl.NewPlainClient("", smtp_username, smtp_password)
 	// case "3":
-	// 	// TODO well... might works?
+	//  // DEPRECATED option, will remove in future versions
 	// 	// https://learn.microsoft.com/en-us/exchange/client-developer/legacy-protocols/how-to-authenticate-an-imap-pop-smtp-application-by-using-oauth
 	// 	client = sasl.NewXoauth2Client(smtp_username, smtp_password)
 	default:
