@@ -66,14 +66,14 @@ func main() {
 	flag.BoolVar(&_function.IgnoreProxy, "no_proxy", false, "Ignore the http proxy config from environment vars")
 
 	// api
-	flag.BoolVar(&share.EnableApi, "api", utils.GetEnv("tc_api", "") != "", "active backend endpoints")
-	flag.BoolVar(&share.EnableFrontend, "fe", utils.GetEnv("tc_fe", "") != "", "active frontend endpoints")
-	flag.BoolVar(&share.EnableBackup, "allow_backup", utils.GetEnv("tc_allow_backup", "") != "", "allow backup (export/import)")
+	flag.BoolVar(&share.EnableApi, "api", utils.GetBoolEnv("tc_api"), "active backend endpoints")
+	flag.BoolVar(&share.EnableFrontend, "fe", utils.GetBoolEnv("tc_fe"), "active frontend endpoints")
+	flag.BoolVar(&share.EnableBackup, "allow_backup", utils.GetBoolEnv("tc_allow_backup"), "allow backup (export/import)")
 	flag.StringVar(&share.Address, "address", utils.GetEnv("tc_address", ":1323"), "address :1323")
 
 	// setup
 	flag.BoolVar(&setup, "setup", false, "Init the system [force]")
-	flag.BoolVar(&autoInstall, "auto_install", utils.GetEnv("tc_auto_install", "") != "", "Auto install the system when tables are not exist")
+	flag.BoolVar(&autoInstall, "auto_install", utils.GetBoolEnv("tc_auto_install"), "Auto install the system when tables are not exist")
 	flag.StringVar(&adminName, "admin_name", utils.GetEnv("tc_admin_name", ""), "Name of admin")
 	flag.StringVar(&adminEmail, "admin_email", utils.GetEnv("tc_admin_email", ""), "Email of admin")
 	flag.StringVar(&adminPassword, "admin_password", utils.GetEnv("tc_admin_password", ""), "Password of admin")
@@ -89,7 +89,7 @@ func main() {
 	flag.StringVar(&share.ReleaseApiBase, "release_api_base", utils.GetEnv("tc_release_api_base", share.ReleaseApiBase), "Base path for release API")
 
 	// others
-	flag.BoolVar(&share.TestMode, "test", utils.GetEnv("tc_test", "") != "", "Not send any requests to tieba servers")
+	flag.BoolVar(&share.TestMode, "test", utils.GetBoolEnv("tc_test"), "Not send any requests to tieba servers")
 
 	flag.Parse()
 
