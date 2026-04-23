@@ -35,6 +35,7 @@ type Client struct {
 	ClientID string
 	SampleID string
 
+	cuid        string
 	cuidGalaxy2 string
 	c3Aid       string
 
@@ -70,6 +71,7 @@ func (tc *Client) RandomUUID() string {
 	// reset c3aid and cuid
 	tc.c3Aid = ""
 	tc.cuidGalaxy2 = ""
+	tc.cuid = ""
 
 	return tc.UUID
 }
@@ -188,6 +190,14 @@ func heliosHash(src []byte, size int) []byte {
 	result := heliosHashWriteBuffer(sec)
 
 	return result
+}
+
+// Cuid only for legacy versions like 9.x, >= 11.x use cuid_galaxy2
+func (tc *Client) Cuid() string {
+	if tc.cuid == "" {
+		tc.cuid = "baidutiebaapp" + tc.UUID
+	}
+	return tc.cuid
 }
 
 // CuidGalaxy2 generates CUID Galaxy 2 from device identifiers
