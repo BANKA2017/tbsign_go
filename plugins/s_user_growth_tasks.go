@@ -178,7 +178,7 @@ func PostUserGrowth(cookie *_type.TypeCookie, task string) (*UserGrowthTasksClie
 	_body.Set("tbs", cookie.Tbs)
 	_body.Set("act_type", task)
 	_body.Set("cuid", "-")
-	_body.Set("subapp_type", "hybrid")
+	// _body.Set("subapp_type", "hybrid") // NEVER SET HYBRID IN WEB ENDPOINT!!!
 
 	if task == "page_sign" {
 		_body.Set("scene_name", "taskCenter")
