@@ -354,20 +354,47 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 				Msg:     "failed",
 			})
 		} else {
-			// ext tasks
-			if extTasks, ok := extTasksList[taskUserItem.UID]; !ok {
-				if err := _function.JsonDecode([]byte(_function.GetUserOption("kd_growth_ext_tasks", strconv.Itoa(int(taskUserItem.UID)))), &extTasks); err != nil {
-					extTasksList[taskUserItem.UID] = make(map[string]string)
-				} else {
-					extTasksList[taskUserItem.UID] = extTasks
-				}
-			}
-			extTasks := extTasksList[taskUserItem.UID]
-
-			var tasksList []UserGrowthTask
+			var tasksList = make(map[string]UserGrowthTask)
 			doCollectStampTasks := false
 
 			/// levelInfo := LevelInfo{}
+			if accountStatusList[taskUserItem.UID] == "2" {
+				// ext tasks
+				if extTasks, ok := extTasksList[taskUserItem.UID]; !ok {
+					if err := _function.JsonDecode([]byte(_function.GetUserOption("kd_growth_ext_tasks", strconv.Itoa(int(taskUserItem.UID)))), &extTasks); err != nil {
+						extTasksList[taskUserItem.UID] = make(map[string]string)
+					} else {
+						extTasksList[taskUserItem.UID] = extTasks
+					}
+				}
+				extTasks := extTasksList[taskUserItem.UID]
+
+				if len(extTasks) > 0 {
+					for actType, taskName := range extTasks {
+						if actType != "" && taskName != "" {
+							var taskID int
+
+							// acttype:123
+							// acttype
+							if strings.Contains(actType, ":") {
+								actTypeSplit := strings.Split(actType, ":")
+								actType = actTypeSplit[0]
+								strTaskID := actTypeSplit[1]
+								taskID, _ = strconv.Atoi(strTaskID)
+							}
+
+							// remove task id now
+							tasksList[actType] = UserGrowthTask{
+								ID:         taskID,
+								Name:       taskName,
+								ActType:    actType,
+								SortStatus: 1,
+								ExpireTime: 0,
+							}
+						}
+					}
+				}
+			}
 
 			if accountStatusList[taskUserItem.UID] != "0" {
 				tasksResponse, err := GetUserGrowthTasksList(cookie)
@@ -394,11 +421,15 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 								if taskTypeList.TaskType == "exchange_flow_task" {
 									for _, taskItem := range taskTypeList.TaskList {
 										if slices.Contains(UserGrowthTasksExchangeFlowTaskIDs, taskItem.ID) {
-											tasksList = append(tasksList, taskItem)
+											tasksList[taskItem.ActType+strconv.Itoa(taskItem.ID)] = taskItem
+										} else if _, exist := tasksList[taskItem.ActType]; exist {
+											tasksList[taskItem.ActType] = taskItem // replace ext task
 										}
 									}
 								} else {
-									tasksList = append(tasksList, taskTypeList.TaskList...)
+									for _, taskItem := range taskTypeList.TaskList {
+										tasksList[taskItem.ActType] = taskItem
+									}
 								}
 							}
 							if taskTypeList.TaskType == "icon_task" && slices.Contains([]string{"0", ""}, _function.GetUserOption("kd_growth_break_icon_tasks", strconv.Itoa(int(taskUserItem.UID)))) {
@@ -443,43 +474,12 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 					}
 				}
 			} else {
-				tasksList = append(tasksList, UserGrowthTask{
+				tasksList["page_sign"] = UserGrowthTask{
 					ID:         20,
 					Name:       "每日签到",
 					ActType:    "page_sign",
 					SortStatus: 1,
 					ExpireTime: 0,
-				})
-			}
-
-			if accountStatusList[taskUserItem.UID] == "2" && len(extTasks) > 0 {
-				var tasksActTypeList []string
-				for _, task := range tasksList {
-					if !slices.Contains(tasksActTypeList, task.ActType) {
-						tasksActTypeList = append(tasksActTypeList, task.ActType)
-					}
-				}
-				for actType, taskName := range extTasks {
-					if actType != "" && taskName != "" && !slices.Contains(tasksActTypeList, actType) {
-						var taskID int
-
-						// acttype:123
-						// acttype
-						if strings.Contains(actType, ":") {
-							actTypeSplit := strings.Split(actType, ":")
-							actType = actTypeSplit[0]
-							strTaskID := actTypeSplit[1]
-							taskID, _ = strconv.Atoi(strTaskID)
-						}
-
-						tasksList = append(tasksList, UserGrowthTask{
-							ID:         taskID,
-							Name:       taskName,
-							ActType:    actType,
-							SortStatus: 1,
-							ExpireTime: 0,
-						})
-					}
 				}
 			}
 
