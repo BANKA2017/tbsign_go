@@ -96,8 +96,8 @@ type UserGrowthTasksClientResponse struct {
 	No    int    `json:"no,omitempty"`
 	Error string `json:"error,omitempty"`
 	Data  struct {
-		Toast          any   `json:"toast"` // they use PHP, so empty array `[]` means do nothing, an object and `success_task_ids` not empty means success
-		SuccessTaskIds []int `json:"success_task_ids"`
+		Toast          json.RawMessage `json:"toast"` // they use PHP, so empty array `[]` means do nothing, an object and `success_task_ids` not empty means success
+		SuccessTaskIds []int           `json:"success_task_ids"`
 	} `json:"data"`
 }
 
@@ -544,7 +544,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 						}
 					} else {
 						if response.No == 0 {
-							if task.ID == 0 || len(response.Data.SuccessTaskIds) > 0 && slices.Contains(response.Data.SuccessTaskIds, task.ID) {
+							if task.ID == 0 || len(response.Data.Toast) > 2 {
 								result = append(result, UserGrowthTaskToSave{
 									TaskID:  task.ID,
 									Name:    task.Name,
