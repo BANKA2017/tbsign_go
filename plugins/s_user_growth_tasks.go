@@ -173,11 +173,16 @@ type UserGrowthTaskCollectStampResponse struct {
 	Error string `json:"error,omitempty"`
 }
 
-func PostGrowthTaskByWeb(cookie *_type.TypeCookie, task string) (*UserGrowthTasksWebResponse, error) {
+func PostUserGrowth(cookie *_type.TypeCookie, task string) (*UserGrowthTasksClientResponse, error) {
 	_body := url.Values{}
 	_body.Set("tbs", cookie.Tbs)
 	_body.Set("act_type", task)
 	_body.Set("cuid", "-")
+	_body.Set("subapp_type", "hybrid")
+
+	if task == "page_sign" {
+		_body.Set("scene_name", "taskCenter")
+	}
 
 	headersMap := map[string]string{
 		"Cookie":     "BDUSS=" + cookie.Bduss,
@@ -190,13 +195,13 @@ func PostGrowthTaskByWeb(cookie *_type.TypeCookie, task string) (*UserGrowthTask
 		return nil, err
 	}
 
-	resp := new(UserGrowthTasksWebResponse)
+	resp := new(UserGrowthTasksClientResponse)
 	err = _function.JsonDecode(response, &resp)
 	return resp, err
 }
 
 // share_thread page_sign
-func PostGrowthTaskByClient(cookie *_type.TypeCookie, task string, taskID int) (*UserGrowthTasksClientResponse, error) {
+func PostUserTask(cookie *_type.TypeCookie, task string, taskID int) (*UserGrowthTasksClientResponse, error) {
 	form := map[string]string{
 		"act_type":        task,
 		"cuid":            "-",
@@ -206,7 +211,7 @@ func PostGrowthTaskByClient(cookie *_type.TypeCookie, task string, taskID int) (
 		"subapp_type": "hybrid",
 	}
 
-	if taskID > 0 {
+	if task == "task_entry_page" && taskID > 0 {
 		form["act_data[task_id]"] = strconv.Itoa(taskID)
 	}
 
@@ -509,17 +514,10 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 						default:
 							err = fmt.Errorf("unknown exchange_flow_task name: %s, act_type: %s, task_id: %d", task.Name, task.ActType, task.ID)
 						}
-					} else if task.ID > 0 {
-						response, err = PostGrowthTaskByClient(cookie, task.ActType, task.ID)
+					} else if task.ActType == "page_sign" || task.ID == 0 {
+						response, err = PostUserGrowth(cookie, task.ActType)
 					} else {
-						// ext tasks should use web api because we can't verify whether success
-						var res *UserGrowthTasksWebResponse
-						res, err = PostGrowthTaskByWeb(cookie, task.ActType)
-						// web api only return success or failed
-						if err == nil {
-							response.No = res.No
-							response.Error = res.Error
-						}
+						response, err = PostUserTask(cookie, task.ActType, task.ID)
 					}
 
 					// {"no":110003,"error":"fail to call service","data":"\u4efb\u52a1\u5931\u8d25"}
