@@ -15,6 +15,18 @@ func init() {
 		BuildPublishType = "binary"
 	}
 
+	// vcs info
+	if buildInfo, ok := debug.ReadBuildInfo(); ok {
+		kv := make(map[string]string)
+		for _, s := range buildInfo.Settings {
+			kv[s.Key] = s.Value
+		}
+
+		BuildGitCommitHash = kv["vcs.revision"]
+		BuildDirty = kv["vcs.modified"] == "true"
+		BuiltAt = kv["vcs.time"]
+	}
+
 	// build at
 	t, err := time.Parse(time.RFC3339, BuiltAt)
 	if err != nil {
@@ -54,16 +66,6 @@ func init() {
 		// }
 	}
 
-	// build info
-	if buildInfo, ok := debug.ReadBuildInfo(); ok {
-		kv := make(map[string]string)
-		for _, s := range buildInfo.Settings {
-			kv[s.Key] = s.Value
-		}
-
-		BuildGitCommitHash = kv["vcs.revision"]
-		BuildDirty = kv["vcs.modified"] == "true"
-	}
 }
 
 var BuiltAt = ""

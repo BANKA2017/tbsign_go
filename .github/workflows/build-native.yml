@@ -74,12 +74,12 @@ jobs:
           commit_hash=$(git rev-parse HEAD)
           short_commit_hash=${commit_hash:0:7}
           short_fe_commit_hash=${fe_commit_hash:0:7}
-          build_prefix="tbsign_go.$(date +%Y%m%d).$short_commit_hash.$short_fe_commit_hash"
+          ts="$(git log -1 --format=%ct)"
+          build_prefix="tbsign_go.$(date -u -d "@$ts" +%Y%m%d).$short_commit_hash.$short_fe_commit_hash"
           echo "build_prefix=${build_prefix}" >> "$GITHUB_ENV"
-          build_at="$(date -u "+%Y-%m-%dT%H:%M:%SZ")"
+          build_at="$(date -u -d "@$ts" +%Y-%m-%dT%H:%M:%SZ)"
 
-          ldflags="-X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$build_at' \
-          -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=${{ env.PUBLISH_TYPE }}'"
+          ldflags="-s -w -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=${{ env.PUBLISH_TYPE }}'"
 
           echo "commit_hash=${commit_hash}" >> "$GITHUB_OUTPUT"
           echo "build_at=${build_at}" >> "$GITHUB_OUTPUT"
@@ -154,7 +154,7 @@ jobs:
       #     name: 'tbsign_go.all'
       #     path: build/*
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: build/*
           prerelease: ${{ inputs.prerelease }}
