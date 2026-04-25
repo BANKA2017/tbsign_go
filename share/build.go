@@ -1,7 +1,6 @@
 package share
 
 import (
-	"log/slog"
 	"os"
 	"regexp"
 	"runtime"
@@ -38,23 +37,21 @@ func init() {
 	// fe-hash
 	indexFile, err := assets.EmbeddedFrontend.ReadFile("dist/index.html")
 
-	if err != nil {
-		return
-	}
+	if err == nil {
+		re := regexp.MustCompile(`NUXT_COMMIT_HASH:"([0-9a-f]+)"`)
+		m := re.FindStringSubmatch(string(indexFile))
 
-	re := regexp.MustCompile(`NUXT_COMMIT_HASH:"([0-9a-f]+)"`)
-	m := re.FindStringSubmatch(string(indexFile))
+		if len(m) > 1 {
+			BuildEmbeddedFrontendGitCommitHash2 = m[1]
+		}
 
-	if len(m) > 1 {
-		BuildEmbeddedFrontendGitCommitHash2 = m[1]
-	}
-
-	if BuildEmbeddedFrontendGitCommitHash2 == "" || BuildEmbeddedFrontendGitCommitHash2 != BuildEmbeddedFrontendGitCommitHash {
-		slog.Warn("Frontend invalid or not built by current source code (share.build)", "embedded_fe_commit_hash", BuildEmbeddedFrontendGitCommitHash, "actual_fe_commit_hash", BuildEmbeddedFrontendGitCommitHash2)
-	}
-
-	if BuildEmbeddedFrontendGitCommitHash == "" {
+		// if BuildEmbeddedFrontendGitCommitHash2 == "" || BuildEmbeddedFrontendGitCommitHash2 != BuildEmbeddedFrontendGitCommitHash {
+		// 	slog.Warn("Frontend invalid or not built by current source code (share.build)", "embedded_fe_commit_hash", BuildEmbeddedFrontendGitCommitHash, "actual_fe_commit_hash", BuildEmbeddedFrontendGitCommitHash2)
+		// }
+		//
+		// if BuildEmbeddedFrontendGitCommitHash == "" {
 		BuildEmbeddedFrontendGitCommitHash = BuildEmbeddedFrontendGitCommitHash2
+		// }
 	}
 
 	// build info

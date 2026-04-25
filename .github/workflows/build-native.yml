@@ -20,6 +20,7 @@ env:
   IMAGE_NAME: ${{ github.repository }}
   GOVERSION: "1.25.6"
   mmacosx_version_min: "11.0"
+  PUBLISH_TYPE: binary
 
 jobs:
   build-frontend:
@@ -78,8 +79,7 @@ jobs:
           build_at="$(date -u "+%Y-%m-%dT%H:%M:%SZ")"
 
           ldflags="-X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$build_at' \
-          -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
-          -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash'"
+          -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=${{ env.PUBLISH_TYPE }}'"
 
           echo "commit_hash=${commit_hash}" >> "$GITHUB_OUTPUT"
           echo "build_at=${build_at}" >> "$GITHUB_OUTPUT"
@@ -215,7 +215,7 @@ jobs:
           go_runtime=$(go env GOOS)/$(go env GOARCH)
           ldflags="$ldflags -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime' \
           -linkmode external -extldflags -static"
-          CC=${{ matrix.arch.compiler }} go build -o "${{ env.build_prefix }}.linux-${{ matrix.arch.name }}" -ldflags "$ldflags -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=binary'" -tags netgo
+          CC=${{ matrix.arch.compiler }} go build -trimpath -o "${{ env.build_prefix }}.linux-${{ matrix.arch.name }}" -ldflags "$ldflags" -tags netgo
 
       - name: Upload package
         uses: actions/upload-artifact@v7
@@ -228,7 +228,6 @@ jobs:
     runs-on: macos-latest
     needs: build-frontend
     env:
-      PUBLISH_TYPE: binary
       ldflags: ${{ needs.build-frontend.outputs.ldflags }}
       build_prefix: ${{ needs.build-frontend.outputs.build_prefix }}
     steps:
@@ -249,11 +248,10 @@ jobs:
       - name: Backend
         run: |
           go_runtime=$(go env GOOS)/$(go env GOARCH)
-          ldflags="$ldflags -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE' \
-          -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime'"
+          ldflags="$ldflags -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime'"
 
-          CGO_CFLAGS="-mmacosx-version-min=${{ env.mmacosx_version_min }}" CGO_LDFLAGS="-mmacosx-version-min=${{ env.mmacosx_version_min }}" GOOS=darwin GOARCH=arm64 go build -o "${{ env.build_prefix }}.darwin-arm64" -ldflags "$ldflags" -tags netgo
-          CGO_CFLAGS="-mmacosx-version-min=${{ env.mmacosx_version_min }} -arch x86_64" CGO_LDFLAGS="-mmacosx-version-min=${{ env.mmacosx_version_min }} -arch x86_64" GOOS=darwin GOARCH=amd64 go build -o "${{ env.build_prefix }}.darwin-amd64" -ldflags "$ldflags" -tags netgo
+          CGO_CFLAGS="-mmacosx-version-min=${{ env.mmacosx_version_min }}" CGO_LDFLAGS="-mmacosx-version-min=${{ env.mmacosx_version_min }}" GOOS=darwin GOARCH=arm64 go build -trimpath -o "${{ env.build_prefix }}.darwin-arm64" -ldflags "$ldflags" -tags netgo
+          CGO_CFLAGS="-mmacosx-version-min=${{ env.mmacosx_version_min }} -arch x86_64" CGO_LDFLAGS="-mmacosx-version-min=${{ env.mmacosx_version_min }} -arch x86_64" GOOS=darwin GOARCH=amd64 go build -trimpath -o "${{ env.build_prefix }}.darwin-amd64" -ldflags "$ldflags" -tags netgo
 
       - name: Upload package
         uses: actions/upload-artifact@v7
@@ -267,7 +265,6 @@ jobs:
     runs-on: windows-latest
     needs: build-frontend
     env:
-      PUBLISH_TYPE: binary
       ldflags: ${{ needs.build-frontend.outputs.ldflags }}
       build_prefix: ${{ needs.build-frontend.outputs.build_prefix }}
 
@@ -289,8 +286,8 @@ jobs:
       - name: Backend
         run: |
           $go_runtime="$(go env GOOS)/$(go env GOARCH)"
-          $ldflags="${{ env.ldflags }} -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=${{ env.PUBLISH_TYPE }}' -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=${go_runtime}'"
-          go build -o "${{ env.build_prefix }}.windows-amd64.exe" -ldflags "$ldflags" -tags netgo
+          $ldflags="${{ env.ldflags }} -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=${go_runtime}'"
+          go build -trimpath -o "${{ env.build_prefix }}.windows-amd64.exe" -ldflags "$ldflags" -tags netgo
 
       - name: Upload package
         uses: actions/upload-artifact@v7

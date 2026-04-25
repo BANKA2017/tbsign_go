@@ -107,8 +107,6 @@ jobs:
           PUBLISH_TYPE=binary
           ldflags="-X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$build_at' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime' \
-          -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
-          -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE'"
           $HOME/go/bin/xgo -go go-${{ env.GOVERSION }} -out "$build_prefix" -ldflags "$ldflags" -tags netgo --targets=windows/amd64,darwin/amd64,darwin/arm64 ../
 
@@ -209,11 +207,9 @@ jobs:
           PUBLISH_TYPE=${{ matrix.publish_type }}
           ldflags="-X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$build_at' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime' \
-          -X 'github.com/BANKA2017/tbsign_go/share.BuildGitCommitHash=$commit_hash' \
-          -X 'github.com/BANKA2017/tbsign_go/share.BuildEmbeddedFrontendGitCommitHash=$fe_commit_hash' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE' \
           -linkmode external -extldflags -static"
-          CC=${{ matrix.arch.compiler }} go build -ldflags "$ldflags" -tags netgo
+          CC=${{ matrix.arch.compiler }} go build -trimpath -ldflags "$ldflags" -tags netgo
 
       - name: Upload package
         uses: actions/upload-artifact@v4

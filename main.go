@@ -41,11 +41,9 @@ func init() {
 	fmt.Println("commit_hash:", share.BuildGitCommitHash)
 	fmt.Println("frontend_hash:", share.BuildEmbeddedFrontendGitCommitHash)
 	fmt.Println("release_type:", share.BuildPublishType)
-	if share.BuiltAt != "Now" && share.BuildGitCommitHash != "N/A" && share.BuildEmbeddedFrontendGitCommitHash != "N/A" {
-		fmt.Println("version:", fmt.Sprintf("%s.%s.%s\n", share.BuildAtTime.Format("20060102"), share.BuildGitCommitHash[0:7], share.BuildEmbeddedFrontendGitCommitHash[0:7]))
-	} else {
-		fmt.Println("version: dev\n------------")
-	}
+	fmt.Println("version:", fmt.Sprintf("%s.%s.%s", share.BuildAtTime.Format("20060102"), share.BuildGitCommitHash[0:7], share.BuildEmbeddedFrontendGitCommitHash[0:7]))
+	fmt.Println("dirty_build:", share.BuildDirty)
+	fmt.Print("------------\n\n")
 }
 
 func main() {
