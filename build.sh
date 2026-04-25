@@ -30,8 +30,6 @@ cd $flag/tbsign_build
 # be
 echo "build: backend"
 cd tbsign_go
-rm assets/ca/.gitkeep
-rm -r assets/dist
 cp -R ../tbsign_go_fe/.output/public/ assets/dist
 commit_hash=$(git rev-parse HEAD)
 build_at="$(date -u "+%Y-%m-%dT%H:%M:%SZ")"

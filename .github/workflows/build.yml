@@ -94,7 +94,6 @@ jobs:
           go install src.techknowlogick.com/xgo@v1.8.1-0.20250401170454-4b368d8a5afa
           docker pull ghcr.io/techknowlogick/xgo:go-${{ env.GOVERSION }}
           curl -o assets/ca/cacert.pem https://curl.se/ca/cacert.pem
-          rm assets/ca/.gitkeep
       - name: Packaging frontend
         run: tar -czf "build/${build_prefix}.fe.tar.gz" -C assets/dist/ .
       - uses: actions/setup-go@v5
@@ -195,7 +194,6 @@ jobs:
       - name: Backend
         run: |
           curl -o assets/ca/cacert.pem https://curl.se/ca/cacert.pem
-          rm assets/ca/.gitkeep
           fe_commit_hash=${{ needs.build-frontend.outputs.fe_commit_hash }}
           commit_hash=$(git rev-parse HEAD)
           short_commit_hash=${commit_hash:0:7}
