@@ -75,6 +75,11 @@ func GetServerStatus(c echo.Context) error {
 			"embedded_frontend_commit_hash": share.BuildEmbeddedFrontendGitCommitHash,
 			"publish_type":                  share.BuildPublishType,
 			"cgo":                           _function.When(db.CgoEnabled, "1", "0"),
+			"vcs.modified":                  _function.When(share.BuildDirty, "1", "0"),
+		},
+		"upgrade": map[string]string{
+			"list":       share.ReleaseApiList,
+			"asset_base": _function.ReleaseFilesPath,
 		},
 		"cron_sign_again": _function.GetOption("cron_sign_again"),
 		"compat":          _function.GetOption("core_version"),

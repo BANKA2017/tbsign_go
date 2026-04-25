@@ -5,6 +5,7 @@ import (
 	"os"
 	"regexp"
 	"runtime"
+	"runtime/debug"
 	"time"
 
 	"github.com/BANKA2017/tbsign_go/assets"
@@ -12,18 +13,21 @@ import (
 
 func init() {
 	if MockReleasedVersion && BuildPublishType == "source" {
-		BuiltAt = time.Now().Format(time.RFC3339)
-		BuildRuntime = runtime.GOOS + "/" + runtime.GOARCH
-		BuildGitCommitHash = "be27116224bfea617de0c7f1f00d6dff0afd5d62"
-		BuildEmbeddedFrontendGitCommitHash = "0dc1f57e3495e21803152460588e1fd010dcf5c0"
 		BuildPublishType = "binary"
 	}
 
+	// build at
 	t, err := time.Parse(time.RFC3339, BuiltAt)
 	if err != nil {
 		BuildAtTime = time.Now()
+		BuiltAt = BuildAtTime.Format(time.RFC3339)
 	} else {
 		BuildAtTime = t
+	}
+
+	// build runtime
+	if BuildRuntime == "" {
+		BuildRuntime = runtime.GOOS + "/" + runtime.GOARCH
 	}
 
 	// docker
@@ -48,14 +52,30 @@ func init() {
 	if BuildEmbeddedFrontendGitCommitHash2 == "" || BuildEmbeddedFrontendGitCommitHash2 != BuildEmbeddedFrontendGitCommitHash {
 		slog.Warn("Frontend invalid or not built by current source code (share.build)", "embedded_fe_commit_hash", BuildEmbeddedFrontendGitCommitHash, "actual_fe_commit_hash", BuildEmbeddedFrontendGitCommitHash2)
 	}
+
+	if BuildEmbeddedFrontendGitCommitHash == "" {
+		BuildEmbeddedFrontendGitCommitHash = BuildEmbeddedFrontendGitCommitHash2
+	}
+
+	// build info
+	if buildInfo, ok := debug.ReadBuildInfo(); ok {
+		kv := make(map[string]string)
+		for _, s := range buildInfo.Settings {
+			kv[s.Key] = s.Value
+		}
+
+		BuildGitCommitHash = kv["vcs.revision"]
+		BuildDirty = kv["vcs.modified"] == "true"
+	}
 }
 
-var BuiltAt = "Now"
-var BuildRuntime = "Dev"
-var BuildGitCommitHash = "N/A"
-var BuildEmbeddedFrontendGitCommitHash = "N/A"
+var BuiltAt = ""
+var BuildRuntime = ""
+var BuildGitCommitHash = ""
+var BuildEmbeddedFrontendGitCommitHash = ""
 var BuildEmbeddedFrontendGitCommitHash2 = ""
 var BuildPublishType = "source"
+var BuildDirty = true
 
 var BuildAtTime time.Time
 
@@ -64,3 +84,4 @@ var ReleaseFilesPath = "https://github.com/BANKA2017/tbsign_go/releases/download
 // ReleaseApiBase https://api.github.com/repos/{owner}/{repo}/releases/tags/{tag_id} // <-
 // see also: https://docs.github.com/zh/rest/releases/releases?apiVersion=2022-11-28#get-a-release
 var ReleaseApiBase = "https://api.github.com/repos/BANKA2017/tbsign_go/releases/tags/"
+var ReleaseApiList = "https://api.github.com/repos/BANKA2017/tbsign_go/releases"

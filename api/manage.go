@@ -133,9 +133,9 @@ func UpdateAdminSettings(c echo.Context) error {
 
 	for _, key := range _function.SettingsFilter {
 		val := c.Request().FormValue(key)
-		if val == "" {
-			continue
-		}
+		// if val == "" {
+		// 	continue
+		// }
 
 		oldVal := _function.GetOption(key)
 		if oldVal == val {
@@ -149,6 +149,96 @@ func UpdateAdminSettings(c echo.Context) error {
 
 		} else if optionRule, ok := SettingsRules[key]; ok {
 			validator = optionRule
+		}
+
+		if validator != nil {
+			newVal, err := _function.ValidateOptionValue(val, validator)
+			if err != nil {
+				errStr = append(errStr, key+": "+err.Error())
+				continue
+			}
+			if newVal == oldVal {
+				continue
+			}
+
+			settings[key] = newVal
+			_function.SetOption(key, newVal)
+		} else {
+			settings[key] = val
+			_function.SetOption(key, val)
+		}
+	}
+
+	if len(errStr) == 0 {
+		errStr = append(errStr, "OK")
+	}
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, strings.Join(errStr, "\n"), settings, "tbsign"))
+}
+
+type pluginSettingResponse struct {
+	_plugin.PluginSettingOption
+	Value string `json:"value"`
+}
+
+func GetPluginSettings(c echo.Context) error {
+	pluginName := c.Param("plugin_name")
+	plugin, ok := _plugin.PluginList[pluginName]
+	if !ok {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "插件不存在", _function.EchoEmptyObject, "tbsign"))
+	}
+
+	if !plugin.GetSwitch() {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "插件不可用", _function.EchoEmptyObject, "tbsign"))
+	}
+
+	settings := plugin.GetInfo().SettingOptions
+
+	var resSettings = make(map[string]pluginSettingResponse, len(settings))
+
+	for _, setting := range settings {
+		resSettings[setting.OptionName] = pluginSettingResponse{
+			PluginSettingOption: setting,
+			Value:               _function.GetOption(setting.OptionName),
+		}
+	}
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resSettings, "tbsign"))
+}
+
+func UpdatePluginSettings(c echo.Context) error {
+	pluginName := c.Param("plugin_name")
+	plugin, ok := _plugin.PluginList[pluginName]
+	if !ok {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "插件不存在", _function.EchoEmptyObject, "tbsign"))
+	}
+
+	if !plugin.GetSwitch() {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "插件不可用", _function.EchoEmptyObject, "tbsign"))
+	}
+
+	pluginSettings := plugin.GetInfo().SettingOptions
+
+	var errStr []string
+	settings := make(map[string]string)
+
+	for _, key := range _function.SettingsFilter {
+		val := c.Request().FormValue(key)
+		// if val == "" {
+		// 	continue
+		// }
+
+		var validator *_function.OptionRule
+
+		if pluginSetting, ok := pluginSettings[key]; ok {
+			validator = pluginSetting.Validate
+		} else {
+			continue
+		}
+
+		oldVal := _function.GetOption(key)
+		if oldVal == val {
+			continue
 		}
 
 		if validator != nil {

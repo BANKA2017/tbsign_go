@@ -27,9 +27,9 @@ type PluginEndpointStruct struct {
 }
 
 type PluginSettingOption struct {
-	OptionName   string
-	OptionNameCN string
-	Validate     *_function.OptionRule
+	OptionName   string                `json:"option_name"`
+	OptionNameCN string                `json:"option_name_cn"`
+	Validate     *_function.OptionRule `json:"-"`
 }
 
 type PluginInfo struct {
@@ -163,7 +163,7 @@ func InitPluginList() {
 			Options: "",
 		})
 	}
-	AddToSettingsFilter()
+	// AddToSettingsFilter()
 }
 
 func UpdatePluginInfo(name string, version string, status bool, options string) error {
@@ -192,7 +192,7 @@ func UpdatePluginInfo(name string, version string, status bool, options string) 
 	for optionKey, optionValidator := range PluginList[name].GetInfo().SettingOptions {
 		PluginOptionValidatorMap.Store(optionKey, optionValidator.Validate, -1)
 	}
-	AddToSettingsFilter()
+	// AddToSettingsFilter()
 
 	return err
 }
@@ -210,14 +210,14 @@ func DeletePluginInfo(name string) error {
 	for optionKey := range PluginList[name].GetInfo().SettingOptions {
 		PluginOptionValidatorMap.Delete(optionKey)
 	}
-	AddToSettingsFilter()
+	// AddToSettingsFilter()
 
 	return _function.GormDB.W.Where("name = ?", name).Delete(&model.TcPlugin{}).Error
 }
 
-func AddToSettingsFilter() {
-	_function.SettingsFilter = append(append([]string(nil), _function.SettingsKeys...), PluginOptionValidatorMap.KV.Keys()...)
-}
+// func AddToSettingsFilter() {
+// 	_function.SettingsFilter = append(append([]string(nil), _function.SettingsKeys...), PluginOptionValidatorMap.KV.Keys()...)
+// }
 
 func DeleteAccount(_type string, id int32, tx *gorm.DB) error {
 	for _, p := range PluginList {

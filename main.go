@@ -87,6 +87,7 @@ func main() {
 	// releases
 	flag.StringVar(&share.ReleaseFilesPath, "release_file_base", utils.GetEnv("tc_release_file_base", share.ReleaseFilesPath), "Base path for release files")
 	flag.StringVar(&share.ReleaseApiBase, "release_api_base", utils.GetEnv("tc_release_api_base", share.ReleaseApiBase), "Base path for release API")
+	flag.StringVar(&share.ReleaseApiList, "release_api_list", utils.GetEnv("tc_release_api_list", share.ReleaseApiList), "URL for releases list (fe)")
 
 	// others
 	flag.BoolVar(&share.TestMode, "test", utils.GetBoolEnv("tc_test"), "Not send any requests to tieba servers")
@@ -342,9 +343,9 @@ func main() {
 			_plugin.DoReCheckinAction()
 
 			// plugins
-			for _, info := range _plugin.PluginList {
-				if _function.TinyIntToBool(info.GetDBInfo().Status) {
-					go info.Action()
+			for _, plugin := range _plugin.PluginList {
+				if plugin.GetSwitch() {
+					go plugin.Action()
 				}
 			}
 

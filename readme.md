@@ -37,6 +37,7 @@
 |                     | tc_docker_mode       |                          | 当值为 `true`(string) 且 `/.dockerenv` 存在时，激活 docker 模式，默认应当忽略，建议阅读 readme.md 的 [发布类型](#发布类型) 部分 |
 | release_file_base   | tc_release_file_base | `share.ReleaseFilesPath` | 手动安装包的下载地址，特殊情况下使用，默认应当忽略，建议阅读 readme.md 的 [发布地址](#发布地址) 部分                            |
 | release_api_base    | tc_release_api_base  | `share.ReleaseApiBase`   | 手动检查更新地址，特殊情况下使用，默认应当忽略，目前没有使用                                                                    |
+| release_api_list    | tc_release_api_list  | `share.ReleaseApiList`   | 前端检查更新地址，特殊情况下使用，默认应当忽略                                                                                  |
 
 
 - 不支持 `.env` 文件，请直接设置环境变量，使用顺序是 `flag` > `env` > `default`

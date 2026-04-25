@@ -109,9 +109,13 @@ func Api(address string) {
 	admin.POST("/account/:uid/list/reset", AdminResetTiebaList)
 	admin.POST("/account/:uid/password/reset", AdminResetPassword)
 	admin.POST("/account/:uid/plugin/:plugin_name/reset", AdminResetAccountPlugin)
+	admin.POST("/service/push/mail/test", SendTestMessage)
+
+	/// plugin
 	admin.POST("/plugin/:plugin_name/switch", PluginSwitch)
 	admin.DELETE("/plugin/:plugin_name", PluginUninstall)
-	admin.POST("/service/push/mail/test", SendTestMessage)
+	admin.GET("/plugin/:plugin_name/settings", GetPluginSettings)
+	admin.POST("/plugin/:plugin_name/settings", UpdatePluginSettings)
 
 	/// server
 	admin.GET("/server/status", GetServerStatus)
