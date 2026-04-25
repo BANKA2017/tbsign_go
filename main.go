@@ -41,7 +41,11 @@ func init() {
 	fmt.Println("commit_hash:", share.BuildGitCommitHash)
 	fmt.Println("frontend_hash:", share.BuildEmbeddedFrontendGitCommitHash)
 	fmt.Println("release_type:", share.BuildPublishType)
-	fmt.Println("version:", fmt.Sprintf("%s.%s.%s", share.BuildAtTime.Format("20060102"), share.BuildGitCommitHash[0:7], share.BuildEmbeddedFrontendGitCommitHash[0:7]))
+	if len(share.BuildGitCommitHash) >= 7 && len(share.BuildEmbeddedFrontendGitCommitHash) >= 7 {
+		fmt.Println("version:", fmt.Sprintf("%s.%s.%s", share.BuildAtTime.Format("20060102"), share.BuildGitCommitHash[0:7], share.BuildEmbeddedFrontendGitCommitHash[0:7]))
+	} else {
+		fmt.Println("version:", "invalid")
+	}
 	fmt.Println("dirty_build:", share.BuildDirty)
 	fmt.Print("------------\n\n")
 }
