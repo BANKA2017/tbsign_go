@@ -341,9 +341,9 @@ func (pluginInfo *WenkuTasksPluginType) Action() {
 		id = 0
 	}
 	// status list
-	var accountStatusList = make(map[int64]string)
+	var accountStatusList = make(map[int32]string)
 	// cookie list
-	// var accountCookiesList = make(map[int64]_type.TypeCookie)
+	// var accountCookiesList = make(map[int32]_type.TypeCookie)
 
 	// get list
 	todayBeginning := _function.LocaleTimeDiff(0) //GMT+8
@@ -799,8 +799,8 @@ func PluginWenkuTasksAddAccount(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "账号已存在", _function.EchoEmptyObject, "tbsign"))
 	} else {
 		dataToInsert := model.TcKdWenkuTask{
-			UID:  numUID,
-			Pid:  numPid,
+			UID:  int32(numUID),
+			Pid:  int32(numPid),
 			Date: 0,
 		}
 		_function.GormDB.W.Create(&dataToInsert)
@@ -839,8 +839,8 @@ func PluginWenkuTasksDelAccount(c echo.Context) error {
 	}
 
 	_function.GormDB.W.Model(&model.TcKdWenkuTask{}).Delete(&model.TcKdWenkuTask{
-		UID: numUID,
-		ID:  numID,
+		UID: int32(numUID),
+		ID:  int32(numID),
 	})
 
 	// vip matrix
@@ -864,7 +864,7 @@ func PluginWenkuTasksDelAllAccounts(c echo.Context) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 
 	_function.GormDB.W.Model(&model.TcKdWenkuTask{}).Delete(&model.TcKdWenkuTask{
-		UID: numUID,
+		UID: int32(numUID),
 	})
 
 	// vip matrix

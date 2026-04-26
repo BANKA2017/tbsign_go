@@ -310,10 +310,10 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 		id = 0
 	}
 	// status list
-	var accountStatusList = make(map[int64]string)
+	var accountStatusList = make(map[int32]string)
 	// cookie list
-	// var accountCookiesList = make(map[int64]_type.TypeCookie)
-	var extTasksList = make(map[int64]map[string]string)
+	// var accountCookiesList = make(map[int32]_type.TypeCookie)
+	var extTasksList = make(map[int32]map[string]string)
 
 	// get list
 	todayBeginning := _function.LocaleTimeDiff(0) //GMT+8
@@ -788,8 +788,8 @@ func PluginGrowthTasksAddAccount(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "账号已存在", _function.EchoEmptyObject, "tbsign"))
 	} else {
 		dataToInsert := model.TcKdGrowth{
-			UID:  numUID,
-			Pid:  numPid,
+			UID:  int32(numUID),
+			Pid:  int32(numPid),
 			Date: 0,
 		}
 		_function.GormDB.W.Create(&dataToInsert)
@@ -813,8 +813,8 @@ func PluginGrowthTasksDelAccount(c echo.Context) error {
 	}
 
 	_function.GormDB.W.Model(&model.TcKdGrowth{}).Delete(&model.TcKdGrowth{
-		UID: numUID,
-		ID:  numID,
+		UID: int32(numUID),
+		ID:  int32(numID),
 	})
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
@@ -829,7 +829,7 @@ func PluginGrowthTasksDelAllAccounts(c echo.Context) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 
 	_function.GormDB.W.Model(&model.TcKdGrowth{}).Delete(&model.TcKdGrowth{
-		UID: numUID,
+		UID: int32(numUID),
 	})
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
