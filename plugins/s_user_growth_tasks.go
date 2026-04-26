@@ -544,7 +544,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 						}
 					} else {
 						if response.No == 0 {
-							if task.ID == 0 || len(response.Data.Toast) > 2 {
+							if task.ID == 0 || len(response.Data.Toast) > 2 || (len(response.Data.SuccessTaskIds) > 0 && slices.Contains(response.Data.SuccessTaskIds, task.ID)) {
 								result = append(result, UserGrowthTaskToSave{
 									TaskID:  task.ID,
 									Name:    task.Name,
