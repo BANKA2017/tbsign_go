@@ -34,20 +34,19 @@ var EncryptDataAction string
 var err error
 
 func init() {
-	_function.InitLogger()
-	fmt.Println("TbSign➡️\n--- info ---")
-	fmt.Println("build_at:", share.BuiltAt)
-	fmt.Println("build_runtime:", runtime.Version()+" "+share.BuildRuntime)
-	fmt.Println("commit_hash:", share.BuildGitCommitHash)
-	fmt.Println("frontend_hash:", share.BuildEmbeddedFrontendGitCommitHash)
-	fmt.Println("release_type:", share.BuildPublishType)
-	if len(share.BuildGitCommitHash) >= 7 && len(share.BuildEmbeddedFrontendGitCommitHash) >= 7 {
-		fmt.Println("version:", fmt.Sprintf("%s.%s.%s", share.BuildAtTime.Format("20060102"), share.BuildGitCommitHash[0:7], share.BuildEmbeddedFrontendGitCommitHash[0:7]))
-	} else {
-		fmt.Println("version:", "invalid")
+	_function.InitDefaultLogger()
+
+	if !utils.GetBoolEnv("tc_hide_version_info") {
+		fmt.Println("TbSign➡️\n--- info ---")
+		fmt.Println("build_at:", share.BuiltAt)
+		fmt.Println("build_runtime:", runtime.Version()+" "+share.BuildRuntime)
+		fmt.Println("commit_hash:", share.BuildGitCommitHash)
+		fmt.Println("frontend_hash:", share.BuildEmbeddedFrontendGitCommitHash)
+		fmt.Println("release_type:", share.BuildPublishType)
+		fmt.Println("version:", share.DynamicVersion)
+		fmt.Println("dirty_build:", share.BuildDirty)
+		fmt.Print("------------\n\n")
 	}
-	fmt.Println("dirty_build:", share.BuildDirty)
-	fmt.Print("------------\n\n")
 }
 
 func main() {
@@ -138,8 +137,6 @@ func main() {
 		_function.Fatal("管理员信息不完整，无法安装")
 	}
 
-	// TODO setup slog
-
 	logLevel := logger.Error
 	// slogLevel := slog.LevelError
 	if share.TestMode {
@@ -147,7 +144,7 @@ func main() {
 		_function.SlogLevel = slog.LevelDebug
 	}
 
-	_function.InitLogger()
+	_function.InitDefaultLogger()
 
 	// connect to db
 	dbExists := true
@@ -155,7 +152,15 @@ func main() {
 	_function.GormDB.LogLevel = logLevel
 	_function.GormDB.ServicePrefix = "tbsign-db"
 	_function.GormDB.WALMode = true
-	_function.GormDB.SetDialTimeout(_function.VPtr(time.Second * 30))
+	_function.GormDB.SetDialTimeout(_function.VPtr(time.Second * 30)).SetLogger(logger.NewSlogLogger(
+		slog.Default(), logger.Config{
+			// copy from gorm default logger config
+			SlowThreshold:             200 * time.Millisecond,
+			LogLevel:                  _function.GormDB.LogLevel,
+			IgnoreRecordNotFoundError: false,
+			Colorful:                  false,
+		},
+	))
 
 	if share.DBMode == "pgsql" || share.DBMode == db.DBModePostgreSQL {
 		// precheck table

@@ -1,6 +1,7 @@
 package share
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 	"runtime"
@@ -66,6 +67,9 @@ func init() {
 		// }
 	}
 
+	if len(BuildGitCommitHash) >= 7 && len(BuildEmbeddedFrontendGitCommitHash) >= 7 {
+		DynamicVersion = fmt.Sprintf("%s.%s.%s", BuildAtTime.Format("20060102"), BuildGitCommitHash[0:7], BuildEmbeddedFrontendGitCommitHash[0:7])
+	}
 }
 
 var BuiltAt = ""
@@ -84,3 +88,5 @@ var ReleaseFilesPath = "https://github.com/BANKA2017/tbsign_go/releases/download
 // see also: https://docs.github.com/zh/rest/releases/releases?apiVersion=2022-11-28#get-a-release
 var ReleaseApiBase = "https://api.github.com/repos/BANKA2017/tbsign_go/releases/tags/"
 var ReleaseApiList = "https://api.github.com/repos/BANKA2017/tbsign_go/releases"
+
+var DynamicVersion = "dev"

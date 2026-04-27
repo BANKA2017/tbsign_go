@@ -3,6 +3,7 @@ package _api
 import (
 	"errors"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -11,12 +12,47 @@ import (
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/BANKA2017/tbsign_go/share"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func Api(address string) {
 	// api
 	e := echo.New()
-	//e.Use(middleware.Logger())
+	e.HideBanner = true
+	e.HidePort = true
+	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+		LogStatus:    true,
+		LogMethod:    true,
+		LogRoutePath: true,
+		LogURI:       true,
+		LogError:     true,
+		HandleError:  true, // forwards error to the global error handler, so it can decide appropriate status code
+		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+			if v.Error == nil {
+				slog.Debug("echo.request",
+					slog.Group("http",
+						slog.Int("status", v.Status),
+						slog.String("method", v.Method),
+						slog.String("path", v.RoutePath),
+						slog.String("uri", v.URI),
+						slog.String("query", c.QueryString()),
+					),
+				)
+			} else {
+				slog.Error("echo.error",
+					slog.Group("http",
+						slog.Int("status", v.Status),
+						slog.String("method", v.Method),
+						slog.String("path", v.RoutePath),
+						slog.String("uri", v.URI),
+						slog.String("query", c.QueryString()),
+						slog.String("error", v.Error.Error()),
+					),
+				)
+			}
+			return nil
+		},
+	}))
 
 	// Why removed this middleware -> https://github.com/labstack/echo/issues/2211
 	// TL;DR -> open embedded static dir in echo@v4 will cause incorrect redirection

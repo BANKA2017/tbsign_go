@@ -1,7 +1,6 @@
 package _api
 
 import (
-	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -17,8 +16,6 @@ import (
 func ParsePath(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		path := c.Path()
-		method := c.Request().Method
-		slog.Debug("api.request", "method", method, "path", path, "url_path", c.Request().URL.Path, "query_string", c.QueryString())
 
 		if share.EnableFrontend && strings.HasPrefix(path, "/api/") {
 			path = strings.TrimPrefix(path, "/api")
