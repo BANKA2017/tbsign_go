@@ -144,6 +144,11 @@ func main() {
 		_function.SlogLevel = slog.LevelDebug
 	}
 
+	/// client
+	/// DO NOT EXEC _function.InitClient BEFORE READING FLAGS AND ENV!!!!!
+	_function.DefaultClient = _function.InitClient(30 * time.Minute)
+	_function.TBClient = _function.InitClient(10 * time.Second)
+
 	_function.InitDefaultLogger()
 
 	// connect to db
@@ -311,11 +316,6 @@ func main() {
 
 		slog.Warn("数据未加密，已恢复使用明文")
 	}
-
-	/// client
-	/// DO NOT EXEC _function.InitClient BEFORE READING FLAGS AND ENV!!!!!
-	_function.DefaultClient = _function.InitClient(30 * time.Minute)
-	_function.TBClient = _function.InitClient(10 * time.Second)
 
 	if share.EnableApi {
 		go _api.Api(share.Address)

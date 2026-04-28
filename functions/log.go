@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"runtime"
+	"sync/atomic"
 
 	"github.com/BANKA2017/tbsign_go/share"
 )
@@ -41,39 +42,58 @@ func FmtFatal(v ...any) {
 	os.Exit(1)
 }
 
-// // Telemetry
+// Telemetry
+var TelemetryActive atomic.Bool
+
 // var sentrySF singleflight.Group
 //
+//
+// How to init sentry logger
+// os.Setenv("tc_go_optin_telemetry", "1")
+// ctx, cancel := context.WithCancel(context.Background())
+// defer cancel()
+// go func() {
+// 	if err := _function.InitSentryLogger(ctx, ""); err != nil {
+// 		slog.Error("sentry", "error", err)
+// 	}
+// }()
+//
 // func InitSentryLogger(ctx context.Context, dsn string) error {
-// 	// env.tc_go_optin_sentry_dsn string option
+// 	// env.SENTRY_DSN string option // official name
 // 	// env.tc_go_optin_telemetry bool
 //
-// 	if !utils.GetBoolEnv("tc_go_optin_telemetry") && GetOption("go_optin_telemetry") != "1" {
+// 	if !(utils.GetBoolEnv("tc_go_optin_telemetry") || GetOption("go_optin_telemetry") == "1") {
 // 		return errors.New("telemetry disallowed")
 // 	}
 //
 // 	if dsn == "" {
-// 		dsn = utils.GetEnv("tc_go_optin_sentry_dsn", "")
+// 		dsn = utils.GetEnv("SENTRY_DSN", dsn)
 // 		if dsn == "" {
 // 			return errors.New("sentry dsn is empty")
 // 		}
 // 	}
 //
 // 	_, err, _ := sentrySF.Do("sentry", func() (any, error) {
+// 		TelemetryActive.Store(true)
+// 		defer TelemetryActive.Store(false)
 // 		err := sentry.Init(sentry.ClientOptions{
-// 			Dsn:              dsn,
-// 			Debug:            true,
-// 			SendDefaultPII:   true,
-// 			EnableLogs:       true,
-// 			EnableTracing:    true,
-// 			TracesSampleRate: 1.0,
+// 			Dsn:        dsn,
+// 			Debug:      true,
+// 			EnableLogs: true,
+// 			Release:    "tbsign_go." + share.DynamicVersion,
+// 			Dist:       share.BuildRuntime,
+//
+// 			HTTPClient: DefaultClient,
 // 		})
 // 		if err != nil {
 // 			slog.Error("sentry init error", "error", err.Error())
 // 			return nil, err
 // 		}
+// 		slog.Info("sentry init success")
+//
 // 		// Flush buffered events before the program terminates.
-// 		defer sentry.Flush(2 * time.Second)
+// 		// flush here is no use here because ctx was canceled
+// 		// sentry.Flush(2 * time.Second)
 //
 // 		sentryLogLevels := []slog.Level{slog.LevelInfo, slog.LevelWarn, slog.LevelError, sentryslog.LevelFatal}
 // 		if SlogLevel == slog.LevelDebug {
@@ -91,6 +111,7 @@ func FmtFatal(v ...any) {
 // 		slog.SetDefault(InitLoggerPresets(slog.New(handler)))
 //
 // 		<-ctx.Done()
+// 		InitDefaultLogger()
 //
 // 		return nil, nil
 // 	})
