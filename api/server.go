@@ -58,6 +58,11 @@ func GetServerStatus(c echo.Context) error {
 
 	ForumCount := checkinStatus.Success + checkinStatus.Failed + checkinStatus.Waiting + checkinStatus.IsIgnore
 
+	// vcs, ok := debug.ReadBuildInfo()
+	// if !ok {
+	// 	slog.Error("failed to read build info")
+	// }
+
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
 		"goroutine":  runtime.NumGoroutine(),
 		"goversion":  fmt.Sprintf("%s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH),
@@ -77,6 +82,7 @@ func GetServerStatus(c echo.Context) error {
 			"publish_type":                  share.BuildPublishType,
 			"cgo":                           _function.When(db.CgoEnabled, "1", "0"),
 			"vcs.modified":                  _function.When(share.BuildDirty, "1", "0"),
+			// "vcs":                           vcs,
 		},
 		"upgrade": map[string]string{
 			"list":       share.ReleaseApiList,

@@ -25,7 +25,11 @@ func init() {
 
 		BuildGitCommitHash = kv["vcs.revision"]
 		BuildDirty = kv["vcs.modified"] == "true"
-		BuiltAt = kv["vcs.time"]
+		BuildGitCommitTime = kv["vcs.time"]
+
+		if BuiltAt == "" {
+			BuiltAt = BuildGitCommitTime
+		}
 	}
 
 	// build at
@@ -75,6 +79,7 @@ func init() {
 var BuiltAt = ""
 var BuildRuntime = ""
 var BuildGitCommitHash = ""
+var BuildGitCommitTime = ""
 var BuildEmbeddedFrontendGitCommitHash = ""
 var BuildEmbeddedFrontendGitCommitHash2 = ""
 var BuildPublishType = "source"

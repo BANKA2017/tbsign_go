@@ -83,12 +83,13 @@ jobs:
           commit_hash=$(git rev-parse HEAD)
           short_commit_hash=${commit_hash:0:7}
           short_fe_commit_hash=${fe_commit_hash:0:7}
-          ts="$(git log -1 --format=%ct)"
-          build_prefix="tbsign_go.$(date -u -d "@$ts" +%Y%m%d).$short_commit_hash.$short_fe_commit_hash"
+          build_prefix="tbsign_go.$(date +%Y%m%d).$short_commit_hash.$short_fe_commit_hash"
           echo "build_prefix=${build_prefix}" >> "$GITHUB_ENV"
+          build_at="$(date -u "+%Y-%m-%dT%H:%M:%SZ")"
           go_runtime=$(go env GOOS)/$(go env GOARCH)
           PUBLISH_TYPE=docker
-          ldflags="-s -w -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime' \
+          ldflags="-s -w -X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$build_at' \
+          -X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime' \
           -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE' \
           -linkmode external -extldflags -static"
           CC=${{ matrix.arch.compiler }} go build -trimpath -ldflags "$ldflags" -tags netgo

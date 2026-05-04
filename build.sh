@@ -32,9 +32,11 @@ echo "build: backend"
 cd tbsign_go
 cp -R ../tbsign_go_fe/.output/public/ assets/dist
 commit_hash=$(git rev-parse HEAD)
+build_at="$(date -u "+%Y-%m-%dT%H:%M:%SZ")"
 go_runtime=$(go env GOOS)/$(go env GOARCH)
 
-CURRENT_LDFLAGS="-X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime' \
+CURRENT_LDFLAGS="-X 'github.com/BANKA2017/tbsign_go/share.BuiltAt=$build_at' \
+-X 'github.com/BANKA2017/tbsign_go/share.BuildRuntime=$go_runtime' \
 -X 'github.com/BANKA2017/tbsign_go/share.BuildPublishType=$PUBLISH_TYPE'"
 
 if [ -n "$EXTERNAL_LDFLAGS" ]; then
