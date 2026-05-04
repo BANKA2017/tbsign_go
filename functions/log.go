@@ -92,8 +92,8 @@ var TelemetryActive atomic.Bool
 // 		slog.Info("sentry init success")
 //
 // 		// Flush buffered events before the program terminates.
-// 		// flush here is no use here because ctx was canceled
-// 		// sentry.Flush(2 * time.Second)
+// 		// flush is no use here because ctx was canceled
+// 		// defer sentry.Flush(2 * time.Second)
 //
 // 		sentryLogLevels := []slog.Level{slog.LevelInfo, slog.LevelWarn, slog.LevelError, sentryslog.LevelFatal}
 // 		if SlogLevel == slog.LevelDebug {

@@ -52,7 +52,7 @@ func AuthCheck(next echo.HandlerFunc) echo.HandlerFunc {
 		authSource := "header"
 		if share.EnableFrontend {
 			_authorization, err := c.Cookie("tc_auth")
-			if err == nil {
+			if err == nil && _authorization.Value != "" {
 				authorization = _authorization.Value
 				authSource = "cookie"
 			}

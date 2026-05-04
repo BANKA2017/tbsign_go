@@ -2,6 +2,7 @@ package _api
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"runtime"
@@ -111,8 +112,9 @@ func UpgradeSystem(c echo.Context) error {
 
 func ShutdownSystem(c echo.Context) error {
 	go func() {
+		slog.Info("system.shutdown")
+		defer os.Exit(1)
 		<-time.After(time.Second)
-		os.Exit(1)
 	}()
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{}, "tbsign"))
 }
