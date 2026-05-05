@@ -111,6 +111,14 @@ func (pluginInfo *ExamplePluginType) Reset(int32, int32, int32) error {
 	return nil
 }
 
+func (pluginInfo *ExamplePluginType) ExportAccount(int32, *gorm.DB) (map[string]any, error) {
+	return nil, nil
+}
+
+func (pluginInfo *ExamplePluginType) ImportAccount(int32, map[int32]int32, map[string]any, *gorm.DB) error {
+	return nil
+}
+
 // OptionValidator
 
 var PluginExampleOptionValidatorKey2 = _function.OptionRule{

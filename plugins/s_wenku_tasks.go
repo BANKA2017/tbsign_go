@@ -1,6 +1,7 @@
 package _plugin
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -703,6 +704,72 @@ func (pluginInfo *WenkuTasksPluginType) Reset(uid, pid, tid int32) error {
 	}
 
 	return _sql.Update("date", 0).Error
+}
+
+func (pluginInfo *WenkuTasksPluginType) ExportAccount(uid int32, tx *gorm.DB) (map[string]any, error) {
+	if !pluginInfo.GetSwitch() {
+		return nil, nil
+	}
+
+	tableName := (&model.TcKdWenkuTask{}).TableName()
+	var exportData []*model.TcKdWenkuTask
+
+	if tx == nil {
+		tx = _function.GormDB.R
+	}
+
+	err := tx.Model(&model.TcKdWenkuTask{}).Where("uid = ?", uid).Find(&exportData).Error
+
+	return map[string]any{
+		tableName: exportData,
+		"tc_users_options": _function.GetUserOptionBatch(strconv.Itoa(int(uid)), _function.OptionExt{
+			Tx:      tx,
+			KeyName: "kd_wenku_tasks_checkin_only",
+		}, _function.OptionExt{
+			Tx:      tx,
+			KeyName: "kd_wenku_tasks_vip_matrix",
+		}, _function.OptionExt{
+			Tx:      tx,
+			KeyName: "kd_wenku_tasks_vip_matrix_id_set",
+		}),
+	}, err
+}
+
+func (pluginInfo *WenkuTasksPluginType) ImportAccount(uid int32, pid map[int32]int32, data map[string]json.RawMessage, tx *gorm.DB) error {
+	if !pluginInfo.GetSwitch() {
+		return errors.New("plugin is not enabled")
+	}
+
+	if tx == nil {
+		tx = _function.GormDB.R
+	}
+
+	tableName := (&model.TcKdWenkuTask{}).TableName()
+
+	var data2 []*model.TcKdWenkuTask
+	if err := _function.JsonDecode(data[tableName], &data2); err != nil {
+		return errors.New("invalid data format")
+	}
+
+	var data3 []*model.TcKdWenkuTask
+
+	var localTasks []int32
+	_function.GormDB.R.Model(&model.TcKdWenkuTask{}).Where("uid = ?", uid).Pluck("pid", &localTasks)
+
+	for i := range data2 {
+		if pid, ok := pid[data2[i].Pid]; ok && !slices.Contains(localTasks, pid) {
+			data2[i].Pid = pid
+			data2[i].ID = 0
+			data2[i].UID = uid
+			data3 = append(data3, data2[i])
+		}
+	}
+
+	if len(data3) == 0 {
+		return nil
+	}
+
+	return tx.Model(&model.TcKdWenkuTask{}).Create(data3).Error
 }
 
 // endpoints

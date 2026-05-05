@@ -1,11 +1,13 @@
 package _plugin
 
 import (
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"strconv"
 	"time"
 
@@ -243,6 +245,77 @@ func (pluginInfo *LotteryPluginPluginType) Reset(uid, pid, tid int32) error {
 	}
 
 	return _sql.Where("date >= ?", _function.LocaleTimeDiff(10)).Delete(&model.TcVer4LotteryLog{}).Error
+}
+
+func (pluginInfo *LotteryPluginPluginType) ExportAccount(uid int32, tx *gorm.DB) (map[string]any, error) {
+	if !pluginInfo.GetSwitch() {
+		return nil, nil
+	}
+
+	tableName := (&model.TcVer4LotteryLog{}).TableName()
+	var exportData []*model.TcVer4LotteryLog
+
+	if tx == nil {
+		tx = _function.GormDB.R
+	}
+
+	err := tx.Model(&model.TcVer4LotteryLog{}).Where("uid = ?", uid).Find(&exportData).Error
+
+	return map[string]any{
+		tableName: exportData,
+		"tc_users_options": _function.GetUserOptionBatch(strconv.Itoa(int(uid)), _function.OptionExt{
+			Tx:      tx,
+			KeyName: "ver4_lottery_check",
+		}),
+	}, err
+}
+
+func (pluginInfo *LotteryPluginPluginType) ImportAccount(uid int32, pid map[int32]int32, data map[string]json.RawMessage, tx *gorm.DB) error {
+	if !pluginInfo.GetSwitch() {
+		return errors.New("plugin is not enabled")
+	}
+
+	if tx == nil {
+		tx = _function.GormDB.R
+	}
+
+	tableName := (&model.TcVer4LotteryLog{}).TableName()
+
+	var data2 []*model.TcVer4LotteryLog
+	if err := _function.JsonDecode(data[tableName], &data2); err != nil {
+		return errors.New("invalid data format")
+	}
+
+	var data3 []*model.TcVer4LotteryLog
+
+	var localTasks []*model.TcVer4LotteryLog
+	_function.GormDB.R.Model(&model.TcVer4LotteryLog{}).Select("pid", "date").Where("uid = ?", uid).Find(&localTasks)
+
+	pidDateMap := make(map[int32][]int32)
+
+	for _, task := range localTasks {
+		if _, ok := pidDateMap[task.Pid]; !ok {
+			pidDateMap[task.Pid] = []int32{}
+		}
+		pidDateMap[task.Pid] = append(pidDateMap[task.Pid], task.Date)
+	}
+
+	for i := range data2 {
+		if pid, ok := pid[data2[i].Pid]; ok {
+			if fid, ok := pidDateMap[pid]; !ok || !slices.Contains(fid, data2[i].Date) {
+				data2[i].Pid = pid
+				data2[i].ID = 0
+				data2[i].UID = uid
+				data3 = append(data3, data2[i])
+			}
+		}
+	}
+
+	if len(data3) == 0 {
+		return nil
+	}
+
+	return tx.Model(&model.TcVer4LotteryLog{}).Create(data3).Error
 }
 
 // endpoint

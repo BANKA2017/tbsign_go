@@ -1,6 +1,7 @@
 package _plugin
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -308,6 +309,131 @@ func (pluginInfo *LoopBanPluginType) Reset(uid, pid, tid int32) error {
 	return _sql.Update("date", 0).Error
 }
 
+func (pluginInfo *LoopBanPluginType) ExportAccount(uid int32, tx *gorm.DB) (map[string]any, error) {
+	if !pluginInfo.GetSwitch() {
+		return nil, nil
+	}
+
+	// banlist
+	banListTableName := (&model.TcVer4BanList{}).TableName()
+	var banList []*model.TcVer4BanList
+
+	if tx == nil {
+		tx = _function.GormDB.R
+	}
+
+	err := tx.Model(&model.TcVer4BanList{}).Where("uid = ?", uid).Find(&banList).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	// reason
+	reasonTableName := (&model.TcVer4BanUserset{}).TableName()
+	var reason []*model.TcVer4BanUserset
+
+	if tx == nil {
+		tx = _function.GormDB.R
+	}
+
+	err = tx.Model(&model.TcVer4BanUserset{}).Where("uid = ?", uid).Find(&reason).Error
+
+	return map[string]any{
+		banListTableName: banList,
+		reasonTableName:  reason,
+		"tc_users_options": _function.GetUserOptionBatch(strconv.Itoa(int(uid)), _function.OptionExt{
+			Tx:      tx,
+			KeyName: "ver4_ban_open",
+		}),
+	}, err
+}
+
+func (pluginInfo *LoopBanPluginType) ImportAccount(uid int32, pid map[int32]int32, data map[string]json.RawMessage, tx *gorm.DB) error {
+	if !pluginInfo.GetSwitch() {
+		return errors.New("plugin is not enabled")
+	}
+
+	if tx == nil {
+		tx = _function.GormDB.R
+	}
+
+	tableName := (&model.TcVer4BanList{}).TableName()
+
+	var data2 []*model.TcVer4BanList
+	if err := _function.JsonDecode(data[tableName], &data2); err != nil {
+		return errors.New("invalid data format")
+	}
+
+	var data3 []*model.TcVer4BanList
+
+	// limit
+	numLimit, _ := strconv.Atoi(_function.GetOption("ver4_ban_limit"))
+
+	var existsAccountList []*model.TcVer4BanList
+	_function.GormDB.R.Model(&model.TcVer4BanList{}).Select("pid", "portrait", "tieba").Where("uid = ?", uid).Find(&existsAccountList)
+
+	count := len(existsAccountList)
+
+	remain := numLimit - count
+
+	for i := range data2 {
+		if pid, ok := pid[data2[i].Pid]; ok {
+			if remain <= 0 {
+				break
+			}
+
+			var exists bool
+			for _, task := range existsAccountList {
+				if task.Pid == pid && task.Portrait == data2[i].Portrait && task.Tieba == data2[i].Tieba {
+					exists = true
+					break
+				}
+			}
+
+			if !exists {
+				data2[i].Pid = pid
+				data2[i].ID = 0
+				data2[i].UID = uid
+
+				data3 = append(data3, data2[i])
+				remain--
+			}
+
+		}
+	}
+
+	if len(data3) > 0 {
+		banListErr := tx.Model(&model.TcVer4BanList{}).Create(data3).Error
+
+		if banListErr != nil {
+			return banListErr
+		}
+	}
+
+	var reason []*model.TcVer4BanUserset
+	if err := _function.JsonDecode(data[(&model.TcVer4BanUserset{}).TableName()], &reason); err != nil {
+		return errors.New("invalid data format")
+	}
+
+	if len(reason) == 0 {
+		return nil
+	}
+
+	var localReason model.TcVer4BanUserset
+	err := _function.GormDB.R.Model(&model.TcVer4BanUserset{}).Where("uid = ?", uid).Limit(1).Find(&localReason).Error
+
+	if errors.As(err, &gorm.ErrRecordNotFound) {
+		return tx.Model(&model.TcVer4BanUserset{}).Create(&model.TcVer4BanUserset{
+			UID: uid,
+			C:   reason[0].C,
+		}).Error
+	} else if reason[0].C != localReason.C && localReason.C != "" {
+		return tx.Model(&model.TcVer4BanUserset{}).Where("uid = ?", uid).Update("c", reason[0].C).Error
+	}
+
+	return nil
+}
+
 // endpoint
 
 type addAccountsResponseList struct {
@@ -393,8 +519,7 @@ func PluginLoopBanGetList(c echo.Context) error {
 	var loopBanList []*model.TcVer4BanList
 	_function.GormDB.R.Model(&model.TcVer4BanList{}).Where("uid = ?", uid).Order("id ASC").Find(&loopBanList)
 
-	limit := _function.GetOption("ver4_ban_limit")
-	numLimit, _ := strconv.ParseInt(limit, 10, 64)
+	numLimit, _ := strconv.Atoi(_function.GetOption("ver4_ban_limit"))
 
 	var responseList []addAccountsResponseList
 
@@ -420,7 +545,7 @@ func PluginLoopBanGetList(c echo.Context) error {
 		List  []addAccountsResponseList `json:"list"`
 	}{
 		Count: int64(len(responseList)),
-		Limit: numLimit,
+		Limit: int64(numLimit),
 		List:  responseList,
 	}
 

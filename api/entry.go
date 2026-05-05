@@ -98,8 +98,8 @@ func Api(address string) {
 	passport.POST("/logout", Logout)
 
 	if share.EnableBackup {
-		passport.POST("/export", ExportAccountData)
-		passport.POST("/import", ImportAccountData)
+		passport.POST("/export", ExportAccountData, RateLimit(1, time.Second*10))
+		passport.POST("/import", ImportAccountData, RateLimit(1, time.Second*10))
 	}
 
 	passport.DELETE("/delete", DeleteAccount)

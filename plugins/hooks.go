@@ -1,6 +1,7 @@
 package _plugin
 
 import (
+	"encoding/json"
 	"log/slog"
 	"sync"
 
@@ -70,7 +71,9 @@ type PluginActionHooks interface {
 	Delete() error
 	Upgrade() error
 	RemoveAccount(string, int32, *gorm.DB) error
-	// ExportAccount(int32) any
+	ExportAccount(int32, *gorm.DB) (map[string]any, error)
+	ImportAccount(int32, map[int32]int32, map[string]json.RawMessage, *gorm.DB) error
+
 	// for future
 	Report(int32, *gorm.DB) (string, error)
 	Reset(int32, int32, int32) error

@@ -687,6 +687,72 @@ func (pluginInfo *UserGrowthTasksPluginType) Reset(uid, pid, tid int32) error {
 	return _sql.Update("date", 0).Error
 }
 
+func (pluginInfo *UserGrowthTasksPluginType) ExportAccount(uid int32, tx *gorm.DB) (map[string]any, error) {
+	if !pluginInfo.GetSwitch() {
+		return nil, nil
+	}
+
+	tableName := (&model.TcKdGrowth{}).TableName()
+	var exportData []*model.TcKdGrowth
+
+	if tx == nil {
+		tx = _function.GormDB.R
+	}
+
+	err := tx.Model(&model.TcKdGrowth{}).Where("uid = ?", uid).Find(&exportData).Error
+
+	return map[string]any{
+		tableName: exportData,
+		"tc_users_options": _function.GetUserOptionBatch(strconv.Itoa(int(uid)), _function.OptionExt{
+			Tx:      tx,
+			KeyName: "kd_growth_break_icon_tasks",
+		}, _function.OptionExt{
+			Tx:      tx,
+			KeyName: "kd_growth_ext_tasks",
+		}, _function.OptionExt{
+			Tx:      tx,
+			KeyName: "kd_growth_sign_only",
+		}),
+	}, err
+}
+
+func (pluginInfo *UserGrowthTasksPluginType) ImportAccount(uid int32, pid map[int32]int32, data map[string]json.RawMessage, tx *gorm.DB) error {
+	if !pluginInfo.GetSwitch() {
+		return errors.New("plugin is not enabled")
+	}
+
+	if tx == nil {
+		tx = _function.GormDB.R
+	}
+
+	tableName := (&model.TcKdGrowth{}).TableName()
+
+	var data2 []*model.TcKdGrowth
+	if err := _function.JsonDecode(data[tableName], &data2); err != nil {
+		return errors.New("invalid data format")
+	}
+
+	var data3 []*model.TcKdGrowth
+
+	var localTasks []int32
+	_function.GormDB.R.Model(&model.TcKdGrowth{}).Where("uid = ?", uid).Pluck("pid", &localTasks)
+
+	for i := range data2 {
+		if pid, ok := pid[data2[i].Pid]; ok && !slices.Contains(localTasks, pid) {
+			data2[i].Pid = pid
+			data2[i].ID = 0
+			data2[i].UID = uid
+			data3 = append(data3, data2[i])
+		}
+	}
+
+	if len(data3) == 0 {
+		return nil
+	}
+
+	return tx.Model(&model.TcKdGrowth{}).Create(data3).Error
+}
+
 // endpoints
 
 func PluginGrowthTasksGetSettings(c echo.Context) error {

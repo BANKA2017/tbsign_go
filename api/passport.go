@@ -1,6 +1,7 @@
 package _api
 
 import (
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -661,6 +662,10 @@ type TcBackupExportStructTcBaiduid struct {
 	Stoken string `gorm:"column:stoken;type:text;not null" json:"stoken"`
 }
 
+var BackupUsersOptionKeys = []string{"go_bark_key", "go_daily_report", "go_message_type", "go_ntfy_topic", "go_pushdeer_key"}
+var BackupUsersOptionDangerKeys = []string{"session_expired_at"}
+var BackupAllowOptionKeys = []string{"go_bark_key", "go_daily_report", "go_daily_report_status", "go_message_type", "go_ntfy_topic", "go_pushdeer_key", "kd_growth_break_icon_tasks", "kd_growth_ext_tasks", "kd_growth_sign_only", "kd_wenku_tasks_checkin_only", "kd_wenku_tasks_vip_matrix", "kd_wenku_tasks_vip_matrix_id_set", "ver4_rank_check", "ver4_lottery_check", "ver4_ban_open", "kd_renew_manager_alert", "kd_renew_manager_interval", "kd_renew_manager_open"}
+
 func ExportAccountData(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
@@ -676,9 +681,9 @@ func ExportAccountData(c echo.Context) error {
 
 	password := c.FormValue("password")
 
-	numUid, _ := strconv.ParseInt(uid, 10, 64)
+	numUid, _ := strconv.Atoi(uid)
 
-	dbPwd := _function.GetPassword(int(numUid))
+	dbPwd := _function.GetPassword(numUid)
 
 	if dbPwd != "" {
 		err := _function.VerifyPasswordHash(dbPwd, password)
@@ -691,20 +696,11 @@ func ExportAccountData(c echo.Context) error {
 
 	var tcTieba []*TcBackupExportStructTcTieba
 	var tcBaiduid []*TcBackupExportStructTcBaiduid
+	var tcUsersOption []*model.TcUsersOption
 
-	// TODO plugin data export
-	// var tcUsersOption []*model.TcUsersOption
-	// var tcVer4BanList []*model.TcVer4BanList
-	// var tcVer4RankLog []*model.TcVer4RankLog
-	// var tcKdGrowth []*model.TcKdGrowth
-
-	_function.GormDB.W.Model(&model.TcTieba{}).Where("uid = ?", uid).Find(&tcTieba)
-	_function.GormDB.W.Model(&model.TcBaiduid{}).Where("uid = ?", uid).Find(&tcBaiduid)
-
-	// _function.GormDB.W.Model(&model.TcUsersOption{}).Where("uid = ?", uid).Find(&tcUsersOption)
-	// _function.GormDB.W.Model(&model.TcVer4BanList{}).Where("uid = ?", uid).Find(&tcVer4BanList)
-	// _function.GormDB.W.Model(&model.TcVer4RankLog{}).Where("uid = ?", uid).Find(&tcVer4RankLog)
-	// _function.GormDB.W.Model(&model.TcKdGrowth{}).Where("uid = ?", uid).Find(&tcKdGrowth)
+	_function.GormDB.W.Model(&model.TcTieba{}).Where("uid = ?", uid).Scan(&tcTieba)
+	_function.GormDB.W.Model(&model.TcBaiduid{}).Where("uid = ?", uid).Scan(&tcBaiduid)
+	_function.GormDB.W.Model(&model.TcUsersOption{}).Where("uid = ? AND name IN (?)", uid, BackupUsersOptionKeys).Find(&tcUsersOption)
 
 	if len(share.DataEncryptKeyByte) > 0 {
 		for _, tcBaiduidItem := range tcBaiduid {
@@ -715,45 +711,48 @@ func ExportAccountData(c echo.Context) error {
 			tcBaiduidItem.Stoken = string(decryptedStoken)
 		}
 
-		// for _, tcUsersOptionItem := range tcUsersOption {
-		// 	if slices.Contains([]string{"go_pushdeer_key", "go_bark_key", "go_ntfy_topic"}, tcUsersOptionItem.Name) {
-		// 		decryptedValue, _ := _function.AES256GCMDecrypt([]byte(tcUsersOptionItem.Value), share.DataEncryptKeyByte)
-		// 		tcUsersOptionItem.Value = string(decryptedValue)
-		// 	}
-		// }
+		for _, tcUsersOptionItem := range tcUsersOption {
+			if slices.Contains([]string{"go_pushdeer_key", "go_bark_key", "go_ntfy_topic"}, tcUsersOptionItem.Name) {
+				decryptedValue, _ := _function.AES256GCMDecrypt([]byte(tcUsersOptionItem.Value), share.DataEncryptKeyByte)
+				tcUsersOptionItem.Value = string(decryptedValue)
+			}
+		}
 	}
 
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
-		"tc_tieba":   tcTieba,
-		"tc_baiduid": tcBaiduid,
-		// "tc_users_option": tcUsersOption,
-		// "tc_ver4_ban_list": tcVer4BanList,
-		// "tc_ver4_bank_log": tcVer4RankLog,
-		// "tc_kd_growth":     tcKdGrowth,
-	}, "tbsign"))
-}
+	dataMap := make(map[string]any)
 
-type TcBackupUploadStructTcBaiduid struct {
-	Label    int    `json:"label"`
-	Bduss    string `json:"bduss"`
-	Stoken   string `json:"stoken"`
-	Name     string `json:"name"`
-	Portrait string `json:"portrait"`
-}
+	for _, plugin := range _plugin.PluginList {
+		m, err := plugin.ExportAccount(int32(numUid), nil)
+		if err == nil && m != nil {
+			for k, v := range m {
+				if slices.Contains([]string{"tc_tieba", "tc_baiduid"}, k) {
+					continue
+				} else if k == "tc_users_options" {
+					if v == nil {
+						continue
+					}
+					for pk, pv := range v.(map[string]string) {
+						if slices.Contains(BackupUsersOptionDangerKeys, pk) {
+							continue
+						}
+						tcUsersOption = append(tcUsersOption, &model.TcUsersOption{
+							UID:   int32(numUid),
+							Name:  pk,
+							Value: pv,
+						})
+					}
+					continue
+				}
+				dataMap[k] = v
+			}
+		}
+	}
 
-type TcBackupUploadStructTcTieba struct {
-	Label     int    `json:"label"`
-	Fid       int    `json:"fid"`
-	Tieba     string `json:"tieba"`
-	No        bool   `json:"no"`
-	Status    int    `json:"status"`
-	Latest    int    `json:"latest"`
-	LastError string `json:"last_error"`
-}
+	dataMap["tc_tieba"] = tcTieba
+	dataMap["tc_baiduid"] = tcBaiduid
+	dataMap["tc_users_options"] = tcUsersOption
 
-type TcBackupUploadStruct struct {
-	TcBaiduid []TcBackupUploadStructTcBaiduid `json:"tc_baiduid,omitempty"`
-	TcTieba   []TcBackupUploadStructTcTieba   `json:"tc_tieba,omitempty"`
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", dataMap, "tbsign"))
 }
 
 func ImportAccountData(c echo.Context) error {
@@ -787,8 +786,8 @@ func ImportAccountData(c echo.Context) error {
 
 	backupData := strings.TrimSpace(c.FormValue("data"))
 
-	decodedData := new(TcBackupUploadStruct)
-	err := _function.JsonDecode([]byte(backupData), decodedData)
+	decodedData := make(map[string]json.RawMessage)
+	err := _function.JsonDecode([]byte(backupData), &decodedData)
 	if err != nil {
 		slog.Error("passport.import-account-data.decode", "uid", uid, "error", err)
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "备份数据读取失败", _function.EchoEmptyObject, "tbsign"))
@@ -797,21 +796,25 @@ func ImportAccountData(c echo.Context) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 
 	var tcTieba []*model.TcTieba
+	var portraitMap = make(map[string]int32)
 	var tcBaiduid []*model.TcBaiduid
+
 	_function.GormDB.W.Model(&model.TcTieba{}).Where("uid = ?", uid).Find(&tcTieba)
 	_function.GormDB.W.Model(&model.TcBaiduid{}).Where("uid = ?", uid).Find(&tcBaiduid)
+	for _, item := range tcBaiduid {
+		portraitMap[item.Portrait] = item.ID
+	}
 
-	var labelPidKV = make(map[int]int32)
-	var newTcBaiduID []model.TcBaiduid
-	var newTcBaiduPortrait []string
-	var newTcTieba []model.TcTieba
-	var newTcTiebaWithoutAccount []TcBackupUploadStructTcTieba
+	var labelPidKV = make(map[int32]int32)
+	var newTcBaiduID []*model.TcBaiduid
+	var newTcBaiduPortraitMap = make(map[string]int32)
+	var newTcTieba []*model.TcTieba
+	var newTcTiebaWithoutAccount []*TcBackupExportStructTcTieba
 
 	var accountNumberOverflow bool
 
 	// bduss-num
-	bdussNUM := _function.GetOption("bduss_num")
-	numBDUSSLimit, err := strconv.ParseInt(bdussNUM, 10, 64)
+	numBDUSSLimit, err := strconv.Atoi(_function.GetOption("bduss_num"))
 	if err != nil || numBDUSSLimit < -1 {
 		numBDUSSLimit = -1
 	}
@@ -820,22 +823,25 @@ func ImportAccountData(c echo.Context) error {
 		numBDUSSLimit = 0
 	}
 
-	// newAccount
-	for _, importBaiduidItem := range decodedData.TcBaiduid {
+	// tc_baiduid
+	baiduidTableRawMessage := decodedData["tc_baiduid"]
+	var baiduidTable []*TcBackupExportStructTcBaiduid
+	err = _function.JsonDecode(baiduidTableRawMessage, &baiduidTable)
+	if err != nil {
+		slog.Error("passport.import-account-data.decode.tc-baiduid", "uid", uid, "error", err)
+	}
+
+	for _, importBaiduidItem := range baiduidTable {
 		exists := false
-		for _, localTcBaiduidItem := range tcBaiduid {
-			if importBaiduidItem.Portrait == localTcBaiduidItem.Portrait {
-				if _, ok := labelPidKV[importBaiduidItem.Label]; !ok {
-					labelPidKV[importBaiduidItem.Label] = localTcBaiduidItem.ID
-				}
-				exists = true
-				break
-			}
+		if localPid, ok := portraitMap[importBaiduidItem.Portrait]; ok {
+			labelPidKV[importBaiduidItem.ID] = localPid
+			exists = true
 		}
+
 		if !exists {
-			if accountNumberOverflow || numBDUSSLimit == -1 || (numBDUSSLimit > 0 && (len(tcBaiduid)+len(newTcBaiduID)) > int(numBDUSSLimit)) {
+			if numBDUSSLimit == -1 || (numBDUSSLimit > 0 && (len(tcBaiduid)+len(newTcBaiduID)) > numBDUSSLimit) {
 				accountNumberOverflow = true
-				continue
+				break
 			}
 			if len(share.DataEncryptKeyByte) > 0 {
 				encryptedBDUSS, _ := _function.AES256GCMEncrypt(importBaiduidItem.Bduss, share.DataEncryptKeyByte)
@@ -845,40 +851,49 @@ func ImportAccountData(c echo.Context) error {
 				importBaiduidItem.Stoken = _function.Base64URLEncode(encryptedStoken)
 			}
 
-			newTcBaiduID = append(newTcBaiduID, model.TcBaiduid{
+			newTcBaiduID = append(newTcBaiduID, &model.TcBaiduid{
 				UID:      int32(numUID),
 				Bduss:    importBaiduidItem.Bduss,
 				Stoken:   importBaiduidItem.Stoken,
 				Name:     importBaiduidItem.Name,
 				Portrait: importBaiduidItem.Portrait,
 			})
-			newTcBaiduPortrait = append(newTcBaiduPortrait, importBaiduidItem.Portrait)
+			newTcBaiduPortraitMap[importBaiduidItem.Portrait] = importBaiduidItem.ID
 		}
 	}
 
-	for _, importTiebaItem := range decodedData.TcTieba {
-		if pid, ok := labelPidKV[importTiebaItem.Label]; ok {
-			exists := false
-			for _, localTcTiebaItem := range tcTieba {
-				if localTcTiebaItem.Pid == pid && localTcTiebaItem.Fid == int32(importTiebaItem.Fid) {
-					exists = true
-					break
+	// tc_tieba
+	if tiebaTableRawMessage, ok := decodedData["tc_tieba"]; ok {
+		var tiebaTable []*TcBackupExportStructTcTieba
+		err = _function.JsonDecode(tiebaTableRawMessage, &tiebaTable)
+		if err != nil {
+			slog.Error("passport.import-account-data.decode.tc-tieba", "uid", uid, "error", err)
+		}
+
+		for _, importTiebaItem := range tiebaTable {
+			if pid, ok := labelPidKV[importTiebaItem.Pid]; ok {
+				exists := false
+				for _, localTcTiebaItem := range tcTieba {
+					if localTcTiebaItem.Pid == pid && localTcTiebaItem.Fid == importTiebaItem.Fid {
+						exists = true
+						break
+					}
 				}
+				if !exists {
+					newTcTieba = append(newTcTieba, &model.TcTieba{
+						UID:       int32(numUID),
+						Pid:       pid,
+						Fid:       importTiebaItem.Fid,
+						Tieba:     importTiebaItem.Tieba,
+						No:        _function.BoolToTinyInt(importTiebaItem.No),
+						Status:    importTiebaItem.Status,
+						Latest:    importTiebaItem.Latest,
+						LastError: importTiebaItem.LastError,
+					})
+				}
+			} else {
+				newTcTiebaWithoutAccount = append(newTcTiebaWithoutAccount, importTiebaItem)
 			}
-			if !exists {
-				newTcTieba = append(newTcTieba, model.TcTieba{
-					UID:       int32(numUID),
-					Pid:       pid,
-					Fid:       int32(importTiebaItem.Fid),
-					Tieba:     importTiebaItem.Tieba,
-					No:        _function.BoolToTinyInt(importTiebaItem.No),
-					Status:    int32(importTiebaItem.Status),
-					Latest:    int32(importTiebaItem.Latest),
-					LastError: importTiebaItem.LastError,
-				})
-			}
-		} else {
-			newTcTiebaWithoutAccount = append(newTcTiebaWithoutAccount, importTiebaItem)
 		}
 	}
 
@@ -905,31 +920,24 @@ func ImportAccountData(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "备份数据导入失败", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	var newTcTiebaWithoutAccountToInsert []model.TcTieba
 	if len(newTcTiebaWithoutAccount) > 0 {
-		_function.GormDB.W.Model(&model.TcBaiduid{}).Where("uid = ? AND portrait IN (?)", uid, newTcBaiduPortrait).Find(&newTcBaiduID)
+		var newTcTiebaWithoutAccountToInsert []model.TcTieba
 
-		for _, importBaiduidItem := range decodedData.TcBaiduid {
-			for _, localTcBaiduidItem := range newTcBaiduID {
-				if importBaiduidItem.Portrait == localTcBaiduidItem.Portrait {
-					if _, ok := labelPidKV[importBaiduidItem.Label]; !ok {
-						labelPidKV[importBaiduidItem.Label] = localTcBaiduidItem.ID
-					}
-					break
-				}
-			}
+		for _, baiduId := range newTcBaiduID {
+			portraitMap[baiduId.Portrait] = baiduId.ID
+			labelPidKV[newTcBaiduPortraitMap[baiduId.Portrait]] = baiduId.ID
 		}
 
 		for _, importTiebaItem := range newTcTiebaWithoutAccount {
-			if pid, ok := labelPidKV[importTiebaItem.Label]; ok {
+			if pid, ok := labelPidKV[importTiebaItem.Pid]; ok {
 				newTcTiebaWithoutAccountToInsert = append(newTcTiebaWithoutAccountToInsert, model.TcTieba{
 					UID:       int32(numUID),
 					Pid:       pid,
-					Fid:       int32(importTiebaItem.Fid),
+					Fid:       importTiebaItem.Fid,
 					Tieba:     importTiebaItem.Tieba,
 					No:        _function.BoolToTinyInt(importTiebaItem.No),
-					Status:    int32(importTiebaItem.Status),
-					Latest:    int32(importTiebaItem.Latest),
+					Status:    importTiebaItem.Status,
+					Latest:    importTiebaItem.Latest,
 					LastError: importTiebaItem.LastError,
 				})
 			}
@@ -943,10 +951,44 @@ func ImportAccountData(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, _function.When(accountNumberOverflow, "导入账号总数量已超出上限，部分账号未导入", "OK"), map[string]int{
-		"tc_tieba":   len(newTcTiebaWithoutAccountToInsert) + len(newTcTieba),
-		"tc_baiduid": len(newTcBaiduID),
-	}, "tbsign"))
+	// tc_users_options
+	if usersOptionsTableRawMessage, ok := decodedData["tc_users_options"]; ok {
+		var usersOptions []*model.TcUsersOption
+		err = _function.JsonDecode(usersOptionsTableRawMessage, &usersOptions)
+		if err != nil {
+			slog.Error("passport.import-account-data.decode.tc-users-options", "uid", uid, "error", err)
+		}
+		userOptionKV := make(map[string]string)
+		for _, item := range usersOptions {
+			userOptionKV[item.Name] = item.Value
+		}
+
+		for k, v := range userOptionKV {
+			if slices.Contains(BackupAllowOptionKeys, k) && v != "" {
+				if slices.Contains([]string{"go_pushdeer_key", "go_bark_key", "go_ntfy_topic"}, k) {
+					err = _function.SetUserOption(k, v, uid, _function.OptionExt{
+						EncryptKey: &share.DataEncryptKeyByte,
+					})
+				} else {
+					err = _function.SetUserOption(k, v, uid, _function.OptionExt{
+						EncryptKey: nil,
+					})
+				}
+				if err != nil {
+					slog.Error("passport.import-account-data.set-user-option", "uid", uid, "user-option", k, "error", err)
+				}
+			}
+		}
+	}
+
+	// plugins
+	for _, plugin := range _plugin.PluginList {
+		if err = plugin.ImportAccount(int32(numUid), labelPidKV, decodedData, nil); err != nil {
+			slog.Error("passport.import-account-data.plugin", "uid", uid, "plugin", plugin.GetInfo().Name, "error", err)
+		}
+	}
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, _function.When(accountNumberOverflow, "导入账号总数量已超出上限，部分账号未导入", "OK"), _function.EchoEmptyObject, "tbsign"))
 }
 
 type ResetAccountPluginParams struct {

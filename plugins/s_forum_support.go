@@ -1,11 +1,13 @@
 package _plugin
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -796,6 +798,77 @@ func (pluginInfo *ForumSupportPluginInfoType) Reset(uid, pid, tid int32) error {
 	}
 
 	return _sql.Update("date", 0).Error
+}
+
+func (pluginInfo *ForumSupportPluginInfoType) ExportAccount(uid int32, tx *gorm.DB) (map[string]any, error) {
+	if !pluginInfo.GetSwitch() {
+		return nil, nil
+	}
+
+	tableName := (&model.TcVer4RankLog{}).TableName()
+	var exportData []*model.TcVer4RankLog
+
+	if tx == nil {
+		tx = _function.GormDB.R
+	}
+
+	err := tx.Model(&model.TcVer4RankLog{}).Where("uid = ?", uid).Find(&exportData).Error
+
+	return map[string]any{
+		tableName: exportData,
+		"tc_users_options": _function.GetUserOptionBatch(strconv.Itoa(int(uid)), _function.OptionExt{
+			Tx:      tx,
+			KeyName: "ver4_rank_check",
+		}),
+	}, err
+}
+
+func (pluginInfo *ForumSupportPluginInfoType) ImportAccount(uid int32, pid map[int32]int32, data map[string]json.RawMessage, tx *gorm.DB) error {
+	if !pluginInfo.GetSwitch() {
+		return errors.New("plugin is not enabled")
+	}
+
+	if tx == nil {
+		tx = _function.GormDB.R
+	}
+
+	tableName := (&model.TcVer4RankLog{}).TableName()
+
+	var data2 []*model.TcVer4RankLog
+	if err := _function.JsonDecode(data[tableName], &data2); err != nil {
+		return errors.New("invalid data format")
+	}
+
+	var data3 []*model.TcVer4RankLog
+
+	var localTasks []*model.TcVer4RankLog
+	_function.GormDB.R.Model(&model.TcVer4RankLog{}).Select("pid", "fid").Where("uid = ?", uid).Find(&localTasks)
+
+	pidFidMap := make(map[int32][]int32)
+
+	for _, task := range localTasks {
+		if _, ok := pidFidMap[task.Pid]; !ok {
+			pidFidMap[task.Pid] = []int32{}
+		}
+		pidFidMap[task.Pid] = append(pidFidMap[task.Pid], task.Fid)
+	}
+
+	for i := range data2 {
+		if pid, ok := pid[data2[i].Pid]; ok {
+			if fid, ok := pidFidMap[pid]; !ok || !slices.Contains(fid, data2[i].Fid) {
+				data2[i].Pid = pid
+				data2[i].ID = 0
+				data2[i].UID = uid
+				data3 = append(data3, data2[i])
+			}
+		}
+	}
+
+	if len(data3) == 0 {
+		return nil
+	}
+
+	return tx.Model(&model.TcVer4RankLog{}).Create(data3).Error
 }
 
 // endpoints

@@ -1,6 +1,7 @@
 package _plugin
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -16,6 +17,7 @@ import (
 	"github.com/kdnetwork/code-snippet/go/utils"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func init() {
@@ -329,6 +331,72 @@ func (pluginInfo *RenewManagerType) Reset(uid, pid, tid int32) error {
 	}
 
 	return _sql.Update("date", 0).Error
+}
+
+func (pluginInfo *RenewManagerType) ExportAccount(uid int32, tx *gorm.DB) (map[string]any, error) {
+	if !pluginInfo.GetSwitch() {
+		return nil, nil
+	}
+
+	tableName := (&model.TcKdRenewManager{}).TableName()
+	var exportData []*model.TcKdRenewManager
+
+	if tx == nil {
+		tx = _function.GormDB.R
+	}
+
+	err := tx.Model(&model.TcKdRenewManager{}).Where("uid = ?", uid).Find(&exportData).Error
+
+	return map[string]any{
+		tableName: exportData,
+		"tc_users_options": _function.GetUserOptionBatch(strconv.Itoa(int(uid)), _function.OptionExt{
+			Tx:      tx,
+			KeyName: "kd_renew_manager_alert",
+		}, _function.OptionExt{
+			Tx:      tx,
+			KeyName: "kd_renew_manager_interval",
+		}, _function.OptionExt{
+			Tx:      tx,
+			KeyName: "kd_renew_manager_open",
+		}),
+	}, err
+}
+
+func (pluginInfo *RenewManagerType) ImportAccount(uid int32, pid map[int32]int32, data map[string]json.RawMessage, tx *gorm.DB) error {
+	if !pluginInfo.GetSwitch() {
+		return errors.New("plugin is not enabled")
+	}
+
+	if tx == nil {
+		tx = _function.GormDB.R
+	}
+
+	tableName := (&model.TcKdRenewManager{}).TableName()
+
+	var data2 []*model.TcKdRenewManager
+	if err := _function.JsonDecode(data[tableName], &data2); err != nil {
+		return errors.New("invalid data format")
+	}
+
+	var data3 []*model.TcKdRenewManager
+
+	for i := range data2 {
+		if pid, ok := pid[data2[i].Pid]; ok {
+			data2[i].Pid = pid
+			data2[i].ID = 0
+			data2[i].UID = uid
+			data3 = append(data3, data2[i])
+		}
+	}
+
+	if len(data3) == 0 {
+		return nil
+	}
+
+	return tx.Model(&model.TcKdRenewManager{}).Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "pid"}, {Name: "fid"}},
+		DoNothing: true,
+	}).Create(data3).Error
 }
 
 // func _PluginRenewManagerAlertMessage(name, fname, end string, fid int32) _function.PushMessageTemplateStruct {

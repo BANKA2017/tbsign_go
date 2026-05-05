@@ -1,6 +1,7 @@
 package _plugin
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
@@ -132,6 +133,14 @@ func (pluginInfo *RefreshTiebaListPluginType) Report(int32, *gorm.DB) (string, e
 }
 
 func (pluginInfo *RefreshTiebaListPluginType) Reset(int32, int32, int32) error { return nil }
+
+func (pluginInfo *RefreshTiebaListPluginType) ExportAccount(int32, *gorm.DB) (map[string]any, error) {
+	return nil, nil
+}
+
+func (pluginInfo *RefreshTiebaListPluginType) ImportAccount(int32, map[int32]int32, map[string]json.RawMessage, *gorm.DB) error {
+	return nil
+}
 
 // endpoint
 
