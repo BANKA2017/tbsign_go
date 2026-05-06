@@ -87,8 +87,7 @@ func main() {
 	flag.StringVar(&share.DNSAddress, "dns_addr", utils.GetEnv("tc_dns_addr", ""), "DNS Address")
 	// releases
 	flag.StringVar(&share.ReleaseFilesPath, "release_file_base", utils.GetEnv("tc_release_file_base", share.ReleaseFilesPath), "Base path for release files")
-	flag.StringVar(&share.ReleaseApiBase, "release_api_base", utils.GetEnv("tc_release_api_base", share.ReleaseApiBase), "Base path for release API")
-	flag.StringVar(&share.ReleaseApiList, "release_api_list", utils.GetEnv("tc_release_api_list", share.ReleaseApiList), "URL for releases list (fe)")
+	flag.StringVar(&share.ReleaseApiBase, "release_api_base", utils.GetEnv("tc_release_api_base", share.ReleaseApiBase), "To replace `https://api.github.com/repos/{owner}/{repo}`")
 
 	// others
 	flag.BoolVar(&share.TestMode, "test", utils.GetBoolEnv("tc_test"), "Not send any requests to tieba servers")

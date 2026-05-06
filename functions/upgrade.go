@@ -217,7 +217,7 @@ func Upgrade(version string) error {
 	slog.Info("replace file", "path", execPath)
 
 	// Path to the new version temporary file
-	tmpFile := filepath.Join(os.TempDir(), "tbsign-binary.tmp")
+	tmpFile := filepath.Join(os.TempDir(), "__tmp__tbsign-binary.tmp")
 
 	// get binary
 	since := time.Now()
@@ -229,68 +229,12 @@ func Upgrade(version string) error {
 	duration := time.Since(since)
 	slog.Info("download status", "duration", int(duration.Seconds()), "avg-speed", formatSpeedMB(int64(len(binary)), duration))
 
-	out, err := os.Create(tmpFile)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	file, err := os.Open(tmpFile)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	_, err = io.Copy(out, bytes.NewReader(binary))
-	if err != nil {
-		return err
-	}
-
-	// diff sha256
-	hasher := sha256.New()
-	if _, err := io.Copy(hasher, file); err != nil {
-		return err
-	}
-	hashBytes := hasher.Sum(nil)
-	hashString := hex.EncodeToString(hashBytes)
-	s, _ := file.Stat()
-
 	sha256Str, err := Fetch(sha256Path, http.MethodGet, nil, defaultHeaders, DefaultClient)
 	if err != nil {
 		return err
 	}
 
-	slog.Info("File info", "size", s.Size(), "calculated-sha256", strings.TrimSpace(hashString), "expected-sha256", strings.TrimSpace(string(sha256Str)))
-
-	if strings.TrimSpace(hashString) == strings.TrimSpace(string(sha256Str)) {
-		if _os != "windows" {
-			os.Chmod(tmpFile, 0755)
-			err = os.Rename(tmpFile, execPath)
-			if err != nil {
-				return err
-			}
-		} else {
-			win_upgrade_script_template, _ := assets.EmbeddedUpgradeFiles.ReadFile("upgrade/win_upgrade_script_template.ps1")
-
-			psScript := fmt.Sprintf(string(win_upgrade_script_template), execPath, tmpFile)
-
-			psFile := filepath.Join(os.TempDir(), "tc_win_upgrade_script.ps1")
-			if err := os.WriteFile(psFile, []byte(psScript), 0644); err != nil {
-				return err
-			}
-
-			cmd := exec.Command("powershell", "-ExecutionPolicy", "Bypass", "-File", psFile)
-			if err := cmd.Start(); err != nil {
-				return err
-			}
-		}
-
-		slog.Info("更新完成")
-	} else {
-		os.Remove(tmpFile)
-		return errors.New("更新失败！sha256 记录不正确")
-	}
-	return nil
+	return verifyAndSave(binary, execPath, tmpFile, string(sha256Str), len(binary))
 }
 
 // https://api.github.com/repos/${{repo}}/releases/tags/${{tag}}
@@ -324,7 +268,7 @@ func Upgrade2(tagName string) error {
 		return fmt.Errorf("❌ 不支持直接下载更新的版本(%s)", share.BuildPublishType)
 	} else if !IsOfficialSupport() {
 		return fmt.Errorf("❌ 不支持的版本(%s/%s)，请下载源码后参考 build.sh 编译运行", runtime.GOOS, runtime.GOARCH)
-	} else if _, err := url.Parse(share.ReleaseApiBase); err != nil {
+	} else if _, err := url.Parse(share.ReleaseApiBase + "/releases/tags/"); err != nil {
 		return errors.New("❌ 更新地址无效")
 	}
 
@@ -334,7 +278,7 @@ func Upgrade2(tagName string) error {
 	}
 
 	// get info
-	binInfo, err := Fetch(share.ReleaseApiBase+tagName, http.MethodGet, nil, map[string]string{
+	binInfo, err := Fetch(share.ReleaseApiBase+"/releases/tags/"+tagName, http.MethodGet, nil, map[string]string{
 		"User-Agent": "tbsign_go/upgrader2",
 	}, DefaultClient)
 
@@ -383,7 +327,7 @@ func Upgrade2(tagName string) error {
 	slog.Info("replace file", "path", execPath)
 
 	// Path to the new tagName temporary file
-	tmpFile := filepath.Join(os.TempDir(), "tbsign-binary.tmp")
+	tmpFile := filepath.Join(os.TempDir(), "__tmp__tbsign-binary.tmp")
 
 	// get binary
 	since := time.Now()
@@ -395,41 +339,52 @@ func Upgrade2(tagName string) error {
 	duration := time.Since(since)
 	slog.Info("download status", "duration", int(duration.Seconds()), "avg-speed", formatSpeedMB(int64(len(binary)), duration))
 
-	out, err := os.Create(tmpFile)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
+	return verifyAndSave(binary, execPath, tmpFile, fileSha256, fileSize)
+}
 
-	file, err := os.Open(tmpFile)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	_, err = io.Copy(out, bytes.NewReader(binary))
-	if err != nil {
-		return err
-	}
-
+func verifyAndSave(binary []byte, execPath, tmpPath, fileSha256 string, fileSize int) error {
 	// diff sha256
 	hasher := sha256.Sum256(binary)
-	hashString := hex.EncodeToString(hasher[:])
-	s, _ := file.Stat()
+	hashString := strings.ToLower(strings.TrimSpace(hex.EncodeToString(hasher[:])))
 
-	slog.Info("File info", "size", s.Size(), "calculated-sha256", strings.TrimSpace(hashString), "expected-sha256", fileSha256)
+	slog.Info("File info", "size", len(binary), "calculated-sha256", hashString, "expected-sha256", fileSha256)
 
-	if strings.TrimSpace(hashString) == fileSha256 && s.Size() == int64(fileSize) {
-		if _os != "windows" {
-			os.Chmod(tmpFile, 0755)
-			err = os.Rename(tmpFile, execPath)
+	if hashString == strings.ToLower(strings.TrimSpace(fileSha256)) && len(binary) == fileSize {
+		out, err := os.Create(tmpPath)
+		if err != nil {
+			return err
+		}
+		defer out.Close()
+
+		file, err := os.Open(tmpPath)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		_, err = io.Copy(out, bytes.NewReader(binary))
+		if err != nil {
+			return err
+		}
+
+		s, err := file.Stat()
+		if err != nil {
+			return err
+		}
+		if s.Size() != int64(fileSize) {
+			return errors.New("更新失败！文件大小不匹配")
+		}
+
+		if runtime.GOOS != "windows" {
+			os.Chmod(tmpPath, 0755)
+			err = os.Rename(tmpPath, execPath)
 			if err != nil {
 				return err
 			}
 		} else {
 			win_upgrade_script_template, _ := assets.EmbeddedUpgradeFiles.ReadFile("upgrade/win_upgrade_script_template.ps1")
 
-			psScript := fmt.Sprintf(string(win_upgrade_script_template), execPath, tmpFile)
+			psScript := fmt.Sprintf(string(win_upgrade_script_template), execPath, tmpPath)
 
 			psFile := filepath.Join(os.TempDir(), "tc_win_upgrade_script.ps1")
 			if err := os.WriteFile(psFile, []byte(psScript), 0644); err != nil {
@@ -444,7 +399,6 @@ func Upgrade2(tagName string) error {
 
 		slog.Info("更新完成")
 	} else {
-		os.Remove(tmpFile)
 		return errors.New("更新失败！sha256 记录或文件大小不正确")
 	}
 	return nil

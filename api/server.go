@@ -85,7 +85,7 @@ func GetServerStatus(c echo.Context) error {
 			// "vcs":                           vcs,
 		},
 		"upgrade": map[string]string{
-			"list":       share.ReleaseApiList,
+			"api_base":   share.ReleaseApiBase,
 			"asset_base": _function.ReleaseFilesPath,
 		},
 		"cron_sign_again": _function.GetOption("cron_sign_again"),

@@ -42,12 +42,12 @@ var ExamplePlugin = _function.VPtr(ExamplePluginType{
 			"key2": {
 				OptionName:   "key2",
 				OptionNameCN: "变量的解释",
-				Validate:     PluginExampleOptionValidatorKey2,
+				Validate:     &PluginExampleOptionValidatorKey2,
 			},
 			"key3_action_limit": {
 				OptionName:   "key3_action_limit",
 				OptionNameCN: "这个变量在前端会被识别成数字",
-				Validate: _function.OptionRule{
+				Validate: &_function.OptionRule{
 					Enum: []string{"50"},
 				},
 			},
@@ -115,7 +115,7 @@ func (pluginInfo *ExamplePluginType) ExportAccount(int32, *gorm.DB) (map[string]
 	return nil, nil
 }
 
-func (pluginInfo *ExamplePluginType) ImportAccount(int32, map[int32]int32, map[string]any, *gorm.DB) error {
+func (pluginInfo *ExamplePluginType) ImportAccount(int32, map[int32]int32, map[string]json.RawMessage, *gorm.DB) error {
 	return nil
 }
 

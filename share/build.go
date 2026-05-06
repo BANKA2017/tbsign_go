@@ -91,7 +91,6 @@ var ReleaseFilesPath = "https://github.com/BANKA2017/tbsign_go/releases/download
 
 // ReleaseApiBase https://api.github.com/repos/{owner}/{repo}/releases/tags/{tag_id} // <-
 // see also: https://docs.github.com/zh/rest/releases/releases?apiVersion=2022-11-28#get-a-release
-var ReleaseApiBase = "https://api.github.com/repos/BANKA2017/tbsign_go/releases/tags/"
-var ReleaseApiList = "https://api.github.com/repos/BANKA2017/tbsign_go/releases"
+var ReleaseApiBase = "https://api.github.com/repos/BANKA2017/tbsign_go"
 
 var DynamicVersion = "dev"
