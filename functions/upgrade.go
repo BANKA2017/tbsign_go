@@ -2,8 +2,13 @@ package _function
 
 import (
 	"bytes"
+	"crypto/ecdsa"
 	"crypto/sha256"
+	"crypto/x509"
+	"debug/buildinfo"
+	"encoding/base64"
 	"encoding/hex"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"io"
@@ -22,9 +27,31 @@ import (
 
 	"github.com/BANKA2017/tbsign_go/assets"
 	"github.com/BANKA2017/tbsign_go/share"
+	"github.com/goccy/go-yaml"
 	"github.com/kdnetwork/code-snippet/go/utils"
 	"golang.org/x/exp/slices"
 )
+
+func init() {
+	pk, err := assets.EmbeddedCACert.ReadFile("ca/tc_p256_verify_public_v1.pem")
+	if err != nil {
+		return
+	}
+
+	block, _ := pem.Decode(pk)
+	if block == nil {
+		return
+	}
+
+	pubKeyInterface, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return
+	}
+
+	VerifyPublicKey, _ = pubKeyInterface.(*ecdsa.PublicKey)
+}
+
+var VerifyPublicKey *ecdsa.PublicKey
 
 type GithubReleasesListResponseItem struct {
 	HTMLURL         string `json:"html_url,omitempty"`
@@ -340,6 +367,75 @@ func Upgrade2(tagName string) error {
 	slog.Info("download status", "duration", int(duration.Seconds()), "avg-speed", formatSpeedMB(int64(len(binary)), duration))
 
 	return verifyAndSave(binary, execPath, tmpFile, fileSha256, fileSize)
+}
+
+type releaseMetaData struct {
+	BuildVersion string            `yaml:"build_version"`
+	BuildAt      string            `yaml:"build_at"`
+	CommitHash   string            `yaml:"commit_hash"`
+	FrontendHash string            `yaml:"frontend_hash"`
+	PublishType  string            `yaml:"publish_type"`
+	Version      string            `yaml:"version"`
+	Sha256       map[string]string `yaml:"sha256"`
+	Signature    string            `yaml:"signature"`
+}
+
+func Upgrade3(binary []byte, metadata string) error {
+	// public key
+	if VerifyPublicKey == nil {
+		return errors.New("❌ 验证公钥无效")
+	}
+
+	// release metadata
+	var release releaseMetaData
+
+	if err := yaml.Unmarshal([]byte(metadata), &release); err != nil {
+		return errors.New("❌ 解析元数据失败")
+	}
+
+	splitMetadata := strings.Split(strings.TrimSpace(metadata), "\n")
+	data := strings.TrimSpace(strings.Join(splitMetadata[0:len(splitMetadata)-1], "\n"))
+	sig, _ := base64.RawURLEncoding.DecodeString(release.Signature)
+
+	hash := sha256.Sum256([]byte(data))
+	if !ecdsa.VerifyASN1(VerifyPublicKey, hash[:], sig) {
+		return errors.New("❌ 签名无效")
+	}
+
+	kv := make(map[string]string)
+	r := bytes.NewReader(binary)
+
+	info, err := buildinfo.Read(r)
+	var binaryGoVersion string
+	if err == nil {
+		binaryGoVersion = info.GoVersion
+		for _, s := range info.Settings {
+			kv[s.Key] = s.Value
+		}
+	}
+
+	// time
+	t, err := time.Parse(time.RFC3339, release.BuildAt)
+	if err != nil {
+		return errors.New("❌ 解析时间失败")
+	}
+
+	if share.BuildAtTime.After(t) && GetOption("go_allow_downgrade") != "1" {
+		return errors.New("❌ 版本已过期")
+	}
+
+	if kv["vcs.modified"] == "false" && binaryGoVersion == "go"+release.BuildVersion && strings.EqualFold(release.CommitHash, kv["vcs.revision"]) {
+
+		execPath, err := os.Executable()
+		if err != nil {
+			return err
+		}
+		slog.Info("replace file", "path", execPath)
+
+		return verifyAndSave(binary, execPath, filepath.Join(os.TempDir(), "__tmp__tbsign-binary.tmp"), release.Sha256[kv["GOOS"]+"_"+kv["GOARCH"]], len(binary))
+	}
+
+	return errors.New("❌ 校验失败")
 }
 
 func verifyAndSave(binary []byte, execPath, tmpPath, fileSha256 string, fileSize int) error {

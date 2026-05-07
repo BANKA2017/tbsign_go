@@ -2,6 +2,7 @@ package _api
 
 import (
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -17,6 +18,7 @@ import (
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/kdnetwork/code-snippet/go/db"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/sync/singleflight"
 )
 
 type PluginListSettingOption struct {
@@ -84,9 +86,10 @@ func GetServerStatus(c echo.Context) error {
 			"vcs.modified":                  _function.When(share.BuildDirty, "1", "0"),
 			// "vcs":                           vcs,
 		},
-		"upgrade": map[string]string{
-			"api_base":   share.ReleaseApiBase,
-			"asset_base": _function.ReleaseFilesPath,
+		"upgrade": map[string]any{
+			"api_base":     share.ReleaseApiBase,
+			"asset_base":   _function.ReleaseFilesPath,
+			"allow_upload": _function.VerifyPublicKey != nil,
 		},
 		"cron_sign_again": _function.GetOption("cron_sign_again"),
 		"compat":          _function.GetOption("core_version"),
@@ -99,21 +102,60 @@ func GetServerStatus(c echo.Context) error {
 	}, "tbsign"))
 }
 
+var upgradeSF singleflight.Group
+
 func UpgradeSystem(c echo.Context) error {
-	version := c.FormValue("version")
-	var err error
+	_, err, _ := upgradeSF.Do("upgrade", func() (any, error) {
+		version := c.FormValue("version")
+		var err error
 
-	if _function.GetOption("go_next_upgrade_func") == "1" {
-		err = _function.Upgrade2("tbsign_go." + strings.TrimSpace(version))
-	} else {
-		err = _function.Upgrade(strings.TrimSpace(version))
-	}
+		if _function.GetOption("go_next_upgrade_func") == "1" {
+			err = _function.Upgrade2("tbsign_go." + strings.TrimSpace(version))
+		} else {
+			err = _function.Upgrade(strings.TrimSpace(version))
+		}
 
+		if err != nil {
+			return nil, c.JSON(http.StatusOK, _function.ApiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
+		}
+
+		return nil, ShutdownSystem(c)
+	})
+	return err
+}
+
+func readFormFile(c echo.Context, name string) ([]byte, error) {
+	file, err := c.FormFile(name)
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
+		return nil, err
 	}
+	src, err := file.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer src.Close()
+	return io.ReadAll(src)
+}
 
-	return ShutdownSystem(c)
+func UpgradeSystem2(c echo.Context) error {
+	_, err, _ := upgradeSF.Do("upgrade", func() (any, error) {
+		metadata, err := readFormFile(c, "metadata")
+		if err != nil {
+			return nil, c.JSON(http.StatusOK, _function.ApiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
+		}
+
+		bin, err := readFormFile(c, "binary")
+		if err != nil {
+			return nil, c.JSON(http.StatusOK, _function.ApiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
+		}
+
+		if err = _function.Upgrade3(bin, string(metadata)); err != nil {
+			return nil, c.JSON(http.StatusOK, _function.ApiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
+		}
+
+		return nil, ShutdownSystem(c)
+	})
+	return err
 }
 
 func ShutdownSystem(c echo.Context) error {

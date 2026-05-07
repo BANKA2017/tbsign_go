@@ -85,18 +85,11 @@ jobs:
           echo "build_at=${build_at}" >> "$GITHUB_OUTPUT"
           echo "build_prefix=${build_prefix}" >> "$GITHUB_OUTPUT"
           echo "ldflags=${ldflags}" >> "$GITHUB_OUTPUT"
-          ${{ secrets.TC_PRIVATE_KEY }}
-          openssl ec -in <(echo "${{ secrets.TC_PRIVATE_KEY }}") -pubout -out assets/ca/tc_p256_verify_public_v1.pem
       - name: Upload cacert
         uses: actions/upload-artifact@v7
         with:
           name: "tbsign_go.cacert"
           path: assets/ca/cacert.pem
-      - name: Upload public key
-        uses: actions/upload-artifact@v7
-        with:
-          name: "tbsign_go.publickey"
-          path: assets/ca/tc_p256_verify_public_v1.pem
 
   release:
     runs-on: ubuntu-slim
@@ -131,10 +124,6 @@ jobs:
         with:
           name: tbsign_go.windows
           path: build
-      - uses: actions/download-artifact@v8
-        with:
-          name: tbsign_go.publickey
-          path: build
 
       - name: Packaging frontend
         run: tar -czf "build/${{ env.build_prefix }}.fe.tar.gz" -C tbsign_go.fe .
@@ -159,27 +148,6 @@ jobs:
           echo "$(sha256sum build/${build_prefix}.fe.tar.gz | awk '{print $1}')" >> "build/${build_prefix}.fe.tar.gz.sha256"
           echo "fe_sha256=$(cat build/${build_prefix}.fe.tar.gz.sha256)" >> "$GITHUB_ENV"
 
-      - name: Create release body
-        run: |
-          cat <<EOF > build/release.yaml
-          build_version: ${{ env.GOVERSION }}
-          build_at: ${{ env.build_at }}
-          commit_hash: ${{ env.commit_hash }}
-          frontend_hash: ${{ env.fe_commit_hash }}
-          publish_type: binary
-          version: ${{ env.build_prefix }}
-          sha256:
-            linux_arm64: ${{ env.linux_arm64_sha256 }}
-            linux_amd64: ${{ env.linux_amd64_sha256 }}
-            darwin_arm64: ${{ env.darwin_arm64_sha256 }}
-            darwin_amd64: ${{ env.darwin_amd64_sha256 }}
-            windows_amd64: ${{ env.windows_amd64_sha256 }}
-            frontend: ${{ env.fe_sha256 }}
-          EOF
-          SIGNATURE=$(openssl dgst -sha256 -sign <(echo "${{ secrets.TC_PRIVATE_KEY }}") "build/release.yaml" | base64 -w 0 | tr '+/' '-_' | tr -d '=')
-          printf "signature: %s" "$SIGNATURE" >> build/release.yaml
-          printf "\`\`\`yaml\n$(cat build/release.yaml)\n\`\`\`" > release.body.md
-
       # - name: Upload package
       #   uses: actions/upload-artifact@v7
       #   with:
@@ -192,7 +160,22 @@ jobs:
           prerelease: ${{ inputs.prerelease }}
           fail_on_unmatched_files: true
           tag_name: ${{ env.build_prefix }}
-          body_path: release.body.md
+          body: |
+            ```yaml
+            build_version: ${{ env.GOVERSION }}
+            build_at: ${{ env.build_at }}
+            commit_hash: ${{ env.commit_hash }}
+            frontend_hash: ${{ env.fe_commit_hash }}
+            publish_type: binary
+            version: ${{ env.build_prefix }}
+            sha256:
+              linux_arm64: ${{ env.linux_arm64_sha256 }}
+              linux_amd64: ${{ env.linux_amd64_sha256 }}
+              darwin_arm64: ${{ env.darwin_arm64_sha256 }}
+              darwin_amd64: ${{ env.darwin_amd64_sha256 }}
+              windows_amd64: ${{ env.windows_amd64_sha256 }}
+              frontend: ${{ env.fe_sha256 }}
+            ```
 
   build-linux-binary:
     name: Build Binary for Linux/${{ matrix.arch.name }}
@@ -220,10 +203,6 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: tbsign_go.cacert
-          path: assets/ca/
-      - uses: actions/download-artifact@v8
-        with:
-          name: tbsign_go.publickey
           path: assets/ca/
       - uses: actions/setup-go@v6
         with:
@@ -261,10 +240,6 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: tbsign_go.cacert
-          path: assets/ca/
-      - uses: actions/download-artifact@v8
-        with:
-          name: tbsign_go.publickey
           path: assets/ca/
       - uses: actions/setup-go@v6
         with:
@@ -304,10 +279,6 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: tbsign_go.cacert
-          path: assets/ca/
-      - uses: actions/download-artifact@v8
-        with:
-          name: tbsign_go.publickey
           path: assets/ca/
       - uses: actions/setup-go@v6
         with:

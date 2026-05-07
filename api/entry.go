@@ -99,7 +99,7 @@ func Api(address string) {
 
 	if share.EnableBackup {
 		passport.POST("/export", ExportAccountData, RateLimit(1, time.Second*10))
-		passport.POST("/import", ImportAccountData, RateLimit(1, time.Second*10))
+		passport.POST("/import", ImportAccountData, RateLimit(1, time.Second*10), middleware.BodyLimit("50M"))
 	}
 
 	passport.DELETE("/delete", DeleteAccount)
@@ -158,7 +158,10 @@ func Api(address string) {
 
 	/// server
 	admin.GET("/server/status", GetServerStatus)
-	admin.POST("/server/upgrade", UpgradeSystem)
+	admin.POST("/server/upgrade", UpgradeSystem, RateLimit(1, time.Second*10))
+	if _function.VerifyPublicKey != nil {
+		admin.POST("/server/upgrade/upload", UpgradeSystem2, RateLimit(1, time.Second*10), middleware.BodyLimit("50M"))
+	}
 	admin.POST("/server/shutdown", ShutdownSystem)
 
 	if share.TestMode {

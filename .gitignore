@@ -2,7 +2,9 @@
 /tmp
 /assets/dist/
 /assets/ca/cacert.pem
+/assets/ca/tc_p256_verify_public_v1.pem
 /.idea/
+build/
 
 **/*.db
 **/*.db-shm
