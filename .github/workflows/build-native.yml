@@ -279,13 +279,14 @@ jobs:
           CGO_CFLAGS="-mmacosx-version-min=${{ env.mmacosx_version_min }}" CGO_LDFLAGS="-mmacosx-version-min=${{ env.mmacosx_version_min }}" GOOS=darwin GOARCH=arm64 go build -trimpath -o "build/${{ env.build_prefix }}.darwin-arm64" -ldflags "$ldflags" -tags netgo
           CGO_CFLAGS="-mmacosx-version-min=${{ env.mmacosx_version_min }} -arch x86_64" CGO_LDFLAGS="-mmacosx-version-min=${{ env.mmacosx_version_min }} -arch x86_64" GOOS=darwin GOARCH=amd64 go build -trimpath -o "build/${{ env.build_prefix }}.darwin-amd64" -ldflags "$ldflags" -tags netgo
 
+          mv build/* ./
       - name: Upload package
         uses: actions/upload-artifact@v7
         with:
           name: "tbsign_go.darwin"
           path: |
-            build/${{ env.build_prefix }}.darwin-arm64
-            build/${{ env.build_prefix }}.darwin-amd64
+            ${{ env.build_prefix }}.darwin-arm64
+            ${{ env.build_prefix }}.darwin-amd64
   build-windows-binary:
     name: Build Binary for Windows
     runs-on: windows-latest
