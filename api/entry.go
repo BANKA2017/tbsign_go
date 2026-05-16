@@ -188,16 +188,22 @@ func Api(address string) {
 	}
 
 	// frontend
-	if !share.EnableFrontend {
-		e.Any("/favicon.ico", _function.EchoNoContent)
-		e.Any("/robots.txt", echoRobots)
-	} else {
+	e.Any("/robots.txt", echoRobots)
+	if share.EnableFrontend {
 		fe, _ := fs.Sub(assets.EmbeddedFrontend, "dist")
+		e.Any("/favicon.ico", echoFavicon)
 		e.GET("/icp.jsonp", func(c echo.Context) error {
-			return c.JSONP(200, "__GetICP", struct {
-				ICP string `json:"icp"`
-			}{
+			return c.JSONP(200, "__GetICP", ICPStruct{
 				ICP: _function.GetOption("icp"),
+			})
+		})
+		e.GET("/site.jsonp", func(c echo.Context) error {
+			return c.JSONP(200, "__GetConfig", FESettings{
+				SystemName:        _function.GetOption("system_name"),
+				SystemKeywords:    _function.GetOption("system_keywords"),
+				SystemDescription: _function.GetOption("system_description"),
+				Footer:            _function.GetOption("footer"),
+				ICP:               _function.GetOption("icp"),
 			})
 		})
 		e.GET("/*", echo.WrapHandler(http.FileServer(&_function.StaticFSWrapper{
@@ -207,4 +213,16 @@ func Api(address string) {
 	}
 
 	e.Logger.Fatal(e.Start(address))
+}
+
+type ICPStruct struct {
+	ICP string `json:"icp"`
+}
+
+type FESettings struct {
+	SystemName        string `json:"system_name"`
+	SystemKeywords    string `json:"system_keywords"`
+	SystemDescription string `json:"system_description"`
+	Footer            string `json:"footer"`
+	ICP               string `json:"icp"`
 }

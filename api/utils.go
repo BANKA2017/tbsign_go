@@ -4,6 +4,7 @@ import (
 	"crypto/hmac"
 	"encoding/base64"
 	"errors"
+	"io/fs"
 	"log/slog"
 	"math"
 	"net/http"
@@ -11,8 +12,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/BANKA2017/tbsign_go/assets"
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
+	"github.com/BANKA2017/tbsign_go/share"
 	"github.com/jellydator/ttlcache/v3"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slices"
@@ -22,7 +25,45 @@ import (
 var RoleList = []string{_function.RoleDeleted, _function.RoleBanned, _function.RoleUser, _function.RoleVIP, _function.RoleAdmin}
 
 func echoRobots(c echo.Context) error {
+	if val := _function.GetOption("go_robots_txt"); val != "" {
+		return c.String(http.StatusOK, val)
+	}
+
 	return c.String(http.StatusOK, "User-agent: *\nDisallow: /*")
+}
+
+var FaviconBinCache []byte
+var FaviconCacheTime time.Time
+var NoFavicon = false
+
+func echoFavicon(c echo.Context) (err error) {
+	if len(FaviconBinCache) > 0 {
+		c.Response().Header().Set("Last-Modified", FaviconCacheTime.Format(http.TimeFormat))
+		return c.Blob(http.StatusOK, "image/x-icon", FaviconBinCache)
+	}
+
+	if NoFavicon {
+		return _function.EchoNoContent(c)
+	}
+
+	// load from options
+	optionVal := _function.GetOption("go_favicon")
+	if val, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(optionVal, "data:image/x-icon;base64,")); err == nil && len(val) > 0 {
+		FaviconBinCache = val
+		FaviconCacheTime = time.Now()
+		c.Response().Header().Set("Last-Modified", FaviconCacheTime.Format(http.TimeFormat))
+		return c.Blob(http.StatusOK, "image/x-icon", FaviconBinCache)
+	}
+
+	// load from embedded
+	fe, _ := fs.Sub(assets.EmbeddedFrontend, "dist")
+	FaviconBinCache, err = fs.ReadFile(fe, "favicon.ico")
+	if err != nil {
+		NoFavicon = true
+		return _function.EchoNoContent(c)
+	}
+	c.Response().Header().Set("Last-Modified", share.BuildAtTime.Format(http.TimeFormat))
+	return c.Blob(http.StatusOK, "image/x-icon", FaviconBinCache)
 }
 
 func verifyAuthorization(authorization string) (string, string) {
@@ -232,3 +273,22 @@ func IsArrayMode(c echo.Context) bool {
 }
 
 var RequestSingleFlight singleflight.Group
+
+func GetBodyMap(c echo.Context) (map[string][]string, error) {
+	request := c.Request()
+
+	if err := request.ParseForm(); err != nil {
+		return nil, err
+	}
+
+	bodyMap := make(map[string][]string)
+	for k, vs := range request.Form {
+		if len(vs) > 0 {
+			bodyMap[k] = vs
+		} else {
+			bodyMap[k] = []string{""}
+		}
+	}
+
+	return bodyMap, nil
+}

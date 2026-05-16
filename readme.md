@@ -20,7 +20,6 @@
 | db_tls              | tc_db_tls            | `false`                  | CA 证书的选项，请看 [CA 证书](#ca-证书) 部分                                                                                         |
 | db_path             | tc_db_path           |                          | SQLite 文件目录                                                                                                                      |
 | db_mode             | tc_db_mode           | `mysql`                  | 用于显式指定数据库类型，只用于 PostgreSQL (仅当值为 `pgsql` 或 `postgresql` 时有效，请看 [PostgreSQL](#postgresql) 部分)             |
-| test                | tc_test              | `false`                  | 测试模式，此模式下不会运行计划任务                                                                                                   |
 | api                 | tc_api               | `false`                  | 是否启动 api                                                                                                                         |
 | fe                  | tc_fe                | `false`                  | 是否启动自带前端，仅当 `api` 为 `true` 时可为 `true`                                                                                 |
 | address             | tc_address           | `:1323`                  | 后端运行地址                                                                                                                         |
@@ -37,6 +36,7 @@
 |                     | tc_docker_mode       |                          | 当值为 `true`(string) 且 `/.dockerenv` 存在时，激活 docker 模式，默认应当忽略，建议阅读 readme.md 的 [发布类型](#发布类型) 部分      |
 | release_file_base   | tc_release_file_base | `share.ReleaseFilesPath` | 手动安装包的下载地址，特殊情况下使用，默认应当忽略，建议阅读 readme.md 的 [发布地址](#发布地址) 部分                                 |
 | release_api_base    | tc_release_api_base  | `share.ReleaseApiBase`   | GitHub API prefix，用于替换 `https://api.github.com/repos/{owner}/{repo}` （没有尾斜杠），特殊情况下使用，默认应当忽略，目前没有使用 |
+| test                | tc_test              | `false`                  | 测试模式，此模式下不会运行计划任务                                                                                                   |
 
 - 不支持 `.env` 文件，请直接设置环境变量，使用顺序是 `flag` > `env` > `default`
 - 有几个值不支持环境变量，必须手动操作

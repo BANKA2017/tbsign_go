@@ -1,6 +1,7 @@
 package _api
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -47,6 +48,8 @@ func GetAdminSettings(c echo.Context) error {
 				tmpOption = append(tmpOption, strings.ReplaceAll(match, "\"", ""))
 			}
 			settings[v.Name] = strings.Join(tmpOption, ",")
+		} else if slices.Contains(_function.SettingsKeysEmptyNoChange, v.Name) {
+			settings[v.Name] = ""
 		} else {
 			settings[v.Name] = v.Value
 		}
@@ -125,17 +128,57 @@ var SettingsRules = map[string]*_function.OptionRule{
 
 	"bduss_num": {Min: _function.VPtr(int64(-1)), Max: _function.VPtr(int64(999999999))},
 	// "tb_max": {Min: _function.VPtr(int64(-1)), Max: _function.VPtr(int64(10000))},
+	"go_favicon": {
+		Custom: func(s string) error {
+			if s == "" {
+				return nil
+			}
+
+			// data:image/x-icon;base64,...
+			if !strings.HasPrefix(s, "data:image/x-icon;base64,") {
+				return errors.New("invalid favicon")
+			}
+			s = strings.TrimPrefix(s, "data:image/x-icon;base64,")
+			if len(s) == 0 {
+				return errors.New("invalid favicon")
+			}
+
+			if _, err := base64.StdEncoding.DecodeString(s); err != nil {
+				return errors.New("invalid favicon")
+			}
+			return nil
+		},
+		Transform: func(s string) string {
+			if s == "" {
+				FaviconBinCache = []byte{}
+			} else {
+				FaviconBinCache, _ = base64.StdEncoding.DecodeString(strings.TrimPrefix(s, "data:image/x-icon;base64,"))
+				FaviconCacheTime = time.Now()
+			}
+			return s
+		},
+	},
 }
 
 func UpdateAdminSettings(c echo.Context) error {
 	var errStr []string
 	settings := make(map[string]string)
 
+	bodyMap, err := GetBodyMap(c)
+	if err != nil {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "无效设置", settings, "tbsign"))
+	}
+
 	for _, key := range _function.SettingsFilter {
-		val := c.Request().FormValue(key)
-		// if val == "" {
-		// 	continue
-		// }
+		vals, exists := bodyMap[key]
+		if !exists {
+			continue
+		}
+
+		val := vals[0]
+		if slices.Contains(_function.SettingsKeysEmptyNoChange, key) && val == "" {
+			continue
+		}
 
 		oldVal := _function.GetOption(key)
 		if oldVal == val {
@@ -222,8 +265,18 @@ func UpdatePluginSettings(c echo.Context) error {
 	var errStr []string
 	settings := make(map[string]string)
 
-	for _, key := range _function.SettingsFilter {
-		val := c.Request().FormValue(key)
+	bodyMap, err := GetBodyMap(c)
+
+	if err != nil {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "无效设置", settings, "tbsign"))
+	}
+
+	for key := range pluginSettings {
+		vals, exists := bodyMap[key]
+		if !exists {
+			continue
+		}
+		val := vals[0]
 		// if val == "" {
 		// 	continue
 		// }

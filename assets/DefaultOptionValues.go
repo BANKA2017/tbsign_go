@@ -30,6 +30,7 @@ var DefaultOptions = map[string]string{
 	"system_keywords":             "贴吧, 签到, 任务, 循环封禁, 名人堂, 成长任务, 自动刷新",
 	"system_name":                 "TbSign➡️",
 	"system_url":                  "",
+	"footer":                      "",
 	"tb_max":                      "0",
 	"yr_reg":                      "",
 	"go_ver":                      "0",
@@ -42,6 +43,8 @@ var DefaultOptions = map[string]string{
 	"go_encrypt":                  "0",
 	"go_re_check_in_max_interval": "1",
 	"go_daily_report_hour":        "-1",
+	"go_robots_txt":               "",
+	"go_favicon":                  "",
 
 	// should be edited in future versions
 	"go_plugin_batch_tasks":              "0",
