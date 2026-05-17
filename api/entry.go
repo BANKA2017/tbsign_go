@@ -140,6 +140,7 @@ func Api(address string) {
 	admin := api.Group("/admin", AdminCheck)
 	admin.GET("/settings", GetAdminSettings)
 	admin.POST("/settings", UpdateAdminSettings)
+	admin.POST("/settings/:option/reset", ResetAdminSettings)
 	admin.GET("/account", GetAccountsList)
 	admin.DELETE("/account/:uid", AdminDeleteAccount)
 	admin.PATCH("/account/:uid/modify", AdminModifyAccountInfo)

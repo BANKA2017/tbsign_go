@@ -11,9 +11,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/BANKA2017/tbsign_go/assets"
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
+	"github.com/BANKA2017/tbsign_go/share"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
@@ -210,6 +212,10 @@ func UpdateAdminSettings(c echo.Context) error {
 			settings[key] = val
 			_function.SetOption(key, val)
 		}
+
+		if slices.Contains(_function.SettingsKeysEmptyNoChange, key) {
+			settings[key] = ""
+		}
 	}
 
 	if len(errStr) == 0 {
@@ -217,6 +223,27 @@ func UpdateAdminSettings(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, strings.Join(errStr, "\n"), settings, "tbsign"))
+}
+
+func ResetAdminSettings(c echo.Context) error {
+	option := c.Param("option")
+	if !slices.Contains(_function.SettingsFilter, option) {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "设置项不存在", _function.EchoEmptyObject, "tbsign"))
+	}
+
+	if err := _function.SetOption(option, assets.DefaultOptions[option]); err != nil {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "重置失败", _function.EchoEmptyObject, "tbsign"))
+	}
+
+	// favicon
+	if option == "go_favicon" {
+		FaviconBinCache = []byte{}
+		FaviconCacheTime = share.BuildAtTime
+	}
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]string{
+		option: _function.When(slices.Contains(_function.SettingsKeysEmptyNoChange, option), "", _function.GetOption(option)),
+	}, "tbsign"))
 }
 
 type pluginSettingResponse struct {
