@@ -2,6 +2,7 @@ package _api
 
 import (
 	"encoding/base64"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -145,10 +146,26 @@ var SettingsRules = map[string]*_function.OptionRule{
 				return errors.New("invalid favicon")
 			}
 
-			if _, err := base64.StdEncoding.DecodeString(s); err != nil {
+			icoBin, err := base64.StdEncoding.DecodeString(s)
+			if err != nil {
 				return errors.New("invalid favicon")
 			}
-			return nil
+
+			if len(icoBin) < 6 {
+				return errors.New("invalid favicon")
+			}
+
+			reserved := binary.LittleEndian.Uint16(icoBin[0:2])
+			typ := binary.LittleEndian.Uint16(icoBin[2:4])
+			count := binary.LittleEndian.Uint16(icoBin[4:6])
+
+			if reserved == 0 &&
+				typ == 1 &&
+				count > 0 {
+				return nil
+			}
+
+			return errors.New("invalid favicon")
 		},
 		Transform: func(s string) string {
 			if s == "" {

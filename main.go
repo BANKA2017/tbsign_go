@@ -91,6 +91,7 @@ func main() {
 
 	// others
 	flag.BoolVar(&share.TestMode, "test", utils.GetBoolEnv("tc_test"), "Not send any requests to tieba servers")
+	flag.BoolVar(&share.DangerFrontend, "danger_fe", utils.GetBoolEnv("tc_danger_fe"), "Allow dangerous frontend actions")
 
 	flag.Parse()
 

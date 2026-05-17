@@ -199,13 +199,18 @@ func Api(address string) {
 			})
 		})
 		e.GET("/site.jsonp", func(c echo.Context) error {
-			return c.JSONP(200, "__GetConfig", FESettings{
+			feSettings := FESettings{
 				SystemName:        _function.GetOption("system_name"),
 				SystemKeywords:    _function.GetOption("system_keywords"),
 				SystemDescription: _function.GetOption("system_description"),
-				Footer:            _function.GetOption("footer"),
 				ICP:               _function.GetOption("icp"),
-			})
+			}
+
+			if share.DangerFrontend {
+				feSettings.Footer = _function.GetOption("footer")
+			}
+
+			return c.JSONP(200, "__GetConfig", feSettings)
 		})
 		e.GET("/*", echo.WrapHandler(http.FileServer(&_function.StaticFSWrapper{
 			FileSystem:   http.FS(fe),

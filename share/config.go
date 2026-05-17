@@ -29,3 +29,4 @@ var DataEncryptKeyStr string
 var DataEncryptKeyByte []byte
 var DisableEmail bool
 var DNSAddress string
+var DangerFrontend bool

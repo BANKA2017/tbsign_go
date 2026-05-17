@@ -37,6 +37,7 @@
 | release_file_base   | tc_release_file_base | `share.ReleaseFilesPath` | 手动安装包的下载地址，特殊情况下使用，默认应当忽略，建议阅读 readme.md 的 [发布地址](#发布地址) 部分                                 |
 | release_api_base    | tc_release_api_base  | `share.ReleaseApiBase`   | GitHub API prefix，用于替换 `https://api.github.com/repos/{owner}/{repo}` （没有尾斜杠），特殊情况下使用，默认应当忽略，目前没有使用 |
 | test                | tc_test              | `false`                  | 测试模式，此模式下不会运行计划任务                                                                                                   |
+| danger_fe           | tc_danger_fe         | `false`                  | 危险前端模式，将允许动态修改前端 HTML 内容，建议阅读 readme.md 的 [前端](#前端) 部分                                                 |
 
 - 不支持 `.env` 文件，请直接设置环境变量，使用顺序是 `flag` > `env` > `default`
 - 有几个值不支持环境变量，必须手动操作
@@ -181,6 +182,21 @@ go run main.go -db_tls=/etc/ssl/certs/ca-certificates.crt
 - 照常 `go build`
 
 嵌入式前端启用后，API 路径自动添加前缀 `/api`，同时 response header 不再含有 `Access-Control-Allow-Origin`
+
+### 动态内容
+
+部分前端信息可以被动态替换，此功能只能在 [嵌入式前端](#嵌入式前端) 中使用，默认值都是 `""`（空字符串）
+
+| option name        | danger? | description                                                                                                                                                                                                                   |
+| :----------------- | :------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| icp                |         | 备案号，显示在页面右下角                                                                                                                                                                                                      |
+| system_url         |         | 网站地址，目前没什么用                                                                                                                                                                                                        |
+| system_name        |         | 网站名称，用于替换页面左上角的网站名称以及标签页信息                                                                                                                                                                          |
+| system_keywords    |         | 网站关键词                                                                                                                                                                                                                    |
+| system_description |         | 网站简介                                                                                                                                                                                                                      |
+| footer             | ✅       | 自定义底部信息，支持 HTML（包括 `<script>` 和 `<style>` 标签），[不保证内容安全](https://vuejs.org/guide/best-practices/security.html#rule-no-1-never-use-non-trusted-templates)，需要后端启用 `danger=true`/`tc_danger=true` |
+| go_favicon         |         | 替换默认的网站图标，文件类型必须是 `image/x-icon`                                                                                                                                                                             |
+| go_robots_txt      |         | 替换默认的 `robots.txt`                                                                                                                                                                                                       |
 
 ## API (WIP)
 
