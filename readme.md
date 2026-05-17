@@ -187,16 +187,16 @@ go run main.go -db_tls=/etc/ssl/certs/ca-certificates.crt
 
 部分前端信息可以被动态替换，此功能只能在 [嵌入式前端](#嵌入式前端) 中使用，默认值都是 `""`（空字符串）
 
-| option name        | danger? | description                                                                                                                                                                                                                   |
-| :----------------- | :------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| icp                |         | 备案号，显示在页面右下角                                                                                                                                                                                                      |
-| system_url         |         | 网站地址，目前没什么用                                                                                                                                                                                                        |
-| system_name        |         | 网站名称，用于替换页面左上角的网站名称以及标签页信息                                                                                                                                                                          |
-| system_keywords    |         | 网站关键词                                                                                                                                                                                                                    |
-| system_description |         | 网站简介                                                                                                                                                                                                                      |
-| footer             | ✅       | 自定义底部信息，支持 HTML（包括 `<script>` 和 `<style>` 标签），[不保证内容安全](https://vuejs.org/guide/best-practices/security.html#rule-no-1-never-use-non-trusted-templates)，需要后端启用 `danger=true`/`tc_danger=true` |
-| go_favicon         |         | 替换默认的网站图标，文件类型必须是 `image/x-icon`                                                                                                                                                                             |
-| go_robots_txt      |         | 替换默认的 `robots.txt`                                                                                                                                                                                                       |
+| option name        | danger? | description                                                                                                                                                                                                                         |
+| :----------------- | :------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| icp                |         | 备案号，显示在页面右下角                                                                                                                                                                                                            |
+| system_url         |         | 网站地址，目前没什么用                                                                                                                                                                                                              |
+| system_name        |         | 网站名称，用于替换页面左上角的网站名称以及标签页信息                                                                                                                                                                                |
+| system_keywords    |         | 网站关键词                                                                                                                                                                                                                          |
+| system_description |         | 网站简介                                                                                                                                                                                                                            |
+| footer             | ✅       | 自定义底部信息，支持 HTML（包括 `<script>` 和 `<style>` 标签），[不保证内容安全](https://vuejs.org/guide/best-practices/security.html#rule-no-1-never-use-non-trusted-templates)，需要后端启用 `danger_fe=true`/`tc_danger_fe=true` |
+| go_favicon         |         | 替换默认的网站图标，文件类型必须是 `image/x-icon`                                                                                                                                                                                   |
+| go_robots_txt      |         | 替换默认的 `robots.txt`                                                                                                                                                                                                             |
 
 ## API (WIP)
 
