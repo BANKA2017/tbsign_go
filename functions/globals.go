@@ -102,9 +102,14 @@ func GetFid(name string) int64 {
 	if !ok || fid == 0 {
 		_fid, _, _ := syncFidTasks.Do(name, func() (any, error) {
 			// find in db
-			var tiebaInfo model.TcTieba
-			GormDB.R.Model(&model.TcTieba{}).Where("tieba = ? AND fid IS NOT NULL AND fid != ''", name).Take(&tiebaInfo)
-			_fid := int64(tiebaInfo.Fid)
+			var fids []int32
+			GormDB.R.Model(&model.TcTieba{}).Where("tieba = ? AND fid IS NOT NULL AND fid != '' AND fid != 0", name).Group("fid").Pluck("fid", &fids)
+
+			var _fid int64
+			if len(fids) == 1 {
+				_fid = int64(fids[0])
+			}
+
 			if _fid == 0 {
 				forumNameInfo, err := GetForumNameShare(name)
 				if err != nil {

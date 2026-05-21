@@ -7,6 +7,7 @@ import (
 
 	"github.com/BANKA2017/tbsign_go/model"
 	"golang.org/x/sync/singleflight"
+	"gorm.io/gorm"
 )
 
 var SyncForumListSf singleflight.Group
@@ -24,11 +25,23 @@ func ScanTiebaByPid(pid int32) {
 		GormDB.R.Model(&model.TcTieba{}).Where("pid = ?", account.ID).Find(&localTiebaList)
 
 		localTiebaFidList := make(map[int32]string, len(localTiebaList))
+		localForumCounter := make(map[string][]int32, len(localTiebaList))
 		pendingDelete := make(map[int32]int32, len(localTiebaList))
 
 		for _, v := range localTiebaList {
 			localTiebaFidList[v.Fid] = v.Tieba
 			pendingDelete[v.Fid] = v.ID
+			localForumCounter[v.Tieba] = append(localForumCounter[v.Tieba], v.Fid)
+		}
+
+		// duplicate forum name
+		var shouldUpdateFid = make(map[int32]struct{})
+		for _, v := range localForumCounter {
+			if len(v) > 1 {
+				for _, id := range v {
+					shouldUpdateFid[id] = struct{}{}
+				}
+			}
 		}
 
 		var pn int64 = 1
@@ -45,6 +58,7 @@ func ScanTiebaByPid(pid int32) {
 				break
 			}
 			var tiebaList []*model.TcTieba
+			var updateList = make(map[int]string)
 			for _, tiebaInfo := range response.LikeForum {
 				if tiebaInfo.ForumID == 0 || tiebaInfo.IsForbidden == 1 {
 					continue
@@ -62,29 +76,50 @@ func ScanTiebaByPid(pid int32) {
 					latest = time.Now().Day()
 				}
 
-				tmpTcTieba := &model.TcTieba{
-					Pid:       pid,
-					Fid:       int32(tiebaInfo.ForumID),
-					UID:       account.UID,
-					Latest:    int32(latest),
-					Tieba:     tiebaInfo.ForumName,
-					Status:    0,
-					LastError: "",
-				}
-
-				if _, ok := localTiebaFidList[int32(tiebaInfo.ForumID)]; !ok {
-					tiebaList = append(tiebaList, tmpTcTieba)
+				localFname, ok := localTiebaFidList[int32(tiebaInfo.ForumID)]
+				if !ok {
+					tiebaList = append(tiebaList, &model.TcTieba{
+						Pid:       pid,
+						Fid:       int32(tiebaInfo.ForumID),
+						UID:       account.UID,
+						Latest:    int32(latest),
+						Tieba:     tiebaInfo.ForumName,
+						Status:    0,
+						LastError: "",
+					})
 					localTiebaFidList[int32(tiebaInfo.ForumID)] = tiebaInfo.ForumName
+				} else if localFname != tiebaInfo.ForumName {
+					updateList[tiebaInfo.ForumID] = tiebaInfo.ForumName
+					slog.Warn("forum name changed1", "fid", tiebaInfo.ForumID, "old", localFname, "new", tiebaInfo.ForumName)
+				} else if _, ok := shouldUpdateFid[int32(tiebaInfo.ForumID)]; ok {
+					updateList[tiebaInfo.ForumID] = tiebaInfo.ForumName
+					delete(shouldUpdateFid, int32(tiebaInfo.ForumID))
+					slog.Warn("forum name changed2", "fid", tiebaInfo.ForumID, "old", localFname, "new", tiebaInfo.ForumName)
 				}
 
 				delete(pendingDelete, int32(tiebaInfo.ForumID))
 			}
-			if len(tiebaList) > 0 {
-				err := GormDB.W.Create(tiebaList).Error
-				if err != nil {
-					slog.Error("update forum list(scanTiebaByPid) failed", "pid", pid, "error", err)
+
+			GormDB.W.Transaction(func(tx *gorm.DB) error {
+				if len(tiebaList) > 0 {
+					err := tx.Create(tiebaList).Error
+					if err != nil {
+						slog.Error("add forum list(scanTiebaByPid) failed", "pid", pid, "error", err)
+						return err
+					}
 				}
-			}
+
+				if len(updateList) > 0 {
+					for k, v := range updateList {
+						err := tx.Model(&model.TcTieba{}).Where("fid = ?", k).Update("tieba", v).Error
+						if err != nil {
+							slog.Error("update forum list(scanTiebaByPid) failed", "pid", pid, "error", err)
+						}
+					}
+				}
+
+				return nil
+			})
 
 			pn++
 			// 20 * 200 -> 4000
@@ -94,6 +129,7 @@ func ScanTiebaByPid(pid int32) {
 			}
 		}
 
+		// delete
 		if GetOption("go_forum_sync_policy") == "add_delete" && len(pendingDelete) > 0 {
 			delList := make([]int32, 0, len(pendingDelete))
 			for _, id := range pendingDelete {
@@ -101,9 +137,21 @@ func ScanTiebaByPid(pid int32) {
 			}
 
 			if len(delList) > 0 {
-				GormDB.W.Delete(&model.TcTieba{}, delList)
+				if err := GormDB.W.Delete(&model.TcTieba{}, delList).Error; err != nil {
+					slog.Error("delete forum list(scanTiebaByPid) failed", "pid", pid, "error", err)
+				}
 			}
 		}
+
+		// no record in duplicated forum name
+		// if len(shouldUpdateFid) > 0 {
+		// 	for k := range shouldUpdateFid {
+		// 		forum := GetFname(int64(k), true)
+		// 		if err := GormDB.W.Model(&model.TcTieba{}).Where("fid = ?", k).Update("tieba", forum).Error; err != nil {
+		// 			slog.Error("update forum list(scanTiebaByPid) failed", "pid", pid, "error", err)
+		// 		}
+		// 	}
+		// }
 
 		return nil, nil
 	})

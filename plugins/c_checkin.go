@@ -115,6 +115,10 @@ func Dosign(_ string, retry bool) (bool, error) {
 			}
 
 			return errors.New("account " + strconv.Itoa(int(task.Pid)) + " login status failed")
+		} else if task.Tieba == "" {
+			slog.Error("no such tieba (checkin.pre-check)", "pid", task.Pid, "fid", task.Fid, "id", task.ID, "today", today)
+
+			return errors.New("no such tieba" + strconv.Itoa(int(task.Fid)))
 		}
 		response, err := _function.PostCheckinClient(ck, task.Tieba, task.Fid)
 
