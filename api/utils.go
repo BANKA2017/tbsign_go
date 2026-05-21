@@ -24,6 +24,8 @@ import (
 
 var RoleList = []string{_function.RoleDeleted, _function.RoleBanned, _function.RoleUser, _function.RoleVIP, _function.RoleAdmin}
 
+var IndependentFEPath = []string{"/robots.txt", "/favicon.ico", "/icp.jsonp", "/site.jsonp"}
+
 func echoRobots(c echo.Context) error {
 	if val := _function.GetOption("go_robots_txt"); val != "" {
 		return c.String(http.StatusOK, val)

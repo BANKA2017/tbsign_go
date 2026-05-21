@@ -5,6 +5,8 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/BANKA2017/tbsign_go/assets"
@@ -212,10 +214,19 @@ func Api(address string) {
 
 			return c.JSONP(200, "__GetConfig", feSettings)
 		})
-		e.GET("/*", echo.WrapHandler(http.FileServer(&_function.StaticFSWrapper{
-			FileSystem:   http.FS(fe),
-			FixedModTime: share.BuildAtTime,
-		})))
+
+		e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+			Filesystem: &_function.StaticFSWrapper{
+				FileSystem:   http.FS(fe),
+				FixedModTime: share.BuildAtTime,
+			},
+			HTML5: true,
+			Skipper: func(c echo.Context) bool {
+				path := c.Path()
+
+				return slices.Contains(IndependentFEPath, path) || path == "/api" || strings.HasPrefix(path, "/api/")
+			},
+		}))
 	}
 
 	e.Logger.Fatal(e.Start(address))

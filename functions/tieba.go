@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/BANKA2017/tbsign_go/model"
-	"golang.org/x/exp/slices"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -24,15 +23,15 @@ func ScanTiebaByPid(pid int32) {
 		var localTiebaList []*model.TcTieba
 		GormDB.R.Model(&model.TcTieba{}).Where("pid = ?", account.ID).Find(&localTiebaList)
 
-		localTiebaFidList := make([]int, len(localTiebaList))
+		localTiebaFidList := make(map[int32]string, len(localTiebaList))
+		pendingDelete := make(map[int32]int32, len(localTiebaList))
 
 		for _, v := range localTiebaList {
-			localTiebaFidList = append(localTiebaFidList, int(v.Fid))
+			localTiebaFidList[v.Fid] = v.Tieba
+			pendingDelete[v.Fid] = v.ID
 		}
 
 		var pn int64 = 1
-
-		var wholeTiebaFidList []int32
 
 		for {
 			//fmt.Println(pid, pn)
@@ -53,7 +52,7 @@ func ScanTiebaByPid(pid int32) {
 				//fmt.Println(tiebaInfo)
 				//合并或被封禁的贴吧会怎样?
 				/// - 被封的现在有 is_forbidden
-				/// - 被合并的暂时没有办法直接判断
+				/// - 被合并的贴吧暂时没有办法直接判断
 
 				/// latest 的数字等于日期，正常从 1 开始
 				/// 0 从未签到过/已重置，-1 已忽略，-2 一键签到中
@@ -73,13 +72,12 @@ func ScanTiebaByPid(pid int32) {
 					LastError: "",
 				}
 
-				if !slices.Contains(localTiebaFidList, tiebaInfo.ForumID) {
+				if _, ok := localTiebaFidList[int32(tiebaInfo.ForumID)]; !ok {
 					tiebaList = append(tiebaList, tmpTcTieba)
-					localTiebaFidList = append(localTiebaFidList, tiebaInfo.ForumID)
+					localTiebaFidList[int32(tiebaInfo.ForumID)] = tiebaInfo.ForumName
 				}
-				if !slices.Contains(wholeTiebaFidList, tmpTcTieba.Fid) {
-					wholeTiebaFidList = append(wholeTiebaFidList, tmpTcTieba.Fid)
-				}
+
+				delete(pendingDelete, int32(tiebaInfo.ForumID))
 			}
 			if len(tiebaList) > 0 {
 				err := GormDB.W.Create(tiebaList).Error
@@ -89,20 +87,19 @@ func ScanTiebaByPid(pid int32) {
 			}
 
 			pn++
-			// 30 * 200 -> 6000
+			// 20 * 200 -> 4000
 			// avoid loop
 			if !response.LikeForumHasMore || pn > 20 {
 				break
 			}
 		}
 
-		if (GetOption("go_forum_sync_policy") == "add_delete" || GetOption("go_forum_sync_policy") == "delete_only") && len(wholeTiebaFidList) != len(localTiebaFidList) {
-			var delList []int32
-			for _, v := range localTiebaList {
-				if !slices.Contains(wholeTiebaFidList, v.Fid) && v.Fid != 0 {
-					delList = append(delList, v.ID)
-				}
+		if GetOption("go_forum_sync_policy") == "add_delete" && len(pendingDelete) > 0 {
+			delList := make([]int32, 0, len(pendingDelete))
+			for _, id := range pendingDelete {
+				delList = append(delList, id)
 			}
+
 			if len(delList) > 0 {
 				GormDB.W.Delete(&model.TcTieba{}, delList)
 			}
