@@ -302,7 +302,7 @@ func (pluginInfo *LotteryPluginPluginType) ImportAccount(uid int32, pid map[int3
 
 	for i := range data2 {
 		if pid, ok := pid[data2[i].Pid]; ok {
-			if fid, ok := pidDateMap[pid]; !ok || !slices.Contains(fid, data2[i].Date) {
+			if timestamp, ok := pidDateMap[pid]; !ok || !slices.Contains(timestamp, data2[i].Date) {
 				data2[i].Pid = pid
 				data2[i].ID = 0
 				data2[i].UID = uid
