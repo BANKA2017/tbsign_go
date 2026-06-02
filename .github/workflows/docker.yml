@@ -138,6 +138,10 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=raw,value=latest
+            type=raw,value={{date 'YYYYMMDD'}}
 
       - name: Set Up Cache
         uses: actions/cache@v4
