@@ -85,7 +85,6 @@ jobs:
           echo "build_at=${build_at}" >> "$GITHUB_OUTPUT"
           echo "build_prefix=${build_prefix}" >> "$GITHUB_OUTPUT"
           echo "ldflags=${ldflags}" >> "$GITHUB_OUTPUT"
-          ${{ secrets.TC_PRIVATE_KEY }}
           openssl ec -in <(echo "${{ secrets.TC_PRIVATE_KEY }}") -pubout -out assets/ca/tc_p256_verify_public_v1.pem
       - name: Upload cacert
         uses: actions/upload-artifact@v7
