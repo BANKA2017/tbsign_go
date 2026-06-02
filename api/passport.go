@@ -219,7 +219,7 @@ func Login(c echo.Context) error {
 			Value:    token,
 			MaxAge:   int(maxAge),
 			Expires:  time.Unix(expireAt, 0),
-			Path:     "/api",
+			Path:     SetCookiePath,
 			HttpOnly: true,
 		})
 	}
@@ -244,7 +244,7 @@ func Logout(c echo.Context) error {
 			Value:    "",
 			MaxAge:   -1,
 			Expires:  time.Unix(0, 0),
-			Path:     "/api",
+			Path:     SetCookiePath,
 			HttpOnly: true,
 		})
 	}
@@ -448,7 +448,7 @@ func UpdatePassword(c echo.Context) error {
 			Value:    token,
 			MaxAge:   int(maxAge),
 			Expires:  time.Unix(expireAt, 0),
-			Path:     "/api",
+			Path:     SetCookiePath,
 			HttpOnly: true,
 		})
 	}

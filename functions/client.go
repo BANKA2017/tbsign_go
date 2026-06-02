@@ -333,7 +333,7 @@ func (tc *Client) SyncZid() (string, error) {
 		return "", errors.New("invalid uuid")
 	}
 
-	now := strconv.Itoa(int(time.Now().Unix()))
+	now := strconv.FormatInt(time.Now().Unix(), 10)
 
 	xyusMD5FinalStr := Md5(Md5(tc.AndroidID+tc.UUID) + "|0")
 

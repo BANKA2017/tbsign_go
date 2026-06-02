@@ -703,7 +703,7 @@ func GetLoginQRCode() (*_type.LoginQRCode, error) {
 }
 
 func GetUnicastResponse(sign string) (*_type.WrapUnicastResponse, error) {
-	callbackName := "tangram_guid_" + strconv.Itoa(int(time.Now().UnixMilli()))
+	callbackName := "tangram_guid_" + strconv.FormatInt(time.Now().UnixMilli(), 10)
 
 	res, err := TBFetch("https://passport.baidu.com/channel/unicast?channel_id="+sign+"&tpl=mn&_sdkFrom=1&callback="+callbackName+"&apiver=v3", http.MethodGet, nil, EmptyHeaders)
 	if err != nil {

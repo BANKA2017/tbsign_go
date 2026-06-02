@@ -77,7 +77,7 @@ func EncryptBaiduIDData() error {
 		}
 		offset += 100
 	}
-	return _function.SetOption("go_encrypt", strconv.Itoa(int(time.Now().Unix())))
+	return _function.SetOption("go_encrypt", strconv.FormatInt(time.Now().Unix(), 10))
 }
 
 func DecryptBaiduIDData() error {

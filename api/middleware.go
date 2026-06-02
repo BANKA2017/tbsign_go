@@ -32,7 +32,7 @@ func SetHeaders(next echo.HandlerFunc) echo.HandlerFunc {
 		if !share.EnableFrontend {
 			c.Response().Header().Set("Access-Control-Allow-Origin", "*")
 			c.Response().Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,PATCH,OPTIONS")
-			c.Response().Header().Set("Access-Control-Allow-Headers", "Authorization")
+			c.Response().Header().Set("Access-Control-Allow-Headers", "Authorization,Content-Type")
 		}
 
 		if c.Request().Method == http.MethodOptions {
@@ -45,6 +45,8 @@ func SetHeaders(next echo.HandlerFunc) echo.HandlerFunc {
 		return next(c)
 	}
 }
+
+const SetCookiePath = "/api"
 
 func AuthCheck(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -59,20 +61,20 @@ func AuthCheck(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		if authorization == "" {
-			authorization = c.Request().Header.Get("Authorization")
+			authorization = strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer ")
 		}
 
 		uid, role := verifyAuthorization(authorization)
 
 		// login
-		if uid == _function.GuestUID || role == _function.RoleGuest {
+		if uid == _function.GuestUID || role == _function.RoleGuest || role == _function.RoleDeleted {
 			if authSource == "cookie" {
 				c.SetCookie(&http.Cookie{
 					Name:     "tc_auth",
 					Value:    "",
 					MaxAge:   -1,
 					Expires:  time.Unix(0, 0),
-					Path:     "/api",
+					Path:     SetCookiePath,
 					HttpOnly: true,
 				})
 			}
@@ -81,9 +83,9 @@ func AuthCheck(next echo.HandlerFunc) echo.HandlerFunc {
 
 		// deleted
 		/// why this check here?
-		if role == _function.RoleDeleted {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "账号已删除", _function.EchoEmptyObject, "tbsign"))
-		}
+		// if role == _function.RoleDeleted {
+		// 	return c.JSON(http.StatusOK, _function.ApiTemplate(404, "账号已删除", _function.EchoEmptyObject, "tbsign"))
+		// }
 
 		// banned
 		if role == _function.RoleBanned {
@@ -109,7 +111,12 @@ func AdminCheck(next echo.HandlerFunc) echo.HandlerFunc {
 
 func PluginPathPrecheck(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		path := strings.TrimPrefix(c.Get("path").(string), "/plugins/")
+		path, ok := c.Get("path").(string)
+		if !ok || !strings.HasPrefix(path, "/plugins/") {
+			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "插件不可用", _function.EchoEmptyObject, "tbsign"))
+		}
+
+		path = strings.TrimPrefix(path, "/plugins/")
 
 		pluginName := strings.SplitN(path, "/", 2)[0]
 
@@ -127,7 +134,7 @@ func RateLimit(_rate int, expiresIn time.Duration) echo.MiddlewareFunc {
 	config := middleware.RateLimiterConfig{
 		Skipper: middleware.DefaultSkipper,
 		Store: middleware.NewRateLimiterMemoryStoreWithConfig(
-			middleware.RateLimiterMemoryStoreConfig{Rate: rate.Limit(_rate), Burst: 0, ExpiresIn: expiresIn},
+			middleware.RateLimiterMemoryStoreConfig{Rate: rate.Limit(_rate), Burst: 1, ExpiresIn: expiresIn},
 		),
 		IdentifierExtractor: func(ctx echo.Context) (string, error) {
 			id := ctx.RealIP()

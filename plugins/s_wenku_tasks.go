@@ -241,7 +241,7 @@ func (m *WenkuTasksPluginVipMatrixIDSet) Import(str string, uid string) error {
 	}
 
 	if len(str) > 1 && strings.HasPrefix(str, "|") && strings.HasSuffix(str, "|") {
-		for _, v := range strings.Split(str[1:len(str)-1], "|") {
+		for v := range strings.SplitSeq(str[1:len(str)-1], "|") {
 			idSet := strings.Split(v, ",")
 			if slices.Contains(idArray, idSet[0]) {
 				m.MatrixIDMap[idSet[0]] = [4]string{idSet[0], idSet[1], idSet[2], uid}

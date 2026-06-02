@@ -68,12 +68,16 @@ func echoFavicon(c echo.Context) (err error) {
 	return c.Blob(http.StatusOK, "image/x-icon", FaviconBinCache)
 }
 
+const authorizationLengthMax = 100
+
 func verifyAuthorization(authorization string) (string, string) {
-	if authorization == "" {
+	authorization = strings.TrimSpace(authorization)
+
+	if authorization == "" || len(authorization) > authorizationLengthMax {
 		return "0", _function.RoleGuest
 	}
 
-	token := strings.Split(strings.TrimSpace(authorization), ":")
+	token := strings.SplitN(authorization, ":", 3)
 	// TODO static target
 	if len(token) != 3 {
 		return "0", _function.RoleGuest
@@ -86,36 +90,34 @@ func verifyAuthorization(authorization string) (string, string) {
 
 	strUID := strconv.Itoa(int(uid))
 
-	expiredAt, _ := strconv.ParseInt(token[2], 10, 64)
-	expiredAtTime := time.Unix(expiredAt, 0)
+	now := time.Now().Unix()
 
-	if time.Now().After(expiredAtTime) {
+	expiredAt, err := strconv.ParseInt(token[2], 10, 64)
+	if err != nil || expiredAt <= now {
 		return "0", _function.RoleGuest
 	}
 
 	savedSessionExpiredAt := GetSessionExpiredAt(strUID)
 
-	if savedSessionExpiredAt <= 0 {
-		return "0", _function.RoleGuest
-	}
-
-	savedSessionExpiredAtTime := time.Unix(savedSessionExpiredAt, 0)
-	if savedSessionExpiredAtTime.After(expiredAtTime) {
+	if savedSessionExpiredAt <= now || savedSessionExpiredAt != expiredAt {
 		return "0", _function.RoleGuest
 	}
 
 	dbPwd := _function.GetPassword(int(uid))
 
-	byteToken, _ := base64.RawURLEncoding.DecodeString(token[1])
+	byteToken, err := base64.RawURLEncoding.DecodeString(token[1])
+	// len(hmac256)==32
+	if err != nil || len(byteToken) != 32 {
+		return "0", _function.RoleGuest
+	}
 
 	if dbPwd != "" {
-		if !hmac.Equal(HmacSessionToken(strUID, dbPwd, strconv.Itoa(int(savedSessionExpiredAt))), byteToken) {
+		if !hmac.Equal(HmacSessionToken(strUID, dbPwd, strconv.FormatInt(savedSessionExpiredAt, 10)), byteToken) {
 			return "0", _function.RoleGuest
 		}
-		var accountInfo []*model.TcUser
-		_function.GormDB.R.Where("id = ?", uid).Limit(1).Find(&accountInfo)
-		if len(accountInfo) == 1 {
-			return strconv.Itoa(int(accountInfo[0].ID)), accountInfo[0].Role
+		var accountInfo model.TcUser
+		if err := _function.GormDB.R.Where("id = ?", uid).First(&accountInfo).Error; err == nil && accountInfo.ID > 0 {
+			return strconv.FormatInt(int64(accountInfo.ID), 10), accountInfo.Role
 		}
 
 		return "0", _function.RoleGuest
@@ -136,7 +138,7 @@ func verifyAuthorization(authorization string) (string, string) {
 // var HttpAuthRefreshTokenMap _function.KV[int, string]
 
 func HmacSessionToken(uid, password, expiredAt string) []byte {
-	return _function.GenHMAC256([]byte(password), []byte(uid+":"+password+":"+expiredAt))
+	return _function.GenHMAC256([]byte(password), []byte(uid+":"+expiredAt))
 }
 
 func tokenBuilder(uid int, password string) (string, int64, int64) {
@@ -151,13 +153,13 @@ func tokenBuilder(uid int, password string) (string, int64, int64) {
 		numberCookieExpire = 30
 	}
 	expiredAt := time.Now().Add(time.Duration(numberCookieExpire) * time.Second).Unix()
-	strExpiredAt := strconv.Itoa(int(expiredAt))
+	strExpiredAt := strconv.FormatInt(expiredAt, 10)
 
 	token := base64.RawURLEncoding.EncodeToString(HmacSessionToken(strconv.Itoa(uid), password, strExpiredAt))
 
 	// HttpAuthRefreshTokenMap.Store(int(uid), token, numberCookieExpire)
 
-	return strconv.Itoa(uid) + ":" + token + ":" + strconv.Itoa(int(expiredAt)), expiredAt, numberCookieExpire
+	return strconv.Itoa(uid) + ":" + token + ":" + strExpiredAt, expiredAt, numberCookieExpire
 }
 
 var ExpiredTimeCache = _function.NewKV(
@@ -177,7 +179,7 @@ func GetSessionExpiredAt(uid string) int64 {
 }
 
 func UpdateSessionExpiredAt(uid string, t int64) (int64, error) {
-	if err := _function.SetUserOption("session_expired_at", strconv.Itoa(int(t)), uid); err != nil {
+	if err := _function.SetUserOption("session_expired_at", strconv.FormatInt(t, 10), uid); err != nil {
 		return 0, err
 	}
 	ExpiredTimeCache.Store(uid, t, int64(ttlcache.DefaultTTL))

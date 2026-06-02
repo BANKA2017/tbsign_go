@@ -601,7 +601,7 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "待封禁 portrait 列表为空!", _function.EchoEmptyObject, "tbsign"))
 	}
 	portraitList := []string{}
-	for _, portrait := range strings.Split(portraits, "\n") {
+	for portrait := range strings.SplitSeq(portraits, "\n") {
 		if strings.HasPrefix(portrait, "tb.1.") {
 			portraitList = append(portraitList, portrait)
 		}
