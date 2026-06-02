@@ -394,8 +394,11 @@ func Upgrade3(binary []byte, metadata string) error {
 	}
 
 	splitMetadata := strings.Split(strings.TrimSpace(metadata), "\n")
-	data := strings.TrimSpace(strings.Join(splitMetadata[0:len(splitMetadata)-1], "\n"))
-	sig, _ := base64.RawURLEncoding.DecodeString(release.Signature)
+	data := strings.Join(splitMetadata[0:len(splitMetadata)-1], "\n") + "\n"
+	sig, err := base64.RawURLEncoding.DecodeString(release.Signature)
+	if err != nil {
+		return errors.New("❌ 解析签名失败")
+	}
 
 	hash := sha256.Sum256([]byte(data))
 	if !ecdsa.VerifyASN1(VerifyPublicKey, hash[:], sig) {
