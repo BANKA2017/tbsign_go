@@ -386,7 +386,7 @@ func PluginForumLikeSwitch(c echo.Context) error {
 
 	if err != nil {
 		slog.Debug("plugin.forum-like.switch", "uid", uid, "current_status", status, "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法修改批量关注贴吧插件状态", status, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "无法修改批量关注贴吧插件状态", status, "tbsign"))
 	}
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", !status, "tbsign"))
 }
@@ -449,11 +449,11 @@ func PluginForumLikeForumListAdd(c echo.Context) error {
 
 	if err := _function.GormDB.R.Model(&model.TcBaiduid{}).Where("uid = ?", uid).Pluck("id", &tiebaAccount).Error; err != nil {
 		slog.Error("plugin.forum-like.list.add.find", "uid", uid, "pid", bindings.Pid, "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyArray, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyArray, "tbsign"))
 	}
 
 	if !slices.Contains(tiebaAccount, int32(bindings.Pid)) {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyArray, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyArray, "tbsign"))
 	}
 
 	numUID, _ := strconv.Atoi(uid)
@@ -464,7 +464,7 @@ func PluginForumLikeForumListAdd(c echo.Context) error {
 	_function.GormDB.R.Model(&model.TcKdForumLike{}).Where("uid = ?", numUID).Count(&userCount)
 
 	if userCount >= int64(numLimit) {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "用户关注数量已达上限", _function.EchoEmptyArray, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "用户关注数量已达上限", _function.EchoEmptyArray, "tbsign"))
 	}
 	remainForumNum := numLimit - int(userCount)
 
@@ -504,7 +504,7 @@ func PluginForumLikeForumListAdd(c echo.Context) error {
 
 	if err := _function.GormDB.W.Create(&dataToInsert).Error; err != nil {
 		slog.Error("plugin.forum-like.list.add.create", "uid", uid, "pid", bindings.Pid, "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyArray, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyArray, "tbsign"))
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", dataToInsert, "tbsign"))
@@ -535,11 +535,11 @@ func PluginForumLikeForumListClone(c echo.Context) error {
 
 	if err := _function.GormDB.R.Model(&model.TcBaiduid{}).Where("uid = ?", uid).Pluck("id", &tiebaAccount).Error; err != nil {
 		slog.Error("plugin.forum-like.list.clone.find", "uid", uid, "pid", bindings.Pid, "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyArray, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyArray, "tbsign"))
 	}
 
 	if !slices.Contains(tiebaAccount, int32(bindings.Pid)) || !slices.Contains(tiebaAccount, int32(bindings.SourcePid)) {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyArray, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyArray, "tbsign"))
 	}
 
 	// forums
@@ -548,7 +548,7 @@ func PluginForumLikeForumListClone(c echo.Context) error {
 	_function.GormDB.R.Model(&model.TcKdForumLike{}).Where("uid = ?", uid).Count(&userCount)
 
 	if userCount >= int64(numLimit) {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "用户关注数量已达上限", _function.EchoEmptyArray, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "用户关注数量已达上限", _function.EchoEmptyArray, "tbsign"))
 	}
 	remainForumNum := numLimit - int(userCount)
 
@@ -608,7 +608,7 @@ func PluginForumLikeForumListClone(c echo.Context) error {
 
 	if err := _function.GormDB.W.Create(&dataToInsert).Error; err != nil {
 		slog.Error("plugin.forum-like.list.clone.create", "uid", uid, "pid", bindings.Pid, "source", bindings.Source, "source-pid", bindings.SourcePid, "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyArray, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyArray, "tbsign"))
 	}
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", dataToInsert, "tbsign"))
 }
@@ -665,7 +665,7 @@ func PluginForumLikeForumListDelete(c echo.Context) error {
 
 	if err != nil {
 		slog.Error("plugin.forum-like.list.delete", "uid", uid, "pid", params.Pid, "tid", params.Tid, "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "error", _function.EchoEmptyArray, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "error", _function.EchoEmptyArray, "tbsign"))
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", affectedRows, "tbsign"))
@@ -707,7 +707,7 @@ func PluginForumLikeForumListDeleteSucceed(c echo.Context) error {
 
 	if err != nil {
 		slog.Error("plugin.forum-like.list.delete-succeed", "uid", uid, "pid", params.Pid, "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "error", _function.EchoEmptyArray, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "error", _function.EchoEmptyArray, "tbsign"))
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", affectedRows, "tbsign"))

@@ -347,7 +347,7 @@ func PluginKnowsLotterySwitch(c echo.Context) error {
 
 	if err != nil {
 		slog.Debug("plugin.knows-lottery.switch", "uid", uid, "current_status", status, "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法修改知道商城抽奖插件状态", status, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "无法修改知道商城抽奖插件状态", status, "tbsign"))
 	}
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", !status, "tbsign"))
 }

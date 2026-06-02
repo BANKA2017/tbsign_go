@@ -116,7 +116,7 @@ func UpgradeSystem(c echo.Context) error {
 		}
 
 		if err != nil {
-			return nil, c.JSON(http.StatusOK, _function.ApiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
+			return nil, c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
 		}
 
 		return nil, ShutdownSystem(c)
@@ -141,16 +141,16 @@ func UpgradeSystem2(c echo.Context) error {
 	_, err, _ := upgradeSF.Do("upgrade", func() (any, error) {
 		metadata, err := readFormFile(c, "metadata")
 		if err != nil {
-			return nil, c.JSON(http.StatusOK, _function.ApiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
+			return nil, c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
 		}
 
 		bin, err := readFormFile(c, "binary")
 		if err != nil {
-			return nil, c.JSON(http.StatusOK, _function.ApiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
+			return nil, c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
 		}
 
 		if err = _function.Upgrade3(bin, string(metadata)); err != nil {
-			return nil, c.JSON(http.StatusOK, _function.ApiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
+			return nil, c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
 		}
 
 		return nil, ShutdownSystem(c)

@@ -852,7 +852,7 @@ func PluginWenkuTasksAddAccount(c echo.Context) error {
 	pid := c.FormValue("pid")
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil || numPid <= 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	day := c.FormValue("day")
@@ -877,7 +877,7 @@ func PluginWenkuTasksAddAccount(c echo.Context) error {
 		if !slices.Contains([]string{"", "0"}, _function.GetUserOption("kd_wenku_tasks_vip_matrix", uid)) {
 			numDay, err := strconv.ParseInt(day, 10, 64)
 			if err != nil || numDay < -1 || numDay > 6 {
-				return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效兑换日", _function.EchoEmptyObject, "tbsign"))
+				return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效兑换日", _function.EchoEmptyObject, "tbsign"))
 			}
 
 			var vipMatrixSet WenkuTasksPluginVipMatrixIDSet
@@ -899,7 +899,7 @@ func PluginWenkuTasksDelAccount(c echo.Context) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	numID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无效任务 id", map[string]any{
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "无效任务 id", map[string]any{
 			"success": false,
 			"id":      id,
 		}, "tbsign"))
@@ -989,7 +989,7 @@ func PluginWenkuTasksGetTasksStatus(c echo.Context) error {
 
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tasksList, "tbsign"))
 	} else {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "账号不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "账号不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 }
 
@@ -1009,10 +1009,10 @@ func PluginWenkuTasksClaim7DaySignVIP(c echo.Context) error {
 
 		if err != nil {
 			slog.Error("7天VIP领取失败 (plugin.wenku-tasks.api.claim-7days-vip)", "pid", pid, "response", res, "error", err)
-			c.JSON(http.StatusOK, _function.ApiTemplate(500, "领取失败", ClaimWenku7DaySignVIPResponse{}, "tbsign"))
+			c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "领取失败", ClaimWenku7DaySignVIPResponse{}, "tbsign"))
 		}
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", res, "tbsign"))
 	} else {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "账号不存在", ClaimWenku7DaySignVIPResponse{}, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "账号不存在", ClaimWenku7DaySignVIPResponse{}, "tbsign"))
 	}
 }

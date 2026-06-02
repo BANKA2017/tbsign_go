@@ -185,7 +185,7 @@ func UpdateAdminSettings(c echo.Context) error {
 
 	bodyMap, err := GetBodyMap(c)
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "无效设置", settings, "tbsign"))
+		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "无效设置", settings, "tbsign"))
 	}
 
 	for _, key := range _function.SettingsFilter {
@@ -245,11 +245,11 @@ func UpdateAdminSettings(c echo.Context) error {
 func ResetAdminSettings(c echo.Context) error {
 	option := c.Param("option")
 	if !slices.Contains(_function.SettingsFilter, option) {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "设置项不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "设置项不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	if err := _function.SetOption(option, assets.DefaultOptions[option]); err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "重置失败", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "重置失败", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// favicon
@@ -272,11 +272,11 @@ func GetPluginSettings(c echo.Context) error {
 	pluginName := c.Param("plugin_name")
 	plugin, ok := _plugin.PluginList[pluginName]
 	if !ok {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "插件不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "插件不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	if !plugin.GetSwitch() {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "插件不可用", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "插件不可用", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	settings := plugin.GetInfo().SettingOptions
@@ -297,11 +297,11 @@ func UpdatePluginSettings(c echo.Context) error {
 	pluginName := c.Param("plugin_name")
 	plugin, ok := _plugin.PluginList[pluginName]
 	if !ok {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "插件不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "插件不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	if !plugin.GetSwitch() {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "插件不可用", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "插件不可用", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	pluginSettings := plugin.GetInfo().SettingOptions
@@ -312,7 +312,7 @@ func UpdatePluginSettings(c echo.Context) error {
 	bodyMap, err := GetBodyMap(c)
 
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "无效设置", settings, "tbsign"))
+		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "无效设置", settings, "tbsign"))
 	}
 
 	for key := range pluginSettings {
@@ -368,24 +368,24 @@ func AdminModifyAccountInfo(c echo.Context) error {
 	targetUID := c.Param("uid")
 
 	if targetUID == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyObject, "tbsign"))
 	} else if uid == targetUID {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无法修改自己的账号", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无法修改自己的账号", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	numTargetUID, err := strconv.ParseInt(targetUID, 10, 64)
 	if err != nil || numTargetUID <= 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// exists?
 	var accountInfo model.TcUser
 	_function.GormDB.R.Model(&model.TcUser{}).Where("id = ?", targetUID).Find(&accountInfo)
 	if accountInfo.ID == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 	if accountInfo.Role == _function.RoleAdmin && uid != _function.OwnerUID {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "只有根管理员允许改变管理员状态", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "只有根管理员允许改变管理员状态", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	var newAccountInfo = accountInfo
@@ -397,12 +397,12 @@ func AdminModifyAccountInfo(c echo.Context) error {
 	// email
 	if newEmail != "" && accountInfo.Email != newEmail {
 		if !_function.VerifyEmail(newEmail) {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效邮箱", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效邮箱", _function.EchoEmptyObject, "tbsign"))
 		} else {
 			var emailExistsCount int64
 			_function.GormDB.R.Model(&model.TcUser{}).Where("email = ?", newEmail).Count(&emailExistsCount)
 			if emailExistsCount > 0 {
-				return c.JSON(http.StatusOK, _function.ApiTemplate(403, "邮箱已存在", _function.EchoEmptyObject, "tbsign"))
+				return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "邮箱已存在", _function.EchoEmptyObject, "tbsign"))
 			} else {
 				newAccountInfo.Email = newEmail
 			}
@@ -416,7 +416,7 @@ func AdminModifyAccountInfo(c echo.Context) error {
 		var nameExistsCount int64
 		_function.GormDB.R.Model(&model.TcUser{}).Where("name = ?", newName).Count(&nameExistsCount)
 		if nameExistsCount > 0 {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "用户名已存在", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "用户名已存在", _function.EchoEmptyObject, "tbsign"))
 		} else {
 			newAccountInfo.Name = newName
 		}
@@ -427,9 +427,9 @@ func AdminModifyAccountInfo(c echo.Context) error {
 	// role
 	if newRole != "" && accountInfo.Role != newRole {
 		if newRole == _function.RoleDeleted {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(400, "请使用 DELETE:/admin/account/:uid 删除用户", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "请使用 DELETE:/admin/account/:uid 删除用户", _function.EchoEmptyObject, "tbsign"))
 		} else if !slices.Contains(RoleList, newRole) {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "新用户组 "+newRole+" 不存在", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "新用户组 "+newRole+" 不存在", _function.EchoEmptyObject, "tbsign"))
 		} else {
 			newAccountInfo.Role = newRole
 		}
@@ -455,22 +455,22 @@ func AdminResetTiebaList(c echo.Context) error {
 	resetFailedOnly := strings.TrimSpace(c.FormValue("failed_only")) != "0"
 
 	if targetUID == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
 
 	numTargetUID, err := strconv.ParseInt(targetUID, 10, 64)
 	if err != nil || numTargetUID <= 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
 
 	// exists?
 	var accountInfo model.TcUser
 	err = _function.GormDB.R.Model(&model.TcUser{}).Where("id = ?", targetUID).Take(&accountInfo).Error
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
 	if accountInfo.Role == _function.RoleAdmin && uid != _function.OwnerUID && uid != targetUID {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "只有根管理员允许改变其他管理员状态", false, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "只有根管理员允许改变其他管理员状态", false, "tbsign"))
 	}
 
 	var PIDCount int64
@@ -498,24 +498,24 @@ func AdminDeleteTiebaAccountList(c echo.Context) error {
 	targetUID := c.Param("uid")
 
 	if targetUID == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	} else if uid == targetUID {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无法修改自己的账号", false, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无法修改自己的账号", false, "tbsign"))
 	}
 
 	numTargetUID, err := strconv.ParseInt(targetUID, 10, 64)
 	if err != nil || numTargetUID <= 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
 
 	// exists?
 	var accountInfo model.TcUser
 	err = _function.GormDB.R.Model(&model.TcUser{}).Where("id = ?", targetUID).Take(&accountInfo).Error
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
 	if accountInfo.Role == _function.RoleAdmin && uid != _function.OwnerUID {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "只有根管理员允许改变管理员状态", false, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "只有根管理员允许改变管理员状态", false, "tbsign"))
 	}
 
 	var PIDCount int64
@@ -537,7 +537,7 @@ func AdminDeleteTiebaAccountList(c echo.Context) error {
 			return err
 		})
 		if err != nil {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(500, fmt.Sprintf("清空用户 %d:%s 的贴吧列表失败 (%s)", accountInfo.ID, accountInfo.Name, err.Error()), false, "tbsign"))
+			return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, fmt.Sprintf("清空用户 %d:%s 的贴吧列表失败 (%s)", accountInfo.ID, accountInfo.Name, err.Error()), false, "tbsign"))
 		}
 
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
@@ -551,13 +551,13 @@ func AdminDeleteAccountToken(c echo.Context) error {
 	targetUID := c.Param("uid")
 
 	if uid == targetUID {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无法踢自己下线", false, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无法踢自己下线", false, "tbsign"))
 	}
 
 	numTargetUID, _ := strconv.ParseInt(targetUID, 10, 64)
 
 	if _, err := DeleteSessionExpiredAt(strconv.Itoa(int(numTargetUID))); err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "令牌错误", false, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "令牌错误", false, "tbsign"))
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
@@ -570,27 +570,27 @@ func AdminResetPassword(c echo.Context) error {
 	var resetCodeResponse _function.VerifyCodeStruct
 
 	if uid == targetUID {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "您已登录，请到首页修改密码", resetCodeResponse, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "您已登录，请到首页修改密码", resetCodeResponse, "tbsign"))
 	}
 	if targetUID == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", resetCodeResponse, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", resetCodeResponse, "tbsign"))
 	} else if uid == targetUID {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无法修改自己的账号", resetCodeResponse, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无法修改自己的账号", resetCodeResponse, "tbsign"))
 	}
 
 	numTargetUID, err := strconv.ParseInt(targetUID, 10, 64)
 	if err != nil || numTargetUID <= 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", resetCodeResponse, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", resetCodeResponse, "tbsign"))
 	}
 
 	// exists?
 	var accountInfo model.TcUser
 	err = _function.GormDB.R.Model(&model.TcUser{}).Where("id = ?", targetUID).Take(&accountInfo).Error
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", resetCodeResponse, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", resetCodeResponse, "tbsign"))
 	}
 	if accountInfo.Role == _function.RoleAdmin && uid != _function.OwnerUID {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "只有根管理员允许改变管理员状态", resetCodeResponse, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "只有根管理员允许改变管理员状态", resetCodeResponse, "tbsign"))
 	}
 
 	resetCodeResponse = *ResetMessageBuilder(int32(numTargetUID), true)
@@ -618,12 +618,12 @@ func GetAccountsList(c echo.Context) error {
 	numPage, err := strconv.ParseInt(page, 10, 64)
 	if err != nil || numPage <= 0 {
 		slog.Debug("admin.account.list", "page", page, "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "Invalid page", respAccountInfo, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "Invalid page", respAccountInfo, "tbsign"))
 	}
 	numCount, err := strconv.ParseInt(count, 10, 64)
 	if err != nil || numCount <= 0 {
 		slog.Debug("admin.account.list", "count", count, "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "Invalid count", respAccountInfo, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "Invalid count", respAccountInfo, "tbsign"))
 	}
 
 	var accountInfoCount int64
@@ -687,24 +687,24 @@ func AdminDeleteAccount(c echo.Context) error {
 	targetUID := c.Param("uid")
 
 	if targetUID == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyObject, "tbsign"))
 	} else if uid == targetUID {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无法删除自己的账号", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无法删除自己的账号", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	numTargetUID, err := strconv.ParseInt(targetUID, 10, 64)
 	if err != nil || numTargetUID <= 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
 
 	// exists?
 	var accountInfo model.TcUser
 	err = _function.GormDB.R.Model(&model.TcUser{}).Where("id = ?", targetUID).Take(&accountInfo).Error
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
 	if accountInfo.Role == _function.RoleAdmin && uid != _function.OwnerUID && uid != targetUID {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "只有根管理员允许改变其他管理员状态", false, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "只有根管理员允许改变其他管理员状态", false, "tbsign"))
 	}
 
 	err = _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
@@ -730,7 +730,7 @@ func AdminDeleteAccount(c echo.Context) error {
 	})
 
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, fmt.Sprintf("删除用户 %d:%s 失败 (%s)", accountInfo.ID, accountInfo.Name, err.Error()), false, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, fmt.Sprintf("删除用户 %d:%s 失败 (%s)", accountInfo.ID, accountInfo.Name, err.Error()), false, "tbsign"))
 	}
 
 	//HttpAuthRefreshTokenMap.Delete(int(accountInfo.ID))
@@ -748,37 +748,37 @@ func AdminResetAccountPlugin(c echo.Context) error {
 	// plugin
 	_pluginInfo, ok := _plugin.PluginList[pluginName]
 	if !ok {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "插件不存在", false, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "插件不存在", false, "tbsign"))
 	}
 
 	if _pluginInfo.GetDBInfo().Ver == "-1" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "插件尚未安装", false, "tbsign"))
+		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "插件尚未安装", false, "tbsign"))
 	}
 
 	// target uid
 	if targetUID == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
 
 	numTargetUID, err := strconv.ParseInt(targetUID, 10, 64)
 	if err != nil || numTargetUID <= 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
 
 	// exists?
 	var accountInfo model.TcUser
 	err = _function.GormDB.R.Model(&model.TcUser{}).Where("id = ?", targetUID).Take(&accountInfo).Error
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) || accountInfo.ID == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
 	if accountInfo.Role == _function.RoleAdmin && uid != _function.OwnerUID && uid != targetUID {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "只有根管理员允许改变其他管理员状态", false, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "只有根管理员允许改变其他管理员状态", false, "tbsign"))
 	}
 
 	err = _pluginInfo.Reset(int32(numTargetUID), 0, 0)
 
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(400, err.Error(), false, "tbsign"))
+		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, err.Error(), false, "tbsign"))
 	} else {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 	}
@@ -789,7 +789,7 @@ func PluginSwitch(c echo.Context) error {
 
 	_pluginInfo, ok := _plugin.PluginList[pluginName]
 	if !ok {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "插件不存在", map[string]any{
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "插件不存在", map[string]any{
 			"name":    pluginName,
 			"exists":  false,
 			"status":  false,
@@ -803,7 +803,7 @@ func PluginSwitch(c echo.Context) error {
 		_pluginInfo.Delete()
 		err := _pluginInfo.Install()
 		if err != nil {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(500, "插件安装失败", map[string]any{
+			return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "插件安装失败", map[string]any{
 				"name":    pluginName,
 				"exists":  false,
 				"status":  false,
@@ -827,7 +827,7 @@ func PluginUninstall(c echo.Context) error {
 
 	_pluginInfo, ok := _plugin.PluginList[pluginName]
 	if !ok {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "插件不存在", map[string]any{
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "插件不存在", map[string]any{
 			"name":    pluginName,
 			"exists":  false,
 			"status":  false,
@@ -836,7 +836,7 @@ func PluginUninstall(c echo.Context) error {
 	}
 
 	if _pluginInfo.GetDBInfo().Ver == "-1" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "插件尚未安装", map[string]any{
+		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "插件尚未安装", map[string]any{
 			"name":    pluginName,
 			"exists":  false,
 			"status":  false,
@@ -847,7 +847,7 @@ func PluginUninstall(c echo.Context) error {
 	err := _pluginInfo.Delete()
 
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(400, err.Error(), _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, err.Error(), _function.EchoEmptyObject, "tbsign"))
 	} else {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
 			"name":    pluginName,
@@ -871,7 +871,7 @@ func SendTestMessage(c echo.Context) error {
 	messageObject := _function.PushMessageTestTemplate()
 	err := _function.SendMessage(messageType, int32(numUID), messageObject.Title, messageObject.Body)
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, err.Error(), false, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, err.Error(), false, "tbsign"))
 	} else {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 	}

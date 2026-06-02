@@ -469,7 +469,7 @@ func PluginLoopBanSwitch(c echo.Context) error {
 
 	if err != nil {
 		slog.Debug("plugin.loop-ban.switch", "uid", uid, "current_status", status, "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法启用循环封禁功能", status, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "无法启用循环封禁功能", status, "tbsign"))
 	}
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", !status, "tbsign"))
 }
@@ -502,7 +502,7 @@ func PluginLoopBanSetReason(c echo.Context) error {
 	err := _function.GormDB.W.Model(&model.TcVer4BanUserset{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcVer4BanUserset{UID: int32(numUID), C: reason}).Error
 	if err != nil {
 		slog.Debug("plugin.loop-ban.set-reason", "uid", uid, "reason", reason, "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法更新封禁理由", map[string]string{
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "无法更新封禁理由", map[string]string{
 			"reason": reason,
 		}, "tbsign"))
 	}
@@ -564,7 +564,7 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// time
@@ -572,33 +572,33 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 	if start != "" {
 		startTime, err = time.Parse(time.DateOnly, start)
 		if err != nil {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "开始日期格式错误", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "开始日期格式错误", _function.EchoEmptyObject, "tbsign"))
 		}
 	}
 
 	endTime, err := time.Parse(time.DateOnly, end)
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "结束日期格式错误", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "结束日期格式错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	if startTime.Unix() >= endTime.Unix() {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "开始时刻晚于结束时刻", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "开始时刻晚于结束时刻", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	if endTime.Unix() < time.Now().Unix() {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "现在时刻晚于结束时刻", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "现在时刻晚于结束时刻", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// pre check
 	var accountInfo model.TcBaiduid
 	_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id = ? AND uid = ?", pid, uid).Take(&accountInfo)
 	if accountInfo.Portrait == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效 pid", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// portrait
 	if portraits == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "待封禁 portrait 列表为空!", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "待封禁 portrait 列表为空!", _function.EchoEmptyObject, "tbsign"))
 	}
 	portraitList := []string{}
 	for portrait := range strings.SplitSeq(portraits, "\n") {
@@ -616,23 +616,23 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 
 	count := len(existsAccountList)
 	if count >= int(numLimit) || count+len(portraitList) > int(numLimit) {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, fmt.Sprintf("添加账号数超限（%d/%s）", count+len(portraitList), limit), _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, fmt.Sprintf("添加账号数超限（%d/%s）", count+len(portraitList), limit), _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// fid
 	fid := _function.GetFid(fname)
 	if fid == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "贴吧不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "贴吧不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// is manager?
 	if _function.GetOption("ver4_ban_break_check") == "0" {
 		managerStatus, err := _function.GetManagerStatus(_function.GetCookie(int32(numPid)).Portrait, fid)
 		if err != nil {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法获取吧务列表", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "无法获取吧务列表", _function.EchoEmptyObject, "tbsign"))
 		}
 		if !managerStatus.IsManager {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "您不是 fname:"+fname+" 的吧务成员", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "您不是 fname:"+fname+" 的吧务成员", _function.EchoEmptyObject, "tbsign"))
 		}
 	}
 
@@ -725,7 +725,7 @@ func PluginLoopBanDelAccount(c echo.Context) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	numID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无效 id", map[string]any{
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "无效 id", map[string]any{
 			"success": false,
 			"id":      id,
 		}, "tbsign"))

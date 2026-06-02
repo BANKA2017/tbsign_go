@@ -15,7 +15,7 @@ func GetUserByTiebaUID(c echo.Context) error {
 
 	if err != nil {
 		slog.Debug("tool.user-tieba-uid", "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", response, "tbsign"))
@@ -28,10 +28,10 @@ func GetUserByUsernameOrPortrait(c echo.Context) error {
 	response, err := _function.GetUserInfoByUsernameOrPortrait(queryType, userValue)
 	if err != nil {
 		slog.Debug("tool.user-username-portrait", "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyObject, "tbsign"))
 	} else if response.No == 1130025 {
 		slog.Debug("tool.user-username-portrait-user-deleted", "response", response)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(response.No, response.Error, _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(response.No, response.Error, _function.EchoEmptyObject, "tbsign"))
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", response, "tbsign"))

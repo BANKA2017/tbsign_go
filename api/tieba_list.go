@@ -19,18 +19,18 @@ func AddTieba(c echo.Context) error {
 	fname := c.FormValue("fname")
 
 	if fname == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "贴吧名无效", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "贴吧名无效", _function.EchoEmptyObject, "tbsign"))
 	}
 	// get tieba info by fname
 	fid := _function.GetFid(fname)
 	if fid == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "\""+fname+"吧\" 不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "\""+fname+"吧\" 不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// pre-check
@@ -99,7 +99,7 @@ func RemoveTieba(c echo.Context) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	response := VerifyFidList(fid)
@@ -124,7 +124,7 @@ func ResetTieba(c echo.Context) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 	response := VerifyFidList(fid)
 
@@ -150,7 +150,7 @@ func IgnoreTieba(c echo.Context) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 	response := VerifyFidList(fid)
 

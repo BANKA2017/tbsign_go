@@ -844,7 +844,7 @@ func PluginGrowthTasksAddAccount(c echo.Context) error {
 	pid := c.FormValue("pid")
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil || numPid <= 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// pre check
@@ -872,7 +872,7 @@ func PluginGrowthTasksDelAccount(c echo.Context) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	numID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无效任务 id", map[string]any{
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "无效任务 id", map[string]any{
 			"success": false,
 			"id":      id,
 		}, "tbsign"))
@@ -913,13 +913,13 @@ func PluginGrowthTasksGetTasksStatus(c echo.Context) error {
 		numPid, _ := strconv.ParseInt(pid, 10, 64)
 		status, err := GetUserGrowthTasksList(_function.GetCookie(int32(numPid)))
 		if err != nil {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(500, "获取任务列表失败", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "获取任务列表失败", _function.EchoEmptyObject, "tbsign"))
 		} else if status.No != 0 {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(500, status.Error, _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, status.Error, _function.EchoEmptyObject, "tbsign"))
 		}
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", status.Data, "tbsign"))
 	} else {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "账号不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "账号不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 }
 

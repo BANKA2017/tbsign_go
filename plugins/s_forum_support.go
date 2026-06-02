@@ -893,7 +893,7 @@ func PluginForumSupportUpdateSettings(c echo.Context) error {
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 
 	if err != nil || numPid <= 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "非法 pid", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "非法 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	var rankList []*model.TcVer4RankLog
@@ -1003,7 +1003,7 @@ func PluginForumSupportSwitch(c echo.Context) error {
 
 	if err != nil {
 		slog.Debug("plugin.forum-support.switch", "uid", uid, "current_status", status, "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法修改名人堂助攻插件状态", status, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "无法修改名人堂助攻插件状态", status, "tbsign"))
 	}
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", !status, "tbsign"))
 }

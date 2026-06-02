@@ -19,7 +19,7 @@ import (
 func GetLoginQRCode(c echo.Context) error {
 	qrcode, err := _function.GetLoginQRCode()
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "获取二维码失败", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "获取二维码失败", _function.EchoEmptyObject, "tbsign"))
 	}
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", qrcode, "tbsign"))
 }
@@ -33,25 +33,25 @@ func GetBDUSS(c echo.Context) error {
 	res, err := _function.GetUnicastResponse(sign)
 
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "获取状态失败", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "获取状态失败", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// tmpBDUSS
 	if res.ChannelV.V == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "未确认", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "未确认", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	res2, err := _function.GetLoginResponse(res.ChannelV.V)
 
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "登录失败", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "登录失败", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	stokenStr := strings.ReplaceAll(res2.Data.Session.StokenList, "&quot;", "\"")
 	var stokenArray []string
 	err = _function.JsonDecode([]byte(stokenStr), &stokenArray)
 	if err != nil || res2.Data.Session.Bduss == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "登录失败", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "登录失败", _function.EchoEmptyObject, "tbsign"))
 	}
 	bduss := res2.Data.Session.Bduss
 
@@ -62,14 +62,14 @@ func GetBDUSS(c echo.Context) error {
 	}
 
 	if stoken, ok := stokenKV["tb"]; !ok || stoken == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "登录失败", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "登录失败", _function.EchoEmptyObject, "tbsign"))
 	}
 	stoken := stokenKV["tb"]
 
 	// get tieba account info
 	baiduAccountInfo, err := _function.GetBaiduUserInfo(&_type.TypeCookie{Bduss: bduss})
 	if err != nil || baiduAccountInfo.User.Portrait == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无法验证登录状态 BDUSS", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "无法验证登录状态 BDUSS", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// pre-check
@@ -116,7 +116,7 @@ func GetBDUSS(c echo.Context) error {
 		bdussNUM := _function.GetOption("bduss_num")
 		numBDUSSLimit, err := strconv.ParseInt(bdussNUM, 10, 64)
 		if err != nil || numBDUSSLimit <= -1 {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无法添加更多账号", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无法添加更多账号", _function.EchoEmptyObject, "tbsign"))
 		}
 
 		if numBDUSSLimit > 0 {
@@ -124,7 +124,7 @@ func GetBDUSS(c echo.Context) error {
 			_function.GormDB.R.Model(&model.TcBaiduid{}).Where("uid = ?", uid).Count(&tiebaAccountsCount)
 
 			if tiebaAccountsCount >= numBDUSSLimit {
-				return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无法添加更多账号", _function.EchoEmptyObject, "tbsign"))
+				return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无法添加更多账号", _function.EchoEmptyObject, "tbsign"))
 			}
 		}
 	}
@@ -151,13 +151,13 @@ func AddTiebaAccount(c echo.Context) error {
 	stoken := strings.TrimSpace(c.FormValue("stoken"))
 
 	if bduss == "" || stoken == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "BDUSS 或 Stoken 无效", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "BDUSS 或 Stoken 无效", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// get tieba account info
 	baiduAccountInfo, err := _function.GetBaiduUserInfo(&_type.TypeCookie{Bduss: bduss})
 	if err != nil || baiduAccountInfo.User.Portrait == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无法验证登录状态 BDUSS", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "无法验证登录状态 BDUSS", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// pre-check
@@ -204,7 +204,7 @@ func AddTiebaAccount(c echo.Context) error {
 		bdussNUM := _function.GetOption("bduss_num")
 		numBDUSSLimit, err := strconv.ParseInt(bdussNUM, 10, 64)
 		if err != nil || numBDUSSLimit <= -1 {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无法添加更多账号", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无法添加更多账号", _function.EchoEmptyObject, "tbsign"))
 		}
 
 		if numBDUSSLimit > 0 {
@@ -212,7 +212,7 @@ func AddTiebaAccount(c echo.Context) error {
 			_function.GormDB.R.Model(&model.TcBaiduid{}).Where("uid = ?", uid).Count(&tiebaAccountsCount)
 
 			if tiebaAccountsCount >= numBDUSSLimit {
-				return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无法添加更多账号", _function.EchoEmptyObject, "tbsign"))
+				return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无法添加更多账号", _function.EchoEmptyObject, "tbsign"))
 			}
 		}
 	}
@@ -237,7 +237,7 @@ func RemoveTiebaAccount(c echo.Context) error {
 	pid := c.Param("pid")
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// fid pid
@@ -245,10 +245,10 @@ func RemoveTiebaAccount(c echo.Context) error {
 	err = _function.GormDB.R.Where("uid = ? AND id = ?", uid, numPid).Find(&tiebaAccount).Error
 
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "Pid 不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "Pid 不存在", _function.EchoEmptyObject, "tbsign"))
 	} else if err != nil {
 		slog.Error("tieba.remove-tieba-account.find", "uid", uid, "pid", pid, "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	err = _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
@@ -269,7 +269,7 @@ func RemoveTiebaAccount(c echo.Context) error {
 
 	if err != nil {
 		slog.Error("tieba.remove-tieba-account.delete", "uid", uid, "pid", pid, "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]int32{
@@ -318,7 +318,7 @@ func GetTiebaAccountItem(c echo.Context) error {
 
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	var tiebaAccount model.TcBaiduid
@@ -335,13 +335,13 @@ func CheckTiebaAccount(c echo.Context) error {
 	pid := c.Param("pid")
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	cookie := _function.GetCookie(int32(numPid), false, true)
 
 	if cookie.ID == 0 || cookie.UID != int32(numUID) || (cookie.ID != 0 && cookie.ID != int32(numPid)) {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", cookie.IsLogin, "tbsign"))
@@ -358,7 +358,7 @@ func CheckIsManager(c echo.Context) error {
 	_function.GormDB.R.Where("id = ? AND uid = ?", pid, uid).Limit(1).Find(&pidCheck)
 
 	if len(pidCheck) == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _type.IsManagerPreCheckResponse{}, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效 pid", _type.IsManagerPreCheckResponse{}, "tbsign"))
 	}
 
 	fid := _function.GetFid(fname)

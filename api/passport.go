@@ -48,7 +48,7 @@ func Signup(c echo.Context) error {
 	// site status
 	isRegistrationEnable := _function.GetOption("enable_reg") == "1"
 	if !isRegistrationEnable {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "注册已关闭", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "注册已关闭", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// form
@@ -58,14 +58,14 @@ func Signup(c echo.Context) error {
 	inviteCode := c.FormValue("invite_code")
 
 	if name == "" || strings.Contains(name, "@") || !_function.VerifyEmail(email) || password == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 用户名/邮箱/密码", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效 用户名/邮箱/密码", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// invite code
 	localInviteCode := _function.GetOption("yr_reg")
 	if localInviteCode != "" {
 		if localInviteCode != inviteCode {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效邀请码", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效邀请码", _function.EchoEmptyObject, "tbsign"))
 		}
 	}
 
@@ -75,12 +75,12 @@ func Signup(c echo.Context) error {
 	var emailOrNameExistsCount int64
 	_function.GormDB.R.Model(&model.TcUser{}).Where("email = ? OR name = ?", email, name).Count(&emailOrNameExistsCount)
 	if emailOrNameExistsCount > 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "用户名或邮箱已注册", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "用户名或邮箱已注册", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	passwordHash, err := _function.CreatePasswordHash(password)
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法建立账号", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "无法建立账号", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	_function.GormDB.W.Create(&model.TcUser{
@@ -105,7 +105,7 @@ func DeleteAccount(c echo.Context) error {
 
 	password := c.FormValue("password")
 	if password == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效密码", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效密码", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	var accountInfo model.TcUser
@@ -114,12 +114,12 @@ func DeleteAccount(c echo.Context) error {
 	// verify password
 	err := _function.VerifyPasswordHash(accountInfo.Pw, password)
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效密码", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效密码", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// find root admin
 	if uid == _function.OwnerUID {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "您不能删除账号，因为您是根管理员", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "您不能删除账号，因为您是根管理员", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// set role -> deleted
@@ -151,7 +151,7 @@ func DeleteAccount(c echo.Context) error {
 	})
 	if err != nil {
 		slog.Error("passport.del-account.delete", "uid", uid, "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "账号删除失败", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "账号删除失败", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// HttpAuthRefreshTokenMap.Delete(int(numUID))
@@ -169,7 +169,7 @@ func Login(c echo.Context) error {
 	password := strings.TrimSpace(c.FormValue("password"))
 
 	if account == "" || password == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// check
@@ -177,7 +177,7 @@ func Login(c echo.Context) error {
 	_function.GormDB.R.Where("name = ? OR email = ?", account, account).Limit(1).Find(&accountInfo)
 
 	if len(accountInfo) == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	dbPwd := accountInfo[0].Pw
@@ -188,17 +188,17 @@ func Login(c echo.Context) error {
 	if err != nil && _function.GetOption("go_ver") != "1" {
 		// Compatible with older versions -> md5(md5(md5($pwd)))
 		if _function.Md5(_function.Md5(_function.Md5(password))) != dbPwd {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(400, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
 		}
 	} else if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	switch accountInfo[0].Role {
 	case _function.RoleBanned:
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号已封禁", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "账号已封禁", _function.EchoEmptyObject, "tbsign"))
 	case _function.RoleDeleted:
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "账号已删除", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "账号已删除", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	token, expireAt, maxAge := tokenBuilder(int(accountInfo[0].ID), dbPwd)
@@ -210,7 +210,7 @@ func Login(c echo.Context) error {
 	}
 
 	if _, err = UpdateSessionExpiredAt(strconv.Itoa(int(accountInfo[0].ID)), expireAt); err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "令牌错误", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "令牌错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	if share.EnableFrontend {
@@ -235,7 +235,7 @@ func Logout(c echo.Context) error {
 	// HttpAuthRefreshTokenMap.Delete(int(numUID))
 
 	if _, err := DeleteSessionExpiredAt(uid); err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "令牌错误", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "令牌错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	if share.EnableFrontend {
@@ -259,7 +259,7 @@ func UpdateAccountInfo(c echo.Context) error {
 	_function.GormDB.R.Where("id = ?", uid).Limit(1).Find(&accountInfo)
 
 	if len(accountInfo) == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "账号不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	username := strings.TrimSpace(c.FormValue("username"))
@@ -277,17 +277,17 @@ func UpdateAccountInfo(c echo.Context) error {
 	if err != nil && _function.GetOption("go_ver") != "1" {
 		// Compatible with older versions
 		if _function.Md5(_function.Md5(_function.Md5(password))) != accountInfo[0].Pw {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "密码错误", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "密码错误", _function.EchoEmptyObject, "tbsign"))
 		}
 	} else if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "密码错误", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "密码错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// TODO use transaction
 	// email
 	if email != "" {
 		if !_function.VerifyEmail(email) {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "邮箱不合法", false, "tbsign"))
+			return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "邮箱不合法", false, "tbsign"))
 		}
 
 		// compare email
@@ -296,7 +296,7 @@ func UpdateAccountInfo(c echo.Context) error {
 			_function.GormDB.R.Model(&model.TcUser{}).Where("email = ?", email).Count(&emailExistsCount)
 
 			if emailExistsCount > 0 {
-				return c.JSON(http.StatusOK, _function.ApiTemplate(403, "邮箱已存在", _function.EchoEmptyObject, "tbsign"))
+				return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "邮箱已存在", _function.EchoEmptyObject, "tbsign"))
 			} else {
 				_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", uid).Update("email", email)
 			}
@@ -313,7 +313,7 @@ func UpdateAccountInfo(c echo.Context) error {
 			_function.GormDB.R.Model(&model.TcUser{}).Where("name = ?", username).Count(&usernameExistsCount)
 
 			if usernameExistsCount > 0 {
-				return c.JSON(http.StatusOK, _function.ApiTemplate(403, "用户名已存在", _function.EchoEmptyObject, "tbsign"))
+				return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "用户名已存在", _function.EchoEmptyObject, "tbsign"))
 			} else {
 				_function.GormDB.W.Model(&model.TcUser{}).Where("id = ?", uid).Update("name", username)
 			}
@@ -401,7 +401,7 @@ func UpdatePassword(c echo.Context) error {
 	newPwd := c.FormValue("new_password")
 
 	if oldPwd == "" || newPwd == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "新/旧密码都不可为空", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "新/旧密码都不可为空", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
@@ -409,7 +409,7 @@ func UpdatePassword(c echo.Context) error {
 	dbPwd := _function.GetPassword(int(numUID))
 
 	if dbPwd == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "账号不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// compare old password
@@ -417,17 +417,17 @@ func UpdatePassword(c echo.Context) error {
 	if err != nil && _function.GetOption("go_ver") != "1" {
 		// Compatible with older versions
 		if _function.Md5(_function.Md5(_function.Md5(oldPwd))) != dbPwd {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "旧密码错误", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "旧密码错误", _function.EchoEmptyObject, "tbsign"))
 		}
 	} else if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "账号或密码错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// create new password
 
 	hash, err := _function.UpdatePassword(int(numUID), newPwd)
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法更新密码...", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "无法更新密码...", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	token, expireAt, maxAge := tokenBuilder(int(numUID), hash)
@@ -439,7 +439,7 @@ func UpdatePassword(c echo.Context) error {
 	}
 
 	if _, err = UpdateSessionExpiredAt(uid, expireAt); err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "令牌错误", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "令牌错误", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	if share.EnableFrontend {
@@ -468,7 +468,7 @@ func GetAccountInfo(c echo.Context) error {
 	// _function.GormDB.R.Where("uid = ?", uid).Find(&accountSettings)
 
 	if len(accountInfo) == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "账号不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	userPushOptions := _function.GetUserOptionBatch(uid, _function.OptionExt{
@@ -589,7 +589,7 @@ func ResetPassword(c echo.Context) error {
 	var accountInfo model.TcUser
 	_function.GormDB.R.Where("name = ? OR email = ?", _account, _account).Find(&accountInfo)
 	if accountInfo.ID == 0 && verifyCode != "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
 	} else if accountInfo.ID == 0 {
 		// defense scan
 		// TODO Implement a delay of several seconds to prevent a side-channel attack.
@@ -599,12 +599,12 @@ func ResetPassword(c echo.Context) error {
 
 	if verifyCode != "" {
 		if len(verifyCode) != resetPasswordVerifyCodeLength {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
+			return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
 		}
 		_v, ok := _function.VerifyCodeList.LoadCode("reset_password", accountInfo.ID)
 
 		if !ok || _v == nil {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
+			return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
 		}
 
 		if _v.TryTime <= _function.ResetPwdMaxTimes {
@@ -613,12 +613,12 @@ func ResetPassword(c echo.Context) error {
 
 			if _v.Value == verifyCode {
 				if newPwd == "" {
-					return c.JSON(http.StatusOK, _function.ApiTemplate(404, "密码不能为空", resMessage, "tbsign"))
+					return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "密码不能为空", resMessage, "tbsign"))
 				} else {
 					// create new password
 					_, err := _function.UpdatePassword(int(accountInfo.ID), newPwd)
 					if err != nil {
-						return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法更新密码...", resMessage, "tbsign"))
+						return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "无法更新密码...", resMessage, "tbsign"))
 					}
 
 					_function.VerifyCodeList.DeleteCode("reset_password", accountInfo.ID)
@@ -627,23 +627,23 @@ func ResetPassword(c echo.Context) error {
 					return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resMessage, "tbsign"))
 				}
 			} else {
-				return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
+				return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
 			}
 		} else {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
+			return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
 		}
 	} else if newPwd != "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "无效验证码", resMessage, "tbsign"))
 	} else {
 		VerifyCode, err := SendResetMessage(accountInfo.ID, "", false)
 		if err != nil {
 			switch err.Error() {
 			case "已超过最大验证次数，请稍后再试":
-				return c.JSON(http.StatusOK, _function.ApiTemplate(429, "已超过最大验证次数，请稍后再试", resMessage, "tbsign"))
+				return c.JSON(http.StatusTooManyRequests, _function.ApiTemplate(429, "已超过最大验证次数，请稍后再试", resMessage, "tbsign"))
 			case "消息发送失败":
-				return c.JSON(http.StatusOK, _function.ApiTemplate(500, "消息发送失败", resMessage, "tbsign"))
+				return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "消息发送失败", resMessage, "tbsign"))
 			case "验证码生成失败，请重试":
-				return c.JSON(http.StatusOK, _function.ApiTemplate(500, "验证码生成失败，请重试", resMessage, "tbsign"))
+				return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "验证码生成失败，请重试", resMessage, "tbsign"))
 			}
 		}
 		resMessage["verify_emoji"] = VerifyCode
@@ -671,12 +671,12 @@ func ExportAccountData(c echo.Context) error {
 
 	// isPureGoMode
 	if _function.GetOption("go_ver") != "1" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "运行在兼容模式下的云签数据不允许导出", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "运行在兼容模式下的云签数据不允许导出", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// allowed?
 	if _function.GetOption("go_export_personal_data") != "1" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "站点管理员已关闭数据导出功能", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "站点管理员已关闭数据导出功能", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	password := c.FormValue("password")
@@ -688,10 +688,10 @@ func ExportAccountData(c echo.Context) error {
 	if dbPwd != "" {
 		err := _function.VerifyPasswordHash(dbPwd, password)
 		if err != nil {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "密码错误", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "密码错误", _function.EchoEmptyObject, "tbsign"))
 		}
 	} else {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "账号不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	var tcTieba []*TcBackupExportStructTcTieba
@@ -761,12 +761,12 @@ func ImportAccountData(c echo.Context) error {
 
 	// isPureGoMode
 	if _function.GetOption("go_ver") != "1" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "运行在兼容模式下的云签数据不允许导入", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "运行在兼容模式下的云签数据不允许导入", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// allowed?
 	if _function.GetOption("go_import_personal_data") != "1" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "站点管理员已关闭数据导入功能", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "站点管理员已关闭数据导入功能", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	password := strings.TrimSpace(c.FormValue("password"))
@@ -778,10 +778,10 @@ func ImportAccountData(c echo.Context) error {
 	if dbPwd != "" {
 		err := _function.VerifyPasswordHash(dbPwd, password)
 		if err != nil {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "密码错误", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "密码错误", _function.EchoEmptyObject, "tbsign"))
 		}
 	} else {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "账号不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "账号不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	backupData := strings.TrimSpace(c.FormValue("data"))
@@ -790,7 +790,7 @@ func ImportAccountData(c echo.Context) error {
 	err := _function.JsonDecode([]byte(backupData), &decodedData)
 	if err != nil {
 		slog.Error("passport.import-account-data.decode", "uid", uid, "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "备份数据读取失败", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "备份数据读取失败", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
@@ -917,7 +917,7 @@ func ImportAccountData(c echo.Context) error {
 
 	if err != nil {
 		slog.Error("passport.import-account-data.import1", "uid", uid, "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "备份数据导入失败", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "备份数据导入失败", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	if len(newTcTiebaWithoutAccount) > 0 {
@@ -946,7 +946,7 @@ func ImportAccountData(c echo.Context) error {
 		if len(newTcTiebaWithoutAccountToInsert) > 0 {
 			if err := _function.GormDB.W.Create(&newTcTiebaWithoutAccountToInsert).Error; err != nil {
 				slog.Error("passport.import-account-data.import2", "uid", uid, "error", err)
-				return c.JSON(http.StatusOK, _function.ApiTemplate(500, "部分贴吧列表导入失败", _function.EchoEmptyObject, "tbsign"))
+				return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "部分贴吧列表导入失败", _function.EchoEmptyObject, "tbsign"))
 			}
 		}
 	}
@@ -1010,23 +1010,23 @@ func ResetAccountPlugin(c echo.Context) error {
 	// plugin
 	_pluginInfo, ok := _plugin.PluginList[pluginName]
 	if !ok {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "插件不存在", false, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "插件不存在", false, "tbsign"))
 	}
 
 	if _pluginInfo.GetDBInfo().Ver == "-1" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "插件不存在", false, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "插件不存在", false, "tbsign"))
 	}
 
 	numUID, err := strconv.ParseInt(uid, 10, 64)
 	if numUID <= 0 || err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", false, "tbsign"))
 	}
 
 	err = _pluginInfo.Reset(int32(numUID), int32(params.Pid), int32(params.Tid))
 
 	if err != nil {
 		slog.Error("passport.reset-account-plugin", "uid", uid, "plugin_name", _pluginInfo.GetInfo().Name, "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, _pluginInfo.GetInfo().Name+" 插件重置失败", false, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, _pluginInfo.GetInfo().Name+" 插件重置失败", false, "tbsign"))
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))

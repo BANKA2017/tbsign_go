@@ -78,18 +78,18 @@ func AuthCheck(next echo.HandlerFunc) echo.HandlerFunc {
 					HttpOnly: true,
 				})
 			}
-			return c.JSON(http.StatusOK, _function.ApiTemplate(401, "无效 session", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusUnauthorized, _function.ApiTemplate(401, "无效 session", _function.EchoEmptyObject, "tbsign"))
 		}
 
 		// deleted
 		/// why this check here?
 		// if role == _function.RoleDeleted {
-		// 	return c.JSON(http.StatusOK, _function.ApiTemplate(404, "账号已删除", _function.EchoEmptyObject, "tbsign"))
+		// 	return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "账号已删除", _function.EchoEmptyObject, "tbsign"))
 		// }
 
 		// banned
 		if role == _function.RoleBanned {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "受限账号", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "受限账号", _function.EchoEmptyObject, "tbsign"))
 		}
 
 		c.Set("uid", uid)
@@ -103,7 +103,7 @@ func AdminCheck(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// admin
 		if role, ok := c.Get("role").(string); !ok || role != _function.RoleAdmin {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效用户组", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效用户组", _function.EchoEmptyObject, "tbsign"))
 		}
 		return next(c)
 	}
@@ -113,7 +113,7 @@ func PluginPathPrecheck(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		path, ok := c.Get("path").(string)
 		if !ok || !strings.HasPrefix(path, "/plugins/") {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "插件不可用", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "插件不可用", _function.EchoEmptyObject, "tbsign"))
 		}
 
 		path = strings.TrimPrefix(path, "/plugins/")
@@ -123,7 +123,7 @@ func PluginPathPrecheck(next echo.HandlerFunc) echo.HandlerFunc {
 		_pluginInfo, ok := _plugin.PluginList[pluginName]
 
 		if !ok || !_pluginInfo.GetSwitch() {
-			return c.JSON(http.StatusOK, _function.ApiTemplate(404, "插件不可用", _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "插件不可用", _function.EchoEmptyObject, "tbsign"))
 		}
 
 		return next(c)

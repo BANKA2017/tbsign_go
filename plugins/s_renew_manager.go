@@ -559,7 +559,7 @@ func PluginRenewManagerSwitch(c echo.Context) error {
 
 	if err != nil {
 		slog.Debug("plugin.renew-manager.switch", "uid", uid, "current_status", status, "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无法启用吧主考核功能", status, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "无法启用吧主考核功能", status, "tbsign"))
 	}
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", !status, "tbsign"))
 }
@@ -612,7 +612,7 @@ func PluginRenewManagerUpdateSettings(c echo.Context) error {
 
 	if err != nil {
 		slog.Error("plugin.renew-manager.update_settings", "uid", uid, "report_status", reportStatus, "action_interval", interval, "error", err)
-		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "设置保存失败", PluginRenewManagerUpdateSettingsResponseStruct{}, "tbsign"))
+		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "设置保存失败", PluginRenewManagerUpdateSettingsResponseStruct{}, "tbsign"))
 	}
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", PluginRenewManagerUpdateSettingsResponseStruct{
 		ReportSwitch:   reportStatus,
@@ -639,38 +639,38 @@ func PluginRenewManagerAddAccount(c echo.Context) error {
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	numTid, err := strconv.ParseInt(tid, 10, 64)
 
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 tid", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效 tid", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// pre check
 	var accountInfo model.TcBaiduid
 	_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id = ? AND uid = ?", pid, uid).Take(&accountInfo)
 	if accountInfo.Portrait == "" {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "无效 pid", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "无效 pid", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// fid
 	fid := _function.GetFid(fname)
 	if fid == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(404, "贴吧不存在", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "贴吧不存在", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	var existsList []*model.TcKdRenewManager
 	_function.GormDB.R.Model(&model.TcKdRenewManager{}).Where("uid = ? AND pid = ? AND fid = ?", uid, pid, fid).Limit(1).Find(&existsList)
 	if len(existsList) > 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(400, "重复任务", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "重复任务", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// is manager? && end time
 	managerTaskStatus, err := _function.GetManagerTasks(_function.GetCookie(int32(numPid)), fid)
 	if err != nil || managerTaskStatus.No != 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无效用户", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "无效用户", _function.EchoEmptyObject, "tbsign"))
 	}
 	end := managerTaskStatus.Data.BawuTask.EndTime
 
@@ -689,7 +689,7 @@ func PluginRenewManagerAddAccount(c echo.Context) error {
 	}).Error
 
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "添加失败", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "添加失败", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	var renewerTasks []*model.TcKdRenewManager
@@ -698,7 +698,7 @@ func PluginRenewManagerAddAccount(c echo.Context) error {
 	if len(renewerTasks) == 1 {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", (renewerTasks)[0], "tbsign"))
 	} else {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "查询出错", _function.EchoEmptyObject, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "查询出错", _function.EchoEmptyObject, "tbsign"))
 	}
 }
 
@@ -710,7 +710,7 @@ func PluginRenewManagerDelAccount(c echo.Context) error {
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	numID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, "无效 id", map[string]any{
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "无效 id", map[string]any{
 			"success": false,
 			"id":      id,
 		}, "tbsign"))
@@ -750,7 +750,7 @@ func PluginRenewManagerPreCheckStatus(c echo.Context) error {
 	_function.GormDB.R.Where("id = ? AND uid = ?", pid, uid).Limit(1).Find(&pidCheck)
 
 	if len(pidCheck) == 0 {
-		return c.JSON(http.StatusOK, _function.ApiTemplate(403, "无效 pid", _type.BawuTask{}, "tbsign"))
+		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效 pid", _type.BawuTask{}, "tbsign"))
 	}
 
 	fid := _function.GetFid(fname)
@@ -770,7 +770,7 @@ func PluginRenewManagerPreCheckStatus(c echo.Context) error {
 			errStr = "未知错误"
 		}
 
-		return c.JSON(http.StatusOK, _function.ApiTemplate(500, errStr, _type.BawuTask{}, "tbsign"))
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, errStr, _type.BawuTask{}, "tbsign"))
 	} else {
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp.Data.BawuTask, "tbsign"))
 	}
