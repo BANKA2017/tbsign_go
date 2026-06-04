@@ -26,17 +26,17 @@ func EncryptBaiduIDData() error {
 	// baidu user
 	var baiduID []*model.TcBaiduid
 	for {
-		_function.GormDB.R.Model(&model.TcBaiduid{}).Select("id", "bduss", "stoken").Offset(offset).Limit(100).Find(&baiduID)
+		_function.GormDB.R.Model(&model.TcBaiduid{}).Select("id", "bduss", "stoken", "portrait").Offset(offset).Limit(100).Find(&baiduID)
 		if len(baiduID) <= 0 {
 			break
 		}
 
 		err := _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
 			for _, baiduIDItem := range baiduID {
-				encryptedBDUSS, _ := _function.AES256GCMEncrypt(baiduIDItem.Bduss, share.DataEncryptKeyByte)
+				encryptedBDUSS, _ := _function.AES256GCMEncrypt(baiduIDItem.Bduss, share.DataEncryptKeyByte, []byte(baiduIDItem.Portrait))
 				baiduIDItem.Bduss = _function.Base64URLEncode(encryptedBDUSS)
 
-				encryptedStoken, _ := _function.AES256GCMEncrypt(baiduIDItem.Stoken, share.DataEncryptKeyByte)
+				encryptedStoken, _ := _function.AES256GCMEncrypt(baiduIDItem.Stoken, share.DataEncryptKeyByte, []byte(baiduIDItem.Portrait))
 				baiduIDItem.Stoken = _function.Base64URLEncode(encryptedStoken)
 
 				if err := tx.Model(&model.TcBaiduid{}).Select("bduss", "stoken").Where("id = ?", baiduIDItem.ID).Updates(&baiduIDItem).Error; err != nil {
@@ -63,7 +63,7 @@ func EncryptBaiduIDData() error {
 
 		err := _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
 			for _, userOption := range userOptions {
-				encryptedUserOptionValue, _ := _function.AES256GCMEncrypt(userOption.Value, share.DataEncryptKeyByte)
+				encryptedUserOptionValue, _ := _function.AES256GCMEncrypt(userOption.Value, share.DataEncryptKeyByte, []byte(strconv.FormatInt(int64(userOption.UID), 10)+":"+userOption.Name))
 				userOption.Value = _function.Base64URLEncode(encryptedUserOptionValue)
 
 				if err := tx.Model(&model.TcUsersOption{}).Where("uid = ? AND name = ?", userOption.UID, userOption.Name).Update("value", userOption.Value).Error; err != nil {
@@ -94,16 +94,16 @@ func DecryptBaiduIDData() error {
 	// baidu user
 	var baiduID []*model.TcBaiduid
 	for {
-		_function.GormDB.R.Model(&model.TcBaiduid{}).Select("id", "bduss", "stoken").Offset(offset).Limit(100).Find(&baiduID)
+		_function.GormDB.R.Model(&model.TcBaiduid{}).Select("id", "bduss", "stoken", "portrait").Offset(offset).Limit(100).Find(&baiduID)
 		if len(baiduID) <= 0 {
 			break
 		}
 		err := _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
 			for _, baiduIDItem := range baiduID {
-				decryptedBDUSS, _ := _function.AES256GCMDecrypt(strings.ReplaceAll(baiduIDItem.Bduss, "=", ""), share.DataEncryptKeyByte)
+				decryptedBDUSS, _ := _function.AES256GCMDecrypt(strings.ReplaceAll(baiduIDItem.Bduss, "=", ""), share.DataEncryptKeyByte, []byte(baiduIDItem.Portrait))
 				baiduIDItem.Bduss = string(decryptedBDUSS)
 
-				decryptedStoken, _ := _function.AES256GCMDecrypt(strings.ReplaceAll(baiduIDItem.Stoken, "=", ""), share.DataEncryptKeyByte)
+				decryptedStoken, _ := _function.AES256GCMDecrypt(strings.ReplaceAll(baiduIDItem.Stoken, "=", ""), share.DataEncryptKeyByte, []byte(baiduIDItem.Portrait))
 				baiduIDItem.Stoken = string(decryptedStoken)
 
 				if err := tx.Model(&model.TcBaiduid{}).Select("bduss", "stoken").Where("id = ?", baiduIDItem.ID).Updates(&baiduIDItem).Error; err != nil {
@@ -129,7 +129,7 @@ func DecryptBaiduIDData() error {
 
 		err := _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
 			for _, userOption := range userOptions {
-				decryptedUserOptionValue, _ := _function.AES256GCMDecrypt(userOption.Value, share.DataEncryptKeyByte)
+				decryptedUserOptionValue, _ := _function.AES256GCMDecrypt(userOption.Value, share.DataEncryptKeyByte, []byte(strconv.FormatInt(int64(userOption.UID), 10)+":"+userOption.Name))
 				userOption.Value = string(decryptedUserOptionValue)
 
 				if err := tx.Model(&model.TcUsersOption{}).Where("uid = ? AND name = ?", userOption.UID, userOption.Name).Update("value", userOption.Value).Error; err != nil {

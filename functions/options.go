@@ -95,7 +95,7 @@ func GetUserOption(keyName string, uid string, ext ...OptionExt) string {
 	if len(ext) > 0 {
 		if ext[0].EncryptKey != nil {
 			if len(*ext[0].EncryptKey) == 32 && tmpUserOption.Value != "" {
-				newDecryptedValue, err := AES256GCMDecrypt(tmpUserOption.Value, *ext[0].EncryptKey)
+				newDecryptedValue, err := AES256GCMDecrypt(tmpUserOption.Value, *ext[0].EncryptKey, []byte(uid+":"+keyName))
 				if err == nil && newDecryptedValue != nil {
 					tmpUserOption.Value = string(newDecryptedValue)
 				}
@@ -131,7 +131,7 @@ func GetUserOptionBatch(uid string, keyOptions ...OptionExt) map[string]string {
 		if ext, ok := keys[option.Name]; ok {
 			if ext.EncryptKey != nil {
 				if len(*ext.EncryptKey) == 32 && option.Value != "" {
-					newDecryptedValue, err := AES256GCMDecrypt(option.Value, *ext.EncryptKey)
+					newDecryptedValue, err := AES256GCMDecrypt(option.Value, *ext.EncryptKey, []byte(uid+":"+option.Name))
 					if err == nil && newDecryptedValue != nil {
 						option.Value = string(newDecryptedValue)
 					}
@@ -166,7 +166,7 @@ func SetUserOption[T ~string | ~bool | ~int](keyName string, value T, uid string
 		}
 
 		if ext[0].EncryptKey != nil {
-			newEncryptedValue, err := AES256GCMEncrypt(newValue, *ext[0].EncryptKey)
+			newEncryptedValue, err := AES256GCMEncrypt(newValue, *ext[0].EncryptKey, []byte(uid+":"+keyName))
 			if err == nil && newEncryptedValue != nil {
 				newValue = Base64URLEncode(newEncryptedValue)
 			}

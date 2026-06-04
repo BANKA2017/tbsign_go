@@ -704,16 +704,16 @@ func ExportAccountData(c echo.Context) error {
 
 	if len(share.DataEncryptKeyByte) > 0 {
 		for _, tcBaiduidItem := range tcBaiduid {
-			decryptedBDUSS, _ := _function.AES256GCMDecrypt(tcBaiduidItem.Bduss, share.DataEncryptKeyByte)
+			decryptedBDUSS, _ := _function.AES256GCMDecrypt(tcBaiduidItem.Bduss, share.DataEncryptKeyByte, []byte(tcBaiduidItem.Portrait))
 			tcBaiduidItem.Bduss = string(decryptedBDUSS)
 
-			decryptedStoken, _ := _function.AES256GCMDecrypt(tcBaiduidItem.Stoken, share.DataEncryptKeyByte)
+			decryptedStoken, _ := _function.AES256GCMDecrypt(tcBaiduidItem.Stoken, share.DataEncryptKeyByte, []byte(tcBaiduidItem.Portrait))
 			tcBaiduidItem.Stoken = string(decryptedStoken)
 		}
 
 		for _, tcUsersOptionItem := range tcUsersOption {
 			if slices.Contains([]string{"go_pushdeer_key", "go_bark_key", "go_ntfy_topic"}, tcUsersOptionItem.Name) {
-				decryptedValue, _ := _function.AES256GCMDecrypt([]byte(tcUsersOptionItem.Value), share.DataEncryptKeyByte)
+				decryptedValue, _ := _function.AES256GCMDecrypt([]byte(tcUsersOptionItem.Value), share.DataEncryptKeyByte, []byte(strconv.FormatInt(int64(tcUsersOptionItem.UID), 10)+":"+tcUsersOptionItem.Name))
 				tcUsersOptionItem.Value = string(decryptedValue)
 			}
 		}
@@ -844,10 +844,10 @@ func ImportAccountData(c echo.Context) error {
 				break
 			}
 			if len(share.DataEncryptKeyByte) > 0 {
-				encryptedBDUSS, _ := _function.AES256GCMEncrypt(importBaiduidItem.Bduss, share.DataEncryptKeyByte)
+				encryptedBDUSS, _ := _function.AES256GCMEncrypt(importBaiduidItem.Bduss, share.DataEncryptKeyByte, []byte(importBaiduidItem.Portrait))
 				importBaiduidItem.Bduss = _function.Base64URLEncode(encryptedBDUSS)
 
-				encryptedStoken, _ := _function.AES256GCMEncrypt(importBaiduidItem.Stoken, share.DataEncryptKeyByte)
+				encryptedStoken, _ := _function.AES256GCMEncrypt(importBaiduidItem.Stoken, share.DataEncryptKeyByte, []byte(importBaiduidItem.Portrait))
 				importBaiduidItem.Stoken = _function.Base64URLEncode(encryptedStoken)
 			}
 

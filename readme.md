@@ -377,9 +377,9 @@ docker run -d --restart unless-stopped -v ./db:/app/tbsign/db -p 8080:1323 ghcr.
 
 ### 手动更新
 
-从 <还没发版，暂无版本号> 版本起，支持用户自行上传受支持的更新文件和校验文件用于更新
+从 [tbsign_go.20260602.26708db.ceaddd9](https://github.com/BANKA2017/tbsign_go/releases/tag/tbsign_go.20260602.26708db.ceaddd9) 版本起，支持用户自行上传受支持的更新文件和校验文件用于更新
 
-打包者需要自行使用 P-256 ECC 生成密钥对，并将公钥以 PEM 格式保存 `~/assets/ca/tc_p256_verify_public_v1.pem`，生成 assets 清单的 yml 文件后使用私钥进行签名，并且添加到 yml 文件的最后一行，具体操作参考 `~/.github/workflows/build-native.yml`
+打包者需要自行使用 P-256 ECC 生成密钥对，并将公钥以 PEM 格式保存到 `~/assets/ca/tc_p256_verify_public_v1.pem`，生成 assets 清单的 yaml 文件后使用私钥进行签名，并且添加到 yaml 文件的最后一行，具体操作参考 `~/.github/workflows/build-native.yml`
 
 因为每个打包者的私钥不可能相同，所以不同来源的 tbsign_go 无法相互手动更新
 

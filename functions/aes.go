@@ -3,11 +3,12 @@ package _function
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"errors"
 )
 
 // GCM Encryption/Decryption
-func AES256GCMEncrypt[T string | []byte](plaintext T, key []byte) ([]byte, error) {
-	strByte := []byte{}
+func AES256GCMEncrypt[T string | []byte](plaintext T, key, aad []byte) ([]byte, error) {
+	var strByte []byte
 	var err error
 
 	switch any(plaintext).(type) {
@@ -29,13 +30,13 @@ func AES256GCMEncrypt[T string | []byte](plaintext T, key []byte) ([]byte, error
 		return nil, err
 	}
 
-	ciphertext := gcm.Seal(nil, nonce, strByte, nil)
+	ciphertext := gcm.Seal(nil, nonce, strByte, aad)
 
 	return append(nonce, ciphertext...), nil
 }
 
-func AES256GCMDecrypt[T string | []byte](ciphertext T, key []byte) ([]byte, error) {
-	strByte := []byte{}
+func AES256GCMDecrypt[T string | []byte](ciphertext T, key, aad []byte) ([]byte, error) {
+	var strByte []byte
 	var err error
 
 	switch any(ciphertext).(type) {
@@ -53,6 +54,10 @@ func AES256GCMDecrypt[T string | []byte](ciphertext T, key []byte) ([]byte, erro
 		return nil, err
 	}
 
+	if len(strByte) < 12 {
+		return nil, errors.New("ciphertext too short for nonce")
+	}
+
 	nonce := strByte[:12]
 	strByte = strByte[12:]
 
@@ -61,7 +66,7 @@ func AES256GCMDecrypt[T string | []byte](ciphertext T, key []byte) ([]byte, erro
 		return nil, err
 	}
 
-	plaintext, err := gcm.Open(nil, nonce, strByte, nil)
+	plaintext, err := gcm.Open(nil, nonce, strByte, aad)
 	if err != nil {
 		return nil, err
 	}
