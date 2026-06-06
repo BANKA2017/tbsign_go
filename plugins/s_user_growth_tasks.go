@@ -722,7 +722,7 @@ func (pluginInfo *UserGrowthTasksPluginType) ImportAccount(uid int32, pid map[in
 	}
 
 	if tx == nil {
-		tx = _function.GormDB.R
+		tx = _function.GormDB.W
 	}
 
 	tableName := (&model.TcKdGrowth{}).TableName()

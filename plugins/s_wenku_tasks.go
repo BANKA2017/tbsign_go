@@ -741,7 +741,7 @@ func (pluginInfo *WenkuTasksPluginType) ImportAccount(uid int32, pid map[int32]i
 	}
 
 	if tx == nil {
-		tx = _function.GormDB.R
+		tx = _function.GormDB.W
 	}
 
 	tableName := (&model.TcKdWenkuTask{}).TableName()

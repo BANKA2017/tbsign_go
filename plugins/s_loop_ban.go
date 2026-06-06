@@ -354,7 +354,7 @@ func (pluginInfo *LoopBanPluginType) ImportAccount(uid int32, pid map[int32]int3
 	}
 
 	if tx == nil {
-		tx = _function.GormDB.R
+		tx = _function.GormDB.W
 	}
 
 	tableName := (&model.TcVer4BanList{}).TableName()

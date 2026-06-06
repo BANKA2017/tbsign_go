@@ -368,7 +368,7 @@ func (pluginInfo *RenewManagerType) ImportAccount(uid int32, pid map[int32]int32
 	}
 
 	if tx == nil {
-		tx = _function.GormDB.R
+		tx = _function.GormDB.W
 	}
 
 	tableName := (&model.TcKdRenewManager{}).TableName()

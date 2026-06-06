@@ -276,7 +276,7 @@ func (pluginInfo *LotteryPluginPluginType) ImportAccount(uid int32, pid map[int3
 	}
 
 	if tx == nil {
-		tx = _function.GormDB.R
+		tx = _function.GormDB.W
 	}
 
 	tableName := (&model.TcVer4LotteryLog{}).TableName()
