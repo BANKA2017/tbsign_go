@@ -88,6 +88,8 @@ var ForumLikePluginInfo = _function.VPtr(ForumLikePluginInfoType{
 	},
 })
 
+const _24hrs = 24 * 60 * 60
+
 func (pluginInfo *ForumLikePluginInfoType) Action() {
 	if !pluginInfo.PluginInfo.CheckActive() {
 		return
@@ -119,16 +121,20 @@ func (pluginInfo *ForumLikePluginInfoType) Action() {
 	// 此方案有一个漏洞，如果某个 pid/fname 在表中唯一，可以通过反复删除已完成记录来无视冷却时间
 	// TODO 目前还不支持开关 AND EXISTS (SELECT 1 FROM tc_users_options uo WHERE uo.uid = t.uid AND uo.name = 'kd_forum_like_check' AND uo.value = '1')
 	// TODO maybe fix raw SQL in the future
-	if err := _function.GormDB.R.Raw(`WITH candidate AS (
+	// TODO 1990029 retry
+	if err := _function.GormDB.R.Raw(`WITH
+	success_count AS ( SELECT pid, COUNT(*) AS cnt FROM tc_kd_forum_like WHERE status = 0 AND date >= ? GROUP BY pid),
+	candidate AS (
 	    SELECT t.id, t.pid, t.fname FROM tc_kd_forum_like t
-	    LEFT JOIN (SELECT pid, MAX(date) AS last_pid_time FROM tc_kd_forum_like WHERE date > 0 GROUP BY pid) p ON p.pid = t.pid
-	    LEFT JOIN (SELECT fname, MAX(date) AS last_fname_time FROM tc_kd_forum_like WHERE date > 0 GROUP BY fname) f ON f.fname = t.fname
-	    WHERE t.status = 0 AND t.date = 0 AND (p.last_pid_time IS NULL OR p.last_pid_time <= ?) AND (f.last_fname_time IS NULL OR f.last_fname_time <= ?)
+		LEFT JOIN success_count sc ON sc.pid = t.pid
+	    LEFT JOIN (SELECT pid, MAX(date) AS last_pid_time FROM tc_kd_forum_like WHERE date > ? GROUP BY pid) p ON p.pid = t.pid
+	    LEFT JOIN (SELECT fname, MAX(date) AS last_fname_time FROM tc_kd_forum_like WHERE date > ? GROUP BY fname) f ON f.fname = t.fname
+	    WHERE t.status = 0 AND t.date = 0 AND (p.last_pid_time IS NULL OR p.last_pid_time <= ?) AND (f.last_fname_time IS NULL OR f.last_fname_time <= ?) AND COALESCE(sc.cnt, 0) < 40
 	),
 	pid_ranked AS ( SELECT id, pid, fname, ROW_NUMBER() OVER (PARTITION BY pid ORDER BY id ASC) AS rn_pid FROM candidate),
 	pid_first AS ( SELECT id, pid, fname FROM pid_ranked WHERE rn_pid = 1),
 	fname_ranked AS ( SELECT id, pid, fname, ROW_NUMBER() OVER (PARTITION BY fname ORDER BY id ASC ) AS rn_fname FROM pid_first )
-	SELECT id, pid, fname FROM fname_ranked WHERE rn_fname = 1 ORDER BY id ASC LIMIT ?;`, int(now)-pidCooldownTime, int(now)-fnameCooldownTime, actionTime).Find(&forumTasksList).Error; err != nil {
+	SELECT id, pid, fname FROM fname_ranked WHERE rn_fname = 1 ORDER BY id ASC LIMIT ?;`, now-_24hrs, int(now)-pidCooldownTime, int(now)-fnameCooldownTime, int(now)-pidCooldownTime, int(now)-fnameCooldownTime, actionTime).Find(&forumTasksList).Error; err != nil {
 		slog.Error("plugin.forum-like.action.get-tasks-error", "error", err)
 		return
 	}
@@ -179,6 +185,7 @@ func (pluginInfo *ForumLikePluginInfoType) Action() {
 			// 300003 null（fid 不存在，自增未到达/彻底清除）
 			// 2410003 不合理（fid 非正整数）
 			// 1 用户未登录或登录失败，请更换账号或重试
+			// 1990029 操作频繁，请稍后再试
 
 			errCode, _ := strconv.Atoi(res.ErrorCode)
 			task.Status = int32(errCode)
