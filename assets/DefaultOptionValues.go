@@ -34,6 +34,7 @@ var DefaultOptions = map[string]string{
 	"tb_max":                      "0",
 	"yr_reg":                      "",
 	"go_ver":                      "0",
+	"go_build_date":               "0", // = share.BuildAtTime.Unix()
 	"go_forum_sync_policy":        "add_only",
 	"go_ntfy_addr":                "https://ntfy.sh",
 	"go_bark_addr":                "https://api.day.app",

@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"runtime"
 	"runtime/debug"
+	"strconv"
 	"time"
 
 	"github.com/BANKA2017/tbsign_go/assets"
@@ -40,6 +41,9 @@ func init() {
 	} else {
 		BuildAtTime = t
 	}
+
+	// set default option
+	assets.DefaultOptions["go_build_date"] = strconv.FormatInt(BuildAtTime.Unix(), 10)
 
 	// build runtime
 	if BuildRuntime == "" {
