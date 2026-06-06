@@ -36,7 +36,7 @@ var ForumLikePluginInfo = _function.VPtr(ForumLikePluginInfoType{
 		Version:           "0.1",
 		Options: map[string]string{
 			"kd_forum_like_action_limit":         "50",
-			"kd_forum_like_forum_limit_each_uid": "3000",
+			"kd_forum_like_forum_limit_each_pid": "40",
 			"kd_forum_like_cooldown_time_pid":    "900",
 			"kd_forum_like_cooldown_time_fname":  "900",
 		},
@@ -48,9 +48,16 @@ var ForumLikePluginInfo = _function.VPtr(ForumLikePluginInfoType{
 					Min: _function.VPtr(int64(0)),
 				},
 			},
-			"kd_forum_like_forum_limit_each_uid": {
-				OptionName:   "kd_forum_like_forum_limit_each_uid",
-				OptionNameCN: "用户关注上限",
+			// "kd_forum_like_forum_limit_each_uid": {
+			// 	OptionName:   "kd_forum_like_forum_limit_each_uid",
+			// 	OptionNameCN: "用户关注上限",
+			// 	Validate: &_function.OptionRule{
+			// 		Min: _function.VPtr(int64(0)),
+			// 	},
+			// },
+			"kd_forum_like_forum_limit_each_pid": {
+				OptionName:   "kd_forum_like_forum_limit_each_pid",
+				OptionNameCN: "单个贴吧账号关注上限",
 				Validate: &_function.OptionRule{
 					Min: _function.VPtr(int64(0)),
 				},
@@ -71,8 +78,8 @@ var ForumLikePluginInfo = _function.VPtr(ForumLikePluginInfoType{
 			},
 		},
 		Endpoints: []PluginEndpointStruct{
-			// {Method: http.MethodGet, Path: "switch", Function: PluginForumLikeGetSwitch},
-			// {Method: http.MethodPost, Path: "switch", Function: PluginForumLikeSwitch},
+			{Method: http.MethodGet, Path: "switch", Function: PluginForumLikeGetSwitch},
+			{Method: http.MethodPost, Path: "switch", Function: PluginForumLikeSwitch},
 			{Method: http.MethodGet, Path: "settings", Function: PluginForumLikeForumConfig},
 			// {Method: http.MethodPost, Path: "settings", Function: _function.EchoNoContent},
 			{Method: http.MethodGet, Path: "list", Function: PluginForumLikeForumList},
@@ -87,8 +94,6 @@ var ForumLikePluginInfo = _function.VPtr(ForumLikePluginInfoType{
 		},
 	},
 })
-
-const _24hrs = 24 * 60 * 60
 
 func (pluginInfo *ForumLikePluginInfoType) Action() {
 	if !pluginInfo.PluginInfo.CheckActive() {
@@ -118,10 +123,8 @@ func (pluginInfo *ForumLikePluginInfoType) Action() {
 	// we have to use raw SQL here
 	// 1e6 random forums, select 50 forums one time takes ~2s
 	// 1e5 random forums, select 50 forums one time takes ~1s
-	// 此方案有一个漏洞，如果某个 pid/fname 在表中唯一，可以通过反复删除已完成记录来无视冷却时间
-	// TODO 目前还不支持开关 AND EXISTS (SELECT 1 FROM tc_users_options uo WHERE uo.uid = t.uid AND uo.name = 'kd_forum_like_check' AND uo.value = '1')
-	// TODO maybe fix raw SQL in the future
-	// TODO 1990029 retry
+	// 此方案有一个漏洞，如果某个 pid/fname 在表中唯一，可以通过反复删除已完成记录来无视冷却时间，但实际上无视冷却时间更可能会导致封号，所以不需要修复
+	// TODO maybe fix raw SQL in the future, raw table: tc_kd_forum_like, tc_users_options
 	if err := _function.GormDB.R.Raw(`WITH
 	success_count AS ( SELECT pid, COUNT(*) AS cnt FROM tc_kd_forum_like WHERE status = 0 AND date >= ? GROUP BY pid),
 	candidate AS (
@@ -129,12 +132,12 @@ func (pluginInfo *ForumLikePluginInfoType) Action() {
 		LEFT JOIN success_count sc ON sc.pid = t.pid
 	    LEFT JOIN (SELECT pid, MAX(date) AS last_pid_time FROM tc_kd_forum_like WHERE date > ? GROUP BY pid) p ON p.pid = t.pid
 	    LEFT JOIN (SELECT fname, MAX(date) AS last_fname_time FROM tc_kd_forum_like WHERE date > ? GROUP BY fname) f ON f.fname = t.fname
-	    WHERE t.status = 0 AND t.date = 0 AND (p.last_pid_time IS NULL OR p.last_pid_time <= ?) AND (f.last_fname_time IS NULL OR f.last_fname_time <= ?) AND COALESCE(sc.cnt, 0) < 40
+	    WHERE t.status = 0 AND t.date = 0 AND EXISTS (SELECT 1 FROM tc_users_options uo WHERE uo.uid = t.uid AND uo.name = 'kd_forum_like_check' AND uo.value = '1') AND (p.last_pid_time IS NULL OR p.last_pid_time <= ?) AND (f.last_fname_time IS NULL OR f.last_fname_time <= ?) AND COALESCE(sc.cnt, 0) < 40
 	),
 	pid_ranked AS ( SELECT id, pid, fname, ROW_NUMBER() OVER (PARTITION BY pid ORDER BY id ASC) AS rn_pid FROM candidate),
 	pid_first AS ( SELECT id, pid, fname FROM pid_ranked WHERE rn_pid = 1),
 	fname_ranked AS ( SELECT id, pid, fname, ROW_NUMBER() OVER (PARTITION BY fname ORDER BY id ASC ) AS rn_fname FROM pid_first )
-	SELECT id, pid, fname FROM fname_ranked WHERE rn_fname = 1 ORDER BY id ASC LIMIT ?;`, now-_24hrs, int(now)-pidCooldownTime, int(now)-fnameCooldownTime, int(now)-pidCooldownTime, int(now)-fnameCooldownTime, actionTime).Find(&forumTasksList).Error; err != nil {
+	SELECT id, pid, fname FROM fname_ranked WHERE rn_fname = 1 ORDER BY id ASC LIMIT ?;`, now-24*60*60, int(now)-pidCooldownTime, int(now)-fnameCooldownTime, int(now)-pidCooldownTime, int(now)-fnameCooldownTime, actionTime).Find(&forumTasksList).Error; err != nil {
 		slog.Error("plugin.forum-like.action.get-tasks-error", "error", err)
 		return
 	}
@@ -186,6 +189,7 @@ func (pluginInfo *ForumLikePluginInfoType) Action() {
 			// 2410003 不合理（fid 非正整数）
 			// 1 用户未登录或登录失败，请更换账号或重试
 			// 1990029 操作频繁，请稍后再试
+			// 3250001 您的帐号涉及违规操作，现已被贴吧官方系统封禁，可进行申诉。
 
 			errCode, _ := strconv.Atoi(res.ErrorCode)
 			task.Status = int32(errCode)
@@ -214,7 +218,23 @@ func (pluginInfo *ForumLikePluginInfoType) Action() {
 			}
 		}
 
-		if err := _function.GormDB.W.Model(&model.TcKdForumLike{}).Select("status", "last_error", "date").Where("id = ?", task.ID).Updates(task).Error; err != nil {
+		if err := _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
+			if err := tx.Model(&model.TcKdForumLike{}).Select("status", "last_error", "date").Where("id = ?", task.ID).Updates(task).Error; err != nil {
+				return err
+			}
+
+			if task.Status == 1990029 || task.Status == 3250001 {
+				if err := tx.Model(&model.TcKdForumLike{}).Where("pid = ?", task.Pid).Select("status", "last_error", "date").Updates(&model.TcKdForumLike{
+					Status:    task.Status,
+					LastError: task.LastError,
+					Date:      task.Date,
+				}).Error; err != nil {
+					return err
+				}
+			}
+
+			return nil
+		}); err != nil {
 			slog.Error("plugin.forum-like.action.update-task-error", "pid", task.Pid, "fname", task.Fname, "error", err)
 		}
 
@@ -466,14 +486,14 @@ func PluginForumLikeForumListAdd(c echo.Context) error {
 	numUID, _ := strconv.Atoi(uid)
 
 	// forums
-	numLimit, _ := strconv.Atoi(_function.GetOption("kd_forum_like_forum_limit_each_uid"))
-	var userCount int64
-	_function.GormDB.R.Model(&model.TcKdForumLike{}).Where("uid = ?", numUID).Count(&userCount)
+	numLimit, _ := strconv.Atoi(_function.GetOption("kd_forum_like_forum_limit_each_pid"))
+	var pidCount int64
+	_function.GormDB.R.Model(&model.TcKdForumLike{}).Where("uid = ? AND pid = ?", numUID, bindings.Pid).Count(&pidCount)
 
-	if userCount >= int64(numLimit) {
+	if pidCount >= int64(numLimit) {
 		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "用户关注数量已达上限", _function.EchoEmptyArray, "tbsign"))
 	}
-	remainForumNum := numLimit - int(userCount)
+	remainForumNum := numLimit - int(pidCount)
 
 	fnameList := make(map[string]struct{}, len(bindings.Fname))
 	var dataToInsert []*model.TcKdForumLike
@@ -550,14 +570,14 @@ func PluginForumLikeForumListClone(c echo.Context) error {
 	}
 
 	// forums
-	numLimit, _ := strconv.Atoi(_function.GetOption("kd_forum_like_forum_limit_each_uid"))
-	var userCount int64
-	_function.GormDB.R.Model(&model.TcKdForumLike{}).Where("uid = ?", uid).Count(&userCount)
+	numLimit, _ := strconv.Atoi(_function.GetOption("kd_forum_like_forum_limit_each_pid"))
+	var pidCount int64
+	_function.GormDB.R.Model(&model.TcKdForumLike{}).Where("uid = ? AND pid = ?", uid, bindings.Pid).Count(&pidCount)
 
-	if userCount >= int64(numLimit) {
+	if pidCount >= int64(numLimit) {
 		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "用户关注数量已达上限", _function.EchoEmptyArray, "tbsign"))
 	}
-	remainForumNum := numLimit - int(userCount)
+	remainForumNum := numLimit - int(pidCount)
 
 	var dataToInsert []*model.TcKdForumLike
 
@@ -621,8 +641,7 @@ func PluginForumLikeForumListClone(c echo.Context) error {
 }
 
 func PluginForumLikeForumConfig(c echo.Context) error {
-
-	numLimit, _ := strconv.Atoi(_function.GetOption("kd_forum_like_forum_limit_each_uid"))
+	numLimit, _ := strconv.Atoi(_function.GetOption("kd_forum_like_forum_limit_each_pid"))
 	pidCooldownTime, _ := strconv.Atoi(_function.GetOption("kd_forum_like_cooldown_time_pid"))
 	fnameCooldownTime, _ := strconv.Atoi(_function.GetOption("kd_forum_like_cooldown_time_fname"))
 
