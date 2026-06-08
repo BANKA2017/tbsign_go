@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"slices"
@@ -34,6 +35,8 @@ var ForumLikePluginInfo = _function.VPtr(ForumLikePluginInfoType{
 		PluginNameCNShort: "批量关注",
 		PluginNameFE:      "forum_like",
 		Version:           "0.1",
+		RandomDuration:    true,
+		Test:              true,
 		Options: map[string]string{
 			"kd_forum_like_action_limit":         "50",
 			"kd_forum_like_forum_limit_each_pid": "40",
@@ -64,7 +67,7 @@ var ForumLikePluginInfo = _function.VPtr(ForumLikePluginInfoType{
 			},
 			"kd_forum_like_cooldown_time_pid": {
 				OptionName:   "kd_forum_like_cooldown_time_pid",
-				OptionNameCN: "用户关注间隔 (s)",
+				OptionNameCN: "用户关注间隔 (s) +[1, 300)s",
 				Validate: &_function.OptionRule{
 					Min: _function.VPtr(int64(0)),
 				},
@@ -119,6 +122,9 @@ func (pluginInfo *ForumLikePluginInfoType) Action() {
 	if pidCooldownTime < 1 || fnameCooldownTime < 1 {
 		slog.Warn("plugin.forum-like.action.too-short-cooldown-time", "action_limit", actionTime, "pid_cooldown_time", pidCooldownTime, "fname_cooldown_time", fnameCooldownTime)
 	}
+
+	// TODO remove hard coded
+	pidCooldownTime += rand.Intn(300)
 
 	// we have to use raw SQL here
 	// 1e6 random forums, select 50 forums one time takes ~2s
@@ -239,7 +245,7 @@ func (pluginInfo *ForumLikePluginInfoType) Action() {
 		}
 
 		// force sleep now, maybe can be custom in the future
-		time.Sleep(time.Millisecond * 100)
+		time.Sleep(time.Second * time.Duration(10+rand.Intn(20)))
 	}
 }
 
@@ -302,8 +308,6 @@ func (pluginInfo *ForumLikePluginInfoType) Reset(uid, pid, tid int32) error {
 		"status": 0,
 	}).Error
 }
-
-// backup is not yet supported
 
 func (pluginInfo *ForumLikePluginInfoType) ExportAccount(uid int32, tx *gorm.DB) (map[string]any, error) {
 	if !pluginInfo.GetSwitch() {

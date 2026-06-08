@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	_ "embed"
 	"errors"
 	"flag"
@@ -8,14 +9,17 @@ import (
 	"io/fs"
 	"log/slog"
 	"os"
+	"os/signal"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
 	_api "github.com/BANKA2017/tbsign_go/api"
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/BANKA2017/tbsign_go/share"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/kdnetwork/code-snippet/go/db"
 	"github.com/kdnetwork/code-snippet/go/utils"
 	"gorm.io/gorm/logger"
@@ -317,6 +321,9 @@ func main() {
 		slog.Warn("数据未加密，已恢复使用明文")
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	if share.EnableApi {
 		go _api.Api(share.Address)
 	}
@@ -329,38 +336,97 @@ func main() {
 		time.Sleep(nextMinute.Sub(now))
 	}
 
-	// Interval
-	oneMinuteInterval := time.NewTicker(time.Minute)
-	defer oneMinuteInterval.Stop()
-	fourHoursInterval := time.NewTicker(time.Hour * 4)
-	defer fourHoursInterval.Stop()
-
 	// cron
-	for {
-		select {
-		case <-oneMinuteInterval.C:
-			if share.TestMode {
-				if share.CrontabBypassTimes.Load() > 0 {
-					share.CrontabBypassTimes.Add(-1)
-				} else {
-					continue
-				}
-			}
-			_plugin.DoCheckinAction()
-			_plugin.DoReCheckinAction()
+	s, err := InitCrontab()
+	if err != nil {
+		_function.Fatal("cron", "error", err)
+	}
 
-			// plugins
-			for _, plugin := range _plugin.PluginList {
-				if plugin.GetSwitch() {
-					go plugin.Action()
-				}
-			}
+	// start the scheduler
+	s.Start()
 
-			// daily report
-			_plugin.DailyReportAction()
-		case <-fourHoursInterval.C:
+	defer s.Shutdown()
+
+	<-ctx.Done()
+}
+
+func InitCrontab() (gocron.Scheduler, error) {
+	s, err := gocron.NewScheduler(
+	// gocron.WithLogger(
+	// 	gocron.NewLogger(gocron.LogLevelDebug),
+	// ),
+	)
+	if err != nil {
+		return s, err
+	}
+
+	// self-services
+	if _, err = s.NewJob(
+		gocron.DurationJob(time.Hour*4),
+		gocron.NewTask(func() {
 			_function.InitOptions()
 			_plugin.InitPluginList()
+		}),
+		gocron.WithTags("option"),
+		gocron.WithName("option"),
+	); err != nil {
+		return s, err
+	}
+
+	// test mode
+	var minuteDuration = gocron.DurationJob(time.Minute)
+	if share.TestMode {
+		minuteDuration = gocron.DurationJob(time.Hour * 24 * 99999)
+	}
+
+	// daily report
+	if _, err = s.NewJob(
+		minuteDuration,
+		gocron.NewTask(_plugin.DailyReportAction),
+		gocron.WithTags("report"),
+		gocron.WithName("report"),
+	); err != nil {
+		return s, err
+	}
+
+	// check-in actions
+	if _, err = s.NewJob(
+		minuteDuration,
+		gocron.NewTask(func() {
+			_plugin.DoCheckinAction()
+			_plugin.DoReCheckinAction()
+		}),
+		gocron.WithTags("checkin"),
+		gocron.WithName("checkin"),
+		gocron.WithSingletonMode(gocron.LimitModeReschedule),
+	); err != nil {
+		return s, err
+	}
+
+	// plugins
+	for _, plugin := range _plugin.PluginList {
+		var d gocron.JobDefinition
+		if plugin.GetInfo().RandomDuration {
+			d = gocron.DurationRandomJob(time.Second*50, time.Second*70)
+		} else {
+			d = minuteDuration
+		}
+
+		if _, err = s.NewJob(
+			d,
+			gocron.NewTask(func() {
+				if plugin.GetSwitch() {
+					plugin.Action()
+				}
+			}),
+			gocron.WithTags("plugin", plugin.GetInfo().Name),
+			gocron.WithName("plugin:"+plugin.GetInfo().Name),
+			gocron.WithSingletonMode(gocron.LimitModeReschedule),
+			// gocron.WithIntervalFromCompletion(),
+		); err != nil {
+			return s, err
 		}
 	}
+
+	return s, err
 }

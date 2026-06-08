@@ -40,12 +40,16 @@ type PluginInfo struct {
 	PluginNameFE      string `json:"plugin_name_fe"`
 
 	Version        string
-	Active         bool
 	Options        map[string]string
 	SettingOptions map[string]PluginSettingOption
 	Info           model.TcPlugin
 	Test           bool
 	Endpoints      []PluginEndpointStruct
+
+	// cron
+	Active bool
+	// CronJobID      string
+	RandomDuration bool
 	sync.Mutex
 }
 
