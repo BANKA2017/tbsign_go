@@ -67,7 +67,7 @@ var ForumLikePluginInfo = _function.VPtr(ForumLikePluginInfoType{
 			},
 			"kd_forum_like_cooldown_time_pid": {
 				OptionName:   "kd_forum_like_cooldown_time_pid",
-				OptionNameCN: "用户关注间隔 (s) +[1, 300)s",
+				OptionNameCN: "用户关注间隔 (s) +[0, 300)s",
 				Validate: &_function.OptionRule{
 					Min: _function.VPtr(int64(0)),
 				},

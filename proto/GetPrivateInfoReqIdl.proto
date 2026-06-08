@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+import "CommonReq.proto";
+
+option go_package = ".";
+
+message GetPrivateInfoReqIdl {
+    message ReqData {
+        int64 user_id = 1;
+        CommonReq common = 2;
+    }
+    ReqData data = 1;
+}

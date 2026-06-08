@@ -554,7 +554,7 @@ func GetForumDetail(fid int64) (*tbpb.GetForumDetailResIdl_DataRes, error) {
 		return nil, err
 	}
 
-	resp, err := TBFetch("http://tiebac.baidu.com/c/f/forum/getforumdetail?cmd=303021", http.MethodPost, body, map[string]string{
+	resp, err := TBFetch("https://tiebac.baidu.com/c/f/forum/getforumdetail?cmd=303021", http.MethodPost, body, map[string]string{
 		"Content-Type":   contentType,
 		"x_bd_data_type": "protobuf",
 	})
@@ -618,7 +618,7 @@ func GetUserInfoByTiebaUID(tbuid string) (*tbpb.GetUserByTiebaUidResIdl_DataRes,
 		return nil, err
 	}
 
-	resp, err := TBFetch("http://tiebac.baidu.com/c/u/user/getUserByTiebaUid?cmd=309702", http.MethodPost, body, map[string]string{
+	resp, err := TBFetch("https://tiebac.baidu.com/c/u/user/getUserByTiebaUid?cmd=309702", http.MethodPost, body, map[string]string{
 		"Content-Type":   contentType,
 		"x_bd_data_type": "protobuf",
 	})
@@ -797,7 +797,7 @@ func GetManagerInfo(fid uint64) (*tbpb.GetBawuInfoResIdl_DataRes, error) {
 		return nil, err
 	}
 
-	resp, err := TBFetch("http://tiebac.baidu.com/c/f/forum/getBawuInfo?cmd=301007", http.MethodPost, body, map[string]string{
+	resp, err := TBFetch("https://tiebac.baidu.com/c/f/forum/getBawuInfo?cmd=301007", http.MethodPost, body, map[string]string{
 		"Content-Type":   contentType,
 		"x_bd_data_type": "protobuf",
 	})
@@ -883,4 +883,48 @@ func GetNewPCForumCard(fid int) (*_type.GetNewPCForumCardResponse, error) {
 	var resp = new(_type.GetNewPCForumCardResponse)
 	err = JsonDecode(response, resp)
 	return resp, err
+}
+
+// GetPrivateInfo uid=0 is ok
+func GetPrivateInfo(cookie *_type.TypeCookie, uid uint64) (*tbpb.GetPrivateInfoResIdl_ResData, error) {
+	pbBytes, err := proto.Marshal(&tbpb.GetPrivateInfoReqIdl_ReqData{
+		Common: &tbpb.CommonReq{
+			XClientVersion: ClientVersion,
+		},
+		UserId: int64(uid),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	pbBytesLen := make([]byte, 8)
+	binary.BigEndian.PutUint64(pbBytesLen, uint64(len(pbBytes)))
+
+	body, contentType, err := MultipartBodyBuilder(map[string][]byte{}, MultipartBodyBinaryFileType{
+		Fieldname: "data",
+		Filename:  "file",
+		Binary:    bytes.Join([][]byte{[]byte("\n"), RemoveLeadingZeros(pbBytesLen), pbBytes}, []byte{}),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := TBFetch("https://tiebac.baidu.com/c/u/user/getPrivateInfo?cmd=303016&format=protobuf", http.MethodPost, body, map[string]string{
+		"Content-Type":   contentType,
+		"x_bd_data_type": "protobuf",
+		"Cookie":         "BDUSS=" + cookie.Bduss,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	// fmt.Println(resp, string(resp))
+	var res tbpb.GetPrivateInfoResIdl
+	err = proto.Unmarshal(resp, &res)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.GetData(), nil
 }
