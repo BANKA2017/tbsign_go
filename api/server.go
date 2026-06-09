@@ -264,6 +264,13 @@ type CronJob struct {
 	Running         bool     `json:"running"`
 }
 
+var cronJobOrder = map[string]int{
+	"tc_service": 1,
+	"checkin":    2,
+	"report":     3,
+	"plugin":     4,
+}
+
 func GetCronJobs(c echo.Context) error {
 	var cronJobs = _function.Crontab.Jobs()
 
@@ -301,7 +308,7 @@ func GetCronJobs(c echo.Context) error {
 			return a.Tags[1] < b.Tags[1]
 		}
 
-		return true
+		return cronJobOrder[a.Tags[0]] < cronJobOrder[b.Tags[0]]
 	})
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", CronJobList, "tbsign"))
