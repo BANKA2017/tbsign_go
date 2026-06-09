@@ -353,9 +353,6 @@ jobs:
           mv docker/${build_prefix}.linux-arm64 docker/tbsign_go.linux-arm64
           mv docker/${build_prefix}.linux-amd64 docker/tbsign_go.linux-amd64
 
-      # - name: Set Date Tag
-      #   run: echo "DATE_TAG=$(date +'%Y%m%d')" >> "$GITHUB_ENV"
-
       - name: Set Up QEMU
         uses: docker/setup-qemu-action@v4
 
@@ -378,6 +375,8 @@ jobs:
             type=ref,event=branch
             type=raw,value=latest
             type=raw,value={{date 'YYYYMMDD'}}
+            type=raw,value=release,enable=${{ !inputs.prerelease }}
+            type=raw,value=prerelease,enable=${{ inputs.prerelease }}
 
       - name: Buildx
         uses: docker/build-push-action@v7

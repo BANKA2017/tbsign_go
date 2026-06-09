@@ -234,9 +234,6 @@ jobs:
         with:
           pattern: tbsign_go.musl.*.docker
 
-      # - name: Set Date Tag
-      #   run: echo "DATE_TAG=$(date +'%Y%m%d')" >> "$GITHUB_ENV"
-
       - name: Set Up QEMU
         uses: docker/setup-qemu-action@v3
 
