@@ -167,10 +167,9 @@ func Api(address string) {
 	}
 	admin.POST("/server/shutdown", ShutdownSystem)
 
-	if share.TestMode {
-		hooks := admin.Group("/server/hooks")
-		hooks.POST("/test/add-cron-time", HookAddCronTime)
-	}
+	// cron
+	admin.GET("/server/cron", GetCronJobs)
+	admin.POST("/server/cron/:id/run", RunCronJob)
 
 	// tools
 	api.GET("/tools/userinfo/tieba_uid/:tiebauid", GetUserByTiebaUID)

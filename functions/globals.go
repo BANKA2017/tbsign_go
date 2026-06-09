@@ -14,6 +14,7 @@ import (
 	"github.com/BANKA2017/tbsign_go/model"
 	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/jellydator/ttlcache/v3"
 	"golang.org/x/mod/semver"
 	"golang.org/x/sync/singleflight"
@@ -228,3 +229,5 @@ func Base64URLEncode(originalBuffer []byte) string {
 func Base64URLDecode(originalBuffer string) ([]byte, error) {
 	return base64.RawURLEncoding.DecodeString(strings.ReplaceAll(originalBuffer, "=", ""))
 }
+
+var Crontab gocron.Scheduler

@@ -337,15 +337,15 @@ func main() {
 	}
 
 	// cron
-	s, err := InitCrontab()
+	_function.Crontab, err = InitCrontab()
 	if err != nil {
 		_function.Fatal("cron", "error", err)
 	}
 
 	// start the scheduler
-	s.Start()
+	_function.Crontab.Start()
 
-	defer s.Shutdown()
+	defer _function.Crontab.Shutdown()
 
 	<-ctx.Done()
 }
@@ -367,8 +367,8 @@ func InitCrontab() (gocron.Scheduler, error) {
 			_function.InitOptions()
 			_plugin.InitPluginList()
 		}),
-		gocron.WithTags("option"),
-		gocron.WithName("option"),
+		gocron.WithTags("tc_service"),
+		gocron.WithName("内部服务"),
 	); err != nil {
 		return s, err
 	}
@@ -384,7 +384,7 @@ func InitCrontab() (gocron.Scheduler, error) {
 		minuteDuration,
 		gocron.NewTask(_plugin.DailyReportAction),
 		gocron.WithTags("report"),
-		gocron.WithName("report"),
+		gocron.WithName("签到报告"),
 	); err != nil {
 		return s, err
 	}
@@ -397,7 +397,7 @@ func InitCrontab() (gocron.Scheduler, error) {
 			_plugin.DoReCheckinAction()
 		}),
 		gocron.WithTags("checkin"),
-		gocron.WithName("checkin"),
+		gocron.WithName("签到任务"),
 		gocron.WithSingletonMode(gocron.LimitModeReschedule),
 	); err != nil {
 		return s, err
@@ -406,7 +406,7 @@ func InitCrontab() (gocron.Scheduler, error) {
 	// plugins
 	for _, plugin := range _plugin.PluginList {
 		var d gocron.JobDefinition
-		if plugin.GetInfo().RandomDuration {
+		if plugin.GetInfo().RandomDuration && !share.TestMode {
 			d = gocron.DurationRandomJob(time.Second*50, time.Second*70)
 		} else {
 			d = minuteDuration
@@ -419,8 +419,8 @@ func InitCrontab() (gocron.Scheduler, error) {
 					plugin.Action()
 				}
 			}),
-			gocron.WithTags("plugin", plugin.GetInfo().Name),
-			gocron.WithName("plugin:"+plugin.GetInfo().Name),
+			gocron.WithTags("plugin", "plugin:"+plugin.GetInfo().Name),
+			gocron.WithName("插件:"+plugin.GetInfo().PluginNameCN),
 			gocron.WithSingletonMode(gocron.LimitModeReschedule),
 			// gocron.WithIntervalFromCompletion(),
 		); err != nil {

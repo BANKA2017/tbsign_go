@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"net/http"
 	"os"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -17,6 +19,7 @@ import (
 	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/kdnetwork/code-snippet/go/db"
+	"github.com/kdnetwork/code-snippet/go/utils"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/sync/singleflight"
 )
@@ -249,4 +252,74 @@ func GetLoginPageConfig(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
+}
+
+type CronJob struct {
+	ID              string   `json:"id"`
+	Name            string   `json:"name"`
+	Tags            []string `json:"tags"`
+	LastStartAt     int64    `json:"last_start_at"`
+	LastCompletedAt int64    `json:"last_completed_at"`
+	NextTime        int64    `json:"next_time"`
+	Running         bool     `json:"running"`
+}
+
+func GetCronJobs(c echo.Context) error {
+	var cronJobs = _function.Crontab.Jobs()
+
+	var CronJobList = make([]CronJob, 0, len(cronJobs))
+
+	for _, job := range cronJobs {
+		lastStart, _ := job.LastRunStartedAt()
+		lastCompleted, _ := job.LastRunCompletedAt()
+		nextTime, _ := job.NextRun()
+		running, _ := job.IsRunning()
+
+		CronJobList = append(CronJobList, CronJob{
+			ID:              job.ID().String(),
+			Name:            job.Name(),
+			Tags:            job.Tags(),
+			LastStartAt:     utils.Clamp(lastStart.Unix(), -1, math.MaxInt64),
+			LastCompletedAt: utils.Clamp(lastCompleted.Unix(), -1, math.MaxInt64),
+			NextTime:        utils.Clamp(nextTime.Unix(), -1, math.MaxInt64),
+			Running:         running,
+		})
+	}
+
+	sort.Slice(CronJobList, func(i, j int) bool {
+		a := CronJobList[i]
+		b := CronJobList[j]
+
+		aMulti := len(CronJobList[i].Tags) >= 2
+		bMulti := len(CronJobList[j].Tags) >= 2
+
+		if aMulti != bMulti {
+			return bMulti
+		}
+
+		if aMulti {
+			return a.Tags[1] < b.Tags[1]
+		}
+
+		return true
+	})
+
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", CronJobList, "tbsign"))
+}
+
+func RunCronJob(c echo.Context) error {
+	jobID := c.Param("id")
+
+	jobs := _function.Crontab.Jobs()
+	for _, job := range jobs {
+		if job.ID().String() == jobID {
+			if err := job.RunNow(); err != nil {
+				slog.Error("failed to run cron job", "id", jobID, "error", err)
+				return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, err.Error(), false, "tbsign"))
+			}
+			return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
+		}
+	}
+
+	return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "Cron job not found", false, "tbsign"))
 }
