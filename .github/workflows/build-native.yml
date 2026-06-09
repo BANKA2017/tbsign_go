@@ -166,6 +166,7 @@ jobs:
           commit_hash: ${{ env.commit_hash }}
           frontend_hash: ${{ env.fe_commit_hash }}
           publish_type: binary
+          prerelease: ${{ inputs.prerelease }}
           version: ${{ env.build_prefix }}
           sha256:
             linux_arm64: ${{ env.linux_arm64_sha256 }}
