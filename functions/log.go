@@ -10,11 +10,12 @@ import (
 	"github.com/BANKA2017/tbsign_go/share"
 )
 
-var SlogLevel = slog.LevelInfo // slog.LevelDebug, slog.LevelInfo, slog.LevelWarn, slog.LevelError
+var SlogLevel slog.LevelVar
 
 func InitDefaultLogger() {
+	SlogLevel.Set(slog.LevelInfo) // slog.LevelDebug, slog.LevelInfo, slog.LevelWarn, slog.LevelError
 	handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-		Level:     SlogLevel,
+		Level:     &SlogLevel,
 		AddSource: true,
 	})
 

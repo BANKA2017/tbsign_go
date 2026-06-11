@@ -145,15 +145,13 @@ func main() {
 	// slogLevel := slog.LevelError
 	if share.TestMode {
 		logLevel = logger.Info
-		_function.SlogLevel = slog.LevelDebug
+		_function.SlogLevel.Set(slog.LevelDebug)
 	}
 
 	/// client
 	/// DO NOT EXEC _function.InitClient BEFORE READING FLAGS AND ENV!!!!!
 	_function.DefaultClient = _function.InitClient(30 * time.Minute)
 	_function.TBClient = _function.InitClient(10 * time.Second)
-
-	_function.InitDefaultLogger()
 
 	// connect to db
 	dbExists := true
