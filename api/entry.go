@@ -31,7 +31,7 @@ func Api(address string) {
 		HandleError:  true, // forwards error to the global error handler, so it can decide appropriate status code
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
 			if v.Error == nil {
-				if v.Status == http.StatusOK && v.RoutePath == "/*" && _function.TelemetryActive.Load() {
+				if v.Status == http.StatusOK && v.RoutePath == "/*" {
 					return nil
 				}
 				slog.Debug("echo.request",
