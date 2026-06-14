@@ -164,7 +164,7 @@ Response
 
 ===========================
 
-`, _url, _method, _body, _headers, resp.StatusCode, resp.Header, strResponse)
+`, _url, _method, _body, req.Header, resp.StatusCode, resp.Header, strResponse)
 	}
 
 	return response, err
