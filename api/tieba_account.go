@@ -149,9 +149,22 @@ func AddTiebaAccount(c echo.Context) error {
 
 	bduss := strings.TrimSpace(c.FormValue("bduss"))
 	stoken := strings.TrimSpace(c.FormValue("stoken"))
+	cookie := strings.TrimSpace(c.FormValue("cookie"))
 
 	if bduss == "" || stoken == "" {
-		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "BDUSS 或 Stoken 无效", _function.EchoEmptyObject, "tbsign"))
+		// try to parse cookie
+		if cookie != "" {
+			parsedCookie := _function.ParseCookie(cookie)
+
+			bduss = parsedCookie["BDUSS"]
+			stoken = parsedCookie["STOKEN"]
+
+			if bduss == "" || stoken == "" {
+				return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "Cookie 无效", _function.EchoEmptyObject, "tbsign"))
+			}
+		} else {
+			return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "BDUSS 或 Stoken 无效", _function.EchoEmptyObject, "tbsign"))
+		}
 	}
 
 	// get tieba account info

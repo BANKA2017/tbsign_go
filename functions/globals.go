@@ -96,6 +96,28 @@ func GetCookie(pid int32, ext ...bool) *_type.TypeCookie {
 	return cookie
 }
 
+// by ChatGPT
+func ParseCookie(cookie string) map[string]string {
+	result := make(map[string]string)
+
+	parts := strings.SplitSeq(cookie, ";")
+	for part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+
+		kv := strings.SplitN(part, "=", 2)
+		if len(kv) != 2 {
+			continue
+		}
+
+		result[kv[0]] = kv[1]
+	}
+
+	return result
+}
+
 var syncFidTasks singleflight.Group
 
 func GetFid(name string) int64 {
