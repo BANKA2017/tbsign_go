@@ -33,6 +33,7 @@ type PluginListContent struct {
 	Name   string `json:"name"`
 	Ver    string `json:"ver"`
 	Status bool   `json:"status"`
+	Test   bool   `json:"test,omitempty"`
 
 	PluginNameCN      string `json:"plugin_name_cn"`
 	PluginNameCNShort string `json:"plugin_name_cn_short"`
@@ -87,11 +88,10 @@ func GetServerStatus(c echo.Context) error {
 			"publish_type":                  share.BuildPublishType,
 			"cgo":                           _function.When(db.CgoEnabled, "1", "0"),
 			"vcs.modified":                  _function.When(share.BuildDirty, "1", "0"),
-			// "vcs":                           vcs,
+			// "vcs": vcs,
 		},
 		"upgrade": map[string]any{
 			"api_base":     share.ReleaseApiBase,
-			"asset_base":   _function.ReleaseFilesPath,
 			"allow_upload": _function.VerifyPublicKey != nil,
 		},
 		"cron_sign_again": _function.GetOption("cron_sign_again"),
@@ -110,19 +110,22 @@ var upgradeSF singleflight.Group
 func UpgradeSystem(c echo.Context) error {
 	_, err, _ := upgradeSF.Do("upgrade", func() (any, error) {
 		version := c.FormValue("version")
-		var err error
+		autoRestart := utils.StrBoolT(c.FormValue("auto_restart"))
 
-		if _function.GetOption("go_next_upgrade_func") == "1" {
-			err = _function.Upgrade2("tbsign_go." + strings.TrimSpace(version))
-		} else {
-			err = _function.Upgrade(strings.TrimSpace(version))
-		}
+		uCtx, err := _function.Upgrade2("tbsign_go." + strings.TrimSpace(version))
 
 		if err != nil {
-			return nil, c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
+			return nil, c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, err.Error(), false, "tbsign"))
 		}
 
-		return nil, ShutdownSystem(c)
+		go func() {
+			slog.Info("system.shutdown")
+			<-time.After(time.Second)
+			uCtx.Save(autoRestart)
+			os.Exit(1)
+		}()
+
+		return nil, c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 	})
 	return err
 }
@@ -144,19 +147,30 @@ func UpgradeSystem2(c echo.Context) error {
 	_, err, _ := upgradeSF.Do("upgrade", func() (any, error) {
 		metadata, err := readFormFile(c, "metadata")
 		if err != nil {
-			return nil, c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
+			return nil, c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, err.Error(), false, "tbsign"))
 		}
 
 		bin, err := readFormFile(c, "binary")
 		if err != nil {
-			return nil, c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
+			return nil, c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, err.Error(), false, "tbsign"))
 		}
 
-		if err = _function.Upgrade3(bin, string(metadata)); err != nil {
-			return nil, c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, err.Error(), map[string]any{}, "tbsign"))
+		autoRestart := utils.StrBoolT(c.FormValue("auto_restart"))
+
+		uCtx, err := _function.Upgrade3(bin, string(metadata))
+
+		if err != nil {
+			return nil, c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, err.Error(), false, "tbsign"))
 		}
 
-		return nil, ShutdownSystem(c)
+		go func() {
+			slog.Info("system.shutdown2")
+			<-time.After(time.Second)
+			uCtx.Save(autoRestart)
+			os.Exit(1)
+		}()
+
+		return nil, c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 	})
 	return err
 }
@@ -167,7 +181,7 @@ func ShutdownSystem(c echo.Context) error {
 		defer os.Exit(1)
 		<-time.After(time.Second)
 	}()
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{}, "tbsign"))
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", _function.EchoEmptyObject, "tbsign"))
 }
 
 func GetPluginsList(c echo.Context) error {
@@ -186,6 +200,7 @@ func GetPluginsList(c echo.Context) error {
 			Name:   value.Name,
 			Ver:    value.Info.Ver,
 			Status: status,
+			Test:   value.Test,
 
 			PluginNameCN:      value.PluginNameCN,
 			PluginNameCNShort: value.PluginNameCNShort,
@@ -238,13 +253,13 @@ func GetLoginPageConfig(c echo.Context) error {
 	enabledInviteCode := len(_function.GetOption("yr_reg")) > 0
 
 	var resp = struct {
-		EnabedEmail               bool   `json:"enabled_email"`
+		EnabledEmail              bool   `json:"enabled_email"`
 		EnabledInviteCode         bool   `json:"enabled_invite_code"`
 		EnabledSignup             bool   `json:"enabled_signup"`
 		ClosedRegistrationMessage string `json:"closed_registration_message"`
 		SystemURL                 string `json:"system_url"`
 	}{
-		EnabedEmail:               enabledEmail,
+		EnabledEmail:              enabledEmail,
 		EnabledInviteCode:         enabledInviteCode,
 		EnabledSignup:             enabledSignup,
 		ClosedRegistrationMessage: closedCRegistrationMessage,

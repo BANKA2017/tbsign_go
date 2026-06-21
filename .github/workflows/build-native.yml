@@ -377,7 +377,6 @@ jobs:
             type=raw,value=latest
             type=raw,value={{date 'YYYYMMDD'}}
             type=raw,value=release,enable=${{ !inputs.prerelease }}
-            type=raw,value=prerelease,enable=${{ inputs.prerelease }}
 
       - name: Buildx
         uses: docker/build-push-action@v7

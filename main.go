@@ -100,10 +100,6 @@ func main() {
 
 	flag.Parse()
 
-	if share.ReleaseFilesPath != _function.ReleaseFilesPath {
-		_function.ReleaseFilesPath = share.ReleaseFilesPath
-	}
-
 	if share.DBEndpoint == "127.0.0.1:3306" && tmpHost != "127.0.0.1:3306" {
 		share.DBEndpoint = tmpHost
 	}

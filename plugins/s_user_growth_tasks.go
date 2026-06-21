@@ -101,6 +101,19 @@ type UserGrowthTasksClientResponse struct {
 	} `json:"data"`
 }
 
+type UserGrowthTasksUserTaskInfoWidgetResponse struct {
+	Data struct {
+		UserInfo struct {
+			GrowthValue int `json:"growth_value"`
+			TmoneyValue int `json:"tmoney_value"`
+		} `json:"user_info"`
+		IsLogin int `json:"is_login"`
+	} `json:"data"`
+	ErrorCode int    `json:"error_code"`
+	ErrorMsg  string `json:"error_msg"`
+	Time      int    `json:"time"`
+}
+
 type LevelInfo struct {
 	Level          int    `json:"level"`
 	Name           string `json:"name"`
@@ -238,7 +251,8 @@ func PostUserTask(cookie *_type.TypeCookie, task string, taskID int) (*UserGrowt
 	return resp, err
 }
 
-func PostUserTaskInfoWidget(cookie *_type.TypeCookie) (any, error) {
+// error code = 0 is normal
+func PostUserTaskInfoWidget(cookie *_type.TypeCookie) (*UserGrowthTasksUserTaskInfoWidgetResponse, error) {
 	_body := url.Values{
 		"BDUSS":           {cookie.Bduss},
 		"push_switch":     {"1"},
@@ -248,14 +262,16 @@ func PostUserTaskInfoWidget(cookie *_type.TypeCookie) (any, error) {
 	}
 
 	taskInfoResponse, err := _function.TBFetch("https://tiebac.baidu.com/c/f/widget/getUserTaskInfo", http.MethodPost, []byte(_body.Encode()), map[string]string{
-		"User-Agent": "TiebaWidgets/" + UserGrowthTasksPluginClientVersion + " CFNetwork/3826.500.131 Darwin/24.5.0",
+		"User-Agent": "TiebaWidgets/" + UserGrowthTasksPluginClientVersion,
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	return string(taskInfoResponse), err
+	resp := new(UserGrowthTasksUserTaskInfoWidgetResponse)
+	err = _function.JsonDecode(taskInfoResponse, &resp)
+	return resp, err
 }
 
 func PostCollectStamp(cookie *_type.TypeCookie, task_id int) (*UserGrowthTaskCollectStampResponse, error) {
@@ -911,11 +927,11 @@ func PluginGrowthTasksGetTasksStatus(c echo.Context) error {
 
 	if count > 0 {
 		numPid, _ := strconv.ParseInt(pid, 10, 64)
-		status, err := GetUserGrowthTasksList(_function.GetCookie(int32(numPid)))
+		status, err := PostUserTaskInfoWidget(_function.GetCookie(int32(numPid)))
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "获取任务列表失败", _function.EchoEmptyObject, "tbsign"))
-		} else if status.No != 0 {
-			return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, status.Error, _function.EchoEmptyObject, "tbsign"))
+			return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "获取任务状态失败", _function.EchoEmptyObject, "tbsign"))
+		} else if status.ErrorCode != 0 {
+			return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, status.ErrorMsg, _function.EchoEmptyObject, "tbsign"))
 		}
 		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", status.Data, "tbsign"))
 	} else {

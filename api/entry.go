@@ -161,11 +161,14 @@ func Api(address string) {
 
 	/// server
 	admin.GET("/server/status", GetServerStatus)
-	admin.POST("/server/upgrade", UpgradeSystem, RateLimit(1, time.Second*10))
-	if _function.VerifyPublicKey != nil {
-		admin.POST("/server/upgrade/upload", UpgradeSystem2, RateLimit(1, time.Second*10), middleware.BodyLimit("50M"))
+
+	if share.BuildPublishType == "binary" {
+		admin.POST("/server/upgrade", UpgradeSystem, RateLimit(1, time.Second*10))
+		if _function.VerifyPublicKey != nil {
+			admin.POST("/server/upgrade/upload", UpgradeSystem2, RateLimit(1, time.Second*10), middleware.BodyLimit("50M"))
+		}
+		admin.POST("/server/shutdown", ShutdownSystem)
 	}
-	admin.POST("/server/shutdown", ShutdownSystem)
 
 	// cron
 	admin.GET("/server/cron", GetCronJobs)

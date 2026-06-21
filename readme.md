@@ -10,34 +10,34 @@
 
 ## 启动参数
 
-| flag                | env                  | default                  | description                                                                                                                          |
-| :------------------ | :------------------- | :----------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
-| username            | tc_username          |                          | 数据库账号                                                                                                                           |
-| pwd                 | tc_pwd               |                          | 数据库密码                                                                                                                           |
-| ~~endpoint~~        | ~~tc_endpoint~~      | `127.0.0.1:3306`         | 数据库 `host:port` （已废弃）                                                                                                        |
-| host                | tc_host              | `127.0.0.1:3306`         | 数据库 `host:port`                                                                                                                   |
-| db                  | tc_db                | `tbsign`                 | 数据库名称                                                                                                                           |
-| db_tls              | tc_db_tls            | `false`                  | CA 证书的选项，请看 [CA 证书](#ca-证书) 部分                                                                                         |
-| db_path             | tc_db_path           |                          | SQLite 文件目录                                                                                                                      |
-| db_mode             | tc_db_mode           | `mysql`                  | 用于显式指定数据库类型，只用于 PostgreSQL (仅当值为 `pgsql` 或 `postgresql` 时有效，请看 [PostgreSQL](#postgresql) 部分)             |
-| api                 | tc_api               | `false`                  | 是否启动 api                                                                                                                         |
-| fe                  | tc_fe                | `false`                  | 是否启动自带前端，仅当 `api` 为 `true` 时可为 `true`                                                                                 |
-| address             | tc_address           | `:1323`                  | 后端运行地址                                                                                                                         |
-| setup               |                      | `false`                  | 强制安装程序（可能会覆盖现有配置）                                                                                                   |
-| auto_install        | tc_auto_install      | `false`                  | 自动安装（仅当数据库不存在时安装）                                                                                                   |
-| admin_name          | tc_admin_name        |                          | 管理员账号，仅当 `auto_install` 为 `true` 时会用到                                                                                   |
-| admin_email         | tc_admin_email       |                          | 管理员邮箱，仅当 `auto_install` 为 `true` 时会用到                                                                                   |
-| admin_password      | tc_admin_password    |                          | 管理员密码，仅当 `auto_install` 为 `true` 时会用到                                                                                   |
-| no_proxy            |                      | `false`                  | 忽略环境变量中的代理配置                                                                                                             |
-| allow_backup        | tc_allow_backup      | `false`                  | 允许用户批量导出/导入账号和贴吧列表，建议阅读 readme.md 的 [备份](#备份) 部分                                                        |
-| data_encrypt_key    | tc_data_encrypt_key  |                          | 加密部分用户数据的密钥，使用 `base64url` 格式填写，建议阅读 readme.md 的 [加密](#加密) 部分                                          |
-| data_encrypt_action |                      |                          | `encrypt` 或者 `decrypt`，用于加密/解密用户数据，处理完成后会自动退出，默认应当留空                                                  |
-| dns_addr            | tc_dns_addr          |                          | 手动设置 DNS 地址，特殊情况下使用，默认应当留空，建议阅读 readme.md 的 [网络](#网络) 部分                                            |
-|                     | tc_docker_mode       |                          | 当值为 `true`(string) 且 `/.dockerenv` 存在时，激活 docker 模式，默认应当忽略，建议阅读 readme.md 的 [发布类型](#发布类型) 部分      |
-| release_file_base   | tc_release_file_base | `share.ReleaseFilesPath` | 手动安装包的下载地址，特殊情况下使用，默认应当忽略，建议阅读 readme.md 的 [发布地址](#发布地址) 部分                                 |
-| release_api_base    | tc_release_api_base  | `share.ReleaseApiBase`   | GitHub API prefix，用于替换 `https://api.github.com/repos/{owner}/{repo}` （没有尾斜杠），特殊情况下使用，默认应当忽略，目前没有使用 |
-| test                | tc_test              | `false`                  | 测试模式，此模式下不会运行计划任务                                                                                                   |
-| danger_fe           | tc_danger_fe         | `false`                  | 危险前端模式，将允许动态修改前端 HTML 内容，建议阅读 readme.md 的 [前端](#前端) 部分                                                 |
+| flag                  | env                      | default                  | description                                                                                                                                                                |
+| :-------------------- | :----------------------- | :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| username              | tc_username              |                          | 数据库账号                                                                                                                                                                 |
+| pwd                   | tc_pwd                   |                          | 数据库密码                                                                                                                                                                 |
+| ~~endpoint~~          | ~~tc_endpoint~~          | `127.0.0.1:3306`         | （已废弃）数据库 `host:port`                                                                                                                                               |
+| host                  | tc_host                  | `127.0.0.1:3306`         | 数据库 `host:port`                                                                                                                                                         |
+| db                    | tc_db                    | `tbsign`                 | 数据库名称                                                                                                                                                                 |
+| db_tls                | tc_db_tls                | `false`                  | CA 证书的选项，请看 [CA 证书](#ca-证书) 部分                                                                                                                               |
+| db_path               | tc_db_path               |                          | SQLite 文件目录                                                                                                                                                            |
+| db_mode               | tc_db_mode               | `mysql`                  | 用于显式指定数据库类型，只用于 PostgreSQL (仅当值为 `pgsql` 或 `postgresql` 时有效，请看 [PostgreSQL](#postgresql) 部分)                                                   |
+| api                   | tc_api                   | `false`                  | 是否启动 api                                                                                                                                                               |
+| fe                    | tc_fe                    | `false`                  | 是否启动自带前端，仅当 `api` 为 `true` 时可为 `true`                                                                                                                       |
+| address               | tc_address               | `:1323`                  | 后端运行地址                                                                                                                                                               |
+| setup                 |                          | `false`                  | 强制安装程序（可能会覆盖现有配置）                                                                                                                                         |
+| auto_install          | tc_auto_install          | `false`                  | 自动安装（仅当数据库不存在时安装）                                                                                                                                         |
+| admin_name            | tc_admin_name            |                          | 管理员账号，仅当 `auto_install` 为 `true` 时会用到                                                                                                                         |
+| admin_email           | tc_admin_email           |                          | 管理员邮箱，仅当 `auto_install` 为 `true` 时会用到                                                                                                                         |
+| admin_password        | tc_admin_password        |                          | 管理员密码，仅当 `auto_install` 为 `true` 时会用到                                                                                                                         |
+| no_proxy              |                          | `false`                  | 忽略环境变量中的代理配置                                                                                                                                                   |
+| allow_backup          | tc_allow_backup          | `false`                  | 允许用户批量导出/导入账号和贴吧列表，建议阅读 readme.md 的 [备份](#备份) 部分                                                                                              |
+| data_encrypt_key      | tc_data_encrypt_key      |                          | 加密部分用户数据的密钥，使用 `base64url` 格式填写，建议阅读 readme.md 的 [加密](#加密) 部分                                                                                |
+| data_encrypt_action   |                          |                          | `encrypt` 或者 `decrypt`，用于加密/解密用户数据，处理完成后会自动退出，默认应当留空                                                                                        |
+| dns_addr              | tc_dns_addr              |                          | 手动设置 DNS 地址，特殊情况下使用，默认应当留空，建议阅读 readme.md 的 [网络](#网络) 部分                                                                                  |
+|                       | tc_docker_mode           |                          | 当值为 `true`(string) 且 `/.dockerenv` 存在时，激活 docker 模式，默认应当忽略，建议阅读 readme.md 的 [发布类型](#发布类型) 部分                                            |
+| ~~release_file_base~~ | ~~tc_release_file_base~~ | `share.ReleaseFilesPath` | （已废弃）手动安装包的下载地址，特殊情况下使用，默认应当忽略，建议阅读 readme.md 的 [发布地址](#发布地址) 部分                                                             |
+| release_api_base      | tc_release_api_base      | `share.ReleaseApiBase`   | GitHub API prefix，用于替换 `https://api.github.com/repos/{owner}/{repo}` （没有尾斜杠），特殊情况下使用，默认应当忽略，，建议阅读 readme.md 的 [发布地址](#发布地址) 部分 |
+| test                  | tc_test                  | `false`                  | 测试模式，此模式下不会运行计划任务                                                                                                                                         |
+| danger_fe             | tc_danger_fe             | `false`                  | 危险前端模式，将允许动态修改前端 HTML 内容，建议阅读 readme.md 的 [前端](#前端) 部分                                                                                       |
 
 - 不支持 `.env` 文件，请直接设置环境变量，使用顺序是 `flag` > `env` > `default`
 - 有几个值不支持环境变量，必须手动操作
@@ -371,7 +371,9 @@ docker run -d --restart unless-stopped -v ./db:/app/tbsign/db -p 8080:1323 ghcr.
 
 ### 发布地址
 
-由 `share.ReleaseFilesPath` 决定，第三方打包者可以自行修改，目录的格式参考 GitHub Releases
+~~由 `share.ReleaseFilesPath` 决定，第三方打包者可以自行修改，目录的格式参考 GitHub Releases~~
+
+Upgrade 已废弃
 
 `share.ReleaseApiBase` 用于请求 GitHub API，用于 Upgrade2 和 前端检查更新
 
@@ -387,9 +389,8 @@ docker run -d --restart unless-stopped -v ./db:/app/tbsign/db -p 8080:1323 ghcr.
 
 ### 降级
 
-- Upgrade（默认）没有降级限制，可以下载到有记录以来的所有版本
-  - 配合 `share.ReleaseFilesPath` 实际可以下载到任意打包者提供的任意版本
-- Upgrade2（设置 Option `go_next_upgrade_func="1"` 启用）和 Upgrade3（[手动更新](#手动更新)）需要手动设置 Option `go_allow_downgrade="1"`
+- Upgrade2（默认）没有降级限制，可以下载到有记录以来的所有版本
+- Upgrade3（[手动更新](#手动更新)）需要手动设置 Option `go_allow_downgrade="1"`
 
 降级可能会带来未知的安全风险和不兼容问题，绝大多数时候都不应降级
 
