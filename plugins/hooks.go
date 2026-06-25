@@ -131,7 +131,10 @@ func (pluginInfo *PluginInfo) GetEndpoints() []PluginEndpointStruct {
 	return pluginInfo.Endpoints
 }
 
+var firstInit = true
+
 func InitPluginList() {
+	defer func() { firstInit = false }()
 	var pluginListDB []*model.TcPlugin
 	// get plugin list
 
@@ -170,7 +173,25 @@ func InitPluginList() {
 			Options: "",
 		})
 	}
-	// AddToSettingsFilter()
+
+	// upgrade
+	if firstInit {
+		for _, plugin := range PluginList {
+			newVersion := plugin.GetInfo()
+			oldVersion := plugin.GetDBInfo()
+
+			if oldVersion.Ver != "-1" && _function.NewerSemver(oldVersion.Ver, newVersion.Version) != oldVersion.Ver {
+				slog.Debug("upgrade plugin", "name", newVersion.Name, "cur", oldVersion.Ver, "new", newVersion.Version)
+				if err := plugin.Upgrade(); err != nil {
+					slog.Error("upgrade plugin failed", "name", newVersion.Name, "cur", oldVersion.Ver, "new", newVersion.Version, "error", err)
+					continue
+				}
+
+				slog.Info("upgrade plugin success", "name", newVersion.Name, "cur", oldVersion.Ver, "new", newVersion.Version)
+				UpdatePluginInfo(newVersion.Name, newVersion.Version, true, "")
+			}
+		}
+	}
 }
 
 func UpdatePluginInfo(name string, version string, status bool, options string) error {

@@ -35,7 +35,7 @@ var UserGrowthTasksPlugin = _function.VPtr(UserGrowthTasksPluginType{
 		PluginNameCN:      "用户成长任务",
 		PluginNameCNShort: "成长任务",
 		PluginNameFE:      "user_growth_tasks",
-		Version:           "0.2",
+		Version:           "0.3",
 		Options: map[string]string{
 			"kd_growth_offset":       "0",
 			"kd_growth_action_limit": "50",
@@ -83,9 +83,24 @@ var UserGrowthTasksPlugin = _function.VPtr(UserGrowthTasksPluginType{
 
 var UserGrowthTasksPluginClientVersion = "22.4.1.0"
 
-var activeTasks = []string{"daily_task", "live_task", "exchange_flow_task"}
 var UserGrowthTasksBreakList = []string{"open_push_switch"}
-var UserGrowthTasksExchangeFlowTaskIDs = []int{591}
+var UserGrowthTasksExchangeFlowTaskIDs = []int{591, 563}
+
+const (
+	UserGrowthTasksTaskSign uint32 = 1 << iota
+	UserGrowthTasksTaskDaily
+	UserGrowthTasksTaskIcon
+	UserGrowthTasksTaskSpecial
+	UserGrowthTasksTaskCustom
+)
+
+const (
+	flagSign           = UserGrowthTasksTaskSign
+	flagNoCustomNoIcon = flagSign | UserGrowthTasksTaskDaily | UserGrowthTasksTaskSpecial
+	flagNoCustom       = flagNoCustomNoIcon | UserGrowthTasksTaskIcon
+	flagNoIcon         = flagNoCustomNoIcon | UserGrowthTasksTaskCustom
+	flagAll            = flagNoIcon | UserGrowthTasksTaskIcon
+)
 
 type UserGrowthTasksWebResponse struct {
 	No    int    `json:"no"`
@@ -326,7 +341,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 		id = 0
 	}
 	// status list
-	var accountStatusList = make(map[int32]string)
+	var accountStatusList = make(map[int32]uint32)
 	// cookie list
 	// var accountCookiesList = make(map[int32]_type.TypeCookie)
 	var extTasksList = make(map[int32]map[string]string)
@@ -340,275 +355,281 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 	_function.GormDB.R.Model(&model.TcKdGrowth{}).Where("date < ? AND id > ?", todayBeginning, id).Limit(int(numLimit)).Find(&kdGrowthTasksUserList)
 	for _, taskUserItem := range kdGrowthTasksUserList {
 		if _, ok := accountStatusList[taskUserItem.UID]; !ok {
-			accountStatusList[taskUserItem.UID] = _function.GetUserOption("kd_growth_sign_only", strconv.Itoa(int(taskUserItem.UID)))
-		}
-		if accountStatusList[taskUserItem.UID] == "" {
-			// check uid is exists
-			var accountInfo model.TcBaiduid
-			_function.GormDB.R.Model(&model.TcBaiduid{}).Where("uid = ?", taskUserItem.UID).Take(&accountInfo)
-			if accountInfo.Portrait == "" {
-				// clean
-				_function.GormDB.W.Where("uid = ?", taskUserItem.UID).Delete(&model.TcKdGrowth{})
-				accountStatusList[taskUserItem.UID] = "NOT_EXISTS"
-				continue
+			tasksFlagStr := _function.GetUserOption("kd_growth_tasks_flag", strconv.Itoa(int(taskUserItem.UID)))
+			numTaskFlag, _ := strconv.ParseUint(tasksFlagStr, 10, 64)
+			if tasksFlagStr == "" {
+				// check uid is exists
+				var accountInfo model.TcBaiduid
+				_function.GormDB.R.Model(&model.TcBaiduid{}).Where("uid = ?", taskUserItem.UID).Take(&accountInfo)
+				if accountInfo.Portrait == "" {
+					// clean
+					_function.GormDB.W.Where("uid = ?", taskUserItem.UID).Delete(&model.TcKdGrowth{})
+					accountStatusList[taskUserItem.UID] = 0
+					continue
+				}
+				// auto set -> 1 (Sign)
+				numTaskFlag = uint64(UserGrowthTasksTaskSign)
+				_function.SetUserOption("kd_growth_tasks_flag", int(numTaskFlag), strconv.Itoa(int(taskUserItem.UID)))
 			}
-			// auto set -> 1
-			accountStatusList[taskUserItem.UID] = "1"
-			_function.SetUserOption("kd_growth_sign_only", "1", strconv.Itoa(int(taskUserItem.UID)))
+			accountStatusList[taskUserItem.UID] = uint32(numTaskFlag)
 		}
 
-		// cookies
-		cookie := _function.GetCookie(int32(taskUserItem.Pid))
 		var result []UserGrowthTaskToSave
-
-		if !cookie.IsLogin {
+		tasksFlag := accountStatusList[taskUserItem.UID]
+		if tasksFlag == 0 {
 			result = append(result, UserGrowthTaskToSave{
-				TaskID:  -1,
-				Name:    "未登录",
-				ActType: "login_failed",
+				TaskID:  -2,
+				Name:    "没有启用的任务",
+				ActType: "tc_ugt_not_active",
 				Status:  0,
 				Msg:     "failed",
 			})
 		} else {
-			var tasksList = make(map[string]UserGrowthTask)
-			doCollectStampTasks := false
+			// cookies
+			cookie := _function.GetCookie(int32(taskUserItem.Pid))
 
-			/// levelInfo := LevelInfo{}
-			if accountStatusList[taskUserItem.UID] == "2" {
-				// ext tasks
-				if extTasks, ok := extTasksList[taskUserItem.UID]; !ok {
-					if err := _function.JsonDecode([]byte(_function.GetUserOption("kd_growth_ext_tasks", strconv.Itoa(int(taskUserItem.UID)))), &extTasks); err != nil {
-						extTasksList[taskUserItem.UID] = make(map[string]string)
-					} else {
-						extTasksList[taskUserItem.UID] = extTasks
+			if !cookie.IsLogin {
+				result = append(result, UserGrowthTaskToSave{
+					TaskID:  -1,
+					Name:    "未登录",
+					ActType: "login_failed",
+					Status:  0,
+					Msg:     "failed",
+				})
+			} else {
+				var tasksList = make(map[string]UserGrowthTask)
+				doCollectStampTasks := false
+
+				// custom
+				if tasksFlag&UserGrowthTasksTaskCustom != 0 {
+					// ext tasks
+					if extTasks, ok := extTasksList[taskUserItem.UID]; !ok {
+						if err := _function.JsonDecode([]byte(_function.GetUserOption("kd_growth_ext_tasks", strconv.Itoa(int(taskUserItem.UID)))), &extTasks); err != nil {
+							extTasksList[taskUserItem.UID] = make(map[string]string)
+						} else {
+							extTasksList[taskUserItem.UID] = extTasks
+						}
 					}
-				}
-				extTasks := extTasksList[taskUserItem.UID]
+					extTasks := extTasksList[taskUserItem.UID]
 
-				if len(extTasks) > 0 {
-					for actType, taskName := range extTasks {
-						if actType != "" && taskName != "" {
-							var taskID int
+					if len(extTasks) > 0 {
+						for actType, taskName := range extTasks {
+							if actType != "" && taskName != "" {
+								var taskID int
 
-							// acttype:123
-							// acttype
-							if strings.Contains(actType, ":") {
-								actTypeSplit := strings.Split(actType, ":")
-								actType = actTypeSplit[0]
-								strTaskID := actTypeSplit[1]
-								taskID, _ = strconv.Atoi(strTaskID)
-							}
+								// acttype:123
+								// acttype
+								if strings.Contains(actType, ":") {
+									actTypeSplit := strings.Split(actType, ":")
+									actType = actTypeSplit[0]
+									strTaskID := actTypeSplit[1]
+									taskID, _ = strconv.Atoi(strTaskID)
+								}
 
-							// remove task id now
-							tasksList[actType] = UserGrowthTask{
-								ID:         taskID,
-								Name:       taskName,
-								ActType:    actType,
-								SortStatus: 1,
-								ExpireTime: 0,
+								// remove task id now
+								tasksList[actType] = UserGrowthTask{
+									ID:         taskID,
+									Name:       taskName,
+									ActType:    actType,
+									SortStatus: 1,
+									ExpireTime: 0,
+								}
 							}
 						}
 					}
 				}
-			}
 
-			if accountStatusList[taskUserItem.UID] != "0" {
-				tasksResponse, err := GetUserGrowthTasksList(cookie)
-				if err != nil {
-					slog.Error("plugin.user-growth-tasks.get-list", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", err)
-					continue
-				} else if tasksResponse.No != 0 {
-					slog.Error("plugin.user-growth-tasks.get-list", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "code", tasksResponse.No, "error", tasksResponse.Error)
-					continue
+				// sign
+				if tasksFlag == UserGrowthTasksTaskSign {
+					tasksList["page_sign"] = UserGrowthTask{
+						ID:         20,
+						Name:       "每日签到",
+						ActType:    "page_sign",
+						SortStatus: 1,
+						ExpireTime: 0,
+					}
 				}
 
-				/// // find level info
-				/// for _, levelInfoItem := range tasksResponse.Data.LevelInfo {
-				/// 	if levelInfoItem.IsCurrent == 1 {
-				/// 		levelInfo = levelInfoItem
-				/// 		break
-				/// 	}
-				/// }
+				if tasksFlag&(UserGrowthTasksTaskDaily|UserGrowthTasksTaskIcon|UserGrowthTasksTaskSpecial) != 0 {
+					tasksResponse, err := GetUserGrowthTasksList(cookie)
+					if err != nil {
+						slog.Error("plugin.user-growth-tasks.get-list", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "error", err)
+						continue
+					} else if tasksResponse.No != 0 {
+						slog.Error("plugin.user-growth-tasks.get-list", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "code", tasksResponse.No, "error", tasksResponse.Error)
+						continue
+					}
 
-				for _, taskTypeListList := range tasksResponse.Data.TabList {
-					if taskTypeListList.TabName == "basic" {
-						for _, taskTypeList := range taskTypeListList.TaskTypeList {
-							if slices.Contains(activeTasks, taskTypeList.TaskType) {
-								if taskTypeList.TaskType == "exchange_flow_task" {
+					for _, taskTypeListList := range tasksResponse.Data.TabList {
+						if taskTypeListList.TabName == "basic" {
+							for _, taskTypeList := range taskTypeListList.TaskTypeList {
+								if (taskTypeList.TaskType == "daily_task" || taskTypeList.TaskType == "live_task") && tasksFlag&UserGrowthTasksTaskDaily != 0 {
+									for _, taskItem := range taskTypeList.TaskList {
+										tasksList[taskItem.ActType] = taskItem
+									}
+								} else if taskTypeList.TaskType == "exchange_flow_task" && tasksFlag&UserGrowthTasksTaskSpecial != 0 {
 									for _, taskItem := range taskTypeList.TaskList {
 										if slices.Contains(UserGrowthTasksExchangeFlowTaskIDs, taskItem.ID) {
 											tasksList[taskItem.ActType+strconv.Itoa(taskItem.ID)] = taskItem
+											delete(tasksList, taskItem.ActType) // delete duplicate task
 										} else if _, exist := tasksList[taskItem.ActType]; exist {
 											tasksList[taskItem.ActType] = taskItem // replace ext task
 										}
 									}
-								} else {
-									for _, taskItem := range taskTypeList.TaskList {
-										tasksList[taskItem.ActType] = taskItem
-									}
-								}
-							}
-							if taskTypeList.TaskType == "icon_task" && slices.Contains([]string{"0", ""}, _function.GetUserOption("kd_growth_break_icon_tasks", strconv.Itoa(int(taskUserItem.UID)))) {
-								for _, iconTaskItem := range taskTypeList.TaskList {
-									switch iconTaskItem.SortStatus {
-									case 0:
-										postCollectStampRES, err := PostCollectStamp(cookie, iconTaskItem.ID)
-										if err != nil {
-											result = append(result, UserGrowthTaskToSave{
-												TaskID:  iconTaskItem.ID,
-												Name:    iconTaskItem.Name,
-												ActType: iconTaskItem.ActType,
-												Status:  0,
-												Msg:     "failed",
-											})
-										} else {
-											if postCollectStampRES.No == 0 {
-												result = append(result, UserGrowthTaskToSave{
-													TaskID:  iconTaskItem.ID,
-													Name:    iconTaskItem.Name,
-													ActType: iconTaskItem.ActType,
-													Status:  1,
-													Msg:     "success",
-												})
-											} else {
+								} else if taskTypeList.TaskType == "icon_task" && tasksFlag&UserGrowthTasksTaskIcon != 0 {
+									for _, iconTaskItem := range taskTypeList.TaskList {
+										switch iconTaskItem.SortStatus {
+										case 0:
+											postCollectStampRES, err := PostCollectStamp(cookie, iconTaskItem.ID)
+											if err != nil {
 												result = append(result, UserGrowthTaskToSave{
 													TaskID:  iconTaskItem.ID,
 													Name:    iconTaskItem.Name,
 													ActType: iconTaskItem.ActType,
 													Status:  0,
-													Msg:     postCollectStampRES.Error,
+													Msg:     "failed",
 												})
+											} else {
+												if postCollectStampRES.No == 0 {
+													result = append(result, UserGrowthTaskToSave{
+														TaskID:  iconTaskItem.ID,
+														Name:    iconTaskItem.Name,
+														ActType: iconTaskItem.ActType,
+														Status:  1,
+														Msg:     "success",
+													})
+												} else {
+													result = append(result, UserGrowthTaskToSave{
+														TaskID:  iconTaskItem.ID,
+														Name:    iconTaskItem.Name,
+														ActType: iconTaskItem.ActType,
+														Status:  0,
+														Msg:     postCollectStampRES.Error,
+													})
+												}
 											}
+											doCollectStampTasks = true
+										case 1:
+											doCollectStampTasks = true
 										}
-										doCollectStampTasks = true
-									case 1:
-										doCollectStampTasks = true
 									}
 								}
 							}
 						}
 					}
 				}
-			} else {
-				tasksList["page_sign"] = UserGrowthTask{
-					ID:         20,
-					Name:       "每日签到",
-					ActType:    "page_sign",
-					SortStatus: 1,
-					ExpireTime: 0,
-				}
-			}
 
-			for _, task := range tasksList {
-				if task.SortStatus == -1 || slices.Contains(UserGrowthTasksBreakList, task.ActType) {
-					continue
-				} else if task.SortStatus == 2 {
-					result = append(result, UserGrowthTaskToSave{
-						TaskID:  task.ID,
-						Name:    task.Name,
-						ActType: task.ActType,
-						Status:  1,
-						Msg:     "success",
-					})
-				} else if task.SortStatus == 1 && (task.ExpireTime == 0 || task.ExpireTime > int(time.Now().Unix())) {
-					response := new(UserGrowthTasksClientResponse)
+				for _, task := range tasksList {
+					if task.SortStatus == -1 || slices.Contains(UserGrowthTasksBreakList, task.ActType) {
+						continue
+					} else if task.SortStatus == 2 {
+						result = append(result, UserGrowthTaskToSave{
+							TaskID:  task.ID,
+							Name:    task.Name,
+							ActType: task.ActType,
+							Status:  1,
+							Msg:     "success",
+						})
+					} else if task.SortStatus == 1 && (task.ExpireTime == 0 || task.ExpireTime > int(time.Now().Unix())) {
+						response := new(UserGrowthTasksClientResponse)
 
-					if slices.Contains(UserGrowthTasksExchangeFlowTaskIDs, task.ID) {
-						switch task.ID {
-						case 591:
-							var res *growthTasks591ExecuteResponse
-							res, err = growthTasks591(task.TargetScheme)
-							if err == nil {
-								response.No = res.Errno
-								response.Error = res.Errmsg
-								if res.Errno == 0 {
-									response.Data.SuccessTaskIds = []int{task.ID}
+						if slices.Contains(UserGrowthTasksExchangeFlowTaskIDs, task.ID) {
+							switch task.ID {
+							case 591:
+								var res *growthTasks591ExecuteResponse
+								res, err = growthTasks591(task.TargetScheme)
+								if err == nil {
+									response.No = res.Errno
+									response.Error = res.Errmsg
+									if res.Errno == 0 {
+										response.Data.SuccessTaskIds = []int{task.ID}
+									}
 								}
+							case 563:
+								response, err = PostUserTask(cookie, task.ActType, task.ID)
+							default:
+								err = fmt.Errorf("unknown exchange_flow_task name: %s, act_type: %s, task_id: %d", task.Name, task.ActType, task.ID)
 							}
-						// case 563:
-						// 	response, err = PostGrowthTaskByClient(cookie, task.ActType, task.ID)
-						default:
-							err = fmt.Errorf("unknown exchange_flow_task name: %s, act_type: %s, task_id: %d", task.Name, task.ActType, task.ID)
-						}
-					} else if task.ActType == "page_sign" || task.ID == 0 {
-						response, err = PostUserGrowth(cookie, task.ActType)
-					} else {
-						response, err = PostUserTask(cookie, task.ActType, task.ID)
-					}
-
-					// {"no":110003,"error":"fail to call service","data":"\u4efb\u52a1\u5931\u8d25"}
-					// WTF string in struct
-					if err != nil {
-						if _function.JsonIsUnmarshalTypeError(err) && response.No > 0 {
-							slog.Error("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "task_id", task.ID, "task_name", task.Name, "act_type", task.ActType, "code", response.No, "error", response.Error)
-							result = append(result, UserGrowthTaskToSave{
-								TaskID:  task.ID,
-								Name:    task.Name,
-								ActType: task.ActType,
-								Status:  0,
-								Msg:     response.Error,
-							})
+						} else if task.ActType == "page_sign" || task.ID == 0 {
+							response, err = PostUserGrowth(cookie, task.ActType)
 						} else {
-							slog.Error("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "task_id", task.ID, "task_name", task.Name, "act_type", task.ActType, "error", err)
-							result = append(result, UserGrowthTaskToSave{
-								TaskID:  task.ID,
-								Name:    task.Name,
-								ActType: task.ActType,
-								Status:  0,
-								Msg:     "failed",
-							})
+							response, err = PostUserTask(cookie, task.ActType, task.ID)
 						}
-					} else {
-						if response.No == 0 {
-							if task.ID == 0 || len(response.Data.Toast) > 2 || (len(response.Data.SuccessTaskIds) > 0 && slices.Contains(response.Data.SuccessTaskIds, task.ID)) {
-								result = append(result, UserGrowthTaskToSave{
-									TaskID:  task.ID,
-									Name:    task.Name,
-									ActType: task.ActType,
-									Status:  1,
-									Msg:     "success",
-								})
-							} else {
-								slog.Error("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "task_id", task.ID, "task_name", task.Name, "act_type", task.ActType, "error", "received, but not successfully")
+
+						// {"no":110003,"error":"fail to call service","data":"\u4efb\u52a1\u5931\u8d25"}
+						// WTF string in struct
+						if err != nil {
+							if _function.JsonIsUnmarshalTypeError(err) && response.No > 0 {
+								slog.Error("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "task_id", task.ID, "task_name", task.Name, "act_type", task.ActType, "code", response.No, "error", response.Error)
 								result = append(result, UserGrowthTaskToSave{
 									TaskID:  task.ID,
 									Name:    task.Name,
 									ActType: task.ActType,
 									Status:  0,
-									Msg:     "received, but not successfully",
+									Msg:     response.Error,
+								})
+							} else {
+								slog.Error("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "task_id", task.ID, "task_name", task.Name, "act_type", task.ActType, "error", err)
+								result = append(result, UserGrowthTaskToSave{
+									TaskID:  task.ID,
+									Name:    task.Name,
+									ActType: task.ActType,
+									Status:  0,
+									Msg:     "failed",
 								})
 							}
 						} else {
-							slog.Error("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "task_id", task.ID, "task_name", task.Name, "act_type", task.ActType, "code", response.No, "error", response.Error)
-							result = append(result, UserGrowthTaskToSave{
-								TaskID:  task.ID,
-								Name:    task.Name,
-								ActType: task.ActType,
-								Status:  0,
-								Msg:     response.Error,
-							})
+							if response.No == 0 {
+								if task.ID == 0 || len(response.Data.Toast) > 2 || (len(response.Data.SuccessTaskIds) > 0 && slices.Contains(response.Data.SuccessTaskIds, task.ID)) {
+									result = append(result, UserGrowthTaskToSave{
+										TaskID:  task.ID,
+										Name:    task.Name,
+										ActType: task.ActType,
+										Status:  1,
+										Msg:     "success",
+									})
+								} else {
+									slog.Error("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "task_id", task.ID, "task_name", task.Name, "act_type", task.ActType, "error", "received, but not successfully")
+									result = append(result, UserGrowthTaskToSave{
+										TaskID:  task.ID,
+										Name:    task.Name,
+										ActType: task.ActType,
+										Status:  0,
+										Msg:     "received, but not successfully",
+									})
+								}
+							} else {
+								slog.Error("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "task_id", task.ID, "task_name", task.Name, "act_type", task.ActType, "code", response.No, "error", response.Error)
+								result = append(result, UserGrowthTaskToSave{
+									TaskID:  task.ID,
+									Name:    task.Name,
+									ActType: task.ActType,
+									Status:  0,
+									Msg:     response.Error,
+								})
+							}
 						}
 					}
 				}
-			}
 
-			// do sync
-			if doCollectStampTasks {
-				_, err := _function.PostSync(cookie)
-				if err != nil {
-					result = append(result, UserGrowthTaskToSave{
-						Name:    "印记任务签到",
-						ActType: "active",
-						Status:  0,
-						Msg:     "failed",
-					})
-				} else {
-					result = append(result, UserGrowthTaskToSave{
-						Name:    "印记任务签到",
-						ActType: "active",
-						Status:  1,
-						Msg:     "success",
-					})
+				// do sync
+				if doCollectStampTasks {
+					_, err := _function.PostSync(cookie)
+					if err != nil {
+						result = append(result, UserGrowthTaskToSave{
+							Name:    "印记任务签到",
+							ActType: "active",
+							Status:  0,
+							Msg:     "failed",
+						})
+					} else {
+						result = append(result, UserGrowthTaskToSave{
+							Name:    "印记任务签到",
+							ActType: "active",
+							Status:  1,
+							Msg:     "success",
+						})
+					}
 				}
 			}
 		}
@@ -664,13 +685,69 @@ func (pluginInfo *UserGrowthTasksPluginType) Delete() error {
 	_function.GormDB.W.Migrator().DropTable(&model.TcKdGrowth{})
 
 	// user options
-	_function.GormDB.W.Where("name = ?", "kd_growth_sign_only").Delete(&model.TcUsersOption{})
-	_function.GormDB.W.Where("name = ?", "kd_growth_break_icon_tasks").Delete(&model.TcUsersOption{})
-	_function.GormDB.W.Where("name = ?", "kd_growth_ext_tasks").Delete(&model.TcUsersOption{})
+	_function.GormDB.W.Where("name IN ?", []string{"kd_growth_sign_only", "kd_growth_break_icon_tasks", "kd_growth_ext_tasks", "kd_growth_tasks_flag"}).Delete(&model.TcUsersOption{})
 
 	return nil
 }
 func (pluginInfo *UserGrowthTasksPluginType) Upgrade() error {
+	// v0.3 upgrade
+	if _function.NewerSemver(pluginInfo.Version, "0.3") != pluginInfo.Version {
+		if err := _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
+			// 1. Convert sign_only = 0 to kd_growth_tasks_flag (Sign)
+			if err := tx.Model(&model.TcUsersOption{}).
+				Where("name = ? AND value = ?", "kd_growth_sign_only", 0).
+				Update("value", flagSign).Error; err != nil {
+				return err
+			}
+
+			// 2.1 Convert sign_only = 1 to kd_growth_tasks_flag (Sign | Daily | Special)
+			if err := tx.Model(&model.TcUsersOption{}).
+				Where("name = ? AND value = ?", "kd_growth_sign_only", 1).
+				Joins("LEFT JOIN (?) tc_users_option2 ON tc_users_option.uid = tc_users_option2.uid AND tc_users_option2.name = ? AND tc_users_option2.value = ?", tx.Model(&model.TcUsersOption{}), "kd_growth_break_icon_tasks", 1).
+				Update("value", flagNoCustomNoIcon).Error; err != nil {
+				return err
+			}
+
+			// 2.2 Convert sign_only = 1 to kd_growth_tasks_flag (Sign | Daily | Icon | Special)
+			if err := tx.Model(&model.TcUsersOption{}).
+				Where("name = ? AND value = ?", "kd_growth_sign_only", 1).
+				Joins("LEFT JOIN (?) tc_users_option2 ON tc_users_option.uid = tc_users_option2.uid AND tc_users_option2.name = ? AND tc_users_option2.value = ?", tx.Model(&model.TcUsersOption{}), "kd_growth_break_icon_tasks", 0).
+				Update("value", flagNoCustom).Error; err != nil {
+				return err
+			}
+
+			// 3.1 Convert sign_only = 2 to kd_growth_tasks_flag (Sign | Daily | Special | Custom)
+			if err := tx.Model(&model.TcUsersOption{}).
+				Where("name = ? AND value = ?", "kd_growth_sign_only", 2).
+				Joins("LEFT JOIN (?) tc_users_option2 ON tc_users_option.uid = tc_users_option2.uid AND tc_users_option2.name = ? AND tc_users_option2.value = ?", tx.Model(&model.TcUsersOption{}), "kd_growth_break_icon_tasks", 1).
+				Update("value", flagNoIcon).Error; err != nil {
+				return err
+			}
+
+			// 3.2 Convert sign_only = 2 to kd_growth_tasks_flag (Sign | Daily | Icon | Special | Custom)
+			if err := tx.Model(&model.TcUsersOption{}).
+				Where("name = ? AND value = ?", "kd_growth_sign_only", 2).
+				Joins("LEFT JOIN (?) tc_users_option2 ON tc_users_option.uid = tc_users_option2.uid AND tc_users_option2.name = ? AND tc_users_option2.value = ?", tx.Model(&model.TcUsersOption{}), "kd_growth_break_icon_tasks", 0).
+				Update("value", flagAll).Error; err != nil {
+				return err
+			}
+
+			// 4. Rename kd_growth_sign_only to kd_growth_tasks_flag
+			if err := tx.Model(&model.TcUsersOption{}).Where("name = ?", "kd_growth_sign_only").Update("name", "kd_growth_tasks_flag").Error; err != nil {
+				return err
+			}
+
+			// Clean up old options
+			if err := tx.Where("name IN ?", []string{"kd_growth_sign_only", "kd_growth_break_icon_tasks"}).Delete(&model.TcUsersOption{}).Error; err != nil {
+				return err
+			}
+
+			return nil
+		}); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -721,13 +798,10 @@ func (pluginInfo *UserGrowthTasksPluginType) ExportAccount(uid int32, tx *gorm.D
 		tableName: exportData,
 		"tc_users_options": _function.GetUserOptionBatch(strconv.Itoa(int(uid)), _function.OptionExt{
 			Tx:      tx,
-			KeyName: "kd_growth_break_icon_tasks",
-		}, _function.OptionExt{
-			Tx:      tx,
 			KeyName: "kd_growth_ext_tasks",
 		}, _function.OptionExt{
 			Tx:      tx,
-			KeyName: "kd_growth_sign_only",
+			KeyName: "kd_growth_tasks_flag",
 		}),
 	}, err
 }
@@ -774,19 +848,13 @@ func (pluginInfo *UserGrowthTasksPluginType) ImportAccount(uid int32, pid map[in
 func PluginGrowthTasksGetSettings(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	// sign only
-	signOnly := _function.GetUserOption("kd_growth_sign_only", uid)
-	if signOnly == "" {
-		signOnly = "0"
-		_function.SetUserOption("kd_growth_sign_only", signOnly, uid)
+	// flag
+	tasksFlagStr := _function.GetUserOption("kd_growth_tasks_flag", uid)
+	if tasksFlagStr == "" {
+		tasksFlagStr = strconv.FormatUint(uint64(UserGrowthTasksTaskSign), 10)
+		_function.SetUserOption("kd_growth_tasks_flag", tasksFlagStr, uid)
 	}
-
-	// no icon tasks
-	noIconTasks := _function.GetUserOption("kd_growth_break_icon_tasks", uid)
-	if noIconTasks == "" {
-		noIconTasks = "0"
-		_function.SetUserOption("kd_growth_break_icon_tasks", noIconTasks, uid)
-	}
+	tasksFlag, _ := strconv.ParseUint(tasksFlagStr, 10, 32)
 
 	// ext tasks
 	var extTasksMap = make(map[string]string)
@@ -805,22 +873,34 @@ func PluginGrowthTasksGetSettings(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
-		"sign_only":        signOnly,
-		"break_icon_tasks": noIconTasks,
-		"ext_tasks":        extTasksMap,
+		"tasks_flag_value": map[string]uint32{
+			"sign":    UserGrowthTasksTaskSign,
+			"daily":   UserGrowthTasksTaskDaily,
+			"icon":    UserGrowthTasksTaskIcon,
+			"special": UserGrowthTasksTaskSpecial,
+			"custom":  UserGrowthTasksTaskCustom,
+		},
+		"tasks_flag": tasksFlag,
+		"ext_tasks":  extTasksMap,
 	}, "tbsign"))
 }
 
 func PluginGrowthTasksSetSettings(c echo.Context) error {
 	uid := c.Get("uid").(string)
 
-	signOnly := strings.TrimSpace(c.FormValue("sign_only"))
-	noIconTasks := c.FormValue("break_icon_tasks") != "0"
+	tasksFlag := strings.TrimSpace(c.FormValue("tasks_flag"))
 	extTasks := c.FormValue("ext_tasks")
 
 	// invalid sign only value
-	if !slices.Contains([]string{"0", "1", "2"}, signOnly) {
-		signOnly = "0"
+	numTasksFlag, _ := strconv.ParseUint(tasksFlag, 10, 64)
+
+	if numTasksFlag > uint64(flagAll) {
+		numTasksFlag = uint64(flagAll)
+	}
+
+	// if contain daily tasks, sign task must be 1
+	if numTasksFlag&uint64(UserGrowthTasksTaskDaily) != 0 {
+		numTasksFlag |= uint64(UserGrowthTasksTaskSign)
 	}
 
 	// ext tasks list
@@ -835,12 +915,12 @@ func PluginGrowthTasksSetSettings(c echo.Context) error {
 		extTasks = "{}"
 	}
 
-	_function.SetUserOption("kd_growth_sign_only", signOnly, uid)
-	_function.SetUserOption("kd_growth_break_icon_tasks", noIconTasks, uid)
+	_function.SetUserOption("kd_growth_tasks_flag", tasksFlag, uid)
 	_function.SetUserOption("kd_growth_ext_tasks", extTasks, uid)
 
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]bool{
-		"success": true,
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]any{
+		"tasks_flag": numTasksFlag,
+		"ext_tasks":  extTasksMap,
 	}, "tbsign"))
 }
 

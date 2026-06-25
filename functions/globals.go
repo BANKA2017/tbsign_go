@@ -201,9 +201,9 @@ func NewerSemver(cur, ver2 string) string {
 
 	if semver.Compare(cver, nver) == 1 {
 		return cur
-	} else {
-		return ver2
 	}
+
+	return ver2
 }
 
 func VerifyURL(_url string) bool {
@@ -239,9 +239,9 @@ func BoolToTinyInt(b bool) int {
 func When[T any](c bool, d1, d2 T) T {
 	if c {
 		return d1
-	} else {
-		return d2
 	}
+
+	return d2
 }
 
 func Base64URLEncode(originalBuffer []byte) string {

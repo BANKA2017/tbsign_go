@@ -12,7 +12,7 @@ message SimpleUser {
     uint32 incomplete_user = 7;
     string portrait = 8;
     int32 agree_type = 9;
-    string ahead_url = 10;
-    string block_msg = 11;
+    string ahead_url = 10; // https://tiebac.baidu.com/mo/q/userappeal
+    string block_msg = 11; // 正常/封禁屏蔽/申诉中
     int32 show_onlyme = 12;
 }
