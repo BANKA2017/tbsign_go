@@ -153,7 +153,7 @@ jobs:
       #   with:
       #     name: 'tbsign_go.all'
       #     path: build/*
-      - name: Release
+      - name: Create release draft
         uses: softprops/action-gh-release@v3
         with:
           files: build/*
@@ -177,6 +177,11 @@ jobs:
               windows_amd64: ${{ env.windows_amd64_sha256 }}
               frontend: ${{ env.fe_sha256 }}
             ```
+          draft: true # <-!!
+      - name: Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "${{ env.build_prefix }}" --draft=false
 
   build-linux-binary:
     name: Build Binary for Linux/${{ matrix.arch.name }}

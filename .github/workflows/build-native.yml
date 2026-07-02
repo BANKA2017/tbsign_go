@@ -185,7 +185,7 @@ jobs:
       #   with:
       #     name: 'tbsign_go.all'
       #     path: build/*
-      - name: Release
+      - name: Create release draft
         uses: softprops/action-gh-release@v3
         with:
           files: build/*
@@ -193,6 +193,11 @@ jobs:
           fail_on_unmatched_files: true
           tag_name: ${{ env.build_prefix }}
           body_path: release.body.md
+          draft: true # <-!!
+      - name: Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "${{ env.build_prefix }}" --draft=false
 
   build-linux-binary:
     name: Build Binary for Linux/${{ matrix.arch.name }}
