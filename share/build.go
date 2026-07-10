@@ -7,9 +7,11 @@ import (
 	"runtime"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/BANKA2017/tbsign_go/assets"
+	"github.com/kdnetwork/code-snippet/go/utils"
 )
 
 func init() {
@@ -50,9 +52,24 @@ func init() {
 		BuildRuntime = runtime.GOOS + "/" + runtime.GOARCH
 	}
 
-	// docker
-	if _, err := os.Stat("/.dockerenv"); err == nil && os.Getenv("tc_docker_mode") == "true" {
-		BuildPublishType = "docker"
+	// container
+	isContainer := false
+	if strings.ToLower(os.Getenv("tc_docker_mode")) == "auto" {
+		// https://github.com/home-assistant/core/pull/132404/changes
+		if _, err := os.Stat("/.dockerenv"); err == nil {
+			// docker
+			isContainer = true
+		} else if _, err := os.Stat("/run/.containerenv"); err == nil {
+			// podman
+			isContainer = true
+		} else if os.Getenv("KUBERNETES_SERVICE_HOST") != "" {
+			// kubernetes
+			isContainer = true
+		}
+	}
+
+	if utils.StrBoolT(os.Getenv("tc_docker_mode")) || isContainer {
+		BuildPublishType = "container"
 	}
 
 	// fe-hash
