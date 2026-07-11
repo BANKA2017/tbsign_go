@@ -41,7 +41,7 @@ func init() {
 
 	VerifyPublicKey, _ = pubKeyInterface.(*ecdsa.PublicKey)
 
-	defaultHeaders["User-Agent"] = "tbsign_go/upgrader2"
+	UpgraderDefaultHeaders["User-Agent"] = "tbsign_go/upgrader2"
 }
 
 var VerifyPublicKey *ecdsa.PublicKey
@@ -83,7 +83,7 @@ func IsBinaryType() bool {
 	return strings.ToLower(share.BuildPublishType) == "binary"
 }
 
-var defaultHeaders = make(map[string]string)
+var UpgraderDefaultHeaders = make(map[string]string)
 
 // https://api.github.com/repos/${{repo}}/releases/tags/${{tag}}
 
@@ -107,7 +107,7 @@ func Upgrade2(tagName string) (*ghup.UpdateContent, error) {
 
 	uCtx.APIPrefix = share.ReleaseApiBase
 	uCtx.Client = DefaultClient
-	uCtx.Headers = defaultHeaders
+	uCtx.Headers = UpgraderDefaultHeaders
 
 	if err := uCtx.Upgrade2(tagName); err != nil {
 		return nil, err
@@ -183,7 +183,7 @@ func Upgrade3(binary []byte, metadata string) (*ghup.UpdateContent, error) {
 
 		uCtx.APIPrefix = share.ReleaseApiBase
 		uCtx.Client = DefaultClient
-		uCtx.Headers = defaultHeaders
+		uCtx.Headers = UpgraderDefaultHeaders
 
 		uCtx.Asset.Binary = binary
 		uCtx.Asset.Size = len(binary) // needn't check

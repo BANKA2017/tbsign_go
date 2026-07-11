@@ -164,6 +164,7 @@ func Api(address string) {
 
 	if share.BuildPublishType == "binary" {
 		admin.POST("/server/upgrade", UpgradeSystem, RateLimit(1, time.Second*10))
+		admin.GET("/server/upgrade/releases", GetReleases, RateLimit(1, time.Second*10))
 		if _function.VerifyPublicKey != nil {
 			admin.POST("/server/upgrade/upload", UpgradeSystem2, RateLimit(1, time.Second*10), middleware.BodyLimit("50M"))
 		}

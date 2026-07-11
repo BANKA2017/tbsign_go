@@ -105,6 +105,22 @@ func GetServerStatus(c echo.Context) error {
 	}, "tbsign"))
 }
 
+func GetReleases(c echo.Context) error {
+	perPage := c.QueryParam("per_page")
+
+	if perPage == "" {
+		perPage = "6"
+	}
+
+	res, err := _function.Fetch(share.ReleaseApiBase+"/releases?per_page="+perPage, http.MethodGet, nil, _function.UpgraderDefaultHeaders, _function.DefaultClient)
+
+	if err != nil {
+		return c.Blob(http.StatusInternalServerError, "application/json; charset=utf-8", []byte(`{"message":"Not Found","documentation_url":"https://docs.github.com/rest/releases/releases#list-releases","status":"404"}`))
+	}
+
+	return c.Blob(http.StatusOK, "application/json; charset=utf-8", res)
+}
+
 var upgradeSF singleflight.Group
 
 func UpgradeSystem(c echo.Context) error {
