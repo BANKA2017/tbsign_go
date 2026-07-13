@@ -16,7 +16,7 @@ func EncryptTCData() error {
 		return errors.New("ERROR: 请不要在兼容模式下加密/解密数据")
 	}
 
-	if share.IsEncrypt {
+	if _function.VerifyEncStatus() == nil {
 		return errors.New("ERROR: 数据已经加密，请勿重复加密")
 	}
 
@@ -96,7 +96,7 @@ func DecryptTCData() error {
 		return errors.New("ERROR: 请不要在兼容模式下加密/解密数据")
 	}
 
-	if !share.IsEncrypt {
+	if _function.VerifyEncStatus() != nil {
 		return errors.New("ERROR: 已经是明文数据")
 	}
 
