@@ -188,7 +188,7 @@ func InitPluginList() {
 				}
 
 				slog.Info("upgrade plugin success", "name", newVersion.Name, "cur", oldVersion.Ver, "new", newVersion.Version)
-				UpdatePluginInfo(newVersion.Name, newVersion.Version, true, "")
+				UpdatePluginInfo(newVersion.Name, newVersion.Version, oldVersion.Status != 0, "")
 			}
 		}
 	}
@@ -196,25 +196,20 @@ func InitPluginList() {
 
 func UpdatePluginInfo(name string, version string, status bool, options string) error {
 	// db
-	err := _function.GormDB.W.Model(&model.TcPlugin{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(&model.TcPlugin{
+	dbStatus := &model.TcPlugin{
 		Name:    name,
 		Ver:     version,
 		Status:  _function.BoolToTinyInt(status),
 		Options: options,
-	}).Error
+	}
+	err := _function.GormDB.W.Model(&model.TcPlugin{}).Clauses(clause.OnConflict{UpdateAll: true}).Create(dbStatus).Error
 
 	if err != nil {
 		return err
 	}
 
 	// memory cache
-	info := PluginList[name].GetInfo()
-	PluginList[name].SetDBInfo(&model.TcPlugin{
-		Name:    name,
-		Status:  0,
-		Ver:     info.Version,
-		Options: "",
-	})
+	PluginList[name].SetDBInfo(dbStatus)
 
 	// option validator
 	for optionKey, optionValidator := range PluginList[name].GetInfo().SettingOptions {
