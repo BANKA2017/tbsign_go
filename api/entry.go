@@ -162,6 +162,9 @@ func Api(address string) {
 	/// server
 	admin.GET("/server/status", GetServerStatus)
 
+	admin.POST("/server/encrypt", EncryptDB)
+	// admin.POST("/server/decrypt", DecryptDB)
+
 	if share.BuildPublishType == "binary" {
 		admin.POST("/server/upgrade", UpgradeSystem, RateLimit(1, time.Second*10))
 		admin.GET("/server/upgrade/releases", GetReleases, RateLimit(1, time.Second*10))

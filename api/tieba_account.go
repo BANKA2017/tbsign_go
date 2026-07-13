@@ -76,12 +76,12 @@ func GetBDUSS(c echo.Context) error {
 	var tiebaAccounts []*model.TcBaiduid
 	_function.GormDB.R.Where("uid = ? AND portrait = ?", uid, baiduAccountInfo.User.Portrait).Limit(1).Find(&tiebaAccounts)
 
-	if len(share.DataEncryptKeyByte) > 0 {
+	if share.IsEncrypt {
 		encryptedBDUSS, _ := _function.AES256GCMEncrypt(bduss, share.DataEncryptKeyByte, []byte(baiduAccountInfo.User.Portrait))
-		bduss = _function.Base64URLEncode(encryptedBDUSS)
+		bduss = encryptedBDUSS
 
 		encryptedStoken, _ := _function.AES256GCMEncrypt(stoken, share.DataEncryptKeyByte, []byte(baiduAccountInfo.User.Portrait))
-		stoken = _function.Base64URLEncode(encryptedStoken)
+		stoken = encryptedStoken
 	}
 
 	if len(tiebaAccounts) > 0 {
@@ -177,12 +177,12 @@ func AddTiebaAccount(c echo.Context) error {
 	var tiebaAccounts []*model.TcBaiduid
 	_function.GormDB.R.Where("uid = ? AND portrait = ?", uid, baiduAccountInfo.User.Portrait).Limit(1).Find(&tiebaAccounts)
 
-	if len(share.DataEncryptKeyByte) > 0 {
+	if share.IsEncrypt {
 		encryptedBDUSS, _ := _function.AES256GCMEncrypt(bduss, share.DataEncryptKeyByte, []byte(baiduAccountInfo.User.Portrait))
-		bduss = _function.Base64URLEncode(encryptedBDUSS)
+		bduss = encryptedBDUSS
 
 		encryptedStoken, _ := _function.AES256GCMEncrypt(stoken, share.DataEncryptKeyByte, []byte(baiduAccountInfo.User.Portrait))
-		stoken = _function.Base64URLEncode(encryptedStoken)
+		stoken = encryptedStoken
 	}
 
 	if len(tiebaAccounts) > 0 {

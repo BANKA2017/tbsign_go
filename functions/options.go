@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/BANKA2017/tbsign_go/model"
+	"github.com/BANKA2017/tbsign_go/share"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -93,7 +94,7 @@ func GetUserOption(keyName string, uid string, ext ...OptionExt) string {
 		return ""
 	}
 	if len(ext) > 0 {
-		if ext[0].EncryptKey != nil {
+		if share.IsEncrypt && ext[0].EncryptKey != nil {
 			if len(*ext[0].EncryptKey) == 32 && tmpUserOption.Value != "" {
 				newDecryptedValue, err := AES256GCMDecrypt(tmpUserOption.Value, *ext[0].EncryptKey, []byte(uid+":"+keyName))
 				if err == nil && newDecryptedValue != nil {
@@ -129,7 +130,7 @@ func GetUserOptionBatch(uid string, keyOptions ...OptionExt) map[string]string {
 
 	for _, option := range tmpUserOption {
 		if ext, ok := keys[option.Name]; ok {
-			if ext.EncryptKey != nil {
+			if share.IsEncrypt && ext.EncryptKey != nil {
 				if len(*ext.EncryptKey) == 32 && option.Value != "" {
 					newDecryptedValue, err := AES256GCMDecrypt(option.Value, *ext.EncryptKey, []byte(uid+":"+option.Name))
 					if err == nil && newDecryptedValue != nil {
@@ -165,10 +166,10 @@ func SetUserOption[T ~string | ~bool | ~int](keyName string, value T, uid string
 			_sql = ext[0].Tx
 		}
 
-		if ext[0].EncryptKey != nil {
+		if share.IsEncrypt && ext[0].EncryptKey != nil {
 			newEncryptedValue, err := AES256GCMEncrypt(newValue, *ext[0].EncryptKey, []byte(uid+":"+keyName))
-			if err == nil && newEncryptedValue != nil {
-				newValue = Base64URLEncode(newEncryptedValue)
+			if err == nil {
+				newValue = newEncryptedValue
 			}
 		}
 	}

@@ -54,7 +54,7 @@ func GetCookie(pid int32, ext ...bool) *_type.TypeCookie {
 			var cookieDB model.TcBaiduid
 			GormDB.R.Model(&model.TcBaiduid{}).Where("id = ?", pid).Take(&cookieDB)
 
-			if len(share.DataEncryptKeyByte) > 0 {
+			if share.IsEncrypt {
 				decryptedBDUSS, _ := AES256GCMDecrypt(cookieDB.Bduss, share.DataEncryptKeyByte, []byte(cookieDB.Portrait))
 				cookieDB.Bduss = string(decryptedBDUSS)
 

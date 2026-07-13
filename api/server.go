@@ -98,6 +98,7 @@ func GetServerStatus(c echo.Context) error {
 		"compat":          _function.GetOption("core_version"),
 		"pure_go":         share.IsPureGO,
 		"encrypt":         share.IsEncrypt,
+		"allow_encrypt":   !share.IsEncrypt && len(share.DataEncryptKeyByte) == 32,
 		"uid_count":       strconv.Itoa(int(UIDCount)),
 		"pid_count":       PIDCount,
 		"forum_count":     ForumCount,
@@ -121,10 +122,10 @@ func GetReleases(c echo.Context) error {
 	return c.Blob(http.StatusOK, "application/json; charset=utf-8", res)
 }
 
-var upgradeSF singleflight.Group
+var serverActionSF singleflight.Group
 
 func UpgradeSystem(c echo.Context) error {
-	_, err, _ := upgradeSF.Do("upgrade", func() (any, error) {
+	_, err, _ := serverActionSF.Do("upgrade", func() (any, error) {
 		version := c.FormValue("version")
 		autoRestart := utils.StrBoolT(c.FormValue("auto_restart"))
 
@@ -160,7 +161,7 @@ func readFormFile(c echo.Context, name string) ([]byte, error) {
 }
 
 func UpgradeSystem2(c echo.Context) error {
-	_, err, _ := upgradeSF.Do("upgrade", func() (any, error) {
+	_, err, _ := serverActionSF.Do("upgrade", func() (any, error) {
 		metadata, err := readFormFile(c, "metadata")
 		if err != nil {
 			return nil, c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, err.Error(), false, "tbsign"))
@@ -360,4 +361,40 @@ func RunCronJob(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "Cron job not found", false, "tbsign"))
+}
+
+func EncryptDB(c echo.Context) error {
+	if !(!share.IsEncrypt && len(share.DataEncryptKeyByte) == 32) {
+		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "invalid encrypt status", false, "tbsign"))
+	}
+
+	_, err, _ := serverActionSF.Do("encrypt", func() (any, error) {
+
+		if err := _plugin.EncryptTCData(); err != nil {
+			slog.Error("encrypt.encrypt-api", "error", err)
+			return nil, c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, err.Error(), false, "tbsign"))
+		}
+
+		share.IsEncrypt = true
+		return nil, c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
+	})
+	return err
+}
+
+func DecryptDB(c echo.Context) error {
+	if !share.IsEncrypt {
+		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "invalid encrypt status", false, "tbsign"))
+	}
+
+	_, err, _ := serverActionSF.Do("decrypt", func() (any, error) {
+
+		if err := _plugin.DecryptTCData(); err != nil {
+			slog.Error("encrypt.decrypt-api", "error", err)
+			return nil, c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, err.Error(), false, "tbsign"))
+		}
+
+		share.IsEncrypt = false
+		return nil, c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
+	})
+	return err
 }

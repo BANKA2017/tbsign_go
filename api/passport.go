@@ -702,7 +702,7 @@ func ExportAccountData(c echo.Context) error {
 	_function.GormDB.W.Model(&model.TcBaiduid{}).Where("uid = ?", uid).Scan(&tcBaiduid)
 	_function.GormDB.W.Model(&model.TcUsersOption{}).Where("uid = ? AND name IN (?)", uid, BackupUsersOptionKeys).Find(&tcUsersOption)
 
-	if len(share.DataEncryptKeyByte) > 0 {
+	if share.IsEncrypt {
 		for _, tcBaiduidItem := range tcBaiduid {
 			decryptedBDUSS, _ := _function.AES256GCMDecrypt(tcBaiduidItem.Bduss, share.DataEncryptKeyByte, []byte(tcBaiduidItem.Portrait))
 			tcBaiduidItem.Bduss = string(decryptedBDUSS)
@@ -713,7 +713,7 @@ func ExportAccountData(c echo.Context) error {
 
 		for _, tcUsersOptionItem := range tcUsersOption {
 			if slices.Contains([]string{"go_pushdeer_key", "go_bark_key", "go_ntfy_topic"}, tcUsersOptionItem.Name) {
-				decryptedValue, _ := _function.AES256GCMDecrypt([]byte(tcUsersOptionItem.Value), share.DataEncryptKeyByte, []byte(strconv.FormatInt(int64(tcUsersOptionItem.UID), 10)+":"+tcUsersOptionItem.Name))
+				decryptedValue, _ := _function.AES256GCMDecrypt(tcUsersOptionItem.Value, share.DataEncryptKeyByte, []byte(strconv.FormatInt(int64(tcUsersOptionItem.UID), 10)+":"+tcUsersOptionItem.Name))
 				tcUsersOptionItem.Value = string(decryptedValue)
 			}
 		}
@@ -843,12 +843,12 @@ func ImportAccountData(c echo.Context) error {
 				accountNumberOverflow = true
 				break
 			}
-			if len(share.DataEncryptKeyByte) > 0 {
+			if share.IsEncrypt {
 				encryptedBDUSS, _ := _function.AES256GCMEncrypt(importBaiduidItem.Bduss, share.DataEncryptKeyByte, []byte(importBaiduidItem.Portrait))
-				importBaiduidItem.Bduss = _function.Base64URLEncode(encryptedBDUSS)
+				importBaiduidItem.Bduss = encryptedBDUSS
 
 				encryptedStoken, _ := _function.AES256GCMEncrypt(importBaiduidItem.Stoken, share.DataEncryptKeyByte, []byte(importBaiduidItem.Portrait))
-				importBaiduidItem.Stoken = _function.Base64URLEncode(encryptedStoken)
+				importBaiduidItem.Stoken = encryptedStoken
 			}
 
 			newTcBaiduID = append(newTcBaiduID, &model.TcBaiduid{
