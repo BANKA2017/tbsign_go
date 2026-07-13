@@ -701,21 +701,18 @@ func (pluginInfo *UserGrowthTasksPluginType) Upgrade() error {
 		if err := _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
 			// 2.1 Convert sign_only = 1 to kd_growth_tasks_flag (Sign | Daily | Special)
 			if err := tx.Model(&model.TcUsersOption{}).
-				Where("name = ? AND value = ?", "kd_growth_sign_only", 1).
-				Joins("INNER JOIN (?) tc_users_option2 ON tc_users_option.uid = tc_users_option2.uid AND tc_users_option2.name = ? AND tc_users_option2.value = ?", tx.Model(&model.TcUsersOption{}), "kd_growth_break_icon_tasks", 1).
+				Where("name = ? AND value = ? AND NOT EXISTS (SELECT 1 FROM tc_users_options o2 WHERE o2.uid = tc_users_options.uid AND o2.name = ? AND o2.value = 0)", "kd_growth_sign_only", 1, "kd_growth_break_icon_tasks").
 				Update("value", flagNoCustomNoIcon).Error; err != nil {
 				return err
 			}
 
 			// 2.2 Convert sign_only = 1 to kd_growth_tasks_flag (Sign | Daily | Icon | Special)
 			if err := tx.Model(&model.TcUsersOption{}).
-				Where("name = ? AND value = ?", "kd_growth_sign_only", 1).
-				Joins("INNER JOIN (?) tc_users_option2 ON tc_users_option.uid = tc_users_option2.uid AND tc_users_option2.name = ? AND tc_users_option2.value = ?", tx.Model(&model.TcUsersOption{}), "kd_growth_break_icon_tasks", 0).
+				Where("name = ? AND value = ? AND EXISTS (SELECT 1 FROM tc_users_options o2 WHERE o2.uid = tc_users_options.uid AND o2.name = ? AND o2.value = 0)", "kd_growth_sign_only", 1, "kd_growth_break_icon_tasks").
 				Update("value", flagNoCustom).Error; err != nil {
 				return err
 			}
 
-			// 猜猜为什么 1. 要排后面
 			// 1. Convert sign_only = 0 to kd_growth_tasks_flag (Sign)
 			if err := tx.Model(&model.TcUsersOption{}).
 				Where("name = ? AND value = ?", "kd_growth_sign_only", 0).
@@ -725,27 +722,28 @@ func (pluginInfo *UserGrowthTasksPluginType) Upgrade() error {
 
 			// 3.1 Convert sign_only = 2 to kd_growth_tasks_flag (Sign | Daily | Special | Custom)
 			if err := tx.Model(&model.TcUsersOption{}).
-				Where("name = ? AND value = ?", "kd_growth_sign_only", 2).
-				Joins("INNER JOIN (?) tc_users_option2 ON tc_users_option.uid = tc_users_option2.uid AND tc_users_option2.name = ? AND tc_users_option2.value = ?", tx.Model(&model.TcUsersOption{}), "kd_growth_break_icon_tasks", 1).
+				Where("name = ? AND value = ? AND NOT EXISTS (SELECT 1 FROM tc_users_options o2 WHERE o2.uid = tc_users_options.uid AND o2.name = ? AND o2.value = 0)", "kd_growth_sign_only", 2, "kd_growth_break_icon_tasks").
 				Update("value", flagNoIcon).Error; err != nil {
 				return err
 			}
 
 			// 3.2 Convert sign_only = 2 to kd_growth_tasks_flag (Sign | Daily | Icon | Special | Custom)
 			if err := tx.Model(&model.TcUsersOption{}).
-				Where("name = ? AND value = ?", "kd_growth_sign_only", 2).
-				Joins("INNER JOIN (?) tc_users_option2 ON tc_users_option.uid = tc_users_option2.uid AND tc_users_option2.name = ? AND tc_users_option2.value = ?", tx.Model(&model.TcUsersOption{}), "kd_growth_break_icon_tasks", 0).
+				Where("name = ? AND value = ? AND EXISTS (SELECT 1 FROM tc_users_options o2 WHERE o2.uid = tc_users_options.uid AND o2.name = ? AND o2.value = 0)", "kd_growth_sign_only", 2, "kd_growth_break_icon_tasks").
 				Update("value", flagAll).Error; err != nil {
 				return err
 			}
 
 			// 4. Rename kd_growth_sign_only to kd_growth_tasks_flag
-			if err := tx.Model(&model.TcUsersOption{}).Where("name = ?", "kd_growth_sign_only").Update("name", "kd_growth_tasks_flag").Error; err != nil {
+			if err := tx.Model(&model.TcUsersOption{}).
+				Where("name = ?", "kd_growth_sign_only").
+				Update("name", "kd_growth_tasks_flag").Error; err != nil {
 				return err
 			}
 
 			// Clean up old options
-			if err := tx.Where("name IN ?", []string{"kd_growth_sign_only", "kd_growth_break_icon_tasks"}).Delete(&model.TcUsersOption{}).Error; err != nil {
+			if err := tx.Where("name IN ?", []string{"kd_growth_sign_only", "kd_growth_break_icon_tasks"}).
+				Delete(&model.TcUsersOption{}).Error; err != nil {
 				return err
 			}
 
