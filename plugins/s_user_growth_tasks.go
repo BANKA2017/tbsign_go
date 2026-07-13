@@ -35,7 +35,7 @@ var UserGrowthTasksPlugin = _function.VPtr(UserGrowthTasksPluginType{
 		PluginNameCN:      "用户成长任务",
 		PluginNameCNShort: "成长任务",
 		PluginNameFE:      "user_growth_tasks",
-		Version:           "0.3",
+		Version:           "0.4",
 		Options: map[string]string{
 			"kd_growth_offset":       "0",
 			"kd_growth_action_limit": "50",
@@ -694,8 +694,10 @@ func (pluginInfo *UserGrowthTasksPluginType) Delete() error {
 	return nil
 }
 func (pluginInfo *UserGrowthTasksPluginType) Upgrade() error {
-	// v0.3 upgrade
-	if _function.NewerSemver(pluginInfo.Version, "0.3") != pluginInfo.Version {
+	dbVersion := pluginInfo.GetDBInfo().Ver
+
+	// v0.4 upgrade
+	if _function.NewerSemver(dbVersion, "0.4") != dbVersion {
 		if err := _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
 			// 1. Convert sign_only = 0 to kd_growth_tasks_flag (Sign)
 			if err := tx.Model(&model.TcUsersOption{}).
