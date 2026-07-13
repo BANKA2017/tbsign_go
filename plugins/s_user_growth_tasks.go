@@ -702,7 +702,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Upgrade() error {
 			// 2.1 Convert sign_only = 1 to kd_growth_tasks_flag (Sign | Daily | Special)
 			if err := tx.Model(&model.TcUsersOption{}).
 				Where("name = ? AND value = ?", "kd_growth_sign_only", 1).
-				Joins("LEFT JOIN (?) tc_users_option2 ON tc_users_option.uid = tc_users_option2.uid AND tc_users_option2.name = ? AND tc_users_option2.value = ?", tx.Model(&model.TcUsersOption{}), "kd_growth_break_icon_tasks", 1).
+				Joins("INNER JOIN (?) tc_users_option2 ON tc_users_option.uid = tc_users_option2.uid AND tc_users_option2.name = ? AND tc_users_option2.value = ?", tx.Model(&model.TcUsersOption{}), "kd_growth_break_icon_tasks", 1).
 				Update("value", flagNoCustomNoIcon).Error; err != nil {
 				return err
 			}
@@ -710,7 +710,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Upgrade() error {
 			// 2.2 Convert sign_only = 1 to kd_growth_tasks_flag (Sign | Daily | Icon | Special)
 			if err := tx.Model(&model.TcUsersOption{}).
 				Where("name = ? AND value = ?", "kd_growth_sign_only", 1).
-				Joins("LEFT JOIN (?) tc_users_option2 ON tc_users_option.uid = tc_users_option2.uid AND tc_users_option2.name = ? AND tc_users_option2.value = ?", tx.Model(&model.TcUsersOption{}), "kd_growth_break_icon_tasks", 0).
+				Joins("INNER JOIN (?) tc_users_option2 ON tc_users_option.uid = tc_users_option2.uid AND tc_users_option2.name = ? AND tc_users_option2.value = ?", tx.Model(&model.TcUsersOption{}), "kd_growth_break_icon_tasks", 0).
 				Update("value", flagNoCustom).Error; err != nil {
 				return err
 			}
@@ -726,7 +726,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Upgrade() error {
 			// 3.1 Convert sign_only = 2 to kd_growth_tasks_flag (Sign | Daily | Special | Custom)
 			if err := tx.Model(&model.TcUsersOption{}).
 				Where("name = ? AND value = ?", "kd_growth_sign_only", 2).
-				Joins("LEFT JOIN (?) tc_users_option2 ON tc_users_option.uid = tc_users_option2.uid AND tc_users_option2.name = ? AND tc_users_option2.value = ?", tx.Model(&model.TcUsersOption{}), "kd_growth_break_icon_tasks", 1).
+				Joins("INNER JOIN (?) tc_users_option2 ON tc_users_option.uid = tc_users_option2.uid AND tc_users_option2.name = ? AND tc_users_option2.value = ?", tx.Model(&model.TcUsersOption{}), "kd_growth_break_icon_tasks", 1).
 				Update("value", flagNoIcon).Error; err != nil {
 				return err
 			}
@@ -734,7 +734,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Upgrade() error {
 			// 3.2 Convert sign_only = 2 to kd_growth_tasks_flag (Sign | Daily | Icon | Special | Custom)
 			if err := tx.Model(&model.TcUsersOption{}).
 				Where("name = ? AND value = ?", "kd_growth_sign_only", 2).
-				Joins("LEFT JOIN (?) tc_users_option2 ON tc_users_option.uid = tc_users_option2.uid AND tc_users_option2.name = ? AND tc_users_option2.value = ?", tx.Model(&model.TcUsersOption{}), "kd_growth_break_icon_tasks", 0).
+				Joins("INNER JOIN (?) tc_users_option2 ON tc_users_option.uid = tc_users_option2.uid AND tc_users_option2.name = ? AND tc_users_option2.value = ?", tx.Model(&model.TcUsersOption{}), "kd_growth_break_icon_tasks", 0).
 				Update("value", flagAll).Error; err != nil {
 				return err
 			}
