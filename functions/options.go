@@ -97,7 +97,7 @@ func GetUserOption(keyName string, uid string, ext ...OptionExt) string {
 		if share.IsEncrypt && ext[0].EncryptKey != nil {
 			if len(*ext[0].EncryptKey) == 32 && tmpUserOption.Value != "" {
 				newDecryptedValue, err := AES256GCMDecrypt(tmpUserOption.Value, *ext[0].EncryptKey, []byte(uid+":"+keyName))
-				if err == nil && newDecryptedValue != nil {
+				if err == nil {
 					tmpUserOption.Value = string(newDecryptedValue)
 				}
 			}
@@ -133,7 +133,7 @@ func GetUserOptionBatch(uid string, keyOptions ...OptionExt) map[string]string {
 			if share.IsEncrypt && ext.EncryptKey != nil {
 				if len(*ext.EncryptKey) == 32 && option.Value != "" {
 					newDecryptedValue, err := AES256GCMDecrypt(option.Value, *ext.EncryptKey, []byte(uid+":"+option.Name))
-					if err == nil && newDecryptedValue != nil {
+					if err == nil {
 						option.Value = string(newDecryptedValue)
 					}
 				}

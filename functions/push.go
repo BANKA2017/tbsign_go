@@ -58,10 +58,10 @@ func SendMessage(_type string, uid int32, _subject, _body string) error {
 		})
 		return SendBark(barkKey, _subject, _body)
 	case "pushdeer":
-		barkKey := GetUserOption("go_pushdeer_key", strconv.Itoa(int(uid)), OptionExt{
+		pushDeerKey := GetUserOption("go_pushdeer_key", strconv.Itoa(int(uid)), OptionExt{
 			EncryptKey: &share.DataEncryptKeyByte,
 		})
-		return SendPushdeer(barkKey, _subject, _body)
+		return SendPushdeer(pushDeerKey, _subject, _body)
 	default:
 		accountInfo := new(model.TcUser)
 		GormDB.R.Where("id = ?", uid).Find(accountInfo)
