@@ -699,13 +699,6 @@ func (pluginInfo *UserGrowthTasksPluginType) Upgrade() error {
 	// v0.4 upgrade
 	if _function.NewerSemver(dbVersion, "0.4") != dbVersion {
 		if err := _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
-			// 1. Convert sign_only = 0 to kd_growth_tasks_flag (Sign)
-			if err := tx.Model(&model.TcUsersOption{}).
-				Where("name = ? AND value = ?", "kd_growth_sign_only", 0).
-				Update("value", flagSign).Error; err != nil {
-				return err
-			}
-
 			// 2.1 Convert sign_only = 1 to kd_growth_tasks_flag (Sign | Daily | Special)
 			if err := tx.Model(&model.TcUsersOption{}).
 				Where("name = ? AND value = ?", "kd_growth_sign_only", 1).
@@ -719,6 +712,14 @@ func (pluginInfo *UserGrowthTasksPluginType) Upgrade() error {
 				Where("name = ? AND value = ?", "kd_growth_sign_only", 1).
 				Joins("LEFT JOIN (?) tc_users_option2 ON tc_users_option.uid = tc_users_option2.uid AND tc_users_option2.name = ? AND tc_users_option2.value = ?", tx.Model(&model.TcUsersOption{}), "kd_growth_break_icon_tasks", 0).
 				Update("value", flagNoCustom).Error; err != nil {
+				return err
+			}
+
+			// 猜猜为什么 1. 要排后面
+			// 1. Convert sign_only = 0 to kd_growth_tasks_flag (Sign)
+			if err := tx.Model(&model.TcUsersOption{}).
+				Where("name = ? AND value = ?", "kd_growth_sign_only", 0).
+				Update("value", flagSign).Error; err != nil {
 				return err
 			}
 
