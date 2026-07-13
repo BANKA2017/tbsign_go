@@ -168,7 +168,7 @@ jobs:
       - name: Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release edit "${{ env.build_prefix }}" --draft=false
+        run: gh release edit "${{ env.build_prefix }}" --draft=false --repo "${{ github.repository }}"
 
   build-linux-binary:
     name: Build Binary for ${{ matrix.arch.name }}/${{ matrix.publish_type }}
