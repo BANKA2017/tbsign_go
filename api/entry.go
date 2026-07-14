@@ -226,6 +226,8 @@ func Api(ctx context.Context, network, address string) {
 	listener, _ := net.Listen(network, address)
 	sc.Listener = listener
 
+	e.Logger = slog.Default()
+
 	if err := sc.Start(ctx, e); err != nil {
 		e.Logger.Error("failed to start server", "error", err)
 	}
