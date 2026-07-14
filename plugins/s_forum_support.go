@@ -15,7 +15,7 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	_type "github.com/BANKA2017/tbsign_go/types"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 )
 
@@ -872,10 +872,10 @@ func (pluginInfo *ForumSupportPluginInfoType) ImportAccount(uid int32, pid map[i
 }
 
 // endpoints
-func PluginForumSupportGetCharactersList(c echo.Context) error {
+func PluginForumSupportGetCharactersList(c *echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", ForumSupportList, "tbsign"))
 }
-func PluginForumSupportGetSettings(c echo.Context) error {
+func PluginForumSupportGetSettings(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	var rankList []*model.TcVer4RankLog
@@ -884,7 +884,7 @@ func PluginForumSupportGetSettings(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", rankList, "tbsign"))
 }
 
-func PluginForumSupportUpdateSettings(c echo.Context) error {
+func PluginForumSupportUpdateSettings(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
@@ -985,7 +985,7 @@ func PluginForumSupportUpdateSettings(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
 }
 
-func PluginForumSupportGetSwitch(c echo.Context) error {
+func PluginForumSupportGetSwitch(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	status := _function.GetUserOption("ver4_rank_check", uid)
 	if status == "" {
@@ -995,7 +995,7 @@ func PluginForumSupportGetSwitch(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", status != "0", "tbsign"))
 }
 
-func PluginForumSupportSwitch(c echo.Context) error {
+func PluginForumSupportSwitch(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	status := _function.GetUserOption("ver4_rank_check", uid) != "0"
 

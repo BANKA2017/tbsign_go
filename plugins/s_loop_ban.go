@@ -14,7 +14,7 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	_type "github.com/BANKA2017/tbsign_go/types"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -451,7 +451,7 @@ type addAccountsResponseList struct {
 	Date     int32  `json:"date,omitempty"`
 }
 
-func PluginLoopBanGetSwitch(c echo.Context) error {
+func PluginLoopBanGetSwitch(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	status := _function.GetUserOption("ver4_ban_open", uid)
 	if status == "" {
@@ -461,7 +461,7 @@ func PluginLoopBanGetSwitch(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", status != "0", "tbsign"))
 }
 
-func PluginLoopBanSwitch(c echo.Context) error {
+func PluginLoopBanSwitch(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	status := _function.GetUserOption("ver4_ban_open", uid) != "0"
 
@@ -474,7 +474,7 @@ func PluginLoopBanSwitch(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", !status, "tbsign"))
 }
 
-func PluginLoopBanGetReason(c echo.Context) error {
+func PluginLoopBanGetReason(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	var loopBanSettings []*model.TcVer4BanUserset
@@ -492,7 +492,7 @@ func PluginLoopBanGetReason(c echo.Context) error {
 	}, "tbsign"))
 }
 
-func PluginLoopBanSetReason(c echo.Context) error {
+func PluginLoopBanSetReason(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	reason := c.FormValue("reason")
@@ -513,7 +513,7 @@ func PluginLoopBanSetReason(c echo.Context) error {
 
 }
 
-func PluginLoopBanGetList(c echo.Context) error {
+func PluginLoopBanGetList(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	var loopBanList []*model.TcVer4BanList
@@ -552,7 +552,7 @@ func PluginLoopBanGetList(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", list, "tbsign"))
 }
 
-func PluginLoopBanAddAccounts(c echo.Context) error {
+func PluginLoopBanAddAccounts(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	pid := c.FormValue("pid")
@@ -717,7 +717,7 @@ func PluginLoopBanAddAccounts(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", accountsResult, "tbsign"))
 }
 
-func PluginLoopBanDelAccount(c echo.Context) error {
+func PluginLoopBanDelAccount(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	id := c.Param("id")
@@ -742,7 +742,7 @@ func PluginLoopBanDelAccount(c echo.Context) error {
 	}, "tbsign"))
 }
 
-func PluginLoopBanDelAllAccounts(c echo.Context) error {
+func PluginLoopBanDelAllAccounts(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	numUID, _ := strconv.ParseInt(uid, 10, 64)

@@ -13,7 +13,7 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	_type "github.com/BANKA2017/tbsign_go/types"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
 )
@@ -773,7 +773,7 @@ func (pluginInfo *WenkuTasksPluginType) ImportAccount(uid int32, pid map[int32]i
 }
 
 // endpoints
-func PluginWenkuTasksGetSettings(c echo.Context) error {
+func PluginWenkuTasksGetSettings(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	// checkin only
@@ -803,7 +803,7 @@ func PluginWenkuTasksGetSettings(c echo.Context) error {
 	}, "tbsign"))
 }
 
-func PluginWenkuTasksSetSettings(c echo.Context) error {
+func PluginWenkuTasksSetSettings(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	checkinOnly := c.FormValue("checkin_only") != "0"
@@ -836,7 +836,7 @@ func PluginWenkuTasksSetSettings(c echo.Context) error {
 	}, "tbsign"))
 }
 
-func PluginWenkuTasksGetList(c echo.Context) error {
+func PluginWenkuTasksGetList(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	var accounts []*model.TcKdWenkuTask
@@ -845,7 +845,7 @@ func PluginWenkuTasksGetList(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", accounts, "tbsign"))
 }
 
-func PluginWenkuTasksAddAccount(c echo.Context) error {
+func PluginWenkuTasksAddAccount(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 
@@ -891,7 +891,7 @@ func PluginWenkuTasksAddAccount(c echo.Context) error {
 	}
 }
 
-func PluginWenkuTasksDelAccount(c echo.Context) error {
+func PluginWenkuTasksDelAccount(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	id := c.Param("id")
@@ -925,7 +925,7 @@ func PluginWenkuTasksDelAccount(c echo.Context) error {
 	}, "tbsign"))
 }
 
-func PluginWenkuTasksDelAllAccounts(c echo.Context) error {
+func PluginWenkuTasksDelAllAccounts(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
@@ -942,7 +942,7 @@ func PluginWenkuTasksDelAllAccounts(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 }
 
-func PluginWenkuTasksGetTasksStatus(c echo.Context) error {
+func PluginWenkuTasksGetTasksStatus(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	pid := c.Param("pid")
 
@@ -993,7 +993,7 @@ func PluginWenkuTasksGetTasksStatus(c echo.Context) error {
 	}
 }
 
-func PluginWenkuTasksClaim7DaySignVIP(c echo.Context) error {
+func PluginWenkuTasksClaim7DaySignVIP(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	pid := c.Param("pid")
 

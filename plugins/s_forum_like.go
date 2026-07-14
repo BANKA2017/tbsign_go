@@ -16,7 +16,7 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	_type "github.com/BANKA2017/tbsign_go/types"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 )
 
@@ -462,7 +462,7 @@ func PostForumLikeClient(cookie *_type.TypeCookie, fid int64) (*PostForumLikeCli
 	return &resp, err
 }
 
-func PluginForumLikeGetSwitch(c echo.Context) error {
+func PluginForumLikeGetSwitch(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	status := _function.GetUserOption("kd_forum_like_check", uid)
 	if status == "" {
@@ -472,7 +472,7 @@ func PluginForumLikeGetSwitch(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", status != "0", "tbsign"))
 }
 
-func PluginForumLikeSwitch(c echo.Context) error {
+func PluginForumLikeSwitch(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	status := _function.GetUserOption("kd_forum_like_check", uid) != "0"
 
@@ -485,7 +485,7 @@ func PluginForumLikeSwitch(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", !status, "tbsign"))
 }
 
-func PluginForumLikeForumList(c echo.Context) error {
+func PluginForumLikeForumList(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	pid := c.Param("pid")
@@ -529,7 +529,7 @@ type PluginForumLikeListBinding struct {
 	Fname []string `form:"fname" json:"fname"`
 }
 
-func PluginForumLikeForumListAdd(c echo.Context) error {
+func PluginForumLikeForumListAdd(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	bindings := new(PluginForumLikeListBinding)
@@ -610,7 +610,7 @@ type PluginForumLikeCloneBinding struct {
 	Source    string `param:"source"`
 }
 
-func PluginForumLikeForumListClone(c echo.Context) error {
+func PluginForumLikeForumListClone(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	bindings := new(PluginForumLikeCloneBinding)
@@ -707,7 +707,7 @@ func PluginForumLikeForumListClone(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", dataToInsert, "tbsign"))
 }
 
-func PluginForumLikeForumConfig(c echo.Context) error {
+func PluginForumLikeForumConfig(c *echo.Context) error {
 	numLimit, _ := strconv.Atoi(_function.GetOption("kd_forum_like_forum_limit_each_pid"))
 	pidCooldownTime, _ := strconv.Atoi(_function.GetOption("kd_forum_like_cooldown_time_pid"))
 	fnameCooldownTime, _ := strconv.Atoi(_function.GetOption("kd_forum_like_cooldown_time_fname"))
@@ -724,7 +724,7 @@ type PluginForumLikeForumListDeleteParams struct {
 	Tid uint64 `param:"tid"`
 }
 
-func PluginForumLikeForumListDelete(c echo.Context) error {
+func PluginForumLikeForumListDelete(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	params := new(PluginForumLikeForumListDeleteParams)
@@ -768,7 +768,7 @@ type PluginForumLikeForumListDeleteSucceedParams struct {
 	Pid uint64 `param:"pid"`
 }
 
-func PluginForumLikeForumListDeleteSucceed(c echo.Context) error {
+func PluginForumLikeForumListDeleteSucceed(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	params := new(PluginForumLikeForumListDeleteSucceedParams)

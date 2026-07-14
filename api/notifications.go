@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
-func GetNotifications(c echo.Context) error {
+func GetNotifications(c *echo.Context) error {
 	notifications := _function.GetOption("ann")
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", notifications, "tbsign"))
 }

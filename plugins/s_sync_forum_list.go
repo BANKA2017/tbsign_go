@@ -9,7 +9,7 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	"github.com/kdnetwork/code-snippet/go/utils"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 )
 
@@ -144,7 +144,7 @@ func (pluginInfo *RefreshTiebaListPluginType) ImportAccount(int32, map[int32]int
 
 // endpoint
 
-func PluginRefreshTiebaListStatus(c echo.Context) error {
+func PluginRefreshTiebaListStatus(c *echo.Context) error {
 	numLastDo, _ := strconv.ParseInt(_function.GetOption("ver4_ref_lastdo"), 10, 64)
 	numInterval, _ := strconv.ParseInt(_function.GetOption("ver4_ref_interval"), 10, 64)
 

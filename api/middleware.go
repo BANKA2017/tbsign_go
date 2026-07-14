@@ -8,13 +8,13 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/BANKA2017/tbsign_go/share"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
 	"golang.org/x/time/rate"
 )
 
 func ParsePath(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		path := c.Path()
 
 		if share.EnableFrontend && strings.HasPrefix(path, "/api/") {
@@ -28,7 +28,7 @@ func ParsePath(next echo.HandlerFunc) echo.HandlerFunc {
 }
 
 func SetHeaders(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		if !share.EnableFrontend {
 			c.Response().Header().Set("Access-Control-Allow-Origin", "*")
 			c.Response().Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,PATCH,OPTIONS")
@@ -49,7 +49,7 @@ func SetHeaders(next echo.HandlerFunc) echo.HandlerFunc {
 const SetCookiePath = "/api"
 
 func AuthCheck(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		authorization := ""
 		authSource := "header"
 		if share.EnableFrontend {
@@ -100,7 +100,7 @@ func AuthCheck(next echo.HandlerFunc) echo.HandlerFunc {
 }
 
 func AdminCheck(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		// admin
 		if role, ok := c.Get("role").(string); !ok || role != _function.RoleAdmin {
 			return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效用户组", _function.EchoEmptyObject, "tbsign"))
@@ -110,7 +110,7 @@ func AdminCheck(next echo.HandlerFunc) echo.HandlerFunc {
 }
 
 func PluginPathPrecheck(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		path, ok := c.Get("path").(string)
 		if !ok || !strings.HasPrefix(path, "/plugins/") {
 			return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "插件不可用", _function.EchoEmptyObject, "tbsign"))
@@ -134,16 +134,16 @@ func RateLimit(_rate int, expiresIn time.Duration) echo.MiddlewareFunc {
 	config := middleware.RateLimiterConfig{
 		Skipper: middleware.DefaultSkipper,
 		Store: middleware.NewRateLimiterMemoryStoreWithConfig(
-			middleware.RateLimiterMemoryStoreConfig{Rate: rate.Limit(_rate), Burst: 1, ExpiresIn: expiresIn},
+			middleware.RateLimiterMemoryStoreConfig{Rate: float64(rate.Limit(_rate)), Burst: 1, ExpiresIn: expiresIn},
 		),
-		IdentifierExtractor: func(ctx echo.Context) (string, error) {
+		IdentifierExtractor: func(ctx *echo.Context) (string, error) {
 			id := ctx.RealIP()
 			return id, nil
 		},
-		ErrorHandler: func(context echo.Context, err error) error {
+		ErrorHandler: func(context *echo.Context, err error) error {
 			return context.JSON(http.StatusServiceUnavailable, _function.ApiTemplate(503, "服务不可用", _function.EchoEmptyObject, "tbsign"))
 		},
-		DenyHandler: func(context echo.Context, identifier string, err error) error {
+		DenyHandler: func(context *echo.Context, identifier string, err error) error {
 			return context.JSON(http.StatusTooManyRequests, _function.ApiTemplate(429, "请求过多", _function.EchoEmptyObject, "tbsign"))
 		},
 	}

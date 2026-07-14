@@ -14,7 +14,7 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	_type "github.com/BANKA2017/tbsign_go/types"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 )
 
@@ -320,7 +320,7 @@ func (pluginInfo *LotteryPluginPluginType) ImportAccount(uid int32, pid map[int3
 
 // endpoint
 
-func PluginKnowsLotteryGetLogs(c echo.Context) error {
+func PluginKnowsLotteryGetLogs(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	var _log []*model.TcVer4LotteryLog
@@ -329,7 +329,7 @@ func PluginKnowsLotteryGetLogs(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", _log, "tbsign"))
 }
 
-func PluginKnowsLotteryGetSwitch(c echo.Context) error {
+func PluginKnowsLotteryGetSwitch(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	status := _function.GetUserOption("ver4_lottery_check", uid)
 	if status == "" {
@@ -339,7 +339,7 @@ func PluginKnowsLotteryGetSwitch(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", status != "0", "tbsign"))
 }
 
-func PluginKnowsLotterySwitch(c echo.Context) error {
+func PluginKnowsLotterySwitch(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	status := _function.GetUserOption("ver4_lottery_check", uid) != "0"
 

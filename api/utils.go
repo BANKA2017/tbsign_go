@@ -17,7 +17,7 @@ import (
 	"github.com/BANKA2017/tbsign_go/model"
 	"github.com/BANKA2017/tbsign_go/share"
 	"github.com/jellydator/ttlcache/v3"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"golang.org/x/exp/slices"
 	"golang.org/x/sync/singleflight"
 )
@@ -26,7 +26,7 @@ var RoleList = []string{_function.RoleDeleted, _function.RoleBanned, _function.R
 
 var IndependentFEPath = []string{"/robots.txt", "/favicon.ico", "/icp.jsonp", "/site.jsonp"}
 
-func echoRobots(c echo.Context) error {
+func echoRobots(c *echo.Context) error {
 	if val := _function.GetOption("go_robots_txt"); val != "" {
 		return c.String(http.StatusOK, val)
 	}
@@ -38,7 +38,7 @@ var FaviconBinCache []byte
 var FaviconCacheTime time.Time
 var NoFavicon = false
 
-func echoFavicon(c echo.Context) (err error) {
+func echoFavicon(c *echo.Context) (err error) {
 	if len(FaviconBinCache) > 0 {
 		c.Response().Header().Set("Last-Modified", FaviconCacheTime.Format(http.TimeFormat))
 		return c.Blob(http.StatusOK, "image/x-icon", FaviconBinCache)
@@ -271,14 +271,14 @@ func SendResetMessage(uid int32, pushType string, forceMode bool) (string, error
 	return v.VerifyCode, nil
 }
 
-func IsArrayMode(c echo.Context) bool {
+func IsArrayMode(c *echo.Context) bool {
 	arrayModeValue := c.QueryParam("array_mode")
 	return arrayModeValue != "" && arrayModeValue != "0" && arrayModeValue != "false"
 }
 
 var RequestSingleFlight singleflight.Group
 
-func GetBodyMap(c echo.Context) (map[string][]string, error) {
+func GetBodyMap(c *echo.Context) (map[string][]string, error) {
 	request := c.Request()
 
 	if err := request.ParseForm(); err != nil {
@@ -296,3 +296,5 @@ func GetBodyMap(c echo.Context) (map[string][]string, error) {
 
 	return bodyMap, nil
 }
+
+const bodyLimit50M = 50 * 1024 * 1024

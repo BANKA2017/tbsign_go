@@ -16,7 +16,7 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	_type "github.com/BANKA2017/tbsign_go/types"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
 )
@@ -850,7 +850,7 @@ func (pluginInfo *UserGrowthTasksPluginType) ImportAccount(uid int32, pid map[in
 
 // endpoints
 
-func PluginGrowthTasksGetSettings(c echo.Context) error {
+func PluginGrowthTasksGetSettings(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	// flag
@@ -890,7 +890,7 @@ func PluginGrowthTasksGetSettings(c echo.Context) error {
 	}, "tbsign"))
 }
 
-func PluginGrowthTasksSetSettings(c echo.Context) error {
+func PluginGrowthTasksSetSettings(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	tasksFlag := strings.TrimSpace(c.FormValue("tasks_flag"))
@@ -929,7 +929,7 @@ func PluginGrowthTasksSetSettings(c echo.Context) error {
 	}, "tbsign"))
 }
 
-func PluginGrowthTasksGetList(c echo.Context) error {
+func PluginGrowthTasksGetList(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	var accounts []*model.TcKdGrowth
@@ -938,7 +938,7 @@ func PluginGrowthTasksGetList(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", accounts, "tbsign"))
 }
 
-func PluginGrowthTasksAddAccount(c echo.Context) error {
+func PluginGrowthTasksAddAccount(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 
@@ -965,7 +965,7 @@ func PluginGrowthTasksAddAccount(c echo.Context) error {
 	}
 }
 
-func PluginGrowthTasksDelAccount(c echo.Context) error {
+func PluginGrowthTasksDelAccount(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	id := c.Param("id")
@@ -990,7 +990,7 @@ func PluginGrowthTasksDelAccount(c echo.Context) error {
 	}, "tbsign"))
 }
 
-func PluginGrowthTasksDelAllAccounts(c echo.Context) error {
+func PluginGrowthTasksDelAllAccounts(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
@@ -1002,7 +1002,7 @@ func PluginGrowthTasksDelAllAccounts(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 }
 
-func PluginGrowthTasksGetTasksStatus(c echo.Context) error {
+func PluginGrowthTasksGetTasksStatus(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	pid := c.Param("pid")
 

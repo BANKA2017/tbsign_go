@@ -12,11 +12,11 @@ import (
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/BANKA2017/tbsign_go/share"
 	_type "github.com/BANKA2017/tbsign_go/types"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 )
 
-func GetLoginQRCode(c echo.Context) error {
+func GetLoginQRCode(c *echo.Context) error {
 	qrcode, err := _function.GetLoginQRCode()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "获取二维码失败", _function.EchoEmptyObject, "tbsign"))
@@ -24,7 +24,7 @@ func GetLoginQRCode(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", qrcode, "tbsign"))
 }
 
-func GetBDUSS(c echo.Context) error {
+func GetBDUSS(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	isAdmin := strings.EqualFold(c.Get("role").(string), _function.RoleAdmin)
 
@@ -143,7 +143,7 @@ func GetBDUSS(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(201, "OK", newAccount, "tbsign"))
 }
 
-func AddTiebaAccount(c echo.Context) error {
+func AddTiebaAccount(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	isAdmin := strings.EqualFold(c.Get("role").(string), _function.RoleAdmin)
 
@@ -244,7 +244,7 @@ func AddTiebaAccount(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(201, "OK", newAccount, "tbsign"))
 }
 
-func RemoveTiebaAccount(c echo.Context) error {
+func RemoveTiebaAccount(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	pid := c.Param("pid")
@@ -291,7 +291,7 @@ func RemoveTiebaAccount(c echo.Context) error {
 
 }
 
-func GetTiebaAccountList(c echo.Context) error {
+func GetTiebaAccountList(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	arrayMode := IsArrayMode(c)
@@ -324,7 +324,7 @@ func GetTiebaAccountList(c echo.Context) error {
 	}
 }
 
-func GetTiebaAccountItem(c echo.Context) error {
+func GetTiebaAccountItem(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	pid := c.Param("pid")
@@ -340,7 +340,7 @@ func GetTiebaAccountItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", tiebaAccount, "tbsign"))
 }
 
-func CheckTiebaAccount(c echo.Context) error {
+func CheckTiebaAccount(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
@@ -360,7 +360,7 @@ func CheckTiebaAccount(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", cookie.IsLogin, "tbsign"))
 }
 
-func CheckIsManager(c echo.Context) error {
+func CheckIsManager(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	pid := c.Param("pid")

@@ -8,11 +8,11 @@ import (
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 )
 
-func AddTieba(c echo.Context) error {
+func AddTieba(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	pid := c.FormValue("pid")
@@ -90,7 +90,7 @@ func VerifyFidList(fid string) ModifyForumIDList {
 	return list
 }
 
-func RemoveTieba(c echo.Context) error {
+func RemoveTieba(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	pid := c.Param("pid")
@@ -115,7 +115,7 @@ func RemoveTieba(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", response, "tbsign"))
 }
 
-func ResetTieba(c echo.Context) error {
+func ResetTieba(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	pid := c.Param("pid")
@@ -139,7 +139,7 @@ func ResetTieba(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", response, "tbsign"))
 }
 
-func IgnoreTieba(c echo.Context) error {
+func IgnoreTieba(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	pid := c.Param("pid")
@@ -176,7 +176,7 @@ func IgnoreTieba(c echo.Context) error {
 	}, "tbsign"))
 }
 
-func CleanTiebaList(c echo.Context) error {
+func CleanTiebaList(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	pid := c.Param("pid")
@@ -198,7 +198,7 @@ func CleanTiebaList(c echo.Context) error {
 	}, "tbsign"))
 }
 
-func RefreshTiebaList(c echo.Context) error {
+func RefreshTiebaList(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	pid := c.Param("pid")
@@ -241,7 +241,7 @@ func RefreshTiebaList(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", forumList.([]*model.TcTieba), "tbsign"))
 }
 
-func GetTiebaList(c echo.Context) error {
+func GetTiebaList(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	pid := c.Param("pid")
@@ -307,7 +307,7 @@ type forumStatus struct {
 	IsIgnore   int   `json:"ignore"`
 }
 
-func GetForumStatus(c echo.Context) error {
+func GetForumStatus(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	pid := c.Param("pid")

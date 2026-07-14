@@ -6,10 +6,11 @@
 package _plugin
 
 import (
+	"encoding/json"
 	"net/http"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 )
 
@@ -126,7 +127,7 @@ var PluginExampleOptionValidatorKey2 = _function.OptionRule{
 }
 
 // endpoint
-func pluginApiSample(c echo.Context) error {
+func pluginApiSample(c *echo.Context) error {
 	// uid := c.Get("uid").(string)
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", _function.EchoEmptyObject, "tbsign"))

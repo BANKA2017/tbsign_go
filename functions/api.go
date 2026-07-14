@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	_type "github.com/BANKA2017/tbsign_go/types"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 var EchoEmptyObject = make(map[string]struct{}, 0)
@@ -19,10 +19,10 @@ func ApiTemplate[T any](code int, message string, data T, version string) _type.
 	}
 }
 
-func EchoReject(c echo.Context) error {
+func EchoReject(c *echo.Context) error {
 	return c.JSON(http.StatusForbidden, ApiTemplate(403, "非法请求", EchoEmptyObject, "tbsign"))
 }
 
-func EchoNoContent(c echo.Context) error {
+func EchoNoContent(c *echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }

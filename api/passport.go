@@ -13,7 +13,7 @@ import (
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/BANKA2017/tbsign_go/share"
 	"github.com/jellydator/ttlcache/v3"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
 )
@@ -44,7 +44,7 @@ type userInfoWithSettingsStruct struct {
 	SystemSettings map[string]string `json:"system_settings"`
 }
 
-func Signup(c echo.Context) error {
+func Signup(c *echo.Context) error {
 	// site status
 	isRegistrationEnable := _function.GetOption("enable_reg") == "1"
 	if !isRegistrationEnable {
@@ -100,7 +100,7 @@ func Signup(c echo.Context) error {
 	}, "tbsign"))
 }
 
-func DeleteAccount(c echo.Context) error {
+func DeleteAccount(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	password := c.FormValue("password")
@@ -164,7 +164,7 @@ func DeleteAccount(c echo.Context) error {
 	}, "tbsign"))
 }
 
-func Login(c echo.Context) error {
+func Login(c *echo.Context) error {
 	account := strings.TrimSpace(c.FormValue("account")) // username or email
 	password := strings.TrimSpace(c.FormValue("password"))
 
@@ -227,7 +227,7 @@ func Login(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
 }
 
-func Logout(c echo.Context) error {
+func Logout(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	// numUID, _ := strconv.ParseInt(uid, 10, 64)
@@ -252,7 +252,7 @@ func Logout(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 }
 
-func UpdateAccountInfo(c echo.Context) error {
+func UpdateAccountInfo(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	var accountInfo []*model.TcUser
@@ -394,7 +394,7 @@ func UpdateAccountInfo(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
 }
 
-func UpdatePassword(c echo.Context) error {
+func UpdatePassword(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	oldPwd := c.FormValue("old_password")
@@ -456,7 +456,7 @@ func UpdatePassword(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
 }
 
-func GetAccountInfo(c echo.Context) error {
+func GetAccountInfo(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	// check filter
@@ -525,7 +525,7 @@ func GetAccountInfo(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resp, "tbsign"))
 }
 
-func GetSettings(c echo.Context) error {
+func GetSettings(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	var accountSettings []*model.TcUsersOption
@@ -541,7 +541,7 @@ func GetSettings(c echo.Context) error {
 }
 
 // TODO verify password
-func UpdateSettings(c echo.Context) error {
+func UpdateSettings(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	c.Request().ParseForm()
@@ -574,7 +574,7 @@ func UpdateSettings(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", settings, "tbsign"))
 }
 
-func ResetPassword(c echo.Context) error {
+func ResetPassword(c *echo.Context) error {
 	_account := strings.TrimSpace(c.FormValue("account"))
 	verifyCode := strings.TrimSpace(c.FormValue("code"))
 	newPwd := strings.TrimSpace(c.FormValue("password"))
@@ -666,7 +666,7 @@ var BackupUsersOptionKeys = []string{"go_bark_key", "go_daily_report", "go_messa
 var BackupUsersOptionDangerKeys = []string{"session_expired_at"}
 var BackupAllowOptionKeys = []string{"go_bark_key", "go_daily_report", "go_daily_report_status", "go_message_type", "go_ntfy_topic", "go_pushdeer_key", "kd_growth_break_icon_tasks", "kd_growth_ext_tasks", "kd_growth_sign_only", "kd_wenku_tasks_checkin_only", "kd_wenku_tasks_vip_matrix", "kd_wenku_tasks_vip_matrix_id_set", "ver4_rank_check", "ver4_lottery_check", "ver4_ban_open", "kd_renew_manager_alert", "kd_renew_manager_interval", "kd_renew_manager_open"}
 
-func ExportAccountData(c echo.Context) error {
+func ExportAccountData(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	// isPureGoMode
@@ -755,7 +755,7 @@ func ExportAccountData(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", dataMap, "tbsign"))
 }
 
-func ImportAccountData(c echo.Context) error {
+func ImportAccountData(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	isAdmin := strings.EqualFold(c.Get("role").(string), _function.RoleAdmin)
 
@@ -997,7 +997,7 @@ type ResetAccountPluginParams struct {
 	Tid        uint64 `param:"tid"`
 }
 
-func ResetAccountPlugin(c echo.Context) error {
+func ResetAccountPlugin(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	params := new(ResetAccountPluginParams)

@@ -20,7 +20,7 @@ import (
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/kdnetwork/code-snippet/go/db"
 	"github.com/kdnetwork/code-snippet/go/utils"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -42,7 +42,7 @@ type PluginListContent struct {
 	SettingOptions []PluginListSettingOption `json:"setting_options,omitempty"`
 }
 
-func GetServerStatus(c echo.Context) error {
+func GetServerStatus(c *echo.Context) error {
 	//system
 	//var memstats runtime.MemStats
 	//runtime.ReadMemStats(&memstats)
@@ -106,7 +106,7 @@ func GetServerStatus(c echo.Context) error {
 	}, "tbsign"))
 }
 
-func GetReleases(c echo.Context) error {
+func GetReleases(c *echo.Context) error {
 	perPage := c.QueryParam("per_page")
 
 	if perPage == "" {
@@ -124,7 +124,7 @@ func GetReleases(c echo.Context) error {
 
 var serverActionSF singleflight.Group
 
-func UpgradeSystem(c echo.Context) error {
+func UpgradeSystem(c *echo.Context) error {
 	_, err, _ := serverActionSF.Do("upgrade", func() (any, error) {
 		version := c.FormValue("version")
 		autoRestart := utils.StrBoolT(c.FormValue("auto_restart"))
@@ -147,7 +147,7 @@ func UpgradeSystem(c echo.Context) error {
 	return err
 }
 
-func readFormFile(c echo.Context, name string) ([]byte, error) {
+func readFormFile(c *echo.Context, name string) ([]byte, error) {
 	file, err := c.FormFile(name)
 	if err != nil {
 		return nil, err
@@ -160,7 +160,7 @@ func readFormFile(c echo.Context, name string) ([]byte, error) {
 	return io.ReadAll(src)
 }
 
-func UpgradeSystem2(c echo.Context) error {
+func UpgradeSystem2(c *echo.Context) error {
 	_, err, _ := serverActionSF.Do("upgrade", func() (any, error) {
 		metadata, err := readFormFile(c, "metadata")
 		if err != nil {
@@ -192,7 +192,7 @@ func UpgradeSystem2(c echo.Context) error {
 	return err
 }
 
-func ShutdownSystem(c echo.Context) error {
+func ShutdownSystem(c *echo.Context) error {
 	go func() {
 		slog.Info("system.shutdown")
 		defer os.Exit(1)
@@ -201,7 +201,7 @@ func ShutdownSystem(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", _function.EchoEmptyObject, "tbsign"))
 }
 
-func GetPluginsList(c echo.Context) error {
+func GetPluginsList(c *echo.Context) error {
 	isAdmin := c.Get("role").(string) == _function.RoleAdmin
 	var resPluginList = make(map[string]*PluginListContent, len(_plugin.PluginList))
 
@@ -239,7 +239,7 @@ func GetPluginsList(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resPluginList, "tbsign"))
 }
 
-func GetLoginPageConfig(c echo.Context) error {
+func GetLoginPageConfig(c *echo.Context) error {
 	// email
 	enabledEmail := true
 
@@ -303,7 +303,7 @@ var cronJobOrder = map[string]int{
 	"plugin":     4,
 }
 
-func GetCronJobs(c echo.Context) error {
+func GetCronJobs(c *echo.Context) error {
 	var cronJobs = _function.Crontab.Jobs()
 
 	var CronJobList = make([]CronJob, 0, len(cronJobs))
@@ -346,7 +346,7 @@ func GetCronJobs(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", CronJobList, "tbsign"))
 }
 
-func RunCronJob(c echo.Context) error {
+func RunCronJob(c *echo.Context) error {
 	jobID := c.Param("id")
 
 	jobs := _function.Crontab.Jobs()
@@ -363,7 +363,7 @@ func RunCronJob(c echo.Context) error {
 	return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "Cron job not found", false, "tbsign"))
 }
 
-func EncryptDB(c echo.Context) error {
+func EncryptDB(c *echo.Context) error {
 	if !(!share.IsEncrypt && len(share.DataEncryptKeyByte) == 32) {
 		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "invalid encrypt status", false, "tbsign"))
 	}
@@ -381,7 +381,7 @@ func EncryptDB(c echo.Context) error {
 	return err
 }
 
-func DecryptDB(c echo.Context) error {
+func DecryptDB(c *echo.Context) error {
 	if !share.IsEncrypt {
 		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "invalid encrypt status", false, "tbsign"))
 	}

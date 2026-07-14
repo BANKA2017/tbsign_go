@@ -1,7 +1,6 @@
 package _api
 
 import (
-	"errors"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -13,47 +12,40 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/BANKA2017/tbsign_go/share"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
 )
 
 func Api(address string) {
 	// api
 	e := echo.New()
-	e.HideBanner = true
-	e.HidePort = true
+	// e.HideBanner = true
+	// e.HidePort = true
 	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogStatus:    true,
 		LogMethod:    true,
 		LogRoutePath: true,
 		LogURI:       true,
-		LogError:     true,
 		HandleError:  true, // forwards error to the global error handler, so it can decide appropriate status code
-		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-			if v.Error == nil {
+		LogValuesFunc: func(c *echo.Context, v middleware.RequestLoggerValues) error {
+			slogHttpGroup := slog.Group("http",
+				slog.Int("status", v.Status),
+				slog.String("method", v.Method),
+				slog.String("path", v.RoutePath),
+				slog.String("uri", v.URI),
+				slog.String("query", c.QueryString()),
+			)
+
+			if v.Error != nil {
+				slog.Error("echo.error",
+					slogHttpGroup,
+					slog.String("error", v.Error.Error()),
+				)
+			} else {
 				// if v.Status == http.StatusOK && v.RoutePath == "/*" {
 				// 	return nil
 				// }
-				slog.Debug("echo.request",
-					slog.Group("http",
-						slog.Int("status", v.Status),
-						slog.String("method", v.Method),
-						slog.String("path", v.RoutePath),
-						slog.String("uri", v.URI),
-						slog.String("query", c.QueryString()),
-					),
-				)
-			} else {
-				slog.Error("echo.error",
-					slog.Group("http",
-						slog.Int("status", v.Status),
-						slog.String("method", v.Method),
-						slog.String("path", v.RoutePath),
-						slog.String("uri", v.URI),
-						slog.String("query", c.QueryString()),
-					),
-					slog.String("error", v.Error.Error()),
-				)
+				slog.Debug("echo.request", slogHttpGroup)
 			}
 			return nil
 		},
@@ -62,21 +54,6 @@ func Api(address string) {
 	// Why removed this middleware -> https://github.com/labstack/echo/issues/2211
 	// TL;DR -> open embedded static dir in echo@v4 will cause incorrect redirection
 	// e.Pre(middleware.RemoveTrailingSlash())
-
-	e.HTTPErrorHandler = func(err error, c echo.Context) {
-		if c.Response().Committed {
-			return
-		}
-
-		var httpError *echo.HTTPError
-		if ok := errors.As(err, &httpError); ok {
-			if httpError.Code == http.StatusNotFound {
-				_ = _function.EchoReject(c)
-				return
-			}
-		}
-		e.DefaultHTTPErrorHandler(err, c)
-	}
 
 	e.Use(ParsePath)
 
@@ -93,6 +70,7 @@ func Api(address string) {
 	noCheckApi.GET("/config/page/login", GetLoginPageConfig) // get site config before login
 
 	api := e.Group(apiPrefix, SetHeaders, AuthCheck)
+	api.Any("/*", _function.EchoReject)
 
 	// passport
 	passport := api.Group("/passport")
@@ -101,7 +79,7 @@ func Api(address string) {
 
 	if share.EnableBackup {
 		passport.POST("/export", ExportAccountData, RateLimit(1, time.Second*10))
-		passport.POST("/import", ImportAccountData, RateLimit(1, time.Second*10), middleware.BodyLimit("50M"))
+		passport.POST("/import", ImportAccountData, RateLimit(1, time.Second*10), middleware.BodyLimit(bodyLimit50M))
 	}
 
 	passport.DELETE("/delete", DeleteAccount)
@@ -169,7 +147,7 @@ func Api(address string) {
 		admin.POST("/server/upgrade", UpgradeSystem, RateLimit(1, time.Second*10))
 		admin.GET("/server/upgrade/releases", GetReleases, RateLimit(1, time.Second*10))
 		if _function.VerifyPublicKey != nil {
-			admin.POST("/server/upgrade/upload", UpgradeSystem2, RateLimit(1, time.Second*10), middleware.BodyLimit("50M"))
+			admin.POST("/server/upgrade/upload", UpgradeSystem2, RateLimit(1, time.Second*10), middleware.BodyLimit(bodyLimit50M))
 		}
 		admin.POST("/server/shutdown", ShutdownSystem)
 	}
@@ -201,12 +179,12 @@ func Api(address string) {
 	if share.EnableFrontend {
 		fe, _ := fs.Sub(assets.EmbeddedFrontend, "dist")
 		e.Any("/favicon.ico", echoFavicon)
-		e.GET("/icp.jsonp", func(c echo.Context) error {
+		e.GET("/icp.jsonp", func(c *echo.Context) error {
 			return c.JSONP(200, "__GetICP", ICPStruct{
 				ICP: _function.GetOption("icp"),
 			})
 		})
-		e.GET("/site.jsonp", func(c echo.Context) error {
+		e.GET("/site.jsonp", func(c *echo.Context) error {
 			feSettings := FESettings{
 				SystemName:        _function.GetOption("system_name"),
 				SystemKeywords:    _function.GetOption("system_keywords"),
@@ -221,21 +199,37 @@ func Api(address string) {
 			return c.JSONP(200, "__GetConfig", feSettings)
 		})
 
-		e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
-			Filesystem: &_function.StaticFSWrapper{
-				FileSystem:   http.FS(fe),
-				FixedModTime: share.BuildAtTime,
-			},
-			HTML5: true,
-			Skipper: func(c echo.Context) bool {
-				path := c.Path()
+		e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+			return func(c *echo.Context) error {
+				if !IsAPIPath(c) {
+					// etag := _function.Sha256(c.Request().RequestURI)
+					//
+					// c.Response().Header().Set("ETag", `"`+etag+`"`)
+					// if c.Request().Header.Get("If-None-Match") == `"`+etag+`"` {
+					// 	return c.NoContent(http.StatusNotModified)
+					// }
 
-				return slices.Contains(IndependentFEPath, path) || path == "/api" || strings.HasPrefix(path, "/api/")
-			},
+					c.Response().Header().Set("Last-Modified", share.BuildAtTime.UTC().Format(http.TimeFormat))
+				}
+
+				return next(c)
+			}
+		}, middleware.StaticWithConfig(middleware.StaticConfig{
+			Filesystem: fe,
+			HTML5:      true,
+			Skipper:    IsAPIPath,
 		}))
 	}
 
-	e.Logger.Fatal(e.Start(address))
+	if err := e.Start(address); err != nil {
+		e.Logger.Error("failed to start server", "error", err)
+	}
+}
+
+func IsAPIPath(c *echo.Context) bool {
+	path := c.Path()
+
+	return slices.Contains(IndependentFEPath, path) || path == "/api" || strings.HasPrefix(path, "/api/")
 }
 
 type ICPStruct struct {

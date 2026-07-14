@@ -15,7 +15,7 @@ import (
 	"github.com/BANKA2017/tbsign_go/model"
 	_type "github.com/BANKA2017/tbsign_go/types"
 	"github.com/kdnetwork/code-snippet/go/utils"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -541,7 +541,7 @@ func PluginRenewManagerGetThreadInfo(cookie *_type.TypeCookie, tid int64, fid in
 }
 
 // endpoint
-func PluginRenewManagerGetSwitch(c echo.Context) error {
+func PluginRenewManagerGetSwitch(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	status := _function.GetUserOption("kd_renew_manager_open", uid)
 	if status == "" {
@@ -551,7 +551,7 @@ func PluginRenewManagerGetSwitch(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", status != "0", "tbsign"))
 }
 
-func PluginRenewManagerSwitch(c echo.Context) error {
+func PluginRenewManagerSwitch(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	status := _function.GetUserOption("kd_renew_manager_open", uid) != "0"
 
@@ -569,7 +569,7 @@ type PluginRenewManagerUpdateSettingsResponseStruct struct {
 	ActionInterval int  `json:"action_interval"`
 }
 
-func PluginRenewManagerGetSettings(c echo.Context) error {
+func PluginRenewManagerGetSettings(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	status := _function.GetUserOption("kd_renew_manager_alert", uid)
 	if status == "" {
@@ -588,7 +588,7 @@ func PluginRenewManagerGetSettings(c echo.Context) error {
 	}, "tbsign"))
 }
 
-func PluginRenewManagerUpdateSettings(c echo.Context) error {
+func PluginRenewManagerUpdateSettings(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	reportStatus := c.FormValue("report_switch") != "0" && c.FormValue("report_switch") != ""
@@ -620,7 +620,7 @@ func PluginRenewManagerUpdateSettings(c echo.Context) error {
 	}, "tbsign"))
 }
 
-func PluginRenewManagerGetList(c echo.Context) error {
+func PluginRenewManagerGetList(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	var list []*model.TcKdRenewManager
@@ -629,7 +629,7 @@ func PluginRenewManagerGetList(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", list, "tbsign"))
 }
 
-func PluginRenewManagerAddAccount(c echo.Context) error {
+func PluginRenewManagerAddAccount(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	pid := strings.TrimSpace(c.FormValue("pid"))
@@ -702,7 +702,7 @@ func PluginRenewManagerAddAccount(c echo.Context) error {
 	}
 }
 
-func PluginRenewManagerDelAccount(c echo.Context) error {
+func PluginRenewManagerDelAccount(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	id := c.Param("id")
@@ -727,7 +727,7 @@ func PluginRenewManagerDelAccount(c echo.Context) error {
 	}, "tbsign"))
 }
 
-func PluginRenewManagerDelAllAccounts(c echo.Context) error {
+func PluginRenewManagerDelAllAccounts(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
@@ -739,7 +739,7 @@ func PluginRenewManagerDelAllAccounts(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 }
 
-func PluginRenewManagerPreCheckStatus(c echo.Context) error {
+func PluginRenewManagerPreCheckStatus(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	pid := c.Param("pid")

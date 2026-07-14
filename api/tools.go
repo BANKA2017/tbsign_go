@@ -5,10 +5,10 @@ import (
 	"net/http"
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
-func GetUserByTiebaUID(c echo.Context) error {
+func GetUserByTiebaUID(c *echo.Context) error {
 	tiebauid := c.Param("tiebauid")
 
 	response, err := _function.GetUserInfoByTiebaUID(tiebauid)
@@ -21,7 +21,7 @@ func GetUserByTiebaUID(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", response, "tbsign"))
 }
 
-func GetUserByUsernameOrPortrait(c echo.Context) error {
+func GetUserByUsernameOrPortrait(c *echo.Context) error {
 	queryType := c.Param("query_type")
 	userValue := c.Param("user_value")
 
@@ -37,7 +37,7 @@ func GetUserByUsernameOrPortrait(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", response, "tbsign"))
 }
 
-func GetFidByFname(c echo.Context) error {
+func GetFidByFname(c *echo.Context) error {
 	fname := c.Param("fname")
 
 	fid := _function.GetFid(fname)

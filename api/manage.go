@@ -17,7 +17,7 @@ import (
 	"github.com/BANKA2017/tbsign_go/model"
 	_plugin "github.com/BANKA2017/tbsign_go/plugins"
 	"github.com/BANKA2017/tbsign_go/share"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
 )
@@ -39,7 +39,7 @@ type SiteAccountsResponse struct {
 	CheckinIgnore  int `json:"checkin_ignore"`
 }
 
-func GetAdminSettings(c echo.Context) error {
+func GetAdminSettings(c *echo.Context) error {
 	var adminSettings []*model.TcOption
 	_function.GormDB.R.Where("name in ?", _function.SettingsFilter).Find(&adminSettings)
 
@@ -179,7 +179,7 @@ var SettingsRules = map[string]*_function.OptionRule{
 	},
 }
 
-func UpdateAdminSettings(c echo.Context) error {
+func UpdateAdminSettings(c *echo.Context) error {
 	var errStr []string
 	settings := make(map[string]string)
 
@@ -242,7 +242,7 @@ func UpdateAdminSettings(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, strings.Join(errStr, "\n"), settings, "tbsign"))
 }
 
-func ResetAdminSettings(c echo.Context) error {
+func ResetAdminSettings(c *echo.Context) error {
 	option := c.Param("option")
 	if !slices.Contains(_function.SettingsFilter, option) {
 		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "设置项不存在", _function.EchoEmptyObject, "tbsign"))
@@ -268,7 +268,7 @@ type pluginSettingResponse struct {
 	Value string `json:"value"`
 }
 
-func GetPluginSettings(c echo.Context) error {
+func GetPluginSettings(c *echo.Context) error {
 	pluginName := c.Param("plugin_name")
 	plugin, ok := _plugin.PluginList[pluginName]
 	if !ok {
@@ -293,7 +293,7 @@ func GetPluginSettings(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resSettings, "tbsign"))
 }
 
-func UpdatePluginSettings(c echo.Context) error {
+func UpdatePluginSettings(c *echo.Context) error {
 	pluginName := c.Param("plugin_name")
 	plugin, ok := _plugin.PluginList[pluginName]
 	if !ok {
@@ -363,7 +363,7 @@ func UpdatePluginSettings(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, strings.Join(errStr, "\n"), settings, "tbsign"))
 }
 
-func AdminModifyAccountInfo(c echo.Context) error {
+func AdminModifyAccountInfo(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	targetUID := c.Param("uid")
 
@@ -448,7 +448,7 @@ func AdminModifyAccountInfo(c echo.Context) error {
 	}, "tbsign"))
 }
 
-func AdminResetTiebaList(c echo.Context) error {
+func AdminResetTiebaList(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	targetUID := c.Param("uid")
@@ -492,7 +492,7 @@ func AdminResetTiebaList(c echo.Context) error {
 	}
 }
 
-func AdminDeleteTiebaAccountList(c echo.Context) error {
+func AdminDeleteTiebaAccountList(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	targetUID := c.Param("uid")
@@ -546,7 +546,7 @@ func AdminDeleteTiebaAccountList(c echo.Context) error {
 	}
 }
 
-func AdminDeleteAccountToken(c echo.Context) error {
+func AdminDeleteAccountToken(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	targetUID := c.Param("uid")
 
@@ -563,7 +563,7 @@ func AdminDeleteAccountToken(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 }
 
-func AdminResetPassword(c echo.Context) error {
+func AdminResetPassword(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 	targetUID := c.Param("uid")
 
@@ -598,7 +598,7 @@ func AdminResetPassword(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", resetCodeResponse, "tbsign"))
 }
 
-func GetAccountsList(c echo.Context) error {
+func GetAccountsList(c *echo.Context) error {
 	page := c.QueryParam("page")
 	count := c.QueryParam("count")
 	query := strings.TrimSpace(c.QueryParam("q"))
@@ -681,7 +681,7 @@ func GetAccountsList(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", respAccountInfo, "tbsign"))
 }
 
-func AdminDeleteAccount(c echo.Context) error {
+func AdminDeleteAccount(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	targetUID := c.Param("uid")
@@ -739,7 +739,7 @@ func AdminDeleteAccount(c echo.Context) error {
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 }
 
-func AdminResetAccountPlugin(c echo.Context) error {
+func AdminResetAccountPlugin(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	pluginName := c.Param("plugin_name")
@@ -784,7 +784,7 @@ func AdminResetAccountPlugin(c echo.Context) error {
 	}
 }
 
-func PluginSwitch(c echo.Context) error {
+func PluginSwitch(c *echo.Context) error {
 	pluginName := c.Param("plugin_name")
 
 	_pluginInfo, ok := _plugin.PluginList[pluginName]
@@ -822,7 +822,7 @@ func PluginSwitch(c echo.Context) error {
 	}, "tbsign"))
 }
 
-func PluginUninstall(c echo.Context) error {
+func PluginUninstall(c *echo.Context) error {
 	pluginName := c.Param("plugin_name")
 
 	_pluginInfo, ok := _plugin.PluginList[pluginName]
@@ -858,7 +858,7 @@ func PluginUninstall(c echo.Context) error {
 	}
 }
 
-func SendTestMessage(c echo.Context) error {
+func SendTestMessage(c *echo.Context) error {
 	uid := c.Get("uid").(string)
 
 	messageType := c.QueryParam("type")
