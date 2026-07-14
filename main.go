@@ -60,7 +60,7 @@ func main() {
 	defer stop()
 
 	if share.EnableApi {
-		go _api.Api(share.Address)
+		go _api.Api(ctx, share.Network, share.Address)
 	}
 
 	// wait for the next minute

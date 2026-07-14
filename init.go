@@ -52,6 +52,7 @@ func InitEnv() {
 	flag.BoolVar(&share.EnableFrontend, "fe", utils.GetBoolEnv("tc_fe"), "active frontend endpoints")
 	flag.BoolVar(&share.EnableBackup, "allow_backup", utils.GetBoolEnv("tc_allow_backup"), "allow backup (export/import)")
 	flag.StringVar(&share.Address, "address", utils.GetEnv("tc_address", ":1323"), "address :1323")
+	flag.StringVar(&share.Network, "network", utils.GetEnv("tc_network", "tcp"), "tcp/tcp4/tcp6/unix/unixpacket")
 
 	// setup
 	flag.BoolVar(&setup, "setup", false, "Init the system [force]")

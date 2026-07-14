@@ -1,8 +1,10 @@
 package _api
 
 import (
+	"context"
 	"io/fs"
 	"log/slog"
+	"net"
 	"net/http"
 	"slices"
 	"strings"
@@ -16,11 +18,9 @@ import (
 	"github.com/labstack/echo/v5/middleware"
 )
 
-func Api(address string) {
+func Api(ctx context.Context, network, address string) {
 	// api
 	e := echo.New()
-	// e.HideBanner = true
-	// e.HidePort = true
 	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogStatus:    true,
 		LogMethod:    true,
@@ -221,7 +221,12 @@ func Api(address string) {
 		}))
 	}
 
-	if err := e.Start(address); err != nil {
+	sc := echo.StartConfig{HideBanner: true}
+
+	listener, _ := net.Listen(network, address)
+	sc.Listener = listener
+
+	if err := sc.Start(ctx, e); err != nil {
 		e.Logger.Error("failed to start server", "error", err)
 	}
 }

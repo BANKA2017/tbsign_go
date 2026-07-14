@@ -18,6 +18,7 @@ var EnableFrontend bool
 var EnableBackup bool
 
 var Address string
+var Network string
 
 var StartTime = time.Now()
 
