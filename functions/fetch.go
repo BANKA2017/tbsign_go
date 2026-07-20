@@ -94,7 +94,7 @@ func InitClient(timeout time.Duration) *http.Client {
 
 var EmptyHeaders = make(map[string]string)
 
-const BrowserUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+const BrowserUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36"
 
 const ClientVersion = "12.58.1.0"
 const ClientUserAgent = "tieba/" + ClientVersion
@@ -103,6 +103,8 @@ const ClientWidgetUserAgent = "TiebaWidgets/" + ClientVersion + " CFNetwork/3826
 func TBFetch(_url string, _method string, _body []byte, _headers map[string]string) ([]byte, error) {
 	return Fetch(_url, _method, _body, _headers, TBClient)
 }
+
+var testModeFetchContentTypeReplacer = strings.NewReplacer("application/", "", "text/", "")
 
 func Fetch(_url string, _method string, _body []byte, _headers map[string]string, client *http.Client) ([]byte, error) {
 	var body io.Reader
@@ -142,7 +144,7 @@ func Fetch(_url string, _method string, _body []byte, _headers map[string]string
 		strResponse := "[binary file]"
 		if contentType, ok := resp.Header["Content-Type"]; ok && len(contentType) > 0 {
 			mediatype, _, _ := mime.ParseMediaType(contentType[0])
-			if slices.Contains([]string{"html", "txt", "json", "xml", "javascript", "x-javascript"}, strings.ReplaceAll(strings.ReplaceAll(mediatype, "application/", ""), "text/", "")) {
+			if slices.Contains([]string{"html", "txt", "json", "xml", "javascript", "x-javascript"}, testModeFetchContentTypeReplacer.Replace(mediatype)) {
 				strResponse = string(response)
 			}
 		}
@@ -739,13 +741,15 @@ func GetUnicastResponse(sign string) (*_type.WrapUnicastResponse, error) {
 	}
 }
 
+var loginReplacer = strings.NewReplacer("'", "\"", "\\&quot;", "\\\"")
+
 func GetLoginResponse(tmpBDUSS string) (*_type.LoginResponse, error) {
 	res, err := TBFetch("https://passport.baidu.com/v3/login/main/qrbdusslogin?bduss="+tmpBDUSS, http.MethodGet, nil, EmptyHeaders)
 	if len(res) <= 2 || err != nil {
 		return nil, err
 	}
 
-	resStr := strings.ReplaceAll(strings.ReplaceAll(string(res), "'", "\""), "\\&", "&")
+	resStr := loginReplacer.Replace(string(res))
 
 	var parsed _type.LoginResponse
 	err = JsonDecode([]byte(resStr), &parsed)

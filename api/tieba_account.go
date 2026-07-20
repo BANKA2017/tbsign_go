@@ -47,9 +47,8 @@ func GetBDUSS(c *echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "登录失败", _function.EchoEmptyObject, "tbsign"))
 	}
 
-	stokenStr := strings.ReplaceAll(res2.Data.Session.StokenList, "&quot;", "\"")
 	var stokenArray []string
-	err = _function.JsonDecode([]byte(stokenStr), &stokenArray)
+	err = _function.JsonDecode([]byte(res2.Data.Session.StokenList), &stokenArray)
 	if err != nil || res2.Data.Session.Bduss == "" {
 		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "登录失败", _function.EchoEmptyObject, "tbsign"))
 	}
