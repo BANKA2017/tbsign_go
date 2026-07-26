@@ -15,4 +15,9 @@ type TypeCookie struct {
 	UID      int32
 	Name     string
 	Portrait string
+
+	// blcp
+	TriggerID int
+	UK        int
+	BaiduUID  int
 }

@@ -6,9 +6,11 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/md5"
+	"crypto/pbkdf2"
 	"crypto/sha1"
 	"encoding/base32"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -40,7 +42,10 @@ type Client struct {
 	c3Aid       string
 
 	aesCBCSecKey []byte
-	aesCBCChiper cipher.Block
+	aesCBCCipher cipher.Block
+
+	aesECBSecretKey []byte
+	aesECBCipher    cipher.Block
 
 	Zid string
 
@@ -51,7 +56,7 @@ func (tc *Client) RandomAndroidID() string {
 	tc.mu.Lock()
 	defer tc.mu.Unlock()
 
-	androidID, _ := RandomTokenBuilder(16)
+	androidID, _ := RandomTokenBuilder(8)
 
 	tc.AndroidID = hex.EncodeToString(androidID)
 
@@ -268,8 +273,8 @@ func (tc *Client) AESCBCSecKey() ([]byte, error) {
 	return tc.aesCBCSecKey, nil
 }
 
-func (tc *Client) AESCBCChiper() (cipher.Block, error) {
-	if tc.aesCBCChiper == nil {
+func (tc *Client) AESCBCCipher() (cipher.Block, error) {
+	if tc.aesCBCCipher == nil {
 		tc.mu.Lock()
 		defer tc.mu.Unlock()
 
@@ -283,9 +288,65 @@ func (tc *Client) AESCBCChiper() (cipher.Block, error) {
 			return nil, fmt.Errorf("create aes cipher error: %w", err)
 		}
 
-		tc.aesCBCChiper = block
+		tc.aesCBCCipher = block
 	}
-	return tc.aesCBCChiper, nil
+	return tc.aesCBCCipher, nil
+}
+
+func (tc *Client) AESECBSecKey() ([]byte, error) {
+	if tc.aesECBSecretKey == nil {
+		// NEVER CREATE DEADLOCK!!!
+		// tc.mu.Lock()
+		// defer tc.mu.Unlock()
+
+		key, err := RandomTokenBuilder(31)
+		if err != nil {
+			return nil, fmt.Errorf("generate random key error: %w", err)
+		}
+
+		tc.aesECBSecretKey = key
+	}
+
+	return tc.aesECBSecretKey, nil
+}
+
+func (tc *Client) AESECBCipher() (cipher.Block, error) {
+	if tc.aesECBCipher == nil {
+		tc.mu.Lock()
+		defer tc.mu.Unlock()
+
+		// double check
+		if tc.aesECBCipher != nil {
+			return tc.aesECBCipher, nil
+		}
+
+		key, err := tc.AESECBSecKey()
+		if err != nil {
+			return nil, err
+		}
+
+		salt := []byte{
+			0xa4, 0x0b, 0xc8, 0x34,
+			0xd6, 0x95, 0xf3, 0x13,
+		}
+
+		wsSecretKey, _ := pbkdf2.Key(
+			sha1.New,
+			string(key),
+			salt,
+			5,
+			32,
+		)
+
+		block, err := aes.NewCipher(wsSecretKey)
+		if err != nil {
+			return nil, fmt.Errorf("create aes ecb cipher error: %w", err)
+		}
+
+		tc.aesECBCipher = block
+	}
+
+	return tc.aesECBCipher, nil
 }
 
 // https://github.com/lumina37/aiotieba/blob/master/aiotieba/api/init_z_id/_api.py
@@ -322,9 +383,9 @@ func (tc *Client) SyncZid() (string, error) {
 		return "", fmt.Errorf("get aes cbc sec key error: %w", err)
 	}
 
-	cbcChiper, err := tc.AESCBCChiper()
+	cbcCipher, err := tc.AESCBCCipher()
 	if err != nil {
-		return "", fmt.Errorf("get aes cbc chiper error: %w", err)
+		return "", fmt.Errorf("get aes cbc cipher error: %w", err)
 	}
 
 	if len(tc.AndroidID) != tbcAndroidIdSize {
@@ -366,7 +427,7 @@ func (tc *Client) SyncZid() (string, error) {
 
 	// cbc
 	iv := make([]byte, 16)
-	blockMode := cipher.NewCBCEncrypter(cbcChiper, iv)
+	blockMode := cipher.NewCBCEncrypter(cbcCipher, iv)
 	reqBodyAES := make([]byte, len(paddedData))
 	blockMode.CryptBlocks(reqBodyAES, paddedData)
 
@@ -502,4 +563,121 @@ func Rc442(xyusMd5Str string, cbcSecKey []byte) []byte {
 	}
 
 	return dst
+}
+
+// bb64
+// by chatgpt && jetbrains ai
+var BB64Alphabet = []byte("qogjOuCRNkfil5p4SQ3LAmxGKZTdesvB6z_YPahMI9t80rJyHW1DEwFbc7nUVX2-")
+
+func EnuidEncode(cuidGalaxy2 string) (string, error) {
+	if cuidGalaxy2 == "" {
+		return "", errors.New("cuidGalaxy2 is empty")
+	}
+
+	source := []byte(cuidGalaxy2)
+	working := make([]byte, ((len(source)+2)/3)*4+2)
+	copy(working, source)
+	encodedLength := EncodeInPlace(working, len(source), 0)
+
+	return string(working[:encodedLength-1]), nil
+}
+
+func EncodeInPlace(buffer []byte, inputLength int, mode int) int {
+	if inputLength == 0 {
+		return -1
+	}
+
+	remainder := inputLength % 3
+	blockCount := inputLength / 3
+	prefixLength := 4 * blockCount
+	table := BuildTable(mode, false)
+	XorWords(table.State, buffer, inputLength)
+	temp := make([]byte, 4)
+	if remainder > 0 {
+		copy(temp, buffer[3*blockCount:])
+		EncodeTriplet(table.Map, temp, buffer, 3*blockCount+blockCount)
+	}
+
+	outputLength := prefixLength
+	if remainder > 0 {
+		outputLength += 4
+	}
+
+	for i := range blockCount {
+		sourceIndex := 3 * (blockCount - 1 - i)
+		destinationIndex := prefixLength - 4*(i+1)
+		EncodeTriplet(table.Map, buffer[sourceIndex:sourceIndex+3], buffer, destinationIndex)
+	}
+
+	buffer[outputLength] = byte(remainder + 65)
+	buffer[outputLength+1] = 0
+
+	return outputLength + 2
+}
+
+type BB64Table struct {
+	State []int32
+	Map   []byte
+}
+
+func BuildTable(mode int, fillLookup bool) BB64Table {
+	state := make([]int32, 49)
+	mp := make([]byte, 196)
+	offset := mode & 0x3f
+	tailLength := 64 - offset
+
+	copy(mp[132:132+tailLength], BB64Alphabet[offset:])
+	copy(mp[132+tailLength:132+64], BB64Alphabet[:offset])
+	rotated := int32(uint32(mode)<<27 | uint32(mode)>>5)
+	state[0] = rotated ^ int32(758653732<<uint32(rotated&0xf))
+
+	if fillLookup {
+		for i := range 128 {
+			mp[i+4] = 64
+		}
+		for i := range 64 {
+			mp[mp[i+132]+4] = byte(i)
+		}
+	}
+
+	return BB64Table{
+		State: state,
+		Map:   mp,
+	}
+}
+
+func XorWords(state []int32, buffer []byte, length int) {
+	seed := state[0]
+	wholeWords := length >> 2
+
+	for i := range wholeWords {
+		offset := i * 4
+
+		word := int32(binary.LittleEndian.Uint32(buffer[offset : offset+4]))
+		word = word ^ int32(uint32(word)>>3|uint32(word)<<29)
+
+		binary.LittleEndian.PutUint32(buffer[offset:offset+4], uint32(word))
+
+	}
+
+	if wholeWords < (length+3)>>2 {
+		var seedBytes [4]byte
+		binary.LittleEndian.PutUint32(seedBytes[:], uint32(seed))
+
+		start := wholeWords * 4
+		for i := start; i < length; i++ {
+			buffer[i] ^= seedBytes[i-start]
+		}
+	}
+}
+
+func EncodeTriplet(mp []byte, input []byte, destination []byte, destinationIndex int) {
+	b0 := input[0]
+	b1 := input[1]
+	b2 := input[2]
+
+	destination[destinationIndex] = mp[132+int(b0&0x3f)]
+	destination[destinationIndex+1] = mp[132+int(b1&0x3f)]
+	destination[destinationIndex+2] = mp[132+int(b2&0x3f)]
+	destination[destinationIndex+3] = mp[132+int(((b1>>6)*4)|((b0>>6)*16)|(b2>>6))]
 }

@@ -256,7 +256,7 @@ type ForumGuideResponse struct {
 		IsSign int `json:"is_sign"`
 		// ThreadNum       int    `json:"thread_num"`
 		// NeedTrans       bool   `json:"need_trans"`
-		// LevelID         int    `json:"level_id"`
+		LevelID int `json:"level_id"`
 		ForumID int `json:"forum_id"`
 		// Avatar          string `json:"avatar"`
 		// TopSortValue    int    `json:"top_sort_value"`

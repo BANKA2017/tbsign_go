@@ -2,6 +2,7 @@ package _function
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -199,6 +200,16 @@ func MultipartBodyBuilder(_body map[string][]byte, files ...MultipartBodyBinaryF
 		return nil, "", err
 	}
 	return body.Bytes(), writer.FormDataContentType(), nil
+}
+
+func GzipDecode(data []byte) ([]byte, error) {
+	reader, err := gzip.NewReader(bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+
+	defer reader.Close()
+	return io.ReadAll(reader)
 }
 
 const (
