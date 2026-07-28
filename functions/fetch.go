@@ -45,7 +45,7 @@ func init() {
 
 	caFile, err := assets.EmbeddedCACert.ReadFile("ca/cacert.pem")
 	if err != nil {
-		slog.Warn("Load embedded CA failed", "error", err)
+		slog.Debug("Load embedded CA failed", "error", err)
 	} else {
 		CACertPool.AppendCertsFromPEM(caFile)
 	}
@@ -650,6 +650,7 @@ func GetUserInfoByTiebaUID(tbuid string) (*tbpb.GetUserByTiebaUidResIdl_DataRes,
 }
 
 var phpArrayDataInObjectResponse = []byte(",\"data\":[]}")
+var phpArrayVipInfoInObjectResponse = []byte(",\"vipInfo\":[],")
 
 func GetUserInfoByUsernameOrPortrait(requestType string, value string) (*_type.TiebaPanelUserInfoResponse, error) {
 	query := "ie=utf-8"
@@ -670,6 +671,10 @@ func GetUserInfoByUsernameOrPortrait(requestType string, value string) (*_type.T
 	// {"no":1130025,"error":"\u83b7\u53d6\u7528\u6237\u4fe1\u606f\u5931\u8d25","data":[]}
 	if bytes.HasSuffix(resp, phpArrayDataInObjectResponse) {
 		resp = bytes.ReplaceAll(resp, phpArrayDataInObjectResponse, []byte(",\"data\":{}}"))
+	}
+
+	if bytes.Contains(resp, phpArrayVipInfoInObjectResponse) {
+		resp = bytes.ReplaceAll(resp, phpArrayVipInfoInObjectResponse, []byte(",\"vipInfo\":{},"))
 	}
 
 	var res _type.TiebaPanelUserInfoResponse

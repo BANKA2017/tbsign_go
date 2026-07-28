@@ -180,7 +180,6 @@ func (b *BLCPCore) SendChatroomMessage(chatroomID int, text string, isVIP bool, 
 
 	appSafeExt, _ := JsonEncode(map[string]map[string]string{"haotianjing": {"zid": ""}}) // zid must be "" b.Client.Zid
 	strContent, _ := JsonEncode(McastMessageTextObject{Text: text})
-	baiduUK, _ := GetBDUKfromUserId(strconv.FormatInt(int64(b.Client.Account.BaiduUID), 10))
 
 	contentText := &SendChatroomMessageContentText{
 		RoomID:      strconv.FormatInt(int64(chatroomID), 10),
@@ -192,7 +191,7 @@ func (b *BLCPCore) SendChatroomMessage(chatroomID int, text string, isVIP bool, 
 		ContentType: "0",
 		ContentBody: string(strContent),
 		Src:         "",
-		BaiduUk:     baiduUK,
+		BaiduUk:     b.Client.Account.BDUK,
 		Ext:         "",
 	}
 
@@ -302,8 +301,6 @@ func (b *BLCPCore) SendChatroomMessage(chatroomID int, text string, isVIP bool, 
 
 	contentJson, _ := JsonEncode(content)
 
-	bduk, _ := GetBDUKfromUserId(strconv.FormatInt(int64(b.Client.Account.BaiduUID), 10))
-
 	requestData := map[string]any{
 		"method":       185,
 		"mcast_id":     chatroomID,
@@ -315,7 +312,7 @@ func (b *BLCPCore) SendChatroomMessage(chatroomID int, text string, isVIP bool, 
 		"type":         81,
 		"app_safe_ext": string(appSafeExt),
 		"content":      string(contentJson),
-		"msg_key":      b.MsgKey(bduk),
+		"msg_key":      b.MsgKey(b.Client.Account.BDUK),
 		"account_type": 1,
 		"sdk_version":  ChatSdkVersion,
 		"event_list": []map[string]any{

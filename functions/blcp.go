@@ -119,8 +119,10 @@ func NewBLCP(ctx context.Context, client *Client) *BLCPCore {
 	// do after ctx done
 	go func() {
 		<-blcp.CloseSignal
-		cancel()
 		blcp.State = BLCPStateDisconnected
+		time.Sleep(blcp.TTL + time.Second)
+		cancel()
+		blcp.Conn.Close()
 	}()
 	return blcp
 }
@@ -136,7 +138,7 @@ func (b *BLCPCore) Connect() error {
 			RootCAs:            CACertPool,
 			ClientSessionCache: tls.NewLRUClientSessionCache(5),
 		},
-	}).DialContext(b.Ctx, "tcp", "common.lcs.baidu.com:443")
+	}).Dial("tcp", "common.lcs.baidu.com:443")
 
 	if err != nil {
 		return err
@@ -291,7 +293,7 @@ func (b *BLCPCore) Login() error {
 	// com.baidu.searchbox.cloudcontrolblcp.CloudControlBlCPManager
 	// com.baidu.common.param.CommonUrlParamManager
 	sid := b.Client.SampleID
-	ua := "900_1600_android_12.68.1.0_240"
+	ua := "900_1600_android_" + ChatVersion + "_240"
 	uid, _ := EnuidEncode(cuidGalaxy2) // Enuid -> cuid_galaxy2->libbase64encoder_v2_0.so
 	login_from := "1008550l"           // baidu_imsdk_common_data.xml
 	cfrom := login_from
@@ -397,7 +399,10 @@ func (b *BLCPCore) Login() error {
 	// TODO fix nil ptr
 	b.Client.Account.TriggerID = int(resp.JsonLCM["trigger_id"].([]any)[0].(float64))
 	b.Client.Account.UK = int(resp.JsonLCM["uk"].(float64))
+
 	b.Client.Account.BaiduUID = int(resp.JsonLCM["bd_uid"].(float64))
+	b.Client.Account.BDUK, _ = GetBDUKfromUserId(strconv.Itoa(b.Client.Account.BaiduUID))
+
 	b.LoginID = int64(resp.JsonLCM["login_id"].(float64))
 
 	b.State = BLCPStateLoggedIn
@@ -417,9 +422,11 @@ func (b *BLCPCore) heartbeat() {
 
 	// go b.SyncSendBLCPData(request)
 
-	n, err := b.Conn.Write(request.toBytes())
-	if err != nil {
-		slog.Error("heartbeat err", "bytes", n, "error", err)
+	if b.Conn != nil {
+		n, err := b.Conn.Write(request.toBytes())
+		if err != nil {
+			slog.Error("heartbeat err", "bytes", n, "error", err)
+		}
 	}
 }
 

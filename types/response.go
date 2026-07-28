@@ -179,9 +179,20 @@ type TiebaPanelUserInfoResponse struct {
 		TbAge                     json.RawMessage `json:"tb_age,omitempty"`
 		PostNum                   json.RawMessage `json:"post_num,omitempty"`
 		Honor                     json.RawMessage `json:"honor,omitempty"`
-		VipInfo                   json.RawMessage `json:"vipInfo,omitempty"`
-		TbVip                     bool            `json:"tb_vip,omitempty"`
-		FollowedCount             json.RawMessage `json:"followed_count,omitempty"`
+		VipInfo                   struct {
+			// AScore     string `json:"a_score"`
+			ETime string `json:"e_time"`
+			// ExtScore   string `json:"ext_score"`
+			IconURL    string `json:"icon_url"`
+			IconURLNew string `json:"icon_url_new"`
+			// NScore     int    `json:"n_score"`
+			STime string `json:"s_time"`
+			// VLevel     int    `json:"v_level"`
+			// VStatus    string `json:"v_status"`
+			// YScore     int    `json:"y_score"`
+		} `json:"vipInfo"`
+		TbVip         bool            `json:"tb_vip,omitempty"`
+		FollowedCount json.RawMessage `json:"followed_count,omitempty"`
 	} `json:"data,omitempty"`
 }
 

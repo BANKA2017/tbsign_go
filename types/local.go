@@ -6,18 +6,21 @@ type TypeLastDo struct {
 }
 
 type TypeCookie struct {
-	Bduss   string
-	Stoken  string
-	Tbs     string
-	IsLogin bool
+	Bduss    string
+	Stoken   string
+	Tbs      string
+	ShortTbs string
+	IsLogin  bool
 
 	ID       int32
 	UID      int32
 	Name     string
 	Portrait string
+	IsVIP    bool
 
 	// blcp
 	TriggerID int
 	UK        int
 	BaiduUID  int
+	BDUK      string // <- GetBDUKfromUserId(BaiduUID)
 }
