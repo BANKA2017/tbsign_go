@@ -118,11 +118,13 @@ func NewBLCP(ctx context.Context, client *Client) *BLCPCore {
 
 	// do after ctx done
 	go func() {
+		defer cancel()
 		<-blcp.CloseSignal
 		blcp.State = BLCPStateDisconnected
 		time.Sleep(blcp.TTL + time.Second)
-		cancel()
-		blcp.Conn.Close()
+		if blcp.Conn != nil {
+			blcp.Conn.Close()
+		}
 	}()
 	return blcp
 }
@@ -215,6 +217,10 @@ func (b *BLCPCore) SyncSendBLCPData(data *BLCPData) (*BLCPWaitListContent, error
 func (b *BLCPCore) SyncSend(key int64, payload []byte) (*BLCPWaitListContent, error) {
 	if share.TestMode {
 		fmt.Println("send->", key)
+	}
+
+	if b.Conn == nil {
+		return nil, errors.New("no conn (snyc send)")
 	}
 
 	ctx, cancel := context.WithTimeout(b.Ctx, b.TTL)
