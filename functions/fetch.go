@@ -97,7 +97,8 @@ var EmptyHeaders = make(map[string]string)
 
 const BrowserUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36"
 
-const ClientVersion = "12.58.1.0"
+const ClientVersion = "22.6.5.1"
+const LegacyClientVersion = "12.64.1.1"
 const ClientUserAgent = "tieba/" + ClientVersion
 const ClientWidgetUserAgent = "TiebaWidgets/" + ClientVersion + " CFNetwork/3826.500.131 Darwin/24.5.0"
 

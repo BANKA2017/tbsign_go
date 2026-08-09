@@ -442,7 +442,7 @@ func (tc *Client) SyncZid() (string, error) {
 
 	headers := map[string]string{
 		"x-device-id": xyusMD5FinalStr,
-		"User-Agent":  fmt.Sprintf("x6/%s/%s/4.4.1.3", zidAppKey, ClientVersion),
+		"User-Agent":  fmt.Sprintf("x6/%s/%s/4.4.1.3", zidAppKey, LegacyClientVersion),
 		"x-plu-ver":   "x6/4.4.1.3",
 	}
 
