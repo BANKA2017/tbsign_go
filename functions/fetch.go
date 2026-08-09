@@ -948,3 +948,65 @@ func GetPrivateInfo(cookie *_type.TypeCookie, uid uint64) (*tbpb.GetPrivateInfoR
 
 	return res.GetData(), nil
 }
+
+type UserInfoIncludedShortTbsResponse struct {
+	No    int    `json:"no"`
+	Error string `json:"error"`
+	Data  struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+		// NameShow string `json:"name_show"`
+		// NameLink any    `json:"name_link"`
+		IsLogin bool `json:"is_login"`
+		// NoUn              string `json:"no_un"`
+		// Mobilephone       string `json:"mobilephone"`
+		// Email             string `json:"email"`
+		// IsHalfUser        int    `json:"is_half_user"`
+		// TempName          string `json:"temp_name"`
+		// SourceID          int    `json:"source_id"`
+		// IsVerify          bool   `json:"is_verify"`
+		Portrait string `json:"portrait"`
+		UID      int    `json:"uid"`
+		// Sid               string `json:"sid"`
+		// LikeForumNum      int    `json:"like_forum_num"`
+		// PostNum           int    `json:"post_num"`
+		// ConcernNum        int    `json:"concern_num"`
+		// FansNum           int    `json:"fans_num"`
+		// Intro             string `json:"intro"`
+		// PortraitURL string `json:"portrait_url"`
+		// UserSex           int    `json:"user_sex"`
+		// IsBusinessAccount int    `json:"is_business_account"`
+		VipInfo struct {
+			// AScore     string `json:"a_score"`
+			ETime string `json:"e_time"`
+			// ExtScore   string `json:"ext_score"`
+			// IconURL    string `json:"icon_url"`
+			// IconURLNew string `json:"icon_url_new"`
+			// NScore     int    `json:"n_score"`
+			// STime      string `json:"s_time"`
+			// VLevel     int    `json:"v_level"`
+			// VStatus    string `json:"v_status"`
+			// YScore     int    `json:"y_score"`
+		} `json:"vipInfo"`
+		Tbs    string `json:"tbs"`
+		ItbTbs string `json:"itb_tbs"`
+	} `json:"data"`
+}
+
+func GetMobileWebIndexWithUser(cookie *_type.TypeCookie) (*UserInfoIncludedShortTbsResponse, error) {
+	headersMap := map[string]string{
+		"Cookie":     "BDUSS=" + cookie.Bduss,
+		"Referer":    "https://tieba.baidu.com/",
+		"User-Agent": BrowserUserAgent,
+	}
+
+	forumUnlikeRes, err := TBFetch("https://tieba.baidu.com/mo/q/newmoindex?need_user=1", http.MethodGet, nil, headersMap)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var forumUnlikeResStruct UserInfoIncludedShortTbsResponse
+	err = JsonDecode(forumUnlikeRes, &forumUnlikeResStruct)
+	return &forumUnlikeResStruct, err
+}

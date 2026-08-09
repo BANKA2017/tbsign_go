@@ -96,6 +96,23 @@ func GetCookie(pid int32, ext ...bool) *_type.TypeCookie {
 	return cookie
 }
 
+func GetCookieWithShortTbs(pid int32) *_type.TypeCookie {
+	cookie := GetCookie(pid)
+
+	if cookie.ShortTbs != "" || !cookie.IsLogin {
+		return cookie
+	}
+
+	userInfo, err := GetMobileWebIndexWithUser(cookie)
+	if err != nil {
+		return cookie
+	}
+
+	cookie.ShortTbs = userInfo.Data.Tbs
+
+	return cookie
+}
+
 // by ChatGPT
 func ParseCookie(cookie string) map[string]string {
 	result := make(map[string]string)

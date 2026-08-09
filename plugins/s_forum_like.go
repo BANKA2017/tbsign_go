@@ -124,7 +124,7 @@ func (pluginInfo *ForumLikePluginInfoType) Action() {
 	}
 
 	// TODO remove hard coded
-	pidCooldownTime += rand.Intn(300)
+	// pidCooldownTime += rand.Intn(300)
 
 	// we have to use raw SQL here
 	// 1e6 random forums, select 50 forums one time takes ~2s
@@ -153,9 +153,9 @@ func (pluginInfo *ForumLikePluginInfoType) Action() {
 		task.Date = now
 
 		// cookie
-		cookie := _function.GetCookie(task.Pid)
+		cookie := _function.GetCookieWithShortTbs(task.Pid)
 
-		if cookie == nil || !cookie.IsLogin {
+		if cookie == nil || !cookie.IsLogin || cookie.ShortTbs == "" {
 			task.Status = 1
 			task.LastError = "用户未登录或登录失败，请更换账号或重试"
 			slog.Error("plugin.forum-like.action.cookie-not-found", "pid", task.Pid, "fname", task.Fname, "error", task.LastError)
@@ -178,7 +178,7 @@ func (pluginInfo *ForumLikePluginInfoType) Action() {
 			continue
 		}
 
-		res, err := PostForumLikeClient(cookie, fid)
+		res, err := PostForumLikeITBForumLike(cookie, task.Fname)
 
 		if err != nil {
 			task.LastError = "请求失败"
@@ -189,39 +189,17 @@ func (pluginInfo *ForumLikePluginInfoType) Action() {
 			continue
 		}
 
-		if res.ErrorCode != "" && res.ErrorCode != "0" {
-			// 300000 不存在（fid=0）
-			// 300003 null（fid 不存在，自增未到达/彻底清除）
-			// 2410003 不合理（fid 非正整数）
-			// 1 用户未登录或登录失败，请更换账号或重试
-			// 1990029 操作频繁，请稍后再试
-			// 3250001 您的帐号涉及违规操作，现已被贴吧官方系统封禁，可进行申诉。
-
-			errCode, _ := strconv.Atoi(res.ErrorCode)
-			task.Status = int32(errCode)
-			task.LastError = res.ErrorMsg
-			if task.Status == 300003 && task.LastError == "" {
-				task.LastError = "贴吧不存在"
-			}
-
-			slog.Error("plugin.forum-like.action.post-error", "pid", task.Pid, "fname", task.Fname, "error", task.LastError)
-		} else if res.Error.Errno != "" && res.Error.Errno != "0" {
-			// errno 永远等于 0，暂时找不到例外
-
-			errCode, _ := strconv.Atoi(res.Error.Errno)
-			task.Status = int32(errCode)
-			task.LastError = res.Error.Usermsg
-			slog.Error("plugin.forum-like.action.post-error", "pid", task.Pid, "fname", task.Fname, "error", task.LastError)
+		if res.IsDone {
+			task.LastError = "关注成功"
+		} else if res.ErrorNo == 36 {
+			task.LastError = "关注成功 [ 重复关注 ]"
+		} else if res.ErrorNo == 29 {
+			task.Status = 300003
+			task.LastError = "贴吧不存在"
 		} else {
-			// task.Status = 0
-
-			if res.Info.IsBlack == "1" {
-				task.LastError = "关注成功 [ 黑名单 ]"
-			} else if res.Info.IsLike == "1" {
-				task.LastError = "关注成功 [ 重复关注 ]"
-			} else {
-				task.LastError = "关注成功"
-			}
+			task.Status = int32(res.ErrorNo)
+			task.LastError = res.Info
+			slog.Error("plugin.forum-like.action.post-error", "pid", task.Pid, "fname", task.Fname, "error", task.LastError)
 		}
 
 		if err := _function.GormDB.W.Transaction(func(tx *gorm.DB) error {
@@ -429,6 +407,12 @@ type PostForumLikeClientResponseStruct struct {
 
 var phpArrayDataInObjectResponse = []byte(",\"info\":[],")
 
+// 300000 不存在（fid=0）
+// 300003 null（fid 不存在，自增未到达/彻底清除）
+// 2410003 不合理（fid 非正整数）
+// 1 用户未登录或登录失败，请更换账号或重试
+// 1990029 操作频繁，请稍后再试
+// 3250001 您的帐号涉及违规操作，现已被贴吧官方系统封禁，可进行申诉。
 func PostForumLikeClient(cookie *_type.TypeCookie, fid int64) (*PostForumLikeClientResponseStruct, error) {
 	var form = make(map[string]string)
 	form["BDUSS"] = cookie.Bduss
@@ -460,6 +444,57 @@ func PostForumLikeClient(cookie *_type.TypeCookie, fid int64) (*PostForumLikeCli
 	err = _function.JsonDecode(likeResponse, &resp)
 
 	return &resp, err
+}
+
+type PostForumLikeITBForumLikeResponse struct {
+	IsDone  bool `json:"is_done"`
+	ErrorNo int  `json:"error_no"`
+	// Msg     []any  `json:"msg"`
+	Info string `json:"_info"`
+	// Ret  struct {
+	// 	AddForum []struct {
+	// 		UserID    string `json:"user_id"`
+	// 		ForumID   int    `json:"forum_id"`
+	// 		ForumName string `json:"forum_name"`
+	// 		IsLike    int    `json:"is_like"`
+	// 		IsBlack   int    `json:"is_black"`
+	// 		LikeNum   int    `json:"like_num"`
+	// 		InTime    int    `json:"in_time"`
+	// 		LevelID   int    `json:"level_id"`
+	// 		CurScore  int    `json:"cur_score"`
+	// 		ScoreLeft int    `json:"score_left"`
+	// 		LevelName string `json:"level_name"`
+	// 		FavoType  string `json:"favo_type"`
+	// 		ForumType int    `json:"forum_type"`
+	// 	} `json:"add_forum"`
+	// } `json:"ret"`
+}
+
+func PostForumLikeITBForumLike(cookie *_type.TypeCookie, fname string) (*PostForumLikeITBForumLikeResponse, error) {
+	headersMap := map[string]string{
+		"Cookie":     "BDUSS=" + cookie.Bduss,
+		"Referer":    "https://tieba.baidu.com/",
+		"User-Agent": _function.BrowserUserAgent,
+	}
+
+	now := strconv.FormatInt(time.Now().UnixMilli(), 10)
+
+	_body := url.Values{}
+	_body.Set("tbs", cookie.ShortTbs) // MUST use short tbs
+	_body.Set("kw", fname)
+	_body.Set("ie", "utf-8")
+
+	forumLikeRes, err := _function.TBFetch("https://tieba.baidu.com/i/submit/add_user_favoforum?_t="+now, http.MethodPost, []byte(_body.Encode()), headersMap)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// forumLikeRes = bytes.ReplaceAll(forumLikeRes, []byte("\"ret\":[]"), []byte("\"ret\":{}"))
+
+	var forumLikeResStruct PostForumLikeITBForumLikeResponse
+	err = _function.JsonDecode(forumLikeRes, &forumLikeResStruct)
+	return &forumLikeResStruct, err
 }
 
 func PluginForumLikeGetSwitch(c *echo.Context) error {
