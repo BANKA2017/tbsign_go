@@ -83,9 +83,10 @@ var UserGrowthTasksPlugin = _function.VPtr(UserGrowthTasksPluginType{
 
 var UserGrowthTasksPluginClientVersion = "22.4.1.0"
 
-var UserGrowthTasksBreakList = []string{"open_push_switch", "answer_question"}
+var UserGrowthTasksBreakList = []string{"open_push_switch", "answer_question", "buy_member"}
 var UserGrowthTasksExchangeFlowTaskIDs = []int{591, 563}
-var UserGrowthTasksVIPRequiredActTypes = []string{"buy_member"}
+
+// var UserGrowthTasksVIPRequiredActTypes = []string{"buy_member"} // <-x
 
 const (
 	UserGrowthTasksTaskSign uint32 = 1 << iota
@@ -466,7 +467,7 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 							for _, taskTypeList := range taskTypeListList.TaskTypeList {
 								if (taskTypeList.TaskType == "daily_task" || taskTypeList.TaskType == "live_task") && tasksFlag&UserGrowthTasksTaskDaily != 0 {
 									for _, taskItem := range taskTypeList.TaskList {
-										if slices.Contains(UserGrowthTasksVIPRequiredActTypes, taskItem.ActType) && !tasksResponse.Data.User.IsTiebaVip {
+										if slices.Contains(UserGrowthTasksBreakList, taskItem.ActType) {
 											continue
 										}
 										tasksList[taskItem.ActType] = taskItem
