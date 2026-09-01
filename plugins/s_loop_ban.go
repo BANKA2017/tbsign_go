@@ -422,7 +422,7 @@ func (pluginInfo *LoopBanPluginType) ImportAccount(uid int32, pid map[int32]int3
 	var localReason model.TcVer4BanUserset
 	err := _function.GormDB.R.Model(&model.TcVer4BanUserset{}).Where("uid = ?", uid).Limit(1).Find(&localReason).Error
 
-	if errors.As(err, &gorm.ErrRecordNotFound) {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return tx.Model(&model.TcVer4BanUserset{}).Create(&model.TcVer4BanUserset{
 			UID: uid,
 			C:   reason[0].C,

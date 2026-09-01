@@ -304,7 +304,9 @@ func (pluginInfo *RenewManagerType) Report(uid int32, tx *gorm.DB) (string, erro
 	}
 
 	var message strings.Builder
-	message.WriteString("---\n插件：" + pluginInfo.PluginNameCN + "\n\n")
+	message.WriteString("---\n插件：")
+	message.WriteString(pluginInfo.PluginNameCN)
+	message.WriteString("\n\n")
 
 	for _, status := range renewStatus {
 		// - xxx吧 (fid:12121121) @yyyyy [ LATEST:01-01/NEXT:01-03/END:02-01 ]

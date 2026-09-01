@@ -287,7 +287,9 @@ func AddSign(form map[string]string, subappType string) {
 	var payload strings.Builder
 
 	for _, v := range formKeys {
-		payload.WriteString(v + "=" + form[v])
+		payload.WriteString(v)
+		payload.WriteString("=")
+		payload.WriteString(form[v])
 	}
 	//fmt.Println("payload", payload)
 	form["sign"] = strings.ToUpper(Md5(payload.String() + signSalt))

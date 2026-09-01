@@ -646,7 +646,13 @@ func (pluginInfo *UserGrowthTasksPluginType) Action() {
 				if i > 0 {
 					tmpLog.WriteString(",")
 				}
-				tmpLog.WriteString(strconv.Itoa(r.TaskID) + ":" + r.Name + ":" + r.ActType + ":" + strconv.Itoa(r.Status))
+				tmpLog.WriteString(strconv.Itoa(r.TaskID))
+				tmpLog.WriteString(":")
+				tmpLog.WriteString(r.Name)
+				tmpLog.WriteString(":")
+				tmpLog.WriteString(r.ActType)
+				tmpLog.WriteString(":")
+				tmpLog.WriteString(strconv.Itoa(r.Status))
 			}
 
 			slog.Debug("plugin.user-growth-tasks.action", "id", taskUserItem.ID, "pid", taskUserItem.Pid, "uid", taskUserItem.UID, "result", string(jsonResult))
