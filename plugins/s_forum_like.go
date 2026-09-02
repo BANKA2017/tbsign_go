@@ -560,7 +560,7 @@ func pluginForumLikeListMerge(uid, pid int32) []string {
 }
 
 type PluginForumLikeListBinding struct {
-	Pid   uint64   `param:"pid"`
+	Pid   string   `param:"pid"`
 	Fname []string `form:"fname" json:"fname"`
 }
 
@@ -581,43 +581,65 @@ func PluginForumLikeForumListAdd(c *echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyArray, "tbsign"))
 	}
 
-	if !slices.Contains(tiebaAccount, int32(bindings.Pid)) {
-		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyArray, "tbsign"))
+	var pids []int32
+	for pid := range strings.SplitSeq(bindings.Pid, ",") {
+		paramPid, _ := strconv.Atoi(pid)
+		if paramPid > 0 && !slices.Contains(pids, int32(paramPid)) && slices.Contains(tiebaAccount, int32(paramPid)) {
+			pids = append(pids, int32(paramPid))
+		}
 	}
+
+	if len(pids) == 0 {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", _function.EchoEmptyArray, "tbsign"))
+	}
+
+	// if !slices.Contains(tiebaAccount, int32(bindings.Pid)) {
+	// 	return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyArray, "tbsign"))
+	// }
 
 	numUID, _ := strconv.Atoi(uid)
 
 	// forums
 	numLimit, _ := strconv.Atoi(_function.GetOption("kd_forum_like_forum_limit_each_pid"))
-	var pidCount int64
-	_function.GormDB.R.Model(&model.TcKdForumLike{}).Where("uid = ? AND pid = ?", numUID, bindings.Pid).Count(&pidCount)
 
-	if pidCount >= int64(numLimit) {
-		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "用户关注数量已达上限", _function.EchoEmptyArray, "tbsign"))
-	}
-	remainForumNum := numLimit - int(pidCount)
-
-	fnameList := make(map[string]struct{}, len(bindings.Fname))
-	var dataToInsert []*model.TcKdForumLike
-
-	localExistsFnameList := pluginForumLikeListMerge(int32(numUID), int32(bindings.Pid))
-
+	var vaildFnames []string
 	for _, fname := range bindings.Fname {
 		fname = strings.TrimSpace(fname)
 
 		if fname == "" {
 			continue
 		}
+		if !slices.Contains(vaildFnames, fname) {
+			vaildFnames = append(vaildFnames, fname)
+		}
+	}
 
-		if _, ok := fnameList[fname]; !ok {
+	if len(vaildFnames) == 0 {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", _function.EchoEmptyArray, "tbsign"))
+	}
+
+	dataToInsert := []*model.TcKdForumLike{}
+
+	for _, pid := range pids {
+		var pidCount int64
+		_function.GormDB.R.Model(&model.TcKdForumLike{}).Where("uid = ? AND pid = ?", numUID, pid).Count(&pidCount)
+
+		if pidCount >= int64(numLimit) {
+			continue
+			//return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "用户关注数量已达上限", _function.EchoEmptyArray, "tbsign"))
+		}
+		remainForumNum := numLimit - int(pidCount)
+
+		localExistsFnameList := pluginForumLikeListMerge(int32(numUID), pid)
+
+		for _, fname := range vaildFnames {
 			if slices.Contains(localExistsFnameList, fname) {
 				continue
 			}
 
-			fnameList[fname] = struct{}{}
 			dataToInsert = append(dataToInsert, &model.TcKdForumLike{
 				UID:   int32(numUID),
-				Pid:   int32(bindings.Pid),
+				Pid:   pid,
 				Fname: fname,
 			})
 			remainForumNum--
@@ -625,6 +647,11 @@ func PluginForumLikeForumListAdd(c *echo.Context) error {
 				break
 			}
 		}
+
+		// if len(dataToInsert) == 0 {
+		//	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", _function.EchoEmptyArray, "tbsign"))
+		// }
+
 	}
 
 	if len(dataToInsert) == 0 {
@@ -640,7 +667,7 @@ func PluginForumLikeForumListAdd(c *echo.Context) error {
 }
 
 type PluginForumLikeCloneBinding struct {
-	Pid       uint64 `param:"pid"`
+	Pid       string `param:"pid"`
 	SourcePid uint64 `param:"source_pid"`
 	Source    string `param:"source"`
 }
@@ -667,68 +694,96 @@ func PluginForumLikeForumListClone(c *echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyArray, "tbsign"))
 	}
 
-	if !slices.Contains(tiebaAccount, int32(bindings.Pid)) || !slices.Contains(tiebaAccount, int32(bindings.SourcePid)) {
-		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "用户不存在", _function.EchoEmptyArray, "tbsign"))
+	if !slices.Contains(tiebaAccount, int32(bindings.SourcePid)) {
+		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "目标用户不存在", _function.EchoEmptyArray, "tbsign"))
 	}
 
-	// forums
+	// pids
+	var pids []int32
+	for pid := range strings.SplitSeq(bindings.Pid, ",") {
+		paramPid, _ := strconv.Atoi(pid)
+		if paramPid > 0 && !slices.Contains(pids, int32(paramPid)) && slices.Contains(tiebaAccount, int32(paramPid)) {
+			pids = append(pids, int32(paramPid))
+		}
+	}
+
+	if len(pids) == 0 {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", _function.EchoEmptyArray, "tbsign"))
+	}
+
 	numLimit, _ := strconv.Atoi(_function.GetOption("kd_forum_like_forum_limit_each_pid"))
-	var pidCount int64
-	_function.GormDB.R.Model(&model.TcKdForumLike{}).Where("uid = ? AND pid = ?", uid, bindings.Pid).Count(&pidCount)
-
-	if pidCount >= int64(numLimit) {
-		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "用户关注数量已达上限", _function.EchoEmptyArray, "tbsign"))
-	}
-	remainForumNum := numLimit - int(pidCount)
-
-	var dataToInsert []*model.TcKdForumLike
 
 	numUID, _ := strconv.Atoi(uid)
-	localExistsFnameList := pluginForumLikeListMerge(int32(numUID), int32(bindings.Pid))
-
+	var sourceForums []*model.TcKdForumLike
 	if bindings.Source == "plugin_tasks" {
 		var sourceData []*model.TcKdForumLike
 		_function.GormDB.R.Model(&model.TcKdForumLike{}).Where("uid = ? AND pid = ?", uid, bindings.SourcePid).Find(&sourceData)
 
 		for _, data := range sourceData {
-			if slices.Contains(localExistsFnameList, data.Fname) {
-				continue
-			}
-			dataToInsert = append(dataToInsert, &model.TcKdForumLike{
-				UID:   int32(numUID),
-				Pid:   int32(bindings.Pid),
+			sourceForums = append(sourceForums, &model.TcKdForumLike{
+				// UID: int32(numUID),
+				// Pid:   pid,
 				Fid:   data.Fid,
 				Fname: data.Fname,
 			})
-			remainForumNum--
-			if remainForumNum <= 0 {
-				break
-			}
 		}
 	} else {
 		var sourceData []*model.TcTieba
 		_function.GormDB.R.Model(&model.TcTieba{}).Where("uid = ? AND pid = ?", uid, bindings.SourcePid).Find(&sourceData)
 
-		var sourceForumMap = make(map[string]struct{}, len(sourceData))
 		for _, data := range sourceData {
-			if slices.Contains(localExistsFnameList, data.Tieba) {
-				continue
-			} else if _, ok := sourceForumMap[data.Tieba]; ok {
-				continue
-			}
-
-			dataToInsert = append(dataToInsert, &model.TcKdForumLike{
-				UID:   int32(numUID),
-				Pid:   int32(bindings.Pid),
+			sourceForums = append(sourceForums, &model.TcKdForumLike{
+				// UID: int32(numUID),
+				// Pid:   pid,
 				Fid:   data.Fid,
 				Fname: data.Tieba,
 			})
-			sourceForumMap[data.Tieba] = struct{}{}
+		}
+	}
+
+	if len(sourceForums) == 0 {
+		return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", _function.EchoEmptyArray, "tbsign"))
+	}
+
+	var dataToInsert = []*model.TcKdForumLike{}
+	for _, pid := range pids {
+		// forums
+		var pidCount int64
+		_function.GormDB.R.Model(&model.TcKdForumLike{}).Where("uid = ? AND pid = ?", uid, pid).Count(&pidCount)
+
+		if pidCount >= int64(numLimit) {
+			continue
+			// return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "用户关注数量已达上限", _function.EchoEmptyArray, "tbsign"))
+		}
+		remainForumNum := numLimit - int(pidCount)
+
+		localExistsFnameList := pluginForumLikeListMerge(int32(numUID), pid)
+		// sourceForumMap := make(map[string]struct{}, len(sourceForums))
+
+		for _, data := range sourceForums {
+			if slices.Contains(localExistsFnameList, data.Fname) {
+				continue
+			}
+			// else if _, ok := sourceForumMap[data.Fname]; ok {
+			// 	continue
+			// }
+
+			dataToInsert = append(dataToInsert, &model.TcKdForumLike{
+				UID:   int32(numUID),
+				Pid:   pid,
+				Fid:   data.Fid,
+				Fname: data.Fname,
+			})
+			// sourceForumMap[data.Fname] = struct{}{}
 			remainForumNum--
 			if remainForumNum <= 0 {
 				break
 			}
 		}
+
+		// if len(dataToInsert) == 0 {
+		// 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", _function.EchoEmptyArray, "tbsign"))
+		// }
 	}
 
 	if len(dataToInsert) == 0 {
@@ -739,6 +794,7 @@ func PluginForumLikeForumListClone(c *echo.Context) error {
 		slog.Error("plugin.forum-like.list.clone.create", "uid", uid, "pid", bindings.Pid, "source", bindings.Source, "source-pid", bindings.SourcePid, "error", err)
 		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "未知错误", _function.EchoEmptyArray, "tbsign"))
 	}
+
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", dataToInsert, "tbsign"))
 }
 
