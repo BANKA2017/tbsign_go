@@ -90,10 +90,14 @@ var LoopBanPlugin = _function.VPtr(LoopBanPluginType{
 
 var banDays = []int32{1, 3, 10}
 
-func PostClientBan(cookie *_type.TypeCookie, fid int32, portrait string, day int32, reason string) (*BanAccountResponse, error) {
+func PostClientBan(cookie *_type.TypeCookie, fid int32, portrait string, day int32, reason string, tid int) (*BanAccountResponse, error) {
 	isSvipBlock := "0"
 	if day <= 90 && !slices.Contains(banDays, day) {
 		isSvipBlock = "1"
+	}
+
+	if tid <= 0 {
+		tid = 10000000000 // 11
 	}
 
 	var form = map[string]string{
@@ -106,7 +110,7 @@ func PostClientBan(cookie *_type.TypeCookie, fid int32, portrait string, day int
 		"reason":      reason,
 		"tbs":         cookie.Tbs,
 		"word":        "-",
-		"z":           "6",
+		"z":           strconv.Itoa(tid),
 	}
 
 	_function.ClientTypeFallBack(form, "android")
@@ -128,12 +132,16 @@ func PostClientBan(cookie *_type.TypeCookie, fid int32, portrait string, day int
 	return &banDecode, err
 }
 
-func PostNewPCBan(cookie *_type.TypeCookie, fid int32, portrait string, day int32, reason string) (*any, error) {
+func PostNewPCBan(cookie *_type.TypeCookie, fid int32, portrait string, day int32, reason string, tid int) (*any, error) {
 	// isSvipBlock := "0"
 	banDaysIndex := 0
 	if ndi := slices.Index(banDays, day); ndi != -1 {
 		// isSvipBlock = "1"
 		banDaysIndex = ndi
+	}
+
+	if tid <= 0 {
+		tid = 10000000000 // 11
 	}
 
 	var form = map[string]string{
@@ -145,8 +153,8 @@ func PostNewPCBan(cookie *_type.TypeCookie, fid int32, portrait string, day int3
 		"portrait": portrait,
 		"reason":   reason,
 		"tbs":      cookie.Tbs,
-		"word":     "-", //fname
-		"z":        "6", //tid
+		"word":     "-",               //fname
+		"z":        strconv.Itoa(tid), //tid
 
 		"post_id":     "0",
 		"un":          "",
@@ -219,7 +227,7 @@ func (pluginInfo *LoopBanPluginType) Action() {
 		if !cookie.IsLogin {
 			msg += time.Now().Format(time.DateTime) + " 执行结果：<font color=\"red\">操作失败</font>#-1 账号未登录<br>"
 		} else {
-			response, err := PostClientBan(cookie, int32(fid), banAccountInfo.Portrait, 1, reason)
+			response, err := PostClientBan(cookie, int32(fid), banAccountInfo.Portrait, 1, reason, 0)
 			if err != nil {
 				slog.Error("plugin.loop-ban.action", "fname", banAccountInfo.Tieba, "pid", banAccountInfo.Pid, "portrait", banAccountInfo.Portrait, "error", err)
 				continue
