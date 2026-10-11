@@ -30,11 +30,12 @@ type PluginListSettingOption struct {
 }
 
 type PluginListContent struct {
-	Name   string `json:"name"`
-	Ver    string `json:"ver"`
-	Status bool   `json:"status"`
-	Test   bool   `json:"test,omitempty"`
-	Core   bool   `json:"core"`
+	Name       string `json:"name"`
+	Ver        string `json:"ver"`
+	Status     bool   `json:"status"`
+	Test       bool   `json:"test,omitempty"`
+	Core       bool   `json:"core"`
+	Deprecated bool   `json:"deprecated"`
 
 	PluginNameCN      string `json:"plugin_name_cn"`
 	PluginNameCNShort string `json:"plugin_name_cn_short"`
@@ -216,11 +217,12 @@ func GetPluginsList(c *echo.Context) error {
 		}
 
 		resPluginList[name] = _function.VPtr(PluginListContent{
-			Name:   value.Name,
-			Ver:    value.Info.Ver,
-			Status: status,
-			Test:   value.Test,
-			Core:   value.Core,
+			Name:       value.Name,
+			Ver:        value.Info.Ver,
+			Status:     status,
+			Test:       value.Test,
+			Core:       value.Core,
+			Deprecated: value.Deprecated,
 
 			PluginNameCN:      value.PluginNameCN,
 			PluginNameCNShort: value.PluginNameCNShort,

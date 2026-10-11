@@ -280,7 +280,9 @@ func InitCrontab() (gocron.Scheduler, error) {
 	// plugins
 	for _, plugin := range _plugin.PluginList {
 		var d gocron.JobDefinition
-		if plugin.GetInfo().RandomDuration && !share.TestMode {
+		info := plugin.GetInfo()
+
+		if info.RandomDuration && !share.TestMode {
 			d = gocron.DurationRandomJob(time.Second*50, time.Second*70)
 		} else {
 			d = minuteDuration
@@ -288,18 +290,18 @@ func InitCrontab() (gocron.Scheduler, error) {
 
 		var tags []string
 		var name string
-		if plugin.GetInfo().Core {
-			tags = append(tags, "core", "core:"+plugin.GetInfo().Name)
-			name = "核心组件:" + plugin.GetInfo().PluginNameCN
+		if info.Core {
+			tags = append(tags, "core", "core:"+info.Name)
+			name = "核心组件:" + info.PluginNameCN
 		} else {
-			tags = append(tags, "plugin", "plugin:"+plugin.GetInfo().Name)
-			name = "插件:" + plugin.GetInfo().PluginNameCN
+			tags = append(tags, "plugin", "plugin:"+info.Name)
+			name = "插件:" + info.PluginNameCN
 		}
 
 		if _, err = s.NewJob(
 			d,
 			gocron.NewTask(func() {
-				if plugin.GetSwitch() {
+				if !info.Deprecated && plugin.GetSwitch() {
 					plugin.Action()
 				}
 			}),

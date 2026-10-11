@@ -36,7 +36,6 @@ var ForumLikePluginInfo = _function.VPtr(ForumLikePluginInfoType{
 		PluginNameFE:      "forum_like",
 		Version:           "0.2",
 		RandomDuration:    true,
-		Test:              false,
 		Options: map[string]string{
 			"kd_forum_like_action_limit":         "50",
 			"kd_forum_like_forum_limit_each_pid": "40",

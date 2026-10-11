@@ -32,7 +32,8 @@ var WenkuTasksPlugin = _function.VPtr(WenkuTasksPluginType{
 		PluginNameCN:      "文库任务",
 		PluginNameCNShort: "文库任务",
 		PluginNameFE:      "wenku_tasks",
-		Version:           "0.1",
+		Version:           "0.2",
+		Deprecated:        true,
 		Options: map[string]string{
 			"kd_wenku_tasks_offset":     "0",
 			"kd_wenku_tasks_vip_matrix": "0",

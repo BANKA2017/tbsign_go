@@ -45,6 +45,7 @@ type PluginInfo struct {
 	Info           model.TcPlugin
 	Test           bool
 	Core           bool
+	Deprecated     bool
 	Endpoints      []PluginEndpointStruct
 
 	// cron

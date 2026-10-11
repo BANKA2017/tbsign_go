@@ -48,7 +48,6 @@ var RenewManager = _function.VPtr(RenewManagerType{
 				},
 			},
 		},
-		Test: false,
 		Endpoints: []PluginEndpointStruct{
 			{Method: http.MethodGet, Path: "switch", Function: PluginRenewManagerGetSwitch},
 			{Method: http.MethodPost, Path: "switch", Function: PluginRenewManagerSwitch},
