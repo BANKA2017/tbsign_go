@@ -2,8 +2,11 @@ package _plugin
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
+	"math/rand/v2"
+	"net/http"
 	"slices"
 	"strconv"
 	"strings"
@@ -13,7 +16,75 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	"github.com/kdnetwork/code-snippet/go/worker"
+	"github.com/labstack/echo/v5"
+	"gorm.io/gorm"
 )
+
+func init() {
+	PluginList.Register(TCCoreSign)
+}
+
+type TCCoreSignType struct {
+	PluginInfo
+}
+
+var TCCoreSign = _function.VPtr(TCCoreSignType{
+	PluginInfo{
+		Name:              "tc_core_sign",
+		PluginNameCN:      "签到",
+		PluginNameCNShort: "签到",
+		PluginNameFE:      "",
+		Version:           "1.0",
+		Core:              true,
+		Options:           map[string]string{},
+		SettingOptions:    map[string]PluginSettingOption{},
+		Endpoints: []PluginEndpointStruct{
+			{Method: http.MethodGet, Path: "signmode", Function: TCCoreSignForumSignGetSwitch},
+			{Method: http.MethodPost, Path: "signmode", Function: TCCoreSignForumSignSwitch},
+		},
+	},
+})
+
+func TCCoreSignForumSignGetSwitch(c *echo.Context) error {
+	uid := c.Get("uid").(string)
+	status := _function.GetUserOption("go_forum_sign_switch", uid)
+	if status == "" {
+		status = "0"
+		_function.SetUserOption("go_forum_sign_switch", status, uid)
+	}
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", status != "0", "tbsign"))
+}
+
+func TCCoreSignForumSignSwitch(c *echo.Context) error {
+	uid := c.Get("uid").(string)
+	status := _function.GetUserOption("go_forum_sign_switch", uid) != "0"
+
+	if err := _function.SetUserOption("go_forum_sign_switch", !status, uid); err != nil {
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "修改签到运行模式失败", status, "tbsign"))
+	}
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", !status, "tbsign"))
+}
+
+func (pluginInfo *TCCoreSignType) Install() error {
+	return UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
+}
+func (pluginInfo *TCCoreSignType) Action() {
+	DoCheckinAction()
+	DoReCheckinAction()
+}
+func (pluginInfo *TCCoreSignType) Delete() error                               { return nil }
+func (pluginInfo *TCCoreSignType) Upgrade() error                              { return nil }
+func (pluginInfo *TCCoreSignType) RemoveAccount(string, int32, *gorm.DB) error { return nil }
+func (pluginInfo *TCCoreSignType) ExportAccount(int32, *gorm.DB) (map[string]any, error) {
+	return nil, nil
+}
+func (pluginInfo *TCCoreSignType) ImportAccount(int32, map[int32]int32, map[string]json.RawMessage, *gorm.DB) error {
+	return nil
+}
+func (pluginInfo *TCCoreSignType) Report(int32, *gorm.DB) (string, error) {
+	return "", nil
+}
+func (pluginInfo *TCCoreSignType) Reset(int32, int32, int32) error { return nil }
 
 const AgainErrorId = "160002"
 
@@ -44,9 +115,11 @@ var checkinToday string
 
 var lastBreakHour = 0
 
-func Dosign(_ string, retry bool) (bool, error) {
+// hasFailed, hasMore, error
+func Dosign(_ string, retry bool) (bool, bool, error) {
 	//signMode := _function.GetOption("sign_mode")// client mode only
 	hasFailed := false
+	hasMore := false
 	signHour, _ := strconv.ParseInt(_function.GetOption("sign_hour"), 10, 64)
 	h := time.Now().Hour()
 	if int64(h) <= signHour {
@@ -55,28 +128,43 @@ func Dosign(_ string, retry bool) (bool, error) {
 			lastBreakHour = h
 		}
 
-		return hasFailed, nil
+		return hasFailed, hasMore, nil
 	}
-	limit, _ := strconv.ParseInt(_function.GetOption("cron_limit"), 10, 64)
+
+	infinitySign := false //TODO _function.GetOption("go_infinity_sign") == "1"
+	autoUnfollow := false //TODO _function.GetOption("go_auto_delete_unfollowed") == "1"
+
 	var tiebaList []*model.TcTieba
 
+	limit, _ := strconv.Atoi(_function.GetOption("cron_limit"))
+
 	// retry has no limit
-	if retry || limit == 0 {
-		limit = -1
+	noLimit := retry || limit <= 0
+
+	// TODO ?? any idea??
+	if infinitySign && !noLimit {
+		limit = max(limit, 2000)
 	}
 
 	today := time.Now().Day()
+
+	tx := _function.GormDB.R.Model(&model.TcTieba{}).Where(`NOT EXISTS (SELECT 1 FROM tc_users_options WHERE tc_users_options.uid = tc_tieba.uid AND tc_users_options.name = ? AND tc_users_options.value = ?)`, "go_forum_sign_switch", "1")
+
 	if retry {
-		// 重签
-		_function.GormDB.R.Where("no = ? AND latest = ? AND status IN ?", 0, today, recheckinErrorID).Limit(int(limit)).Find(&tiebaList)
+		tx.Session(&gorm.Session{}).Where("no = ? AND latest = ? AND status IN ?", 0, today, recheckinErrorID).Limit(-1).Find(&tiebaList)
 	} else {
-		BatchPluginQuery(_function.GormDB.R.Model(&model.TcTieba{}).Where("no = ? AND latest != ?", 0, today), int(limit), 3, []string{"id", "pid", "tieba", "fid"}, &tiebaList)
+		BatchPluginQuery(tx.Session(&gorm.Session{}).Where("no = ? AND latest != ?", 0, today), _function.When(noLimit, -1, limit), 3, []string{"id", "pid", "tieba", "fid"}, &tiebaList)
 	}
 
 	if len(tiebaList) <= 0 {
 		slog.Debug("List empty (checkin.action)")
-		return hasFailed, nil
+		return hasFailed, hasMore, nil
 	}
+
+	// random order
+	rand.Shuffle(len(tiebaList), func(i, j int) {
+		tiebaList[i], tiebaList[j] = tiebaList[j], tiebaList[i]
+	})
 
 	//fmt.Println(tiebaList)
 	sleep, _ := strconv.ParseInt(_function.GetOption("sign_sleep"), 10, 64)
@@ -135,6 +223,11 @@ func Dosign(_ string, retry bool) (bool, error) {
 				errorMsg = ""
 			}
 
+			if errorCode == 300004 && autoUnfollow {
+				if err := _function.GormDB.W.Where("id = ?", task.ID).Delete(&model.TcTieba{}).Error; err != nil {
+					slog.Error("checkin.delete-db", "pid", task.Pid, "tieba", task.Tieba, "fid", task.Fid, "id", task.ID, "today", today, "error", err)
+				}
+			} else
 			// TODO better sql update
 			if err := _function.GormDB.W.Model(&model.TcTieba{}).Select("status", "last_error", "latest").Where("id = ?", task.ID).Updates(&model.TcTieba{
 				Status:    int32(errorCode),
@@ -176,7 +269,15 @@ func Dosign(_ string, retry bool) (bool, error) {
 	}
 
 	slog.Debug("done (checkin.action)")
-	return hasFailed, nil
+
+	// `cron_limit`?
+	if infinitySign {
+		var remain int64
+		tx.Session(&gorm.Session{}).Where("no = ? AND latest != ?", 0, today).Count(&remain)
+		hasMore = remain > 0
+	}
+
+	return hasFailed, hasMore, nil
 }
 
 var cronSignAgainInterface CronSignAgainType
@@ -293,7 +394,7 @@ func DoReCheckinAction() {
 		}
 		//for retryMax == 0 || int64(retryNum) <= retryMax {
 		for _, table := range tableList {
-			_, err := Dosign(table, true)
+			_, _, err := Dosign(table, true)
 			if err != nil {
 				slog.Error("checkin.re-checkin", "error", err)
 			}

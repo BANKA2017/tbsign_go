@@ -103,6 +103,14 @@ func SetupSystem(dbExists, autoInstall bool, name, email, password string) bool 
 		return false
 	}
 
+	fmt.Println("⌛正在激活核心组件")
+	for _, plugin := range PluginList {
+		if plugin.GetInfo().Core {
+			plugin.Install()
+			plugin.Switch()
+		}
+	}
+
 	_function.InitOptions()
 
 	fmt.Println("🔒注册管理员账号...")

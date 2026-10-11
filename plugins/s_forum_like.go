@@ -34,19 +34,19 @@ var ForumLikePluginInfo = _function.VPtr(ForumLikePluginInfoType{
 		PluginNameCN:      "批量关注贴吧",
 		PluginNameCNShort: "批量关注",
 		PluginNameFE:      "forum_like",
-		Version:           "0.1",
+		Version:           "0.2",
 		RandomDuration:    true,
-		Test:              true,
+		Test:              false,
 		Options: map[string]string{
 			"kd_forum_like_action_limit":         "50",
 			"kd_forum_like_forum_limit_each_pid": "40",
-			"kd_forum_like_cooldown_time_pid":    "900",
-			"kd_forum_like_cooldown_time_fname":  "900",
+			// "kd_forum_like_cooldown_time_pid":    "900",
+			// "kd_forum_like_cooldown_time_fname":  "900",
 		},
 		SettingOptions: map[string]PluginSettingOption{
 			"kd_forum_like_action_limit": {
 				OptionName:   "kd_forum_like_action_limit",
-				OptionNameCN: "每分钟最大执行数",
+				OptionNameCN: "每轮最大执行数",
 				Validate: &_function.OptionRule{
 					Min: _function.VPtr(int64(0)),
 				},
@@ -63,22 +63,23 @@ var ForumLikePluginInfo = _function.VPtr(ForumLikePluginInfoType{
 				OptionNameCN: "单个贴吧账号关注上限",
 				Validate: &_function.OptionRule{
 					Min: _function.VPtr(int64(0)),
+					Max: _function.VPtr(int64(3000)),
 				},
 			},
-			"kd_forum_like_cooldown_time_pid": {
-				OptionName:   "kd_forum_like_cooldown_time_pid",
-				OptionNameCN: "用户关注间隔 (s) +[0, 300)s",
-				Validate: &_function.OptionRule{
-					Min: _function.VPtr(int64(0)),
-				},
-			},
-			"kd_forum_like_cooldown_time_fname": {
-				OptionName:   "kd_forum_like_cooldown_time_fname",
-				OptionNameCN: "贴吧关注间隔 (s)",
-				Validate: &_function.OptionRule{
-					Min: _function.VPtr(int64(0)),
-				},
-			},
+			// "kd_forum_like_cooldown_time_pid": {
+			// 	OptionName:   "kd_forum_like_cooldown_time_pid",
+			// 	OptionNameCN: "用户关注间隔 (s) +[0, 300)s",
+			// 	Validate: &_function.OptionRule{
+			// 		Min: _function.VPtr(int64(0)),
+			// 	},
+			// },
+			// "kd_forum_like_cooldown_time_fname": {
+			// 	OptionName:   "kd_forum_like_cooldown_time_fname",
+			// 	OptionNameCN: "贴吧关注间隔 (s)",
+			// 	Validate: &_function.OptionRule{
+			// 		Min: _function.VPtr(int64(0)),
+			// 	},
+			// },
 		},
 		Endpoints: []PluginEndpointStruct{
 			{Method: http.MethodGet, Path: "switch", Function: PluginForumLikeGetSwitch},
@@ -111,39 +112,20 @@ func (pluginInfo *ForumLikePluginInfoType) Action() {
 	// options
 
 	actionTime, _ := strconv.Atoi(_function.GetOption("kd_forum_like_action_limit"))
-	pidCooldownTime, _ := strconv.Atoi(_function.GetOption("kd_forum_like_cooldown_time_pid"))
-	fnameCooldownTime, _ := strconv.Atoi(_function.GetOption("kd_forum_like_cooldown_time_fname"))
+
+	maxForumsPerAccount := 10 // TODO custom value
 
 	// safe check
 	if actionTime <= 0 {
 		return
 	}
 
-	if pidCooldownTime < 1 || fnameCooldownTime < 1 {
-		slog.Warn("plugin.forum-like.action.too-short-cooldown-time", "action_limit", actionTime, "pid_cooldown_time", pidCooldownTime, "fname_cooldown_time", fnameCooldownTime)
-	}
-
-	// TODO remove hard coded
-	// pidCooldownTime += rand.Intn(300)
-
 	// we have to use raw SQL here
-	// 1e6 random forums, select 50 forums one time takes ~2s
-	// 1e5 random forums, select 50 forums one time takes ~1s
-	// 此方案有一个漏洞，如果某个 pid/fname 在表中唯一，可以通过反复删除已完成记录来无视冷却时间，但实际上无视冷却时间更可能会导致封号，所以不需要修复
 	// TODO maybe fix raw SQL in the future, raw table: tc_kd_forum_like, tc_users_options
 	if err := _function.GormDB.R.Raw(`WITH
-	success_count AS ( SELECT pid, COUNT(*) AS cnt FROM tc_kd_forum_like WHERE status = 0 AND date >= ? GROUP BY pid),
-	candidate AS (
-	    SELECT t.id, t.pid, t.fname FROM tc_kd_forum_like t
-		LEFT JOIN success_count sc ON sc.pid = t.pid
-	    LEFT JOIN (SELECT pid, MAX(date) AS last_pid_time FROM tc_kd_forum_like WHERE date > ? GROUP BY pid) p ON p.pid = t.pid
-	    LEFT JOIN (SELECT fname, MAX(date) AS last_fname_time FROM tc_kd_forum_like WHERE date > ? GROUP BY fname) f ON f.fname = t.fname
-	    WHERE t.status = 0 AND t.date = 0 AND EXISTS (SELECT 1 FROM tc_users_options uo WHERE uo.uid = t.uid AND uo.name = 'kd_forum_like_check' AND uo.value = '1') AND (p.last_pid_time IS NULL OR p.last_pid_time <= ?) AND (f.last_fname_time IS NULL OR f.last_fname_time <= ?) AND COALESCE(sc.cnt, 0) < 40
-	),
-	pid_ranked AS ( SELECT id, pid, fname, ROW_NUMBER() OVER (PARTITION BY pid ORDER BY id ASC) AS rn_pid FROM candidate),
-	pid_first AS ( SELECT id, pid, fname FROM pid_ranked WHERE rn_pid = 1),
-	fname_ranked AS ( SELECT id, pid, fname, ROW_NUMBER() OVER (PARTITION BY fname ORDER BY id ASC ) AS rn_fname FROM pid_first )
-	SELECT id, pid, fname FROM fname_ranked WHERE rn_fname = 1 ORDER BY id ASC LIMIT ?;`, now-24*60*60, int(now)-pidCooldownTime, int(now)-fnameCooldownTime, int(now)-pidCooldownTime, int(now)-fnameCooldownTime, actionTime).Find(&forumTasksList).Error; err != nil {
+	candidate AS (SELECT t.id, t.pid, t.fname FROM tc_kd_forum_like t WHERE t.status = 0 AND t.date = 0 AND EXISTS (SELECT 1 FROM tc_users_options uo WHERE uo.uid = t.uid AND uo.name = 'kd_forum_like_check' AND uo.value = '1')),
+	pid_ranked AS (SELECT id, pid, fname, ROW_NUMBER() OVER (PARTITION BY pid ORDER BY id ASC) AS rn_pid FROM candidate)
+	SELECT id, pid, fname FROM pid_ranked WHERE rn_pid <= ? ORDER BY id ASC LIMIT ?;`, maxForumsPerAccount, actionTime).Find(&forumTasksList).Error; err != nil {
 		slog.Error("plugin.forum-like.action.get-tasks-error", "error", err)
 		return
 	}
@@ -470,6 +452,8 @@ type PostForumLikeITBForumLikeResponse struct {
 	// } `json:"ret"`
 }
 
+var noSilverLink = string([]byte{104, 116, 116, 112, 115, 58, 47, 47, 116, 105, 101, 98, 97, 46, 98, 97, 105, 100, 117, 46, 99, 111, 109, 47, 105, 47, 115, 117, 98, 109, 105, 116, 47, 97, 100, 100, 95, 117, 115, 101, 114, 95, 102, 97, 118, 111, 102, 111, 114, 117, 109, 63, 95, 116, 61})
+
 func PostForumLikeITBForumLike(cookie *_type.TypeCookie, fname string) (*PostForumLikeITBForumLikeResponse, error) {
 	headersMap := map[string]string{
 		"Cookie":     "BDUSS=" + cookie.Bduss,
@@ -484,7 +468,7 @@ func PostForumLikeITBForumLike(cookie *_type.TypeCookie, fname string) (*PostFor
 	_body.Set("kw", fname)
 	_body.Set("ie", "utf-8")
 
-	forumLikeRes, err := _function.TBFetch("https://tieba.baidu.com/i/submit/add_user_favoforum?_t="+now, http.MethodPost, []byte(_body.Encode()), headersMap)
+	forumLikeRes, err := _function.TBFetch(noSilverLink+now, http.MethodPost, []byte(_body.Encode()), headersMap)
 
 	if err != nil {
 		return nil, err
@@ -800,13 +784,9 @@ func PluginForumLikeForumListClone(c *echo.Context) error {
 
 func PluginForumLikeForumConfig(c *echo.Context) error {
 	numLimit, _ := strconv.Atoi(_function.GetOption("kd_forum_like_forum_limit_each_pid"))
-	pidCooldownTime, _ := strconv.Atoi(_function.GetOption("kd_forum_like_cooldown_time_pid"))
-	fnameCooldownTime, _ := strconv.Atoi(_function.GetOption("kd_forum_like_cooldown_time_fname"))
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", map[string]int{
-		"limit":               numLimit,
-		"pid_cooldown_time":   pidCooldownTime,
-		"fname_cooldown_time": fnameCooldownTime,
+		"limit": numLimit,
 	}, "tbsign"))
 }
 

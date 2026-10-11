@@ -49,7 +49,7 @@ func GetCookie(pid int32, ext ...bool) *_type.TypeCookie {
 	forceSync := len(ext) >= 2 && ext[1]
 
 	if !ok || forceSync {
-		_cookie, _, _ := syncCookieTasks.Do(strconv.Itoa(int(pid))+When(forceSync, "1", "0"), func() (any, error) {
+		_cookie, _, _ := syncCookieTasks.Do(strconv.Itoa(int(pid))+"-"+When(bdussOnly, "1", "0")+"-"+When(forceSync, "1", "0"), func() (any, error) {
 			var _cookie = new(_type.TypeCookie)
 			var cookieDB model.TcBaiduid
 			GormDB.R.Model(&model.TcBaiduid{}).Where("id = ?", pid).Take(&cookieDB)

@@ -65,6 +65,10 @@ func (pluginInfo *RefreshTiebaListPluginType) Action() {
 	}
 	defer pluginInfo.PluginInfo.SetActive(false)
 
+	if !PluginList["tc_core_sign"].GetSwitch() {
+		return
+	}
+
 	//activeAfter := 18 //GMT+8 18:00
 
 	// day, _ := strconv.ParseInt(_function.GetOption("ver4_ref_day"), 10, 64)
@@ -88,7 +92,7 @@ func (pluginInfo *RefreshTiebaListPluginType) Action() {
 		// hard code limit 1000
 		numLimit = utils.Clamp(numLimit, 0, 1000)
 
-		_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id > ?", numRefID).Limit(int(numLimit)).Find(&accounts)
+		_function.GormDB.R.Model(&model.TcBaiduid{}).Where("id > ?", numRefID).Where(`NOT EXISTS (SELECT 1 FROM tc_users_options WHERE tc_users_options.uid = tc_baiduid.uid AND tc_users_options.name = ? AND tc_users_options.value = ?)`, "go_forum_sign_switch", "1").Limit(int(numLimit)).Find(&accounts)
 
 		if len(accounts) == 0 {
 			_function.SetOption("ver4_ref_id", "0")

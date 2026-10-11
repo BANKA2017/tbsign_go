@@ -44,6 +44,7 @@ type PluginInfo struct {
 	SettingOptions map[string]PluginSettingOption
 	Info           model.TcPlugin
 	Test           bool
+	Core           bool
 	Endpoints      []PluginEndpointStruct
 
 	// cron
@@ -189,6 +190,9 @@ func InitPluginList() {
 
 				slog.Info("upgrade plugin success", "name", newVersion.Name, "cur", oldVersion.Ver, "new", newVersion.Version)
 				UpdatePluginInfo(newVersion.Name, newVersion.Version, oldVersion.Status != 0, "")
+			} else if oldVersion.Ver == "-1" && newVersion.Core {
+				plugin.Install()
+				plugin.Switch()
 			}
 		}
 	}
@@ -254,11 +258,19 @@ func DeleteAccount(_type string, id int32, tx *gorm.DB) error {
 }
 
 func BatchPluginQuery(originalQuery *gorm.DB, limit, rate int, selectedKeys []string, target any) error {
+	tx := _function.GormDB.R.Table(
+		"(?) as filtered_tasks",
+		originalQuery.Select("*", "ROW_NUMBER() OVER (PARTITION BY pid ORDER BY id) AS rn"),
+	)
+
+	totalLimit := limit * rate
+	if limit >= 0 {
+		tx = tx.Where("rn <= ?", limit)
+	} else {
+		totalLimit = -1
+	}
+
 	return _function.GormDB.R.Table(
-		"(?) as tasks",
-		_function.GormDB.R.Table(
-			"(?) as filtered_tasks",
-			originalQuery.Select("*", "ROW_NUMBER() OVER (PARTITION BY pid ORDER BY id) AS rn"),
-		).Where("rn <= ?", limit),
-	).Select(selectedKeys).Limit(limit * rate).Scan(target).Error
+		"(?) as tasks", tx,
+	).Select(selectedKeys).Limit(totalLimit).Scan(target).Error
 }

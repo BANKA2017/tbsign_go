@@ -34,6 +34,7 @@ type PluginListContent struct {
 	Ver    string `json:"ver"`
 	Status bool   `json:"status"`
 	Test   bool   `json:"test,omitempty"`
+	Core   bool   `json:"core"`
 
 	PluginNameCN      string `json:"plugin_name_cn"`
 	PluginNameCNShort string `json:"plugin_name_cn_short"`
@@ -103,6 +104,7 @@ func GetServerStatus(c *echo.Context) error {
 		"pid_count":       PIDCount,
 		"forum_count":     ForumCount,
 		"checkin_status":  checkinStatus,
+		// "infinity_sign_mode": _function.GetOption("go_infinity_sign"),
 	}, "tbsign"))
 }
 
@@ -209,7 +211,7 @@ func GetPluginsList(c *echo.Context) error {
 		value := info.GetInfo()
 		status := _function.TinyIntToBool(value.Info.Status)
 
-		if !isAdmin && !status {
+		if !isAdmin && !status && !value.Core {
 			continue
 		}
 
@@ -218,6 +220,7 @@ func GetPluginsList(c *echo.Context) error {
 			Ver:    value.Info.Ver,
 			Status: status,
 			Test:   value.Test,
+			Core:   value.Core,
 
 			PluginNameCN:      value.PluginNameCN,
 			PluginNameCNShort: value.PluginNameCNShort,
@@ -298,8 +301,7 @@ type CronJob struct {
 
 var cronJobOrder = map[string]int{
 	"tc_service": 1,
-	"checkin":    2,
-	"report":     3,
+	"core":       2,
 	"plugin":     4,
 }
 

@@ -1,6 +1,7 @@
 package _plugin
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -11,7 +12,50 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	_type "github.com/BANKA2017/tbsign_go/types"
+	"gorm.io/gorm"
 )
+
+func init() {
+	PluginList.Register(TCCoreReport)
+}
+
+type TCCoreReportType struct {
+	PluginInfo
+}
+
+var TCCoreReport = _function.VPtr(TCCoreReportType{
+	PluginInfo{
+		Name:              "tc_core_report",
+		PluginNameCN:      "每日报告",
+		PluginNameCNShort: "每日报告",
+		PluginNameFE:      "",
+		Version:           "1.0",
+		Core:              true,
+		Options:           map[string]string{},
+		SettingOptions:    map[string]PluginSettingOption{},
+		Endpoints:         []PluginEndpointStruct{},
+	},
+})
+
+func (pluginInfo *TCCoreReportType) Install() error {
+	return UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")
+}
+func (pluginInfo *TCCoreReportType) Action() {
+	DailyReportAction()
+}
+func (pluginInfo *TCCoreReportType) Delete() error                               { return nil }
+func (pluginInfo *TCCoreReportType) Upgrade() error                              { return nil }
+func (pluginInfo *TCCoreReportType) RemoveAccount(string, int32, *gorm.DB) error { return nil }
+func (pluginInfo *TCCoreReportType) ExportAccount(int32, *gorm.DB) (map[string]any, error) {
+	return nil, nil
+}
+func (pluginInfo *TCCoreReportType) ImportAccount(int32, map[int32]int32, map[string]json.RawMessage, *gorm.DB) error {
+	return nil
+}
+func (pluginInfo *TCCoreReportType) Report(int32, *gorm.DB) (string, error) {
+	return "", nil
+}
+func (pluginInfo *TCCoreReportType) Reset(int32, int32, int32) error { return nil }
 
 // go_daily_report_status
 // go_daily_report

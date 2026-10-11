@@ -277,30 +277,6 @@ func InitCrontab() (gocron.Scheduler, error) {
 		minuteDuration = gocron.DurationJob(time.Hour * 24 * 99999)
 	}
 
-	// daily report
-	if _, err = s.NewJob(
-		minuteDuration,
-		gocron.NewTask(_plugin.DailyReportAction),
-		gocron.WithTags("report"),
-		gocron.WithName("签到报告"),
-	); err != nil {
-		return s, err
-	}
-
-	// check-in actions
-	if _, err = s.NewJob(
-		minuteDuration,
-		gocron.NewTask(func() {
-			_plugin.DoCheckinAction()
-			_plugin.DoReCheckinAction()
-		}),
-		gocron.WithTags("checkin"),
-		gocron.WithName("签到任务"),
-		gocron.WithSingletonMode(gocron.LimitModeReschedule),
-	); err != nil {
-		return s, err
-	}
-
 	// plugins
 	for _, plugin := range _plugin.PluginList {
 		var d gocron.JobDefinition
@@ -310,6 +286,16 @@ func InitCrontab() (gocron.Scheduler, error) {
 			d = minuteDuration
 		}
 
+		var tags []string
+		var name string
+		if plugin.GetInfo().Core {
+			tags = append(tags, "core", "core:"+plugin.GetInfo().Name)
+			name = "核心组件:" + plugin.GetInfo().PluginNameCN
+		} else {
+			tags = append(tags, "plugin", "plugin:"+plugin.GetInfo().Name)
+			name = "插件:" + plugin.GetInfo().PluginNameCN
+		}
+
 		if _, err = s.NewJob(
 			d,
 			gocron.NewTask(func() {
@@ -317,8 +303,8 @@ func InitCrontab() (gocron.Scheduler, error) {
 					plugin.Action()
 				}
 			}),
-			gocron.WithTags("plugin", "plugin:"+plugin.GetInfo().Name),
-			gocron.WithName("插件:"+plugin.GetInfo().PluginNameCN),
+			gocron.WithTags(tags...),
+			gocron.WithName(name),
 			gocron.WithSingletonMode(gocron.LimitModeReschedule),
 			// gocron.WithIntervalFromCompletion(),
 		); err != nil {

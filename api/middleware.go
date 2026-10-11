@@ -118,11 +118,11 @@ func PluginPathPrecheck(next echo.HandlerFunc) echo.HandlerFunc {
 
 		path = strings.TrimPrefix(path, "/plugins/")
 
-		pluginName := strings.SplitN(path, "/", 2)[0]
+		pluginName, _, _ := strings.Cut(path, "/")
 
 		_pluginInfo, ok := _plugin.PluginList[pluginName]
 
-		if !ok || !_pluginInfo.GetSwitch() {
+		if !ok || (!_pluginInfo.GetInfo().Core && !_pluginInfo.GetSwitch()) {
 			return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "插件不可用", _function.EchoEmptyObject, "tbsign"))
 		}
 

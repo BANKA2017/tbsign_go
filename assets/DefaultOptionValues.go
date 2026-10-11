@@ -46,6 +46,7 @@ var DefaultOptions = map[string]string{
 	"go_daily_report_hour":        "-1",
 	"go_robots_txt":               "",
 	"go_favicon":                  "",
+	"go_infinity_sign":            "0",
 
 	// should be edited in future versions
 	"go_plugin_batch_tasks":              "0",

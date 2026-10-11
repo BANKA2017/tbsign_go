@@ -722,6 +722,11 @@ func ExportAccountData(c *echo.Context) error {
 	dataMap := make(map[string]any)
 
 	for _, plugin := range _plugin.PluginList {
+		// core component need not export and import
+		if plugin.GetInfo().Core {
+			continue
+		}
+
 		m, err := plugin.ExportAccount(int32(numUid), nil)
 		if err == nil && m != nil {
 			for k, v := range m {
@@ -983,6 +988,11 @@ func ImportAccountData(c *echo.Context) error {
 
 	// plugins
 	for _, plugin := range _plugin.PluginList {
+		// core component need not export and import
+		if plugin.GetInfo().Core {
+			continue
+		}
+
 		if err = plugin.ImportAccount(int32(numUid), labelPidKV, decodedData, nil); err != nil {
 			slog.Error("passport.import-account-data.plugin", "uid", uid, "plugin", plugin.GetInfo().Name, "error", err)
 		}

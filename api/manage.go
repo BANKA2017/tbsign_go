@@ -65,10 +65,16 @@ func encodeSignMode(val []string) string {
 	// a:1:{i:0;s:1:"1";}
 	var sb strings.Builder
 	sb.Grow(6 + len(val)*12)
-	sb.WriteString(`a:` + strconv.Itoa(len(val)) + `:{`)
+	sb.WriteString(`a:`)
+	sb.WriteString(strconv.Itoa(len(val)))
+	sb.WriteString(`:{`)
 
 	for i := range val {
-		sb.WriteString("i:" + strconv.Itoa(i) + `;s:1:"` + val[i] + `";`)
+		sb.WriteString("i:")
+		sb.WriteString(strconv.Itoa(i))
+		sb.WriteString(`;s:1:"`)
+		sb.WriteString(val[i])
+		sb.WriteString(`";`)
 	}
 
 	sb.WriteByte('}')
@@ -177,6 +183,7 @@ var SettingsRules = map[string]*_function.OptionRule{
 			return s
 		},
 	},
+	// "go_infinity_sign": {Enum: []string{"0", "1"}},
 }
 
 func UpdateAdminSettings(c *echo.Context) error {
@@ -842,6 +849,10 @@ func PluginUninstall(c *echo.Context) error {
 			"status":  false,
 			"version": -1,
 		}, "tbsign"))
+	}
+
+	if _pluginInfo.GetInfo().Core {
+		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "组件不可删除", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	err := _pluginInfo.Delete()
