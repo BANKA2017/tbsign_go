@@ -60,7 +60,7 @@ func ScanTiebaByPid(pid int32) {
 			var tiebaList []*model.TcTieba
 			var updateList = make(map[int]string)
 			for _, tiebaInfo := range response.LikeForum {
-				if tiebaInfo.ForumID == 0 || tiebaInfo.IsForbidden == 1 {
+				if tiebaInfo.ForumID == 0 {
 					continue
 				}
 				//fmt.Println(tiebaInfo)
@@ -86,6 +86,7 @@ func ScanTiebaByPid(pid int32) {
 						Tieba:     tiebaInfo.ForumName,
 						Status:    0,
 						LastError: "",
+						No:        When(tiebaInfo.IsForbidden == 1, 1, 0),
 					})
 					localTiebaFidList[int32(tiebaInfo.ForumID)] = tiebaInfo.ForumName
 				} else if localFname != tiebaInfo.ForumName {

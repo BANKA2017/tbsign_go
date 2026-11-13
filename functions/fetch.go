@@ -1013,3 +1013,30 @@ func GetMobileWebIndexWithUser(cookie *_type.TypeCookie) (*UserInfoIncludedShort
 	err = JsonDecode(forumUnlikeRes, &forumUnlikeResStruct)
 	return &forumUnlikeResStruct, err
 }
+
+type ClientWebviewForumUnlike2Response struct {
+	No    int    `json:"no"`
+	Error string `json:"error"`
+	// Data  string `json:"data"`
+}
+
+func ClientWebviewForumUnlike2(cookie *_type.TypeCookie, fid int64, fname string) (*ClientWebviewForumUnlike2Response, error) {
+
+	_body := url.Values{}
+	_body.Set("fid", strconv.Itoa(int(fid)))
+	_body.Set("kw", fname)
+	_body.Set("itb_tbs", cookie.Tbs)
+
+	forumUnLikeRes, err := TBFetch("https://tieba.baidu.com/mo/q/delfavolike?"+_body.Encode(), http.MethodGet, nil, map[string]string{
+		"Cookie": `BDUSS=` + cookie.Bduss,
+		// https://tieba.baidu.com/mo/q/hybrid-main-bawu/forumConcern/hybrid?customfullscreen=1&nonavigationbar=1&loadingSignal=1&skin=default&_client_version=<version>
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	var forumUnLikeResStruct ClientWebviewForumUnlike2Response
+	err = JsonDecode(forumUnLikeRes, &forumUnLikeResStruct)
+	return &forumUnLikeResStruct, err
+}

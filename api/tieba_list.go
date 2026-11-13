@@ -8,6 +8,7 @@ import (
 
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
+	"github.com/kdnetwork/code-snippet/go/utils"
 	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 )
@@ -95,6 +96,7 @@ func RemoveTieba(c *echo.Context) error {
 
 	pid := c.Param("pid")
 	fid := c.Param("fid")
+	unfollow := utils.StrBoolT(c.QueryParam("unfollow"))
 
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	numPid, err := strconv.ParseInt(pid, 10, 64)
@@ -105,10 +107,30 @@ func RemoveTieba(c *echo.Context) error {
 	response := VerifyFidList(fid)
 
 	if len(response.ValidFid) > 0 {
-		if len(response.ValidFid) == 1 {
-			_function.GormDB.W.Where("uid = ? AND pid = ? AND fid = ?", numUID, numPid, response.ValidFid[0]).Delete(&model.TcTieba{})
+		if unfollow {
+			cookie := _function.GetCookie(int32(numPid))
+
+			validFid := make([]int64, 0, len(response.ValidFid))
+			invalidFid := response.InvalidFid
+
+			for _, fid := range response.ValidFid {
+				res, err := _function.ClientWebviewForumUnlike2(cookie, fid, "")
+				if err != nil || res.No != 0 {
+					invalidFid = append(invalidFid, strconv.FormatInt(fid, 10))
+					continue
+				}
+				validFid = append(validFid, fid)
+				_function.GormDB.W.Where("uid = ? AND pid = ? AND fid = ?", numUID, numPid, fid).Delete(&model.TcTieba{})
+			}
+
+			response.ValidFid = validFid
+			response.InvalidFid = invalidFid
 		} else {
-			_function.GormDB.W.Where("uid = ? AND pid = ? AND fid IN (?)", numUID, numPid, response.ValidFid).Delete(&model.TcTieba{})
+			if len(response.ValidFid) == 1 {
+				_function.GormDB.W.Where("uid = ? AND pid = ? AND fid = ?", numUID, numPid, response.ValidFid[0]).Delete(&model.TcTieba{})
+			} else {
+				_function.GormDB.W.Where("uid = ? AND pid = ? AND fid IN (?)", numUID, numPid, response.ValidFid).Delete(&model.TcTieba{})
+			}
 		}
 	}
 
