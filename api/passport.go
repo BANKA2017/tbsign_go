@@ -1041,3 +1041,35 @@ func ResetAccountPlugin(c *echo.Context) error {
 
 	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", true, "tbsign"))
 }
+
+func GetSignSwitch(c *echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	name := c.Param("name")
+	if _function.UserSignSwitchNames[name] == "" {
+		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "Invalid switch name", false, "tbsign"))
+	}
+
+	status := _function.GetUserOption(_function.UserSignSwitchNames[name], uid)
+	if status == "" {
+		status = "0"
+		_function.SetUserOption(_function.UserSignSwitchNames[name], status, uid)
+	}
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", status != "0", "tbsign"))
+}
+
+func SetSignSwitch(c *echo.Context) error {
+	uid := c.Get("uid").(string)
+
+	name := c.Param("name")
+	if _function.UserSignSwitchNames[name] == "" {
+		return c.JSON(http.StatusBadRequest, _function.ApiTemplate(400, "Invalid switch name", false, "tbsign"))
+	}
+
+	status := _function.GetUserOption(_function.UserSignSwitchNames[name], uid) != "0"
+
+	if err := _function.SetUserOption(_function.UserSignSwitchNames[name], !status, uid); err != nil {
+		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "修改失败", status, "tbsign"))
+	}
+	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", !status, "tbsign"))
+}

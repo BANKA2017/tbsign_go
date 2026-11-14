@@ -96,12 +96,20 @@ func RemoveTieba(c *echo.Context) error {
 
 	pid := c.Param("pid")
 	fid := c.Param("fid")
-	unfollow := utils.StrBoolT(c.QueryParam("unfollow"))
+	unfollowParams := strings.TrimSpace(c.QueryParam("unfollow"))
 
 	numUID, _ := strconv.ParseInt(uid, 10, 64)
 	numPid, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
 		return c.JSON(http.StatusForbidden, _function.ApiTemplate(403, "无效 pid", _function.EchoEmptyObject, "tbsign"))
+	}
+
+	var unfollow bool
+
+	if unfollowParams == "" {
+		unfollow = utils.StrBoolT(_function.GetUserOption("unfollow_forum_when_deleting", strconv.Itoa(int(numPid))))
+	} else {
+		unfollow = utils.StrBoolT(unfollowParams)
 	}
 
 	response := VerifyFidList(fid)

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"log/slog"
 	"math/rand/v2"
-	"net/http"
 	"slices"
 	"strconv"
 	"strings"
@@ -16,7 +15,6 @@ import (
 	_function "github.com/BANKA2017/tbsign_go/functions"
 	"github.com/BANKA2017/tbsign_go/model"
 	"github.com/kdnetwork/code-snippet/go/worker"
-	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 )
 
@@ -38,32 +36,8 @@ var TCCoreSign = _function.VPtr(TCCoreSignType{
 		Core:              true,
 		Options:           map[string]string{},
 		SettingOptions:    map[string]PluginSettingOption{},
-		Endpoints: []PluginEndpointStruct{
-			{Method: http.MethodGet, Path: "signmode", Function: TCCoreSignForumSignGetSwitch},
-			{Method: http.MethodPost, Path: "signmode", Function: TCCoreSignForumSignSwitch},
-		},
 	},
 })
-
-func TCCoreSignForumSignGetSwitch(c *echo.Context) error {
-	uid := c.Get("uid").(string)
-	status := _function.GetUserOption("go_forum_sign_switch", uid)
-	if status == "" {
-		status = "0"
-		_function.SetUserOption("go_forum_sign_switch", status, uid)
-	}
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", status != "0", "tbsign"))
-}
-
-func TCCoreSignForumSignSwitch(c *echo.Context) error {
-	uid := c.Get("uid").(string)
-	status := _function.GetUserOption("go_forum_sign_switch", uid) != "0"
-
-	if err := _function.SetUserOption("go_forum_sign_switch", !status, uid); err != nil {
-		return c.JSON(http.StatusInternalServerError, _function.ApiTemplate(500, "修改签到运行模式失败", status, "tbsign"))
-	}
-	return c.JSON(http.StatusOK, _function.ApiTemplate(200, "OK", !status, "tbsign"))
-}
 
 func (pluginInfo *TCCoreSignType) Install() error {
 	return UpdatePluginInfo(pluginInfo.Name, pluginInfo.Version, false, "")

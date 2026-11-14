@@ -70,6 +70,7 @@ func InitEnv() {
 	// releases
 	flag.StringVar(&share.ReleaseFilesPath, "release_file_base", utils.GetEnv("tc_release_file_base", share.ReleaseFilesPath), "Base path for release files")
 	flag.StringVar(&share.ReleaseApiBase, "release_api_base", utils.GetEnv("tc_release_api_base", share.ReleaseApiBase), "To replace `https://api.github.com/repos/{owner}/{repo}`")
+	// flag.BoolVar(&share.TCECO, "tceco", utils.GetBoolEnv("tc_tceco"), "export internal api endpoints for tceco")
 
 	// others
 	flag.BoolVar(&share.TestMode, "test", utils.GetBoolEnv("tc_test"), "Not send any requests to tieba servers")

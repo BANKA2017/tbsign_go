@@ -88,6 +88,8 @@ func Api(ctx context.Context, network, address string) {
 	passport.POST("/plugin/:plugin_name/reset", ResetAccountPlugin)
 	passport.POST("/plugin/:plugin_name/reset/:pid", ResetAccountPlugin)
 	passport.POST("/plugin/:plugin_name/reset/:pid/:tid", ResetAccountPlugin)
+	passport.GET("/switch/:name", GetSignSwitch)
+	passport.POST("/switch/:name", SetSignSwitch)
 
 	// tieba account
 	tiebaAccount := api.Group("/account")

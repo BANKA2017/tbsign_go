@@ -1,6 +1,8 @@
 package share
 
-import "time"
+import (
+	"time"
+)
 
 var DBUsername string
 var DBPassword string
@@ -31,3 +33,4 @@ var DataEncryptKeyByte []byte
 var DisableEmail bool
 var DNSAddress string
 var DangerFrontend bool
+var TCECO bool

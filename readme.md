@@ -371,8 +371,8 @@ docker run -d --restart unless-stopped -v ./db:/app/tbsign/db -p 8080:1323 ghcr.
 | 类型                 | 发布方式                                                                             | 支持更新自身文件 |
 | :------------------- | :----------------------------------------------------------------------------------- | :--------------- |
 | `source`             | 通过源码直接编译的默认值                                                             | ❌                |
-| `binary`             | 通过 [GitHub Releases](https://github.com/BANKA2017/tbsign_go/releases) 发布         | ✅                |
-| `docker`/`container` | 通过 [ghcr.io](https://github.com/BANKA2017/tbsign_go/pkgs/container/tbsign_go) 发布 | ❌                |
+| `binary`             | 通过 [GitHub Releases](https://github.com/BANKA2017/tbsign_go/releases) 发布         | ✅               |
+| `docker`/`container` | 通过 [ghcr.io](https://github.com/BANKA2017/tbsign_go/pkgs/container/tbsign_go) 发布 | ❌               |
 | 其他自定义值         | 由第三方打包者自行决定                                                               | ⚠️ 由打包者决定   |
 
 ### 发布地址
