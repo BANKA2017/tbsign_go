@@ -165,7 +165,7 @@ go run main.go -db_tls=/etc/ssl/certs/ca-certificates.crt
 - [❌] MySQL 不支持无法使用 [MySQL 窗口函数](https://dev.mysql.com/doc/refman/8.0/en/window-functions.html) 的发行版，使用了**不支持**的函数 `ROW_NUMBER()`
 - [⚠️] 开发环境使用的 MySQL 版本号为 `8.0` 或更高，其他 MySQL 发行版请自行测试是否可用
 - [⚠️] PostgreSQL 不保证可用
-- [⚠️] Go 版本为 `go1.25.6`，请自行检查[兼容性](https://tip.golang.org/wiki/MinimumRequirements)
+- [⚠️] Go 版本为 `go1.27.4`，请自行检查[兼容性](https://tip.golang.org/wiki/MinimumRequirements)
 
 ## 前端
 
