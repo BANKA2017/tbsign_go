@@ -13,7 +13,7 @@ env:
   CGO_ENABLED: "1"
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  GOVERSION: "1.25.6"
+  GOVERSION: "1.27.4"
 
 jobs:
   build-frontend:

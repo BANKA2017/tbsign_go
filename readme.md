@@ -313,8 +313,8 @@ CC="zig cc -target x86_64-windows-gnu -O2" GOOS=windows GOARCH=amd64 CGO_ENABLED
 
 ```bash
 # go install src.techknowlogick.com/xgo@v1.8.1-0.20250401170454-4b368d8a5afa
-# docker pull ghcr.io/techknowlogick/xgo:go-1.25.6
-CGO_ENABLED=1 $HOME/go/bin/xgo -go go-1.25.6 -tags netgo --targets=windows/amd64,darwin/amd64,darwin/arm64 ./
+# docker pull ghcr.io/techknowlogick/xgo:go-1.27.4
+CGO_ENABLED=1 $HOME/go/bin/xgo -go go-1.27.4 -tags netgo --targets=windows/amd64,darwin/amd64,darwin/arm64 ./
 ```
 
 #### glibc

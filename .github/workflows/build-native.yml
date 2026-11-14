@@ -18,8 +18,8 @@ env:
   CGO_ENABLED: "1"
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  GOVERSION: "1.25.6"
-  mmacosx_version_min: "11.0"
+  GOVERSION: "1.27.4"
+  mmacosx_version_min: "13.0"
   PUBLISH_TYPE: binary
 
 jobs:
