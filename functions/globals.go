@@ -109,6 +109,13 @@ func GetCookieWithShortTbs(pid int32) *_type.TypeCookie {
 	}
 
 	cookie.ShortTbs = userInfo.Data.Tbs
+	cookie.Tbs = userInfo.Data.ItbTbs
+
+	// others
+	cookie.BaiduUID = userInfo.Data.UID
+
+	numVipEndTime, _ := strconv.Atoi(userInfo.Data.VipInfo.ETime)
+	cookie.IsVIP = numVipEndTime > int(time.Now().Unix()) // >=?
 
 	return cookie
 }

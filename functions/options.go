@@ -19,6 +19,7 @@ var SettingsKeysEmptyNoChange = []string{"mail_smtppw", "go_favicon"}
 var UserSignSwitchNames = map[string]string{
 	"signmode":                     "go_forum_sign_switch",
 	"unfollow_forum_when_deleting": "go_unfollow_forum_when_deleting_switch",
+	// "move_to_ignore_when_special_error": "go_move_to_ignore_when_special_error_switch",
 }
 
 var SettingsFilter = SettingsKeys

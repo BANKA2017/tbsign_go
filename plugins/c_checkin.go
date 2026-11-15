@@ -107,6 +107,7 @@ func Dosign(_ string, retry bool) (bool, bool, error) {
 
 	infinitySign := false //TODO _function.GetOption("go_infinity_sign") == "1"
 	autoUnfollow := false //TODO _function.GetOption("go_auto_delete_unfollowed") == "1"
+	// go_move_to_ignore_when_special_error_switch user option
 
 	var tiebaList []*model.TcTieba
 
