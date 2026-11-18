@@ -686,6 +686,7 @@ func GetUserInfoByUsernameOrPortrait(requestType string, value string) (*_type.T
 }
 
 // !!! Calling this api will change the IP location !!!
+// !!! Calling this api will init tieba uid !!!
 func PostSync(cookie *_type.TypeCookie) (*_type.PostSyncResponse, error) {
 	form := map[string]string{
 		"BDUSS": cookie.Bduss,

@@ -66,20 +66,20 @@ func GetBDUSS(c *echo.Context) error {
 	stoken := stokenKV["tb"]
 
 	// get tieba account info
-	baiduAccountInfo, err := _function.GetBaiduUserInfo(&_type.TypeCookie{Bduss: bduss})
-	if err != nil || baiduAccountInfo.User.Portrait == "" {
+	baiduAccountInfo, err := _function.GetMobileWebIndexWithUser(&_type.TypeCookie{Bduss: bduss})
+	if err != nil || baiduAccountInfo.Data.Portrait == "" {
 		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "无法验证登录状态 BDUSS", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// pre-check
 	var tiebaAccounts []*model.TcBaiduid
-	_function.GormDB.R.Where("uid = ? AND portrait = ?", uid, baiduAccountInfo.User.Portrait).Limit(1).Find(&tiebaAccounts)
+	_function.GormDB.R.Where("uid = ? AND portrait = ?", uid, baiduAccountInfo.Data.Portrait).Limit(1).Find(&tiebaAccounts)
 
 	if share.IsEncrypt {
-		encryptedBDUSS, _ := _function.AES256GCMEncrypt(bduss, share.DataEncryptKeyByte, []byte(baiduAccountInfo.User.Portrait))
+		encryptedBDUSS, _ := _function.AES256GCMEncrypt(bduss, share.DataEncryptKeyByte, []byte(baiduAccountInfo.Data.Portrait))
 		bduss = encryptedBDUSS
 
-		encryptedStoken, _ := _function.AES256GCMEncrypt(stoken, share.DataEncryptKeyByte, []byte(baiduAccountInfo.User.Portrait))
+		encryptedStoken, _ := _function.AES256GCMEncrypt(stoken, share.DataEncryptKeyByte, []byte(baiduAccountInfo.Data.Portrait))
 		stoken = encryptedStoken
 	}
 
@@ -88,8 +88,8 @@ func GetBDUSS(c *echo.Context) error {
 			newData := model.TcBaiduid{
 				Bduss:    bduss,
 				Stoken:   stoken,
-				Name:     baiduAccountInfo.User.Name,
-				Portrait: baiduAccountInfo.User.Portrait,
+				Name:     baiduAccountInfo.Data.Name,
+				Portrait: baiduAccountInfo.Data.Portrait,
 			}
 			_function.GormDB.W.Model(&model.TcBaiduid{}).Where("id = ?", tiebaAccounts[0].ID).Updates(&newData)
 			newData.ID = tiebaAccounts[0].ID
@@ -134,8 +134,8 @@ func GetBDUSS(c *echo.Context) error {
 		UID:      int32(numUID),
 		Bduss:    bduss,
 		Stoken:   stoken,
-		Name:     baiduAccountInfo.User.Name,
-		Portrait: baiduAccountInfo.User.Portrait,
+		Name:     baiduAccountInfo.Data.Name,
+		Portrait: baiduAccountInfo.Data.Portrait,
 	}
 	_function.GormDB.W.Create(&newAccount)
 
@@ -167,20 +167,20 @@ func AddTiebaAccount(c *echo.Context) error {
 	}
 
 	// get tieba account info
-	baiduAccountInfo, err := _function.GetBaiduUserInfo(&_type.TypeCookie{Bduss: bduss})
-	if err != nil || baiduAccountInfo.User.Portrait == "" {
+	baiduAccountInfo, err := _function.GetMobileWebIndexWithUser(&_type.TypeCookie{Bduss: bduss})
+	if err != nil || baiduAccountInfo.Data.Portrait == "" {
 		return c.JSON(http.StatusNotFound, _function.ApiTemplate(404, "无法验证登录状态 BDUSS", _function.EchoEmptyObject, "tbsign"))
 	}
 
 	// pre-check
 	var tiebaAccounts []*model.TcBaiduid
-	_function.GormDB.R.Where("uid = ? AND portrait = ?", uid, baiduAccountInfo.User.Portrait).Limit(1).Find(&tiebaAccounts)
+	_function.GormDB.R.Where("uid = ? AND portrait = ?", uid, baiduAccountInfo.Data.Portrait).Limit(1).Find(&tiebaAccounts)
 
 	if share.IsEncrypt {
-		encryptedBDUSS, _ := _function.AES256GCMEncrypt(bduss, share.DataEncryptKeyByte, []byte(baiduAccountInfo.User.Portrait))
+		encryptedBDUSS, _ := _function.AES256GCMEncrypt(bduss, share.DataEncryptKeyByte, []byte(baiduAccountInfo.Data.Portrait))
 		bduss = encryptedBDUSS
 
-		encryptedStoken, _ := _function.AES256GCMEncrypt(stoken, share.DataEncryptKeyByte, []byte(baiduAccountInfo.User.Portrait))
+		encryptedStoken, _ := _function.AES256GCMEncrypt(stoken, share.DataEncryptKeyByte, []byte(baiduAccountInfo.Data.Portrait))
 		stoken = encryptedStoken
 	}
 
@@ -189,8 +189,8 @@ func AddTiebaAccount(c *echo.Context) error {
 			newData := model.TcBaiduid{
 				Bduss:    bduss,
 				Stoken:   stoken,
-				Name:     baiduAccountInfo.User.Name,
-				Portrait: baiduAccountInfo.User.Portrait,
+				Name:     baiduAccountInfo.Data.Name,
+				Portrait: baiduAccountInfo.Data.Portrait,
 			}
 			_function.GormDB.W.Model(&model.TcBaiduid{}).Where("id = ?", tiebaAccounts[0].ID).Updates(&newData)
 			newData.ID = tiebaAccounts[0].ID
@@ -235,8 +235,8 @@ func AddTiebaAccount(c *echo.Context) error {
 		UID:      int32(numUID),
 		Bduss:    bduss,
 		Stoken:   stoken,
-		Name:     baiduAccountInfo.User.Name,
-		Portrait: baiduAccountInfo.User.Portrait,
+		Name:     baiduAccountInfo.Data.Name,
+		Portrait: baiduAccountInfo.Data.Portrait,
 	}
 	_function.GormDB.W.Create(&newAccount)
 
